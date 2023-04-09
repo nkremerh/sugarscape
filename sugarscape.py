@@ -43,7 +43,7 @@ class Sugarscape:
                 randX = random.randrange(self.__environment.getHeight())
                 randY = random.randrange(self.__environment.getWidth())
             c = self.__environment.getCell(randX, randY)
-            a = agent.Agent(c, 1, 1, 3)
+            a = agent.Agent(c, 1, 2, 3)
             c.setAgent(a)
             self.__agents.append(a)
 
@@ -70,7 +70,8 @@ class Sugarscape:
 
 if __name__ == "__main__":
     S = Sugarscape(50, 50, 100, 4, None)
-    for i in range(4):
+    print(str(S))
+    for i in range(5):
         S.doTimestep()
         print(str(S))
     exit(0)

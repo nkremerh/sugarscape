@@ -61,7 +61,7 @@ class Cell:
         southIndex = self.__y - 1
         if southIndex < southWrapAround:
             southIndex = self.__environment.getHeight() - 1
-        southNeighbor = self.__environment.getCell(x, southIndex)
+        southNeighbor = self.__environment.getCell(self.__x, southIndex)
         return southNeighbor
 
     def getEastNeighbor(self):
@@ -69,7 +69,7 @@ class Cell:
         eastIndex = self.__x + 1
         if eastIndex >= eastWrapAround:
             eastIndex = 0
-        easthNeighbor = self.__environment.getCell(eastIndex, self.__y)
+        eastNeighbor = self.__environment.getCell(eastIndex, self.__y)
         return eastNeighbor
 
     def getWestNeighbor(self):
@@ -77,14 +77,16 @@ class Cell:
         westIndex = self.__y - 1
         if westIndex < westWrapAround:
             westIndex = self.__environment.getWidth() - 1
-        westNeighbor = self.__environment.getCell(westIndex, y)
+        westNeighbor = self.__environment.getCell(westIndex, self.__y)
         return westNeighbor
 
     def setNeighbors(self):
-        self.__neighbors.append(self.getNorthNeighbor())
-        self.__neighbors.append(self.getSouthNeighbor())
-        self.__neighbors.append(self.getEastNeighbor())
-        self.__neighbors.append(self.getWestNeighbor())
+        if(len(self.__neighbors) < 4):
+            self.__neighbors = []
+            self.__neighbors.append(self.getNorthNeighbor())
+            self.__neighbors.append(self.getSouthNeighbor())
+            self.__neighbors.append(self.getEastNeighbor())
+            self.__neighbors.append(self.getWestNeighbor())
 
     def setX(self, x):
         self.__x = x

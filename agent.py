@@ -10,6 +10,7 @@ class Agent:
         self.__vision = vision
         self.__sugar = 0
         self.__alive = True
+        self.__cellsInVision = []
 
     def getAlive(self):
         return self.__alive
@@ -33,6 +34,7 @@ class Agent:
         if(self.__cell != None):
             self.unsetCell()
         self.__cell = cell
+        self.__cell.setAgent(self)
 
     def unsetCell(self):
         self.__cell.unsetAgent()
@@ -50,8 +52,44 @@ class Agent:
     def isAlive(self):
         return self.getAlive()
 
-    def getResourcesAtCell(self):
-        self.__sugar = self.__sugar + self.__cell.resetSugar()
+    def collectResourcesAtCell(self):
+        if self.__cell != None:
+            self.__sugar = self.__sugar + self.__cell.resetSugar()
+
+    def getCellsInVision(self):
+        return self.__cellsInVision
+
+    def setCellsInVision(self, cells):
+        self.__cellsInVision = cells
+
+    def findCellsInVision(self):
+        if self.__vision > 0 and self.__cell != None:
+            northCells = [self.__cell.getNorthNeighbor()]
+            southCells = [self.__cell.getSouthNeighbor()]
+            eastCells = [self.__cell.getEastNeighbor()]
+            westCells = [self.__cell.getWestNeighbor()]
+            # Vision 1 accounted for in list setup
+            for i in range(self.__vision - 1):
+                northCells.append(northCells[-1].getNorthNeighbor())
+                southCells.append(southCells[-1].getSouthNeighbor())
+                eastCells.append(eastCells[-1].getEastNeighbor())
+                westCells.append(westCells[-1].getWestNeighbor())
+            self.setCellsInVision(northCells + southCells + eastCells + westCells)
+
+    def findBestCellInVision(self):
+        self.findCellsInVision()
+        bestCell = self.__cell
+        for i in range(len(self.__cellsInVision)):
+            currCell = self.__cellsInVision[i]
+            if currCell.getAgent() == None and currCell.getCurrSugar() > bestCell.getCurrSugar():
+                bestCell = currCell
+        return bestCell
+
+    def moveToBestCellInVision(self):
+        bestCell = self.findBestCellInVision()
+        if bestCell == None:
+            print("No best cell found")
+        self.setCell(bestCell)
 
     def doMetabolism(self):
         self.__sugar = self.__sugar - self.__metabolism
@@ -60,9 +98,11 @@ class Agent:
             self.unsetCell()
 
     def doTimestep(self):
-        # TODO: Determine if sugar/spice eaten before moving (requires initial endowment of sugar/spice)
-        self.getResourcesAtCell()
-        self.doMetabolism()
+        if self.__alive == True:
+            # TODO: Determine if sugar/spice eaten before moving (requires initial endowment of sugar/spice)
+            self.moveToBestCellInVision()
+            self.collectResourcesAtCell()
+            self.doMetabolism()
 
-    def __Str__(self):
-        return "[Agent Object with {0} sugar]".format(self.getSugarHold())
+    def __str__(self):
+        return "{0}".format(self.getSugar())
