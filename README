@@ -1,0 +1,11 @@
+SUGARSCAPE
+
+Python implementation of the Sugarscape agent-based computational model introduced in Growing Artificial Societies (1996) by Epstein and Axtell.
+
+Based on previous work by Herve Lange (https://github.com/langerv/sugarscape) and Joshua Palicka (https://github.com/joshuapalicka/sugarscape).
+
+Requirements:
+Python 3
+
+Usage:
+python sugarscape.py
