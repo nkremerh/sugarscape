@@ -85,6 +85,11 @@ class Sugarscape:
             if a.isAlive() == False:
                 self.__agents.remove(a)
 
+    def runSimulation(self, timesteps=5):
+        for t in range(timesteps):
+            self.doTimestep()
+            self.__gui.getWindow().update()
+
     def __str__(self):
         string = "{0}Living Agents: {1}".format(str(self.__environment), len(self.__agents))
         return string
@@ -92,8 +97,6 @@ class Sugarscape:
 if __name__ == "__main__":
     S = Sugarscape(50, 50, 100, 4, None)
     print(str(S))
-    window = S.getGUI().getWindow()
-    for i in range(1000):
-        S.doTimestep()
-        window.update()
+    S.runSimulation(100)
+    print(str(S))
     exit(0)

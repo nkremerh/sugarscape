@@ -61,7 +61,7 @@ class GUI:
         window.title("Sugarscape")
         window.geometry("%dx%d" % (self.__screenWidth + borderEdge, self.__screenHeight + borderEdge))
         window.resizable(True, True)
-        window.configure(background = "white")
+        window.configure(background="white")
         return window
 
     def mainLoop(self):
