@@ -3,9 +3,11 @@
 import agent
 import cell
 import environment
+import gui
 
 import math
 import random
+import time
 
 '''
 Class: Sugarscape
@@ -17,6 +19,25 @@ class Sugarscape:
         self.configureEnvironment(globalMaxSugar)
         self.__agents = []
         self.configureAgents(startingAgents)
+        self.__gui = gui.GUI(self)
+
+    def getEnvironment(self):
+        return self.__environment
+
+    def getAgents(self):
+        return self.__agents
+
+    def getGUI(self):
+        return self.__gui
+
+    def setEnvironment(self, environment):
+        self.__environment = environment
+
+    def setAgents(self, agents):
+        self.__agents = agents
+
+    def setGUI(self, gui):
+        self.__gui = gui
 
     def addSugarPeak(self, startX, startY, radius, maxCapacity):
         height = self.__environment.getHeight()
@@ -71,7 +92,8 @@ class Sugarscape:
 if __name__ == "__main__":
     S = Sugarscape(50, 50, 100, 4, None)
     print(str(S))
-    for i in range(5):
+    window = S.getGUI().getWindow()
+    for i in range(1000):
         S.doTimestep()
-        print(str(S))
+        window.update()
     exit(0)
