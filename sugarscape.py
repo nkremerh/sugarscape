@@ -14,12 +14,16 @@ Class: Sugarscape
 Purpose: Container class for simulation storing environment, list of extant agents, sets options from command line/config file
 '''
 class Sugarscape:
-    def __init__(self, gridHeight, gridWidth, startingAgents, globalMaxSugar, options):
-        self.__environment = environment.Environment(gridHeight, gridWidth)
+    def __init__(self, EnvironmentHeight, EnvironmentWidth, startingAgents, globalMaxSugar, options):
+        self.__environment = environment.Environment(EnvironmentHeight, EnvironmentWidth)
+        self.__EnvironmentHeight = EnvironmentHeight
+        self.__EnvironmentWidth = EnvironmentWidth
         self.configureEnvironment(globalMaxSugar)
         self.__agents = []
         self.configureAgents(startingAgents)
         self.__gui = gui.GUI(self)
+        self.__run = False # Simulation start flag
+        self.__end = False # Simulation end flag
 
     def getEnvironment(self):
         return self.__environment
@@ -30,6 +34,18 @@ class Sugarscape:
     def getGUI(self):
         return self.__gui
 
+    def getRun(self):
+        return self.__run
+
+    def getEnd(self):
+        return self.__end
+
+    def getEnvironmentHeight(self):
+        return self.__EnvironmentHeight
+
+    def getEnvironmentWidth(self):
+        return self.__EnvironmentWidth
+
     def setEnvironment(self, environment):
         self.__environment = environment
 
@@ -38,6 +54,18 @@ class Sugarscape:
 
     def setGUI(self, gui):
         self.__gui = gui
+
+    def setEnvironmentHeight(self, EnvironmentHeight):
+        self.__EnvironmentHeight = EnvironmentHeight
+
+    def setEnvironmentWdith(self, EnvironmentWidth):
+        self.__EnvironmentWidth = EnvironmentWidth
+
+    def setRun(self):
+        self.__run = not self.__run
+
+    def setEnd(self):
+        self.__end = not self.__end
 
     def addSugarPeak(self, startX, startY, radius, maxCapacity):
         height = self.__environment.getHeight()
@@ -85,10 +113,22 @@ class Sugarscape:
             if a.isAlive() == False:
                 self.__agents.remove(a)
 
+    def pauseSimulation(self):
+        while self.__run == False:
+            self.__gui.getWindow().update() 
+
     def runSimulation(self, timesteps=5):
-        for t in range(timesteps):
+        self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
+        t = 0
+        while t < timesteps and self.__end == False:
             self.doTimestep()
             self.__gui.getWindow().update()
+            t += 1
+            if self.__run == False:
+                self.pauseSimulation()
+
+    def endSimulation(self):
+        exit(0)
 
     def __str__(self):
         string = "{0}Living Agents: {1}".format(str(self.__environment), len(self.__agents))
@@ -97,6 +137,6 @@ class Sugarscape:
 if __name__ == "__main__":
     S = Sugarscape(50, 50, 100, 4, None)
     print(str(S))
-    S.runSimulation(100)
+    S.runSimulation(1000)
     print(str(S))
     exit(0)
