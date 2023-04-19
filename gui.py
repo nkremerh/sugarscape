@@ -10,7 +10,7 @@ class GUI:
         self.__screenWidth = screenWidth
         self.__window = None
         self.__canvas = None
-        self.__grid = [[None for j in range(self.__sugarscape.getEnvironmentWidth())]for i in range(self.__sugarscape.getEnvironmentHeight())]
+        self.__grid = []
         self.__widgets = {}
         self.configureWindow()
 
@@ -76,7 +76,7 @@ class GUI:
         return
 
     def doStepButton(self):
-        return
+        self.__sugarscape.doTimestep()
 
     def doGraphButton(self):
         return
@@ -168,13 +168,19 @@ class GUI:
     def configureEnvironment(self):
         siteSize = self.__screenHeight / self.__sugarscape.getEnvironmentWidth()
         for i in range(self.__screenHeight):
+            self.__grid.append([])
             for j in range(self.__screenWidth):
                 fillColor = "green" # TODO: Replace with environment check for agent/sugar/spice at given cell coordinates i,j
-                x1 = 5 + (.5 * siteSize) + i * siteSize - (.5 * siteSize)
-                y1 = 5 + (.5 * siteSize) + j * siteSize - (.5 * siteSize)
-                x2 = 5 + (.5 * siteSize) + i * siteSize + (.5 * siteSize)
-                y2 = 5 + (.5 * siteSize) + j * siteSize + (.5 * siteSize)
-                self.__grid[i][j] = {"rectangle": self.__canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
+                #x1 = 5 + (.5 * siteSize) + i * siteSize - (.5 * siteSize) # Upper right x coordinate
+                #y1 = 5 + (.5 * siteSize) + j * siteSize - (.5 * siteSize) # Upper right y coordinate
+                #x2 = 5 + (.5 * siteSize) + i * siteSize + (.5 * siteSize) # Lower left x coordinate
+                #y2 = 5 + (.5 * siteSize) + j * siteSize + (.5 * siteSize) # Lower left y coordinate
+                x1 = i * siteSize
+                y1 = j * siteSize
+                x2 = i * siteSize + (0.5 * siteSize)
+                y2 = j * siteSize + (0.5 * siteSize)
+                #self.__grid[i][j] = {"rectangle": self.__canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
+                self.__grid[i].append({"rectangle": self.__canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor})
 
     def configureWindow(self):
         numMenuColumns = 7
@@ -193,7 +199,7 @@ class GUI:
         self.configureButtons(window)
         canvas.grid(row=1, column=0, columnspan=numMenuColumns, sticky="nsew")
 
-        #self.configureEnvironment() # TODO: List index out of range error
+        self.configureEnvironment() # TODO: List index out of range error
 
         window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
         window.bind("<Escape>", self.doWindowClose)
