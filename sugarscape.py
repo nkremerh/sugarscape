@@ -121,7 +121,8 @@ class Sugarscape:
         for a in self.__agents:
             if a.isAlive() == False:
                 self.__agents.remove(a)
-        self.__gui.getWindow().update()
+        self.__gui.doTimestep()
+        print("Timestep: {0}".format(self.__timestep))
         self.__timestep += 1
 
     def pauseSimulation(self):
@@ -134,22 +135,22 @@ class Sugarscape:
         self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
         t = 0
         timesteps = timesteps - self.__timestep
-        while t < timesteps and self.__end == False:
+        while t < timesteps and self.__end == False and len(self.__agents) != 0:
             self.doTimestep()
             t += 1
             if self.__run == False:
                 self.pauseSimulation()
 
     def endSimulation(self):
-        exit(0)
+        return
 
     def __str__(self):
         string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__timestep, len(self.__agents))
         return string
 
 if __name__ == "__main__":
-    #S = Sugarscape(50, 50, 100, 4, None)
-    S = Sugarscape(10, 10, 100, 4, None)
+    S = Sugarscape(50, 50, 100, 4, None)
+    #S = Sugarscape(10, 10, 100, 4, None)
     print(str(S))
     S.runSimulation(1000)
     print(str(S))

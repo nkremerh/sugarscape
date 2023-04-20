@@ -1,4 +1,4 @@
-#import itertools
+import itertools
 import matplotlib
 import matplotlib.pyplot
 import tkinter
@@ -10,7 +10,7 @@ class GUI:
         self.__screenWidth = screenWidth
         self.__window = None
         self.__canvas = None
-        self.__grid = []
+        self.__grid = [[None for j in range(screenWidth)]for i in range(screenHeight)]
         self.__widgets = {}
         self.configureWindow()
 
@@ -109,10 +109,8 @@ class GUI:
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
         playButton.grid(row=0, column=0, sticky="nsew")
-        renderButton = tkinter.Button(window, text="Pause Render ", command=self.doRenderButton)
-        renderButton.grid(row=0, column=1, sticky="nsew")
         stepButton = tkinter.Button(window, text="Step Forward", command=self.doStepButton, relief=tkinter.RAISED)
-        stepButton.grid(row=0, column=2, sticky="nsew")
+        stepButton.grid(row=0, column=1, sticky="nsew")
 
         graphButton = tkinter.Menubutton(window, text="Graphs", relief=tkinter.RAISED)
         graphMenu = tkinter.Menu(graphButton, tearoff=0)
@@ -123,7 +121,7 @@ class GUI:
         lastSelectedGraph.set(graphNames[0]) # Default
         for name in graphNames:
             graphMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=lastSelectedGraph, command=self.doGraphMenu, indicatoron=True)
-        graphButton.grid(row=0, column=3, sticky="nsew")
+        graphButton.grid(row=0, column=2, sticky="nsew")
 
         agentColorButton = tkinter.Menubutton(window, text="Agent Coloring", relief=tkinter.RAISED)
         agentColorMenu = tkinter.Menu(agentColorButton, tearoff=0)
@@ -135,7 +133,7 @@ class GUI:
         lastSelectedAgentColor.set(agentColorNames[0])  # Default 
         for name in agentColorNames:
             agentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=lastSelectedAgentColor, command=self.doAgentColorMenu, indicatoron=True)
-        agentColorButton.grid(row=0, column=4, sticky="nsew")
+        agentColorButton.grid(row=0, column=3, sticky="nsew")
 
         environmentColorButton = tkinter.Menubutton(window, text="Environment Coloring", relief=tkinter.RAISED)
         environmentColorMenu = tkinter.Menu(environmentColorButton, tearoff=0)
@@ -147,13 +145,12 @@ class GUI:
         lastSelectedEnvironmentColor.set(environmentColorNames[0])  # Default 
         for name in environmentColorNames:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
-        environmentColorButton.grid(row=0, column=5, sticky="nsew")
+        environmentColorButton.grid(row=0, column=4, sticky="nsew")
 
         statsButton = tkinter.Button(window, text="Statistics", command=self.doStatsButton)
-        statsButton.grid(row=0, column=6, sticky="nsew")
+        statsButton.grid(row=0, column=5, sticky="nsew")
 
         self.__widgets["playButton"] = playButton
-        self.__widgets["renderButton"] = renderButton
         self.__widgets["stepButton"] = stepButton
         self.__widgets["graphButton"] = graphButton
         self.__widgets["statsButton"] = statsButton
@@ -165,25 +162,26 @@ class GUI:
         self.__widgets["graphNames"] = graphNames
         self.__widgets["lastSelectedGraph"] = lastSelectedGraph
 
+    def lookupFillColor(self, cell):
+        if cell.getAgent() == None:
+            return "green"
+        return "red"
+
     def configureEnvironment(self):
-        siteSize = self.__screenHeight / self.__sugarscape.getEnvironmentWidth()
-        for i in range(self.__screenHeight):
-            self.__grid.append([])
-            for j in range(self.__screenWidth):
-                fillColor = "green" # TODO: Replace with environment check for agent/sugar/spice at given cell coordinates i,j
-                #x1 = 5 + (.5 * siteSize) + i * siteSize - (.5 * siteSize) # Upper right x coordinate
-                #y1 = 5 + (.5 * siteSize) + j * siteSize - (.5 * siteSize) # Upper right y coordinate
-                #x2 = 5 + (.5 * siteSize) + i * siteSize + (.5 * siteSize) # Lower left x coordinate
-                #y2 = 5 + (.5 * siteSize) + j * siteSize + (.5 * siteSize) # Lower left y coordinate
-                x1 = i * siteSize
-                y1 = j * siteSize
-                x2 = i * siteSize + (0.5 * siteSize)
-                y2 = j * siteSize + (0.5 * siteSize)
-                #self.__grid[i][j] = {"rectangle": self.__canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
-                self.__grid[i].append({"rectangle": self.__canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor})
+        borderOffset = 10
+        siteSize = (self.__screenHeight - borderOffset) / self.__sugarscape.getEnvironmentWidth()
+        for i in range(self.__sugarscape.getEnvironmentHeight()):
+            for j in range(self.__sugarscape.getEnvironmentWidth()):
+                cell = self.__sugarscape.getEnvironment().getCell(i, j)
+                fillColor = self.lookupFillColor(cell)
+                x1 = 5 + (0.50 * siteSize) + i * siteSize - (0.50 * siteSize) # Upper right x coordinate
+                y1 = 5 + (0.50 * siteSize) + j * siteSize - (0.50 * siteSize) # Upper right y coordinate
+                x2 = 5 + (0.50 * siteSize) + i * siteSize + (0.50 * siteSize) # Lower left x coordinate
+                y2 = 5 + (0.50 * siteSize) + j * siteSize + (0.50 * siteSize) # Lower left y coordinate
+                self.__grid[i][j] = {"rectangle": self.__canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
 
     def configureWindow(self):
-        numMenuColumns = 7
+        numMenuColumns = 6
         borderEdge = 5
         window = tkinter.Tk()
         self.__window = window
@@ -198,9 +196,23 @@ class GUI:
         self.__canvas = canvas
         self.configureButtons(window)
         canvas.grid(row=1, column=0, columnspan=numMenuColumns, sticky="nsew")
+        window.update()
 
-        self.configureEnvironment() # TODO: List index out of range error
+        self.configureEnvironment()
+        buttonsOffset = self.__widgets["playButton"].winfo_height()
+        window.geometry("%dx%d" % (self.__screenWidth + borderEdge, self.__screenHeight + borderEdge + buttonsOffset))
+        window.update()
 
         window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
         window.bind("<Escape>", self.doWindowClose)
         #canvas.bind("<Button-1>", self.onClick)
+
+    def doTimestep(self):
+        for i in range(self.__sugarscape.getEnvironmentHeight()):
+            for j in range(self.__sugarscape.getEnvironmentWidth()):
+                cell = self.__sugarscape.getEnvironment().getCell(i, j)
+                fillColor = self.lookupFillColor(cell)
+                if self.__grid[i][j]["color"] != fillColor:
+                    self.__canvas.itemconfig(self.__grid[i][j]["rectangle"], fill=fillColor, outline="#C0C0C0")
+                    self.__grid[i][j] = {"rectangle": self.__grid[i][j]["rectangle"], "color": fillColor}
+        self.__window.update()
