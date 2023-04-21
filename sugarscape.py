@@ -15,7 +15,7 @@ Purpose: Container class for simulation storing environment, list of extant agen
 '''
 class Sugarscape:
     def __init__(self, EnvironmentHeight, EnvironmentWidth, startingAgents, globalMaxSugar, options):
-        self.__environment = environment.Environment(EnvironmentHeight, EnvironmentWidth)
+        self.__environment = environment.Environment(EnvironmentHeight, EnvironmentWidth, globalMaxSugar)
         self.__EnvironmentHeight = EnvironmentHeight
         self.__EnvironmentWidth = EnvironmentWidth
         self.configureEnvironment(globalMaxSugar)
@@ -142,7 +142,7 @@ class Sugarscape:
                 self.pauseSimulation()
 
     def endSimulation(self):
-        return
+        exit(0)
 
     def __str__(self):
         string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__timestep, len(self.__agents))

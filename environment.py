@@ -8,9 +8,10 @@ Assumptions: grid is always indexed by [height][width]
 import random
 
 class Environment:
-    def __init__(self, height, width):
+    def __init__(self, height, width, globalMaxSugar=0):
         self.__width = width
         self.__height = height
+        self.__globalMaxSugar = globalMaxSugar
         # Populate grid with NoneType objects
         self.__grid = [[None for j in range(width)]for i in range(height)]
 
@@ -23,6 +24,12 @@ class Environment:
     def getGrid(self):
         return self.__grid
     
+    def getGlobalMaxSugar(self):
+        return self.__globalMaxSugar
+
+    def setGlobalMaxSugar(self, globalMaxSugar):
+        self.__globalMaxSugar = globalMaxSugar
+
     def setHeight(self, height):
         self.__height = height
 

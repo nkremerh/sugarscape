@@ -11,6 +11,7 @@ class GUI:
         self.__window = None
         self.__canvas = None
         self.__grid = [[None for j in range(screenWidth)]for i in range(screenHeight)]
+        self.__colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#BF8232", "agentNoSex": "#FA3232", "agentFemale": "#FA32FA", "agentMale": "#3232FA", "pollution": "#88C641"}
         self.__widgets = {}
         self.configureWindow()
 
@@ -162,9 +163,35 @@ class GUI:
         self.__widgets["graphNames"] = graphNames
         self.__widgets["lastSelectedGraph"] = lastSelectedGraph
 
+    def hexToInt(self, hexval):
+        intvals = []
+        hexval = hexval.lstrip('#')
+        for i in range(0, len(hexval), 2):
+            subval = hexval[i:i + 2]
+            intvals.append(int(subval, 16))
+        return intvals
+
+    def intToHex(self, intvals):
+        hexval = "#"
+        for i in intvals:
+            subhex = "%0.2X" % i
+            hexval = hexval + subhex
+        return hexval
+
+    def recolorByResourceAmount(self, cell, fillColor):
+        recolorFactor = cell.getCurrSugar() / self.__sugarscape.getEnvironment().getGlobalMaxSugar()
+        subcolors = self.hexToInt(fillColor)
+        i = 0
+        for color in subcolors:
+            color = int(color + (255 - color) * (1 - recolorFactor))
+            subcolors[i] = color
+            i += 1
+        fillColor = self.intToHex(subcolors)
+        return fillColor
+
     def lookupFillColor(self, cell):
         if cell.getAgent() == None:
-            return "green"
+            return self.recolorByResourceAmount(cell, self.__colors["sugar"])
         return "red"
 
     def configureEnvironment(self):
