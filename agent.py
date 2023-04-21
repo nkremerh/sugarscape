@@ -1,8 +1,3 @@
-'''
-Class: Agent
-Purpose: Provides autonomous agent behavior for simulation, stores cell
-Data Members: vision, metabolism, sugar, spice, maxAge, currAge, tags, children, parents, cell, alive
-'''
 class Agent:
     def __init__(self, cell, metabolism = 0, vision = 0, sugar = 0):
         self.__cell = cell
@@ -12,55 +7,31 @@ class Agent:
         self.__alive = True
         self.__cellsInVision = []
 
-    def getAlive(self):
-        return self.__alive
-
-    def getCell(self):
-        return self.__cell
-
-    def getEnvironment(self):
-        return self.__cell.getEnvironment()
-
-    def getMetabolism(self):
-        return self.__metabolism
-
-    def getVision(self):
-        return self.__vision
-
-    def getSugar(self):
-        return self.__sugar
-
-    def setCell(self, cell):
-        if(self.__cell != None):
-            self.unsetCell()
-        self.__cell = cell
-        self.__cell.setAgent(self)
-
-    def unsetCell(self):
-        self.__cell.unsetAgent()
-        self.__cell = None
-
-    def setMetabolism(self, metabolism):
-        self.__metabolism = metabolism
-
-    def setVision(self, vision):
-        self.__vision = vision
-
-    def setAlive(self, alive):
-        self.__alive = alive
-
-    def isAlive(self):
-        return self.getAlive()
-
     def collectResourcesAtCell(self):
         if self.__cell != None:
             self.__sugar = self.__sugar + self.__cell.resetSugar()
 
-    def getCellsInVision(self):
-        return self.__cellsInVision
+    def doMetabolism(self):
+        self.__sugar = self.__sugar - self.__metabolism
+        if self.__sugar < 1:
+            self.setAlive(False)
+            self.unsetCell()
 
-    def setCellsInVision(self, cells):
-        self.__cellsInVision = cells
+    def doTimestep(self):
+        if self.__alive == True:
+            # TODO: Determine if sugar/spice eaten before moving (requires initial endowment of sugar/spice)
+            self.moveToBestCellInVision()
+            self.collectResourcesAtCell()
+            self.doMetabolism()
+
+    def findBestCellInVision(self):
+        self.findCellsInVision()
+        bestCell = self.__cell
+        for i in range(len(self.__cellsInVision)):
+            currCell = self.__cellsInVision[i]
+            if currCell.getAgent() == None and currCell.getCurrSugar() > bestCell.getCurrSugar():
+                bestCell = currCell
+        return bestCell
 
     def findCellsInVision(self):
         if self.__vision > 0 and self.__cell != None:
@@ -76,14 +47,29 @@ class Agent:
                 westCells.append(westCells[-1].getWestNeighbor())
             self.setCellsInVision(northCells + southCells + eastCells + westCells)
 
-    def findBestCellInVision(self):
-        self.findCellsInVision()
-        bestCell = self.__cell
-        for i in range(len(self.__cellsInVision)):
-            currCell = self.__cellsInVision[i]
-            if currCell.getAgent() == None and currCell.getCurrSugar() > bestCell.getCurrSugar():
-                bestCell = currCell
-        return bestCell
+    def getAlive(self):
+        return self.__alive
+
+    def getCell(self):
+        return self.__cell
+
+    def getCellsInVision(self):
+        return self.__cellsInVision
+
+    def getEnvironment(self):
+        return self.__cell.getEnvironment()
+
+    def getMetabolism(self):
+        return self.__metabolism
+
+    def getSugar(self):
+        return self.__sugar
+
+    def getVision(self):
+        return self.__vision
+
+    def isAlive(self):
+        return self.getAlive()
 
     def moveToBestCellInVision(self):
         bestCell = self.findBestCellInVision()
@@ -91,18 +77,27 @@ class Agent:
             print("No best cell found")
         self.setCell(bestCell)
 
-    def doMetabolism(self):
-        self.__sugar = self.__sugar - self.__metabolism
-        if self.__sugar < 1:
-            self.setAlive(False)
+    def setAlive(self, alive):
+        self.__alive = alive
+    
+    def setCell(self, cell):
+        if(self.__cell != None):
             self.unsetCell()
+        self.__cell = cell
+        self.__cell.setAgent(self)
 
-    def doTimestep(self):
-        if self.__alive == True:
-            # TODO: Determine if sugar/spice eaten before moving (requires initial endowment of sugar/spice)
-            self.moveToBestCellInVision()
-            self.collectResourcesAtCell()
-            self.doMetabolism()
+    def setCellsInVision(self, cells):
+        self.__cellsInVision = cells
+
+    def setMetabolism(self, metabolism):
+        self.__metabolism = metabolism
+
+    def setVision(self, vision):
+        self.__vision = vision
+ 
+    def unsetCell(self):
+        self.__cell.unsetAgent()
+        self.__cell = None
 
     def __str__(self):
         return "{0}".format(self.getSugar())

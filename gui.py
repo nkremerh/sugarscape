@@ -1,4 +1,3 @@
-import itertools
 import matplotlib
 import matplotlib.pyplot
 import tkinter
@@ -15,96 +14,7 @@ class GUI:
         self.__widgets = {}
         self.configureWindow()
 
-    def getSugarscape(self):
-        return self.__sugarscape
-
-    def getScreenHeight(self):
-        return self.__screenHeight
-
-    def getscreenWidth(self):
-        return self.__screenWidth
-
-    def getWindow(self):
-        return self.__window
-
-    def getCanvas(self):
-        return self.__canvas
-
-    def getWidgets(self):
-        return self.__widgets
-
-    def setSugarscape(self, sugarscape):
-        self.__sugarscape = sugarscape
-
-    def setScreenHeight(self, screenHeight):
-        self.__screenHeight = screenHeight
-
-    def setScreenWidth(self, screenWidth):
-        self.__screenWidth = screenWidth
-
-    def setWindow(self, window):
-        self.__window = window
-
-    def setCanvas(self, canvas):
-        self.__canvas = canvas
-
-    def setWidgets(self, widgets):
-        self.__widgets = widgets
-
-    def drawAgent(self, agent):
-        return
-
-    def drawCell(self, cell):
-        agent = cell.getAgent()
-        if agent != None:
-            self.drawAgent(agent)
-
-    def drawEnvironment(self, environment):
-        return
-
-    def drawSugarscape(self):
-        environment = self.__sugarscape.getEnvironment()
-        self.drawEnvironment(environment)
-        for i in range(environment.getHeight()):
-            for j in range(environment.getWidth()):
-                self.drawCell(environment.getCell(i, j))
-
-    def doPlayButton(self):
-        self.__sugarscape.setRun()
-        self.__widgets["playButton"].config(text="Play Simulation" if self.__sugarscape.getRun() == False else "Pause Simulation")
-
-    def doRenderButton(self):
-        return
-
-    def doStepButton(self):
-        self.__sugarscape.doTimestep()
-
-    def doGraphButton(self):
-        return
-
-    def doStatsButton(self):
-        return
-
-    def doGraphMenu(self):
-        return
-
-    def doAgentColorMenu(self):
-        return
-
-    def doEnvironmentColorMenu(self):
-        return
-
-    def doWindowClose(self, event=None):
-        self.__window.destroy()
-        self.__sugarscape.setEnd()
-
-    def configureGraphNames(self):
-        return ["TEST"]
-
     def configureAgentColorNames(self):
-        return ["TEST"]
-
-    def configureEnvironmentColorNames(self):
         return ["TEST"]
 
     def configureButtons(self, window):
@@ -162,38 +72,7 @@ class GUI:
         self.__widgets["graphMenu"] = graphMenu
         self.__widgets["graphNames"] = graphNames
         self.__widgets["lastSelectedGraph"] = lastSelectedGraph
-
-    def hexToInt(self, hexval):
-        intvals = []
-        hexval = hexval.lstrip('#')
-        for i in range(0, len(hexval), 2):
-            subval = hexval[i:i + 2]
-            intvals.append(int(subval, 16))
-        return intvals
-
-    def intToHex(self, intvals):
-        hexval = "#"
-        for i in intvals:
-            subhex = "%0.2X" % i
-            hexval = hexval + subhex
-        return hexval
-
-    def recolorByResourceAmount(self, cell, fillColor):
-        recolorFactor = cell.getCurrSugar() / self.__sugarscape.getEnvironment().getGlobalMaxSugar()
-        subcolors = self.hexToInt(fillColor)
-        i = 0
-        for color in subcolors:
-            color = int(color + (255 - color) * (1 - recolorFactor))
-            subcolors[i] = color
-            i += 1
-        fillColor = self.intToHex(subcolors)
-        return fillColor
-
-    def lookupFillColor(self, cell):
-        if cell.getAgent() == None:
-            return self.recolorByResourceAmount(cell, self.__colors["sugar"])
-        return "red"
-
+ 
     def configureEnvironment(self):
         borderOffset = 10
         siteSize = (self.__screenHeight - borderOffset) / self.__sugarscape.getEnvironmentWidth()
@@ -206,6 +85,12 @@ class GUI:
                 x2 = 5 + (0.50 * siteSize) + i * siteSize + (0.50 * siteSize) # Lower left x coordinate
                 y2 = 5 + (0.50 * siteSize) + j * siteSize + (0.50 * siteSize) # Lower left y coordinate
                 self.__grid[i][j] = {"rectangle": self.__canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
+
+    def configureEnvironmentColorNames(self):
+        return ["TEST"]
+
+    def configureGraphNames(self):
+        return ["TEST"]
 
     def configureWindow(self):
         numMenuColumns = 6
@@ -232,7 +117,35 @@ class GUI:
 
         window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
         window.bind("<Escape>", self.doWindowClose)
-        #canvas.bind("<Button-1>", self.onClick)
+        canvas.bind("<Button-1>", self.doClick)
+
+    def doAgentColorMenu(self):
+        return
+
+    def doClick(self):
+        return
+
+    def doEnvironmentColorMenu(self):
+        return
+
+    def doGraphButton(self):
+        return
+
+    def doGraphMenu(self):
+        return
+
+    def doPlayButton(self):
+        self.__sugarscape.setRun()
+        self.__widgets["playButton"].config(text="Play Simulation" if self.__sugarscape.getRun() == False else "Pause Simulation")
+
+    def doRenderButton(self):
+        return
+
+    def doStatsButton(self):
+        return
+
+    def doStepButton(self):
+        self.__sugarscape.doTimestep()
 
     def doTimestep(self):
         for i in range(self.__sugarscape.getEnvironmentHeight()):
@@ -243,3 +156,74 @@ class GUI:
                     self.__canvas.itemconfig(self.__grid[i][j]["rectangle"], fill=fillColor, outline="#C0C0C0")
                     self.__grid[i][j] = {"rectangle": self.__grid[i][j]["rectangle"], "color": fillColor}
         self.__window.update()
+
+    def doWindowClose(self, event=None):
+        self.__window.destroy()
+        self.__sugarscape.setEnd()
+
+    def getCanvas(self):
+        return self.__canvas
+
+    def getScreenHeight(self):
+        return self.__screenHeight
+
+    def getscreenWidth(self):
+        return self.__screenWidth
+
+    def getSugarscape(self):
+        return self.__sugarscape
+ 
+    def getWidgets(self):
+        return self.__widgets
+
+    def getWindow(self):
+        return self.__window
+
+    def hexToInt(self, hexval):
+        intvals = []
+        hexval = hexval.lstrip('#')
+        for i in range(0, len(hexval), 2):
+            subval = hexval[i:i + 2]
+            intvals.append(int(subval, 16))
+        return intvals
+
+    def intToHex(self, intvals):
+        hexval = "#"
+        for i in intvals:
+            subhex = "%0.2X" % i
+            hexval = hexval + subhex
+        return hexval
+
+    def lookupFillColor(self, cell):
+        if cell.getAgent() == None:
+            return self.recolorByResourceAmount(cell, self.__colors["sugar"])
+        return self.__colors["agentNoSex"]
+
+    def recolorByResourceAmount(self, cell, fillColor):
+        recolorFactor = cell.getCurrSugar() / self.__sugarscape.getEnvironment().getGlobalMaxSugar()
+        subcolors = self.hexToInt(fillColor)
+        i = 0
+        for color in subcolors:
+            color = int(color + (255 - color) * (1 - recolorFactor))
+            subcolors[i] = color
+            i += 1
+        fillColor = self.intToHex(subcolors)
+        return fillColor
+
+    def setCanvas(self, canvas):
+        self.__canvas = canvas
+
+    def setScreenHeight(self, screenHeight):
+        self.__screenHeight = screenHeight
+
+    def setScreenWidth(self, screenWidth):
+        self.__screenWidth = screenWidth
+
+    def setSugarscape(self, sugarscape):
+        self.__sugarscape = sugarscape
+ 
+    def setWidgets(self, widgets):
+        self.__widgets = widgets
+
+    def setWindow(self, window):
+        self.__window = window 

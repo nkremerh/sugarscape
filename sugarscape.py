@@ -9,10 +9,6 @@ import math
 import random
 import time
 
-'''
-Class: Sugarscape
-Purpose: Container class for simulation storing environment, list of extant agents, sets options from command line/config file
-'''
 class Sugarscape:
     def __init__(self, EnvironmentHeight, EnvironmentWidth, startingAgents, globalMaxSugar, options):
         self.__environment = environment.Environment(EnvironmentHeight, EnvironmentWidth, globalMaxSugar)
@@ -25,54 +21,6 @@ class Sugarscape:
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
         self.__timestep = 0
-
-    def getEnvironment(self):
-        return self.__environment
-
-    def getAgents(self):
-        return self.__agents
-
-    def getGUI(self):
-        return self.__gui
-
-    def getRun(self):
-        return self.__run
-
-    def getEnd(self):
-        return self.__end
-
-    def getEnvironmentHeight(self):
-        return self.__EnvironmentHeight
-
-    def getEnvironmentWidth(self):
-        return self.__EnvironmentWidth
-
-    def getTimestep(self):
-        return self.__timestep
-
-    def setTimestep(self, timestep):
-        self.__timestep = timestep
-
-    def setEnvironment(self, environment):
-        self.__environment = environment
-
-    def setAgents(self, agents):
-        self.__agents = agents
-
-    def setGUI(self, gui):
-        self.__gui = gui
-
-    def setEnvironmentHeight(self, EnvironmentHeight):
-        self.__EnvironmentHeight = EnvironmentHeight
-
-    def setEnvironmentWdith(self, EnvironmentWidth):
-        self.__EnvironmentWidth = EnvironmentWidth
-
-    def setRun(self):
-        self.__run = not self.__run
-
-    def setEnd(self):
-        self.__end = not self.__end
 
     def addSugarPeak(self, startX, startY, radius, maxCapacity):
         height = self.__environment.getHeight()
@@ -125,6 +73,33 @@ class Sugarscape:
         print("Timestep: {0}".format(self.__timestep))
         self.__timestep += 1
 
+    def endSimulation(self):
+        exit(0)
+
+    def getAgents(self):
+        return self.__agents
+
+    def getEnd(self):
+        return self.__end
+
+    def getEnvironment(self):
+        return self.__environment
+ 
+    def getEnvironmentHeight(self):
+        return self.__EnvironmentHeight
+
+    def getEnvironmentWidth(self):
+        return self.__EnvironmentWidth
+
+    def getGUI(self):
+        return self.__gui
+
+    def getRun(self):
+        return self.__run
+  
+    def getTimestep(self):
+        return self.__timestep
+
     def pauseSimulation(self):
         while self.__run == False:
             if self.__end == True:
@@ -141,16 +116,36 @@ class Sugarscape:
             if self.__run == False:
                 self.pauseSimulation()
 
-    def endSimulation(self):
-        exit(0)
+    def setAgents(self, agents):
+        self.__agents = agents
 
+    def setEnd(self):
+        self.__end = not self.__end
+
+    def setEnvironment(self, environment):
+        self.__environment = environment
+
+    def setEnvironmentHeight(self, EnvironmentHeight):
+        self.__EnvironmentHeight = EnvironmentHeight
+
+    def setEnvironmentWidth(self, EnvironmentWidth):
+        self.__EnvironmentWidth = EnvironmentWidth
+
+    def setGUI(self, gui):
+        self.__gui = gui
+
+    def setTimestep(self, timestep):
+        self.__timestep = timestep
+  
+    def setRun(self):
+        self.__run = not self.__run
+  
     def __str__(self):
         string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__timestep, len(self.__agents))
         return string
 
 if __name__ == "__main__":
     S = Sugarscape(50, 50, 100, 4, None)
-    #S = Sugarscape(10, 10, 100, 4, None)
     print(str(S))
     S.runSimulation(1000)
     print(str(S))
