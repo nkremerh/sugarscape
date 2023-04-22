@@ -1,5 +1,5 @@
 class Cell:
-    def __init__(self, x, y, environment, maxSugar = 0, maxSpice = 0, growbackRate = 0):
+    def __init__(self, x, y, environment, maxSugar=0, maxSpice=0, growbackRate=0):
         self.__x = x
         self.__y = y
         self.__environment = environment
@@ -81,6 +81,10 @@ class Cell:
         currSugar = self.__currSugar
         self.setCurrSugar(0)
         return currSugar
+
+    def safeSetAgent(self, agent):
+        if self.__agent == None:
+            self.__agent = agent
 
     def setAgent(self, agent):
         self.__agent = agent

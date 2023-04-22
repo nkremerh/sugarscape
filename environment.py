@@ -3,14 +3,23 @@ import random
 
 class Environment:
     # Assumption: grid is always indexed by [height][width]
-    def __init__(self, height, width, globalMaxSugar=0):
+    def __init__(self, height, width, globalMaxSugar=0, sugarRegrowRate=0):
         self.__width = width
         self.__height = height
         self.__globalMaxSugar = globalMaxSugar
+        self.__sugarRegrowRate = sugarRegrowRate
         # Populate grid with NoneType objects
         self.__grid = [[None for j in range(width)]for i in range(height)]
- 
+
+    def doCellUpdate(self):
+        for i in range(self.__height):
+            for j in range(self.__width):
+                cellCurrSugar = self.__grid[i][j].getCurrSugar()
+                cellMaxSugar = self.__grid[i][j].getMaxSugar()
+                self.__grid[i][j].setCurrSugar(min(cellCurrSugar + self.__sugarRegrowRate, cellMaxSugar))
+
     def doTimestep(self):
+        self.doCellUpdate()
         randomRows = list(range(self.__height))
         randomColumns = list(range(self.__width))
         random.shuffle(randomRows)

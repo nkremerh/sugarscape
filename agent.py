@@ -1,9 +1,9 @@
 class Agent:
-    def __init__(self, cell, metabolism = 0, vision = 0, sugar = 0):
+    def __init__(self, cell, metabolism=0, vision=0, sugar=0):
         self.__cell = cell
         self.__metabolism = metabolism
         self.__vision = vision
-        self.__sugar = 0
+        self.__sugar = sugar
         self.__alive = True
         self.__cellsInVision = []
 
@@ -26,11 +26,17 @@ class Agent:
 
     def findBestCellInVision(self):
         self.findCellsInVision()
-        bestCell = self.__cell
+        bestCell = None
         for i in range(len(self.__cellsInVision)):
             currCell = self.__cellsInVision[i]
-            if currCell.getAgent() == None and currCell.getCurrSugar() > bestCell.getCurrSugar():
+            if(currCell.getAgent() != None):
+                continue
+            if bestCell == None:
                 bestCell = currCell
+            elif currCell.getCurrSugar() > bestCell.getCurrSugar():
+                bestCell = currCell
+        if bestCell == None:
+            bestCell = self.__cell
         return bestCell
 
     def findCellsInVision(self):
@@ -71,10 +77,9 @@ class Agent:
     def isAlive(self):
         return self.getAlive()
 
+    # TODO: Agents currently overlap
     def moveToBestCellInVision(self):
         bestCell = self.findBestCellInVision()
-        if bestCell == None:
-            print("No best cell found")
         self.setCell(bestCell)
 
     def setAlive(self, alive):

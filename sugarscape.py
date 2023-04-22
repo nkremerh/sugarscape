@@ -10,13 +10,13 @@ import random
 import time
 
 class Sugarscape:
-    def __init__(self, EnvironmentHeight, EnvironmentWidth, startingAgents, globalMaxSugar, options):
-        self.__environment = environment.Environment(EnvironmentHeight, EnvironmentWidth, globalMaxSugar)
-        self.__EnvironmentHeight = EnvironmentHeight
-        self.__EnvironmentWidth = EnvironmentWidth
-        self.configureEnvironment(globalMaxSugar)
+    def __init__(self, environmentOptions, agentOptions):
+        self.__environment = environment.Environment(environmentOptions["height"], environmentOptions["width"], environmentOptions["maxSugar"], environmentOptions["sugarRegrowRate"])
+        self.__EnvironmentHeight = environmentOptions["height"]
+        self.__EnvironmentWidth = environmentOptions["width"]
+        self.configureEnvironment(environmentOptions["maxSugar"])
         self.__agents = []
-        self.configureAgents(startingAgents)
+        self.configureAgents(agentOptions["initialAgents"], agentOptions["vision"], agentOptions["metabolism"], agentOptions["endowment"])
         self.__gui = gui.GUI(self)
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
@@ -37,17 +37,17 @@ class Sugarscape:
                     self.__environment.getCell(i, j).setMaxSugar(cellMaxCapacity)
                     self.__environment.getCell(i, j).setCurrSugar(cellMaxCapacity)
 
-    def configureAgents(self, startingAgents):
+    def configureAgents(self, initialAgents, agentVision, agentMetabolism, agentEndowment):
         if self.__environment == None:
             return
-        for i in range(startingAgents):
+        for i in range(initialAgents):
             randX = random.randrange(self.__environment.getHeight())
             randY = random.randrange(self.__environment.getWidth())
             while self.__environment.getCell(randX, randY).getAgent() != None:
                 randX = random.randrange(self.__environment.getHeight())
                 randY = random.randrange(self.__environment.getWidth())
             c = self.__environment.getCell(randX, randY)
-            a = agent.Agent(c, 1, 2, 3)
+            a = agent.Agent(c, agentMetabolism, agentVision, agentEndowment)
             c.setAgent(a)
             self.__agents.append(a)
 
@@ -145,8 +145,10 @@ class Sugarscape:
         return string
 
 if __name__ == "__main__":
-    S = Sugarscape(50, 50, 100, 4, None)
+    agentOptions = {"vision": 10, "metabolism": 1, "endowment": 3, "initialAgents": 500}
+    environmentOptions = {"height": 50, "width": 50, "maxSugar": 4, "sugarRegrowRate": 1}
+    S = Sugarscape(environmentOptions, agentOptions)
     print(str(S))
-    S.runSimulation(1000)
+    S.runSimulation(10000)
     print(str(S))
     exit(0)
