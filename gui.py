@@ -1,5 +1,3 @@
-import matplotlib
-import matplotlib.pyplot
 import tkinter
 
 class GUI:
@@ -15,24 +13,15 @@ class GUI:
         self.configureWindow()
 
     def configureAgentColorNames(self):
-        return ["TEST"]
+        return []
 
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
         playButton.grid(row=0, column=0, sticky="nsew")
-        stepButton = tkinter.Button(window, text="Step Forward", command=self.doStepButton, relief=tkinter.RAISED)
+        stepButton = tkinter.Button(window, text="Step Backward", command=self.doStepBackwardButton, relief=tkinter.RAISED)
         stepButton.grid(row=0, column=1, sticky="nsew")
-
-        graphButton = tkinter.Menubutton(window, text="Graphs", relief=tkinter.RAISED)
-        graphMenu = tkinter.Menu(graphButton, tearoff=0)
-        graphButton.configure(menu=graphMenu)
-        graphNames = self.configureGraphNames()
-        graphNames.sort()
-        lastSelectedGraph = tkinter.StringVar(window)
-        lastSelectedGraph.set(graphNames[0]) # Default
-        for name in graphNames:
-            graphMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=lastSelectedGraph, command=self.doGraphMenu, indicatoron=True)
-        graphButton.grid(row=0, column=2, sticky="nsew")
+        stepButton = tkinter.Button(window, text="Step Forward", command=self.doStepForwardButton, relief=tkinter.RAISED)
+        stepButton.grid(row=0, column=2, sticky="nsew")
 
         agentColorButton = tkinter.Menubutton(window, text="Agent Coloring", relief=tkinter.RAISED)
         agentColorMenu = tkinter.Menu(agentColorButton, tearoff=0)
@@ -58,20 +47,16 @@ class GUI:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
         environmentColorButton.grid(row=0, column=4, sticky="nsew")
 
-        statsButton = tkinter.Button(window, text="Statistics", command=self.doStatsButton)
-        statsButton.grid(row=0, column=5, sticky="nsew")
+        statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.LEFT)
+        statsLabel.grid(row=1, column=0, columnspan=5, sticky="nsew")
 
         self.__widgets["playButton"] = playButton
         self.__widgets["stepButton"] = stepButton
-        self.__widgets["graphButton"] = graphButton
-        self.__widgets["statsButton"] = statsButton
         self.__widgets["agentColorButton"] = agentColorButton
         self.__widgets["environmentColorButton"] = environmentColorButton
         self.__widgets["agentColorMenu"] = agentColorMenu
         self.__widgets["environmentColorMenu"] = environmentColorMenu
-        self.__widgets["graphMenu"] = graphMenu
-        self.__widgets["graphNames"] = graphNames
-        self.__widgets["lastSelectedGraph"] = lastSelectedGraph
+        self.__widgets["statsLabel"] = statsLabel
  
     def configureEnvironment(self):
         borderOffset = 10
@@ -87,13 +72,10 @@ class GUI:
                 self.__grid[i][j] = {"rectangle": self.__canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
 
     def configureEnvironmentColorNames(self):
-        return ["TEST"]
-
-    def configureGraphNames(self):
-        return ["TEST"]
+        return []
 
     def configureWindow(self):
-        numMenuColumns = 6
+        numMenuColumns = 5
         borderEdge = 5
         window = tkinter.Tk()
         self.__window = window
@@ -103,11 +85,10 @@ class GUI:
         window.configure(background="white")
         window.option_add("*font", "Roboto 10")
 
-        matplotlib.use("TkAgg") # Use Tk backend for matplotlib
         canvas = tkinter.Canvas(window, width=self.__screenWidth, height=self.__screenHeight, bg="white")
         self.__canvas = canvas
         self.configureButtons(window)
-        canvas.grid(row=1, column=0, columnspan=numMenuColumns, sticky="nsew")
+        canvas.grid(row=2, column=0, columnspan=numMenuColumns, sticky="nsew")
         window.update()
 
         self.configureEnvironment()
@@ -122,21 +103,15 @@ class GUI:
     def doAgentColorMenu(self):
         return
 
-    def doClick(self):
+    def doClick(self, event):
         return
 
     def doEnvironmentColorMenu(self):
         return
 
-    def doGraphButton(self):
-        return
-
-    def doGraphMenu(self):
-        return
-
     def doPlayButton(self):
         self.__sugarscape.setRun()
-        self.__widgets["playButton"].config(text="Play Simulation" if self.__sugarscape.getRun() == False else "Pause Simulation")
+        self.__widgets["playButton"].config(text="  Play Simulation  " if self.__sugarscape.getRun() == False else "Pause Simulation")
 
     def doRenderButton(self):
         return
@@ -144,7 +119,10 @@ class GUI:
     def doStatsButton(self):
         return
 
-    def doStepButton(self):
+    def doStepBackwardButton(self):
+        return
+
+    def doStepForwardButton(self):
         self.__sugarscape.doTimestep()
 
     def doTimestep(self):
@@ -155,6 +133,7 @@ class GUI:
                 if self.__grid[i][j]["color"] != fillColor:
                     self.__canvas.itemconfig(self.__grid[i][j]["rectangle"], fill=fillColor, outline="#C0C0C0")
                     self.__grid[i][j] = {"rectangle": self.__grid[i][j]["rectangle"], "color": fillColor}
+        self.updateLabel()
         self.__window.update()
 
     def doWindowClose(self, event=None):
@@ -226,4 +205,11 @@ class GUI:
         self.__widgets = widgets
 
     def setWindow(self, window):
-        self.__window = window 
+        self.__window = window
+
+    def updateLabel(self):
+        stats = self.__sugarscape.getRuntimeStats()
+        statsString = "Timestep: {0} | Agents: {1} | Metabolism: {2:.2f} | Vision: {3:.2f} | Gini: {4:.2f} | Trade Price: {5:.2f} | Trade Volume: {6:.2f}".format(
+                self.__sugarscape.getTimestep(), stats["agents"], stats["meanMetabolism"], stats["meanVision"], stats["giniCoefficient"], stats["meanTradePrice"], stats["meanTradeVolume"])
+        label = self.__widgets["statsLabel"]
+        label.config(text=statsString)

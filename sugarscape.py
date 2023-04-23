@@ -24,6 +24,8 @@ class Sugarscape:
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
         self.__timestep = 0
+        self.__runtimeStats = {"agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0, "meanTradePrice": 0, "meanTradeVolume": 0,
+                               "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
 
     # TODO: Make more consistent with book, dispersion more tightly concentrated than in book (ref: pg. 22)
     def addSugarPeak(self, startX, startY, radius, maxCapacity):
@@ -78,6 +80,7 @@ class Sugarscape:
     def doTimestep(self):
         if self.__end == True:
             self.endSimulation()
+        self.updateRuntimeStats()
         self.__environment.doTimestep()
         for a in self.__agents:
             if a.isAlive() == False:
@@ -110,7 +113,10 @@ class Sugarscape:
 
     def getRun(self):
         return self.__run
-  
+
+    def getRuntimeStats(self):
+        return self.__runtimeStats
+
     def getTimestep(self):
         return self.__timestep
 
@@ -185,6 +191,43 @@ class Sugarscape:
     def setRun(self):
         self.__run = not self.__run
   
+    def setRuntimeStats(self, runtimeStats):
+        self.__runtimeStats = runtimeStats
+
+    def updateRuntimeStats(self):
+        #self.__runtimeStats = {"agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0, "meanTradePrice": 0, "meanTradeVolume": 0,
+        #                       "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
+        numAgents = len(self.__agents)
+        meanMetabolism = 0
+        meanVision = 0
+        meanWealth = 0
+        meanAge = 0
+        meanTradePrice = 0
+        meanTradeVolume = 0
+        totalTradeVolume = 0
+        totalWealth = 0
+        maxWealth = 0
+        minWealth = sys.maxsize
+        for agent in self.__agents:
+            agentWealth = agent.getSugar()
+            meanMetabolism += agent.getMetabolism()
+            meanVision += agent.getVision()
+            meanWealth += agentWealth
+            totalWealth += agentWealth
+            if agentWealth < minWealth:
+                minWealth = agentWealth
+            if agentWealth > maxWealth:
+                maxWealth = agentWealth
+        meanMetabolism = meanMetabolism / numAgents
+        meanVision = meanVision / numAgents
+        meanWealth = meanWealth / numAgents
+        self.__runtimeStats["agents"] = numAgents
+        self.__runtimeStats["meanMetabolism"] = meanMetabolism
+        self.__runtimeStats["meanVision"] = meanVision
+        self.__runtimeStats["meanWealth"] = meanWealth
+        self.__runtimeStats["minWealth"] = minWealth
+        self.__runtimeStats["maxWealth"] = maxWealth
+
     def __str__(self):
         string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__timestep, len(self.__agents))
         return string
