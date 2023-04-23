@@ -26,14 +26,14 @@ class Agent:
 
     def doMetabolism(self):
         self.__sugar = self.__sugar - self.__metabolism
-        if self.__sugar < 0:
+        if self.__sugar < 1:
             self.setAlive(False)
             self.unsetCell()
 
     def doTimestep(self):
         timestep = self.__cell.getEnvironment().getSugarscape().getTimestep()
+        # Prevent dead or already moved agent from moving
         if self.__alive == True and self.__lastMoved != timestep: 
-            # TODO: Determine if sugar/spice eaten before moving (requires initial endowment of sugar/spice)
             self.__lastMoved = timestep
             self.moveToBestCellInVision()
             self.collectResourcesAtCell()
@@ -62,6 +62,7 @@ class Agent:
                 bestRange = travelDistance
             currSugar = currCell.getCurrSugar()
             bestSugar = bestCell.getCurrSugar()
+            # Move to closest cell with the most resources
             if currSugar > bestSugar or (currSugar == bestSugar and travelDistance < bestRange):
                 bestCell = currCell
                 bestRange = travelDistance

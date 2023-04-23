@@ -233,6 +233,18 @@ class Sugarscape:
             return
         self.__log.write("[\n")
 
+    def updateGiniCoefficient(self):
+        agentWealths = sorted([agent.getSugar() for agent in self.__agents])
+        # Calculate area between line of equality and Lorenz curve of agent wealths
+        height = 0
+        area = 0
+        for wealth in agentWealths:
+            height += wealth
+            area += (height - wealth) / 2
+        lineOfEquality = (height * len(agentWealths)) / 2
+        giniCoefficient = (lineOfEquality - area) / lineOfEquality
+        return giniCoefficient
+
     def updateRuntimeStats(self):
         numAgents = len(self.__agents)
         meanMetabolism = 0
@@ -268,6 +280,7 @@ class Sugarscape:
         self.__runtimeStats["meanWealth"] = meanWealth
         self.__runtimeStats["minWealth"] = minWealth
         self.__runtimeStats["maxWealth"] = maxWealth
+        self.__runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.__agents) > 1 else 0
 
     def writeToLog(self):
         if self.__log == None:
