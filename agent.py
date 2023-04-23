@@ -1,3 +1,5 @@
+import random
+
 class Agent:
     def __init__(self, cell, metabolism=0, vision=0, sugar=0):
         self.__cell = cell
@@ -6,6 +8,7 @@ class Agent:
         self.__sugar = sugar
         self.__alive = True
         self.__cellsInVision = []
+        print("Agent stats: {0} vision, {1} metabolism, {2} endowment".format(self.__vision, self.__metabolism, self.__sugar))
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
@@ -26,15 +29,28 @@ class Agent:
 
     def findBestCellInVision(self):
         self.findCellsInVision()
+        random.shuffle(self.__cellsInVision)
         bestCell = None
+        bestRange = max(self.__cell.getEnvironment().getHeight(), self.__cell.getEnvironment().getWidth())
+        agentX = self.__cell.getX()
+        agentY = self.__cell.getY()
+        wraparound = self.__vision + 1
         for i in range(len(self.__cellsInVision)):
             currCell = self.__cellsInVision[i]
-            if(currCell.getAgent() != None):
+            # Either X or Y distance will be 0 due to cardinal direction movement only
+            distanceX = (abs(agentX - currCell.getX()) % wraparound)
+            distanceY = (abs(agentY - currCell.getY()) % wraparound)
+            travelDistance = distanceX + distanceY
+            if(currCell.isOccupied() == True):
                 continue
             if bestCell == None:
                 bestCell = currCell
-            elif currCell.getCurrSugar() > bestCell.getCurrSugar():
+                bestRange = travelDistance
+            currSugar = currCell.getCurrSugar()
+            bestSugar = bestCell.getCurrSugar()
+            if currSugar > bestSugar or (currSugar == bestSugar and travelDistance < bestRange):
                 bestCell = currCell
+                bestRange = travelDistance
         if bestCell == None:
             bestCell = self.__cell
         return bestCell
@@ -51,7 +67,8 @@ class Agent:
                 southCells.append(southCells[-1].getSouthNeighbor())
                 eastCells.append(eastCells[-1].getEastNeighbor())
                 westCells.append(westCells[-1].getWestNeighbor())
-            self.setCellsInVision(northCells + southCells + eastCells + westCells)
+            # Keep only unique neighbors
+            self.setCellsInVision(list(set(northCells + southCells + eastCells + westCells)))
 
     def getAlive(self):
         return self.__alive
@@ -77,7 +94,6 @@ class Agent:
     def isAlive(self):
         return self.getAlive()
 
-    # TODO: Agents currently overlap
     def moveToBestCellInVision(self):
         bestCell = self.findBestCellInVision()
         self.setCell(bestCell)

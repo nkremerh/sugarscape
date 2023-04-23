@@ -64,8 +64,8 @@ class Cell:
         return southNeighbor
 
     def getWestNeighbor(self):
-        westWrapAround = self.__environment.getHeight()
-        westIndex = self.__y - 1
+        westWrapAround = 0
+        westIndex = self.__x - 1
         if westIndex < westWrapAround:
             westIndex = self.__environment.getWidth() - 1
         westNeighbor = self.__environment.getCell(westIndex, self.__y)
@@ -77,14 +77,13 @@ class Cell:
     def getY(self):
         return self.__y
 
+    def isOccupied(self):
+        return self.__agent != None
+
     def resetSugar(self):
         currSugar = self.__currSugar
         self.setCurrSugar(0)
         return currSugar
-
-    def safeSetAgent(self, agent):
-        if self.__agent == None:
-            self.__agent = agent
 
     def setAgent(self, agent):
         self.__agent = agent
