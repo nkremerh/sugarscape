@@ -8,7 +8,7 @@ class Agent:
         self.__sugar = sugar
         self.__alive = True
         self.__cellsInVision = []
-        print("Agent stats: {0} vision, {1} metabolism, {2} endowment".format(self.__vision, self.__metabolism, self.__sugar))
+        #print("Agent stats: {0} vision, {1} metabolism, {2} endowment".format(self.__vision, self.__metabolism, self.__sugar))
 
     def collectResourcesAtCell(self):
         if self.__cell != None:

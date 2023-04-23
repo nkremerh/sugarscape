@@ -1,0 +1,11 @@
+{
+    "__README__": "Default values for Sugarscape simulation provided here.",
+    "agentMaxMetabolism": 4,
+    "agentMaxVision": 6,
+    "agentMaxInitialWealth": 5,
+    "environmentHeight": 50,
+    "environmentWidth": 50,
+    "environmentMaxSugar": 4,
+    "environmentSugarRegrowRate": 1,
+    "initialAgents": 250
+}

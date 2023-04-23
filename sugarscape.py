@@ -5,18 +5,21 @@ import cell
 import environment
 import gui
 
+import getopt
+import json
 import math
 import random
-import time
+import sys
+#import time
 
 class Sugarscape:
-    def __init__(self, environmentOptions, agentOptions):
-        self.__environment = environment.Environment(environmentOptions["height"], environmentOptions["width"], environmentOptions["maxSugar"], environmentOptions["sugarRegrowRate"])
-        self.__environmentHeight = environmentOptions["height"]
-        self.__environmentWidth = environmentOptions["width"]
-        self.configureEnvironment(environmentOptions["maxSugar"])
+    def __init__(self, configOptions):
+        self.__environment = environment.Environment(configOptions["environmentHeight"], configOptions["environmentWidth"], configOptions["environmentMaxSugar"], configOptions["environmentSugarRegrowRate"])
+        self.__environmentHeight = configOptions["environmentHeight"]
+        self.__environmentWidth = configOptions["environmentWidth"]
+        self.configureEnvironment(configOptions["environmentMaxSugar"])
         self.__agents = []
-        self.configureAgents(agentOptions["initialAgents"], agentOptions["maxVision"], agentOptions["maxMetabolism"], agentOptions["maxInitialWealth"])
+        self.configureAgents(configOptions["initialAgents"], configOptions["agentMaxVision"], configOptions["agentMaxMetabolism"], configOptions["agentMaxInitialWealth"])
         self.__gui = gui.GUI(self)
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
@@ -186,10 +189,45 @@ class Sugarscape:
         string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__timestep, len(self.__agents))
         return string
 
+def parseConfigFile(configFile, configOptions):
+    file = open(configFile)
+    options = json.loads(file.read())
+    for opt in configOptions:
+        if opt in options:
+            configOptions[opt] = options[opt]
+    return configOptions
+
+def parseOptions(configOptions):
+    commandLineArgs = sys.argv[1:]
+    shortOptions = "ch:"
+    longOptions = ["conf=", "help"]
+    try:
+        args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
+    except getopt.GetoptError as err:
+        print(err)
+        printHelp()
+    for currArg, currVal in args:
+        # TODO: Passing short option -c requires instead passing --c to grab config file name
+        if currArg in ("-c", "--conf"):
+            if currVal == "":
+                print("No config file provided.")
+                printHelp()
+            parseConfigFile(currVal, configOptions)
+        elif currArg in ("-h", "--help"):
+            printHelp()
+    return configOptions
+
+def printHelp():
+    print("Usage:\n\tpython sugarscape.py --conf config.json\n\nOptions:\n\t-c,--conf\tUse specified config file for simulation settings.\n\t-h,--help\tDisplay this message.")
+    exit(0)
+
 if __name__ == "__main__":
-    agentOptions = {"maxVision": 6, "maxMetabolism": 4, "maxInitialWealth": 5, "initialAgents": 250}
-    environmentOptions = {"height": 50, "width": 50, "maxSugar": 4, "sugarRegrowRate": 1}
-    S = Sugarscape(environmentOptions, agentOptions)
+    # Set default values for simulation configuration
+    configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250,
+                     "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1}
+    configOptions = parseOptions(configOptions)
+
+    S = Sugarscape(configOptions)
     print(str(S))
     S.runSimulation(10000)
     print(str(S))
