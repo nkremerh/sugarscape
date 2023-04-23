@@ -1,6 +1,10 @@
 REPO = nkremerh/sugarscape
 BRANCH = master
 
+CLEAN = log.json
+CONFIG = config.json
+SUGARSCAPE = sugarscape.py
+
 all: 
 
 install: /usr/bin/pip /usr/bin/python
@@ -8,8 +12,11 @@ install: /usr/bin/pip /usr/bin/python
 	@echo "If you want to use another method, please abort installation now."
 	@sleep 5
 
+test:
+	python $(SUGARSCAPE) --conf $(CONFIG)
+
 clean:
-	echo "Nothing to clean up"
+	rm -rf $(CLEAN) || true
 
 .PHONY: all clean install
 

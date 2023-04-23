@@ -7,12 +7,16 @@ class Agent:
         self.__vision = vision
         self.__sugar = sugar
         self.__alive = True
+        self.__age = 0
         self.__cellsInVision = []
         #print("Agent stats: {0} vision, {1} metabolism, {2} endowment".format(self.__vision, self.__metabolism, self.__sugar))
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
             self.__sugar = self.__sugar + self.__cell.resetSugar()
+
+    def doAging(self):
+        self.__age += 1
 
     def doMetabolism(self):
         self.__sugar = self.__sugar - self.__metabolism
@@ -26,9 +30,11 @@ class Agent:
             self.moveToBestCellInVision()
             self.collectResourcesAtCell()
             self.doMetabolism()
+            self.doAging()
 
     def findBestCellInVision(self):
         self.findCellsInVision()
+        random.seed(self.__cell.__environment.__sugarscape.getSeed())
         random.shuffle(self.__cellsInVision)
         bestCell = None
         bestRange = max(self.__cell.getEnvironment().getHeight(), self.__cell.getEnvironment().getWidth())

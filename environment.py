@@ -3,11 +3,12 @@ import random
 
 class Environment:
     # Assumption: grid is always indexed by [height][width]
-    def __init__(self, height, width, globalMaxSugar=0, sugarRegrowRate=0):
+    def __init__(self, height, width, sugarscape, globalMaxSugar=0, sugarRegrowRate=0):
         self.__width = width
         self.__height = height
         self.__globalMaxSugar = globalMaxSugar
         self.__sugarRegrowRate = sugarRegrowRate
+        self.__sugarscape = sugarscape
         # Populate grid with NoneType objects
         self.__grid = [[None for j in range(width)]for i in range(height)]
 
@@ -22,6 +23,7 @@ class Environment:
         self.doCellUpdate()
         randomRows = list(range(self.__height))
         randomColumns = list(range(self.__width))
+        random.seed(self.__sugarscape.getSeed())
         random.shuffle(randomRows)
         random.shuffle(randomColumns)
         for i in randomRows:
@@ -41,6 +43,9 @@ class Environment:
     def getHeight(self):
         return self.__height
 
+    def getSugarscape(self):
+        return self.__sugarscape
+
     def getWidth(self):
         return self.__width
 
@@ -55,6 +60,9 @@ class Environment:
 
     def setHeight(self, height):
         self.__height = height
+
+    def setSugarscape(self, sugarscape):
+        self.__sugarscape = sugarscape
 
     def setWidth(self, width):
         self.__width = width

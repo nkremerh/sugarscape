@@ -14,7 +14,8 @@ import sys
 
 class Sugarscape:
     def __init__(self, configOptions):
-        self.__environment = environment.Environment(configOptions["environmentHeight"], configOptions["environmentWidth"], configOptions["environmentMaxSugar"], configOptions["environmentSugarRegrowRate"])
+        self.__configOptions = configOptions
+        self.__environment = environment.Environment(configOptions["environmentHeight"], configOptions["environmentWidth"], self, configOptions["environmentMaxSugar"], configOptions["environmentSugarRegrowRate"])
         self.__environmentHeight = configOptions["environmentHeight"]
         self.__environmentWidth = configOptions["environmentWidth"]
         self.configureEnvironment(configOptions["environmentMaxSugar"])
@@ -95,7 +96,7 @@ class Sugarscape:
     def endLog(self):
         if self.__log == None:
             return
-        logString += '\t' + json.dumps(self.__runtimeStats) + "\n]"
+        logString = '\t' + json.dumps(self.__runtimeStats) + "\n]"
         self.__log.write(logString)
         self.__log.flush()
         self.__log.close()
@@ -128,6 +129,9 @@ class Sugarscape:
 
     def getRuntimeStats(self):
         return self.__runtimeStats
+
+    def getSeed(self):
+        return self.__configOptions["seed"]
 
     def getTimestep(self):
         return self.__timestep
@@ -255,7 +259,7 @@ class Sugarscape:
         self.__log.write(logString)
 
     def __str__(self):
-        string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__timestep, len(self.__agents))
+        string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__lastLoggedTimestep, len(self.__agents))
         return string
 
 def parseConfigFile(configFile, configOptions):
@@ -294,9 +298,9 @@ if __name__ == "__main__":
     # Set default values for simulation configuration
     configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
-                     "logfile": None}
+                     "logfile": None, "seed": 12345}
     configOptions = parseOptions(configOptions)
-
+    random.seed(configOptions["seed"])
     S = Sugarscape(configOptions)
     print(str(S))
     S.runSimulation(10000)
