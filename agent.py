@@ -1,7 +1,7 @@
 import random
 
 class Agent:
-    def __init__(self, cell, metabolism=0, vision=0, maxAge=0, sugar=0):
+    def __init__(self, agentID, cell, metabolism=0, vision=0, maxAge=0, sugar=0):
         self.__cell = cell
         self.__metabolism = metabolism
         self.__vision = vision
@@ -11,6 +11,10 @@ class Agent:
         self.__maxAge = maxAge
         self.__cellsInVision = []
         self.__lastMoved = 0
+        self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
+        self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
+        self.__socialNetwork = {}
+        self.__id = agentID
         # Debugging print statement
         #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar))
 
@@ -36,6 +40,7 @@ class Agent:
         if self.__alive == True and self.__lastMoved != timestep: 
             self.__lastMoved = timestep
             self.moveToBestCellInVision()
+            self.updateNeighbors()
             self.collectResourcesAtCell()
             self.doMetabolism()
             self.doAging()
@@ -100,17 +105,29 @@ class Agent:
     def getEnvironment(self):
         return self.__cell.getEnvironment()
 
+    def getID(self):
+        return self.__id
+
     def getMaxAge(self):
         return self.__maxAge
 
     def getMetabolism(self):
         return self.__metabolism
 
+    def getMooreNeighbors(self):
+        return self.__mooreNeighbors
+
+    def getSocialNetwork(self):
+        return self.__socialNetwork
+
     def getSugar(self):
         return self.__sugar
 
     def getVision(self):
         return self.__vision
+
+    def getVonNeumannNeighbors(self):
+        return self.__vonNeumannNeigbbors
 
     def isAlive(self):
         return self.getAlive()
@@ -134,15 +151,65 @@ class Agent:
     def setCellsInVision(self, cells):
         self.__cellsInVision = cells
 
+    def setID(self, agentID):
+        self.__id = agentID
+
     def setMaxAge(self, maxAge):
         self.__maxAge = maxAge
 
     def setMetabolism(self, metabolism):
         self.__metabolism = metabolism
 
+    def setMooreNeighbors(self, mooreNeighbors):
+        self.__mooreNeighbors = mooreNeighbors
+
+    def setSocialNetwork(self, socialNetwork):
+        self.__socialNetwork = socialNetwork
+
     def setVision(self, vision):
         self.__vision = vision
  
+    def setVonNeumannNeighbors(self, vonNeumannNeigbors):
+        self.__vonNeumannNeighbors = vonNeumannNeighbors
+
+    def updateMooreNeighbors(self):
+        for direction, neighbor in self.__vonNeumannNeighbors.items():
+            self.__mooreNeighbors[direction] = neighbor
+        north = self.__mooreNeighbors["north"]
+        south = self.__mooreNeighbors["south"]
+        east = self.__mooreNeighbors["east"]
+        west = self.__mooreNeighbors["west"]
+        self.__mooreNeighbors["northeast"] = north.getCell().getEastNeighbor() if north != None else None
+        self.__mooreNeighbors["northeast"] = east.getCell().getNorthNeighbor() if east != None and self.__mooreNeighbors["northeast"] == None else None
+        self.__mooreNeighbors["northwest"] = north.getCell().getWestNeighbor() if north != None else None
+        self.__mooreNeighbors["northwest"] = west.getCell().getNorthNeighbor() if west != None and self.__mooreNeighbors["northwest"] == None else None
+        self.__mooreNeighbors["southeast"] = south.getCell().getEastNeighbor() if south != None else None
+        self.__mooreNeighbors["southeast"] = east.getCell().getSouthNeighbor() if east != None and self.__mooreNeighbors["southeast"] == None else None
+        self.__mooreNeighbors["southwest"] = south.getCell().getWestNeighbor() if south != None else None
+        self.__mooreNeighbors["southwest"] = west.getCell().getSouthNeighbor() if west != None and self.__mooreNeighbors["southwest"] == None else None
+
+    def updateNeighbors(self):
+        self.updateVonNeumannNeighbors()
+        self.updateMooreNeighbors()
+        self.updateSocialNetwork()
+
+    def updateSocialNetwork(self):
+        for direction, neighbor in self.__vonNeumannNeighbors.items():
+            if neighbor == None:
+                continue
+            neighborID = neighbor.getID()
+            if neighborID in self.__socialNetwork:
+                self.__socialNetwork[neighborID]["lastSeen"] = self.__lastMoved
+                self.__socialNetwork[neighborID]["timesVisited"] += 1
+            else:
+                self.__socialNetwork[neighborID] = {"lastSeen": self.__lastMoved, "timesVisited": 1}
+
+    def updateVonNeumannNeighbors(self):
+        self.__vonNeumannNeighbors["north"] = self.__cell.getNorthNeighbor().getAgent()
+        self.__vonNeumannNeighbors["south"] = self.__cell.getSouthNeighbor().getAgent()
+        self.__vonNeumannNeighbors["east"] = self.__cell.getEastNeighbor().getAgent()
+        self.__vonNeumannNeighbors["west"] = self.__cell.getWestNeighbor().getAgent()
+
     def unsetCell(self):
         self.__cell.unsetAgent()
         self.__cell = None

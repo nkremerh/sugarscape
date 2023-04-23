@@ -11,6 +11,7 @@ import math
 import random
 import sys
 #import time
+import uuid
 
 class Sugarscape:
     def __init__(self, configOptions):
@@ -66,7 +67,9 @@ class Sugarscape:
             currVision = agentEndowments[i][1]
             currMaxAge = agentEndowments[i][2]
             currWealth = agentEndowments[i][3]
-            a = agent.Agent(c, currMetabolism, currVision, currMaxAge, currWealth)
+            # Generate random UUID for agent identification
+            agentID = str(uuid.uuid4())
+            a = agent.Agent(agentID, c, currMetabolism, currVision, currMaxAge, currWealth)
             c.setAgent(a)
             self.__agents.append(a)
 
