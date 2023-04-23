@@ -24,8 +24,10 @@ class Sugarscape:
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
         self.__timestep = 0
-        self.__runtimeStats = {"agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0, "meanTradePrice": 0, "meanTradeVolume": 0,
-                               "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
+        self.__runtimeStats = {"timestep": 0, "agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
+                               "meanTradePrice": 0, "meanTradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
+        self.__lastLoggedTimestep = 0
+        self.__log = open(configOptions["logfile"], 'a') if configOptions["logfile"] != None else None
 
     # TODO: Make more consistent with book, dispersion more tightly concentrated than in book (ref: pg. 22)
     def addSugarPeak(self, startX, startY, radius, maxCapacity):
@@ -81,15 +83,25 @@ class Sugarscape:
         if self.__end == True:
             self.endSimulation()
         self.updateRuntimeStats()
+        self.writeToLog()
         self.__environment.doTimestep()
         for a in self.__agents:
             if a.isAlive() == False:
                 self.__agents.remove(a)
         self.__gui.doTimestep()
-        #print("Timestep: {0}".format(self.__timestep))
         self.__timestep += 1
+        #print("Timestep: {0}".format(self.__timestep))
+
+    def endLog(self):
+        if self.__log == None:
+            return
+        logString += '\t' + json.dumps(self.__runtimeStats) + "\n]"
+        self.__log.write(logString)
+        self.__log.flush()
+        self.__log.close()
 
     def endSimulation(self):
+        self.endLog()
         print(str(self))
         exit(0)
 
@@ -158,6 +170,7 @@ class Sugarscape:
         return endowments
 
     def runSimulation(self, timesteps=5):
+        self.startLog()
         self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
         t = 0
         timesteps = timesteps - self.__timestep
@@ -194,6 +207,11 @@ class Sugarscape:
     def setRuntimeStats(self, runtimeStats):
         self.__runtimeStats = runtimeStats
 
+    def startLog(self):
+        if self.__log == None:
+            return
+        self.__log.write("[\n")
+
     def updateRuntimeStats(self):
         #self.__runtimeStats = {"agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0, "meanTradePrice": 0, "meanTradeVolume": 0,
         #                       "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
@@ -221,12 +239,20 @@ class Sugarscape:
         meanMetabolism = meanMetabolism / numAgents
         meanVision = meanVision / numAgents
         meanWealth = meanWealth / numAgents
+        self.__runtimeStats["timestep"] = self.__timestep
         self.__runtimeStats["agents"] = numAgents
         self.__runtimeStats["meanMetabolism"] = meanMetabolism
         self.__runtimeStats["meanVision"] = meanVision
         self.__runtimeStats["meanWealth"] = meanWealth
         self.__runtimeStats["minWealth"] = minWealth
         self.__runtimeStats["maxWealth"] = maxWealth
+
+    def writeToLog(self):
+        if self.__log == None:
+            return
+        self.__lastLoggedTimestep = self.__timestep
+        logString = '\t' + json.dumps(self.__runtimeStats) + ",\n"
+        self.__log.write(logString)
 
     def __str__(self):
         string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__timestep, len(self.__agents))
@@ -267,7 +293,8 @@ def printHelp():
 if __name__ == "__main__":
     # Set default values for simulation configuration
     configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250,
-                     "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1}
+                     "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
+                     "logfile": None}
     configOptions = parseOptions(configOptions)
 
     S = Sugarscape(configOptions)

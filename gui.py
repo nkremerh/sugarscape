@@ -139,6 +139,7 @@ class GUI:
     def doWindowClose(self, event=None):
         self.__window.destroy()
         self.__sugarscape.setEnd()
+        self.__sugarscape.endSimulation()
 
     def getCanvas(self):
         return self.__canvas

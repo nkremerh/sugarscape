@@ -7,5 +7,6 @@
     "environmentWidth": 50,
     "environmentMaxSugar": 4,
     "environmentSugarRegrowRate": 1,
-    "initialAgents": 250
+    "initialAgents": 250,
+    "logfile": "log.json"
 }
