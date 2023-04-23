@@ -1,15 +1,18 @@
 import random
 
 class Agent:
-    def __init__(self, cell, metabolism=0, vision=0, sugar=0):
+    def __init__(self, cell, metabolism=0, vision=0, maxAge=0, sugar=0):
         self.__cell = cell
         self.__metabolism = metabolism
         self.__vision = vision
         self.__sugar = sugar
         self.__alive = True
         self.__age = 0
+        self.__maxAge = maxAge
         self.__cellsInVision = []
-        #print("Agent stats: {0} vision, {1} metabolism, {2} endowment".format(self.__vision, self.__metabolism, self.__sugar))
+        self.__lastMoved = 0
+        # Debugging print statement
+        #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar))
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
@@ -17,16 +20,21 @@ class Agent:
 
     def doAging(self):
         self.__age += 1
+        if self.__age >= self.__maxAge:
+            self.setAlive(False)
+            self.unsetCell()
 
     def doMetabolism(self):
         self.__sugar = self.__sugar - self.__metabolism
-        if self.__sugar < 1:
+        if self.__sugar < 0:
             self.setAlive(False)
             self.unsetCell()
 
     def doTimestep(self):
-        if self.__alive == True:
+        timestep = self.__cell.getEnvironment().getSugarscape().getTimestep()
+        if self.__alive == True and self.__lastMoved != timestep: 
             # TODO: Determine if sugar/spice eaten before moving (requires initial endowment of sugar/spice)
+            self.__lastMoved = timestep
             self.moveToBestCellInVision()
             self.collectResourcesAtCell()
             self.doMetabolism()
@@ -34,7 +42,7 @@ class Agent:
 
     def findBestCellInVision(self):
         self.findCellsInVision()
-        random.seed(self.__cell.__environment.__sugarscape.getSeed())
+        random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
         random.shuffle(self.__cellsInVision)
         bestCell = None
         bestRange = max(self.__cell.getEnvironment().getHeight(), self.__cell.getEnvironment().getWidth())
@@ -76,6 +84,9 @@ class Agent:
             # Keep only unique neighbors
             self.setCellsInVision(list(set(northCells + southCells + eastCells + westCells)))
 
+    def getAge(self):
+        return self.__age
+
     def getAlive(self):
         return self.__alive
 
@@ -87,6 +98,9 @@ class Agent:
 
     def getEnvironment(self):
         return self.__cell.getEnvironment()
+
+    def getMaxAge(self):
+        return self.__maxAge
 
     def getMetabolism(self):
         return self.__metabolism
@@ -104,6 +118,9 @@ class Agent:
         bestCell = self.findBestCellInVision()
         self.setCell(bestCell)
 
+    def setAge(self, age):
+        self.__age = age
+
     def setAlive(self, alive):
         self.__alive = alive
     
@@ -115,6 +132,9 @@ class Agent:
 
     def setCellsInVision(self, cells):
         self.__cellsInVision = cells
+
+    def setMaxAge(self, maxAge):
+        self.__maxAge = maxAge
 
     def setMetabolism(self, metabolism):
         self.__metabolism = metabolism

@@ -21,15 +21,14 @@ class Environment:
 
     def doTimestep(self):
         self.doCellUpdate()
-        randomRows = list(range(self.__height))
-        randomColumns = list(range(self.__width))
+        rows = list(range(self.__height))
+        columns = list(range(self.__width))
+        cells = [(x, y) for x in rows for y in columns]
         random.seed(self.__sugarscape.getSeed())
-        random.shuffle(randomRows)
-        random.shuffle(randomColumns)
-        for i in randomRows:
-            for j in randomColumns:
-                if self.__grid[i][j] != None:
-                    self.__grid[i][j].doTimestep()
+        random.shuffle(cells)
+        for coords in cells:
+            if self.__grid[coords[0]][coords[1]] != None:
+                self.__grid[coords[0]][coords[1]].doTimestep()
 
     def getCell(self, x, y):
         return self.__grid[x][y]

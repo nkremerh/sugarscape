@@ -100,6 +100,9 @@ class GUI:
         window.bind("<Escape>", self.doWindowClose)
         canvas.bind("<Button-1>", self.doClick)
 
+    def destroyGUI(self):
+        self.__window.destroy()
+
     def doAgentColorMenu(self):
         return
 
@@ -139,7 +142,6 @@ class GUI:
     def doWindowClose(self, event=None):
         self.__window.destroy()
         self.__sugarscape.setEnd()
-        self.__sugarscape.endSimulation()
 
     def getCanvas(self):
         return self.__canvas

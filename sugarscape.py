@@ -20,7 +20,7 @@ class Sugarscape:
         self.__environmentWidth = configOptions["environmentWidth"]
         self.configureEnvironment(configOptions["environmentMaxSugar"])
         self.__agents = []
-        self.configureAgents(configOptions["initialAgents"], configOptions["agentMaxVision"], configOptions["agentMaxMetabolism"], configOptions["agentMaxInitialWealth"])
+        self.configureAgents(configOptions["initialAgents"], configOptions["agentMaxVision"], configOptions["agentMaxMetabolism"], configOptions["agentMaxInitialWealth"], configOptions["agentMaxAgeHigh"], configOptions["agentMaxAgeLow"])
         self.__gui = gui.GUI(self)
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
@@ -47,25 +47,26 @@ class Sugarscape:
                     self.__environment.getCell(i, j).setMaxSugar(cellMaxCapacity)
                     self.__environment.getCell(i, j).setCurrSugar(cellMaxCapacity)
  
-    def configureAgents(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth):
+    def configureAgents(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth, maxAgeHigh, maxAgeLow):
         if self.__environment == None:
             return
         totalCells = self.__environmentHeight * self.__environmentWidth
         if initialAgents > totalCells:
             print("Could not allocate {0} agents. Allocating maximum of {1}.".format(initialAgents, totalCells))
             initialAgents = totalCells
-        agentEndowments = self.randomizeAgentEndowments(initialAgents, maxVision, maxMetabolism, maxInitialWealth)
+        agentEndowments = self.randomizeAgentEndowments(initialAgents, maxVision, maxMetabolism, maxInitialWealth, maxAgeHigh, maxAgeLow)
         for i in range(initialAgents):
-            randX = random.randrange(self.__environment.getHeight())
-            randY = random.randrange(self.__environment.getWidth())
-            while self.__environment.getCell(randX, randY).getAgent() != None:
+            randX = random.randrange(self.__environmentHeight)
+            randY = random.randrange(self.__environmentWidth)
+            while self.__environment.getCell(randX, randY).getAgent() != None and len(self.__agents) <= (self.__environmentHeight * self.__environmentWidth):
                 randX = random.randrange(self.__environment.getHeight())
                 randY = random.randrange(self.__environment.getWidth())
             c = self.__environment.getCell(randX, randY)
             currMetabolism = agentEndowments[i][0]
             currVision = agentEndowments[i][1]
-            currWealth = agentEndowments[i][2]
-            a = agent.Agent(c, currMetabolism, currVision, currWealth)
+            currMaxAge = agentEndowments[i][2]
+            currWealth = agentEndowments[i][3]
+            a = agent.Agent(c, currMetabolism, currVision, currMaxAge, currWealth)
             c.setAgent(a)
             self.__agents.append(a)
 
@@ -81,8 +82,9 @@ class Sugarscape:
         self.addSugarPeak(startX2, startY2, radius, maxCapacity)
 
     def doTimestep(self):
-        if self.__end == True:
+        if self.__end == True or len(self.__agents) == 0:
             self.endSimulation()
+        self.replaceDeadAgents()
         self.updateRuntimeStats()
         self.writeToLog()
         self.__environment.doTimestep()
@@ -91,7 +93,7 @@ class Sugarscape:
                 self.__agents.remove(a)
         self.__gui.doTimestep()
         self.__timestep += 1
-        #print("Timestep: {0}".format(self.__timestep))
+        print("Timestep: {0}".format(self.__timestep))
 
     def endLog(self):
         if self.__log == None:
@@ -101,6 +103,7 @@ class Sugarscape:
         self.__log.flush()
         self.__log.close()
 
+    # TODO: Simulation does not terminate when stepping through to end condition (no living agents)
     def endSimulation(self):
         self.endLog()
         print(str(self))
@@ -142,47 +145,61 @@ class Sugarscape:
                 self.endSimulation()
             self.__gui.getWindow().update()
 
-    def randomizeAgentEndowments(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth):
+    def randomizeAgentEndowments(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth, maxAgeHigh, maxAgeLow):
         endowments = []
         metabolisms = []
         visions = []
+        ages = []
         initialWealths = []
         minMetabolism = min(1, maxMetabolism) # Accept 0 case
         minVision = min(1, maxVision) # Accept 0 case
         minWealth = min(1, maxInitialWealth) # Accept 0 case
-        currMetabolism = 1
-        currVision = 1
-        currWealth = 1
+        currMetabolism = random.randrange(minMetabolism, maxMetabolism + 1)
+        currVision = random.randrange(minVision, maxVision + 1)
+        currWealth = random.randrange(minWealth, maxInitialWealth + 1)
+        currMaxAge = maxAgeLow
         for i in range(initialAgents):
             metabolisms.append(currMetabolism)
             visions.append(currVision)
+            ages.append(currMaxAge)
             initialWealths.append(currWealth)
             currMetabolism += 1
             currVision += 1
+            currMaxAge += 1
             currWealth += 1
             if currMetabolism > maxMetabolism:
                 currMetabolism = minMetabolism
             if currVision > maxVision:
                 currVision = minVision
+            if currMaxAge > maxAgeHigh:
+                currMaxAge = maxAgeLow
             if currWealth > maxInitialWealth:
                 currWealth = minWealth
         random.shuffle(metabolisms)
         random.shuffle(visions)
+        random.shuffle(ages)
         random.shuffle(initialWealths)
         for i in range(initialAgents):
-            endowments.append([metabolisms[i], visions[i], initialWealths[i]])
+            endowments.append([metabolisms[i], visions[i], ages[i], initialWealths[i]])
         return endowments
+
+    def replaceDeadAgents(self):
+        if len(self.__agents) < self.__configOptions["initialAgents"]:
+            numReplacements = (self.__configOptions["initialAgents"] - len(self.__agents)) * self.__configOptions["agentReplacement"]
+            self.configureAgents(numReplacements, self.__configOptions["agentMaxVision"], self.__configOptions["agentMaxMetabolism"], self.__configOptions["agentMaxInitialWealth"], self.__configOptions["agentMaxAgeHigh"], self.__configOptions["agentMaxAgeLow"])
+            self.__gui.doTimestep()
 
     def runSimulation(self, timesteps=5):
         self.startLog()
         self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
         t = 0
         timesteps = timesteps - self.__timestep
-        while t < timesteps and self.__end == False and len(self.__agents) != 0:
+        while t < timesteps:
             self.doTimestep()
             t += 1
             if self.__run == False:
                 self.pauseSimulation()
+        self.endSimulation()
 
     def setAgents(self, agents):
         self.__agents = agents
@@ -217,8 +234,6 @@ class Sugarscape:
         self.__log.write("[\n")
 
     def updateRuntimeStats(self):
-        #self.__runtimeStats = {"agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0, "meanTradePrice": 0, "meanTradeVolume": 0,
-        #                       "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
         numAgents = len(self.__agents)
         meanMetabolism = 0
         meanVision = 0
@@ -234,6 +249,7 @@ class Sugarscape:
             agentWealth = agent.getSugar()
             meanMetabolism += agent.getMetabolism()
             meanVision += agent.getVision()
+            meanAge += agent.getAge()
             meanWealth += agentWealth
             totalWealth += agentWealth
             if agentWealth < minWealth:
@@ -242,11 +258,13 @@ class Sugarscape:
                 maxWealth = agentWealth
         meanMetabolism = meanMetabolism / numAgents
         meanVision = meanVision / numAgents
+        meanAge = meanAge / numAgents
         meanWealth = meanWealth / numAgents
         self.__runtimeStats["timestep"] = self.__timestep
         self.__runtimeStats["agents"] = numAgents
         self.__runtimeStats["meanMetabolism"] = meanMetabolism
         self.__runtimeStats["meanVision"] = meanVision
+        self.__runtimeStats["meanAge"] = meanAge
         self.__runtimeStats["meanWealth"] = meanWealth
         self.__runtimeStats["minWealth"] = minWealth
         self.__runtimeStats["maxWealth"] = maxWealth
@@ -296,13 +314,14 @@ def printHelp():
 
 if __name__ == "__main__":
     # Set default values for simulation configuration
-    configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250,
+    configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250, "agentReplacement": 0,
+                     "agentMaxAgeHigh": 100, "agentMaxAgeLow": 60,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "logfile": None, "seed": 12345}
     configOptions = parseOptions(configOptions)
     random.seed(configOptions["seed"])
     S = Sugarscape(configOptions)
     print(str(S))
-    S.runSimulation(10000)
-    print(str(S))
+    S.runSimulation(1000)
+    #print(str(S))
     exit(0)
