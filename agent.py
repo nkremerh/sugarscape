@@ -20,7 +20,10 @@ class Agent:
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
-            self.__sugar = self.__sugar + self.__cell.resetSugar()
+            sugarCollected = self.__cell.getCurrSugar()
+            self.__sugar = self.__sugar + sugarCollected
+            self.__cell.doProductionPollution(sugarCollected)
+            self.__cell.resetSugar()
 
     def doAging(self):
         self.__age += 1
@@ -31,6 +34,7 @@ class Agent:
 
     def doMetabolism(self):
         self.__sugar = self.__sugar - self.__metabolism
+        self.__cell.doConsumptionPollution(self.__metabolism)
         if self.__sugar < 1:
             self.setAlive(False)
             self.unsetCell()
@@ -66,8 +70,8 @@ class Agent:
             if bestCell == None:
                 bestCell = currCell
                 bestRange = travelDistance
-            currSugar = currCell.getCurrSugar()
-            bestSugar = bestCell.getCurrSugar()
+            currSugar = currCell.getCurrSugar() / (1 + currCell.getCurrPollution())
+            bestSugar = bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())
             # Move to closest cell with the most resources
             if currSugar > bestSugar or (currSugar == bestSugar and travelDistance < bestRange):
                 bestCell = currCell

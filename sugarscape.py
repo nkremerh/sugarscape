@@ -17,7 +17,8 @@ class Sugarscape:
     def __init__(self, configOptions):
         self.__configOptions = configOptions
         self.__environment = environment.Environment(configOptions["environmentHeight"], configOptions["environmentWidth"], self, configOptions["environmentMaxSugar"], configOptions["environmentSugarRegrowRate"],
-                                                     configOptions["environmentSeasonInterval"], configOptions["environmentSeasonalGrowbackDelay"])
+                                                     configOptions["environmentSeasonInterval"], configOptions["environmentSeasonalGrowbackDelay"], configOptions["environmentConsumptionPollutionRate"],
+                                                     configOptions["environmentProductionPollutionRate"], configOptions["environmentPollutionDiffusionDelay"])
         self.__environmentHeight = configOptions["environmentHeight"]
         self.__environmentWidth = configOptions["environmentWidth"]
         self.configureEnvironment(configOptions["environmentMaxSugar"])
@@ -95,6 +96,7 @@ class Sugarscape:
         radius = math.ceil(math.sqrt(2 * (height + width)))
         self.addSugarPeak(startX1, startY1, radius, maxCapacity)
         self.addSugarPeak(startX2, startY2, radius, maxCapacity)
+        self.__environment.setCellNeighbors()
 
     def doTimestep(self):
         if self.__end == True or len(self.__agents) == 0:
@@ -345,7 +347,8 @@ if __name__ == "__main__":
     configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250, "agentReplacement": 0,
                      "agentMaxAgeHigh": 100, "agentMaxAgeLow": 60,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
-                     "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2,
+                     "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
+                     "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10,
                      "logfile": None, "seed": 12345}
     configOptions = parseOptions(configOptions)
     random.seed(configOptions["seed"])

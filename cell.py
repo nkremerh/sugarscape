@@ -1,3 +1,5 @@
+import math
+
 class Cell:
     def __init__(self, x, y, environment, maxSugar=0, maxSpice=0, growbackRate=0):
         self.__x = x
@@ -12,7 +14,23 @@ class Cell:
         self.__hemisphere = "north" if self.__x >= self.__environment.getEquator() else "south"
         self.__season = None
         self.__neighbors = []
-    
+
+    def doConsumptionPollution(self, resourcesConsumed):
+        consumptionPollutionRate = self.__environment.getConsumptionPollutionRate()
+        self.__currPollution = self.__currPollution + (consumptionPollutionRate * resourcesConsumed)
+
+    def doPollutionDiffusion(self):
+        meanPollution = 0
+        for neighbor in self.__neighbors:
+            meanPollution += neighbor.getCurrPollution()
+        meanPollution = math.ceil(meanPollution / len(self.__neighbors))
+        for neighbor in self.__neighbors:
+            neighbor.setCurrPollution(meanPollution)
+
+    def doProductionPollution(self, resourcesProduced):
+        productionPollutionRate = self.__environment.getProductionPollutionRate()
+        self.__currPollution = self.__currPollution + (productionPollutionRate * resourcesProduced)
+
     def doTimestep(self):
         if self.__agent != None:
             self.__agent.doTimestep()
@@ -88,10 +106,12 @@ class Cell:
     def resetSugar(self):
         currSugar = self.__currSugar
         self.setCurrSugar(0)
-        return currSugar
 
     def setAgent(self, agent):
         self.__agent = agent
+
+    def setCurrPollution(self, currPollution):
+        self.__currPollution = currPollution
 
     def setCurrSpice(self, currSpice):
         self.__currSpice = currSpice

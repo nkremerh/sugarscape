@@ -3,7 +3,7 @@ import random
 
 class Environment:
     # Assumption: grid is always indexed by [height][width]
-    def __init__(self, height, width, sugarscape, globalMaxSugar=0, sugarRegrowRate=0, seasonInterval=0, seasonalGrowbackDelay=0):
+    def __init__(self, height, width, sugarscape, globalMaxSugar=0, sugarRegrowRate=0, seasonInterval=0, seasonalGrowbackDelay=0, consumptionPollutionRate=0, productionPollutionRate=0, pollutionDiffusionDelay=0):
         self.__width = width
         self.__height = height
         self.__globalMaxSugar = globalMaxSugar
@@ -15,6 +15,10 @@ class Environment:
         self.__seasonSouth = "winter" if seasonInterval > 0 else None
         self.__equator = math.ceil(self.__height / 2)
         self.__seasonalGrowbackCountdown = seasonalGrowbackDelay
+        self.__pollutionDiffusionDelay = pollutionDiffusionDelay
+        self.__pollutionDiffusionCountdown = pollutionDiffusionDelay
+        self.__consumptionPollutionRate = consumptionPollutionRate
+        self.__productionPollutionRate = productionPollutionRate
         # Populate grid with NoneType objects
         self.__grid = [[None for j in range(width)]for i in range(height)]
 
@@ -32,6 +36,8 @@ class Environment:
                         self.__grid[i][j].setCurrSugar(min(cellCurrSugar + self.__sugarRegrowRate, cellMaxSugar))
                 else:
                     self.__grid[i][j].setCurrSugar(min(cellCurrSugar + self.__sugarRegrowRate, cellMaxSugar))
+                if self.__pollutionDiffusionDelay > 0 and self.__pollutionDiffusionCountdown == self.__pollutionDiffusionDelay:
+                    self.__grid[i][j].doPollutionDiffusion()
 
     def doTimestep(self):
         self.updateSeasons()
@@ -48,6 +54,9 @@ class Environment:
     def getCell(self, x, y):
         return self.__grid[x][y]
 
+    def getConsumptionPollutionRate(self):
+        return self.__consumptionPollutionRate
+
     def getEquator(self):
         return self.__equator
 
@@ -59,6 +68,15 @@ class Environment:
 
     def getHeight(self):
         return self.__height
+
+    def getPollutionDiffusionCountdown(self):
+        return self.__pollutionDiffusionCountdown
+
+    def getPollutionDiffusionDelay(self):
+        return self.__pollutionDiffusionDelay
+
+    def getProductionPollutionRate(self):
+        return self.__productionPollutionRate
 
     def getSeasonalGrowbackCountdown(self):
         return self.__seasonalGrowbackCountdown
@@ -81,6 +99,14 @@ class Environment:
     def setCell(self, cell, x, y):
         self.__grid[x][y] = cell
 
+    def setCellNeighbors(self):
+        for i in range(self.__height):
+            for j in range(self.__width):
+                self.__grid[i][j].setNeighbors()
+
+    def setConsumptionPollutionRate(self, consumptionPollutionRate):
+        self.__consumptionPollutionRate = consumptionPollutionRate
+
     def setEquator(self, equator):
         self.__equator = equator
 
@@ -92,6 +118,15 @@ class Environment:
 
     def setHeight(self, height):
         self.__height = height
+
+    def setPollutionDiffusionCountdown(self, pollutionDiffusionCountdown):
+        self.__pollutionDiffusionCountdown = pollutionDiffusionCountdown
+
+    def setPollutionDiffusionDelay(self, pollutionDiffusionDelay):
+        self.__pollutionDiffusionDelay = pollutionDiffisionDelay
+
+    def setProductionPollutionRate(self, productionPollutionRate):
+        self.__productionPollutionRate = productionPollutionRate
 
     def setSeasonalGrowbackCountdown(self, seasonalGrowbackCountdown):
         self.__seasonalGrowbackCountdown = seasonalGrowbackCountdown
@@ -110,6 +145,14 @@ class Environment:
 
     def setWidth(self, width):
         self.__width = width
+
+    def updatePollution(self):
+        timestep = self.__sugarscape.getTimestep()
+        if self.__pollutionDiffusionDelay > 0:
+            self.__pollutionDiffusionCountdown -= 1
+            # Pollution diffusion delay over
+            if self.__pollutionDiffusionCountdown == 0:
+                self.__pollutionDiffusionCountdown = self.__pollutionDiffusionDelay
 
     def updateSeasons(self):
         timestep = self.__sugarscape.getTimestep()
