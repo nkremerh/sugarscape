@@ -1,15 +1,18 @@
 {
     "__README__": "Default values for Sugarscape simulation provided here.",
     "agentMaxInitialWealth": 5,
-    "agentMaxMetabolism": 0,
+    "agentMaxMetabolism": 4,
     "agentMaxVision": 6,
     "agentMaxAgeHigh": 100,
     "agentMaxAgeLow": 60,
-    "agentReplacement": 1,
+    "agentReplacement": 0,
     "environmentHeight": 50,
     "environmentWidth": 50,
     "environmentMaxSugar": 4,
+    "environmentSeasonalGrowbackDelay": 0,
+    "environmentSeasonInterval": 0,
     "environmentSugarRegrowRate": 1,
     "initialAgents": 250,
-    "logfile": "log.json"
+    "logfile": "log.json",
+    "seed": 12345
 }

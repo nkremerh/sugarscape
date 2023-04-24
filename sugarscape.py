@@ -16,7 +16,8 @@ import uuid
 class Sugarscape:
     def __init__(self, configOptions):
         self.__configOptions = configOptions
-        self.__environment = environment.Environment(configOptions["environmentHeight"], configOptions["environmentWidth"], self, configOptions["environmentMaxSugar"], configOptions["environmentSugarRegrowRate"])
+        self.__environment = environment.Environment(configOptions["environmentHeight"], configOptions["environmentWidth"], self, configOptions["environmentMaxSugar"], configOptions["environmentSugarRegrowRate"],
+                                                     configOptions["environmentSeasonInterval"], configOptions["environmentSeasonalGrowbackDelay"])
         self.__environmentHeight = configOptions["environmentHeight"]
         self.__environmentWidth = configOptions["environmentWidth"]
         self.configureEnvironment(configOptions["environmentMaxSugar"])
@@ -36,10 +37,17 @@ class Sugarscape:
         height = self.__environment.getHeight()
         width = self.__environment.getWidth()
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
+        seasons = True if self.__configOptions["environmentSeasonInterval"] > 0 else False
         for i in range(height):
             for j in range(width):
                 if self.__environment.getCell(i, j) == None:
-                    self.__environment.setCell(cell.Cell(i, j, self.__environment), i, j)
+                    newCell = cell.Cell(i, j, self.__environment)
+                    if seasons == True:
+                        if j >= self.__environment.getEquator():
+                            newCell.setSeason("summer")
+                        else:
+                            newCell.setSeason("winter")
+                    self.__environment.setCell(newCell, i, j)
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxCapacity * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxCapacity)
@@ -55,6 +63,10 @@ class Sugarscape:
         if initialAgents > totalCells:
             print("Could not allocate {0} agents. Allocating maximum of {1}.".format(initialAgents, totalCells))
             initialAgents = totalCells
+        # Ensure infinitely-lived agents are properly initialized
+        if maxAgeHigh < 0 or maxAgeLow < 0:
+            maxAgeHigh = -1
+            maxAgeLow = -1
         agentEndowments = self.randomizeAgentEndowments(initialAgents, maxVision, maxMetabolism, maxInitialWealth, maxAgeHigh, maxAgeLow)
         for i in range(initialAgents):
             randX = random.randrange(self.__environmentHeight)
@@ -333,6 +345,7 @@ if __name__ == "__main__":
     configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250, "agentReplacement": 0,
                      "agentMaxAgeHigh": 100, "agentMaxAgeLow": 60,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
+                     "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2,
                      "logfile": None, "seed": 12345}
     configOptions = parseOptions(configOptions)
     random.seed(configOptions["seed"])

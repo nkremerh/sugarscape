@@ -24,7 +24,8 @@ class Agent:
 
     def doAging(self):
         self.__age += 1
-        if self.__age >= self.__maxAge:
+        # Die if reached max age and if not infinitely-lived
+        if self.__age >= self.__maxAge and self.__maxAge != -1:
             self.setAlive(False)
             self.unsetCell()
 

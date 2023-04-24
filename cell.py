@@ -9,6 +9,8 @@ class Cell:
         self.__currSpice = maxSpice
         self.__currPollution = 0
         self.__agent = None
+        self.__hemisphere = "north" if self.__x >= self.__environment.getEquator() else "south"
+        self.__season = None
         self.__neighbors = []
     
     def doTimestep(self):
@@ -37,6 +39,9 @@ class Cell:
             eastIndex = 0
         eastNeighbor = self.__environment.getCell(eastIndex, self.__y)
         return eastNeighbor
+
+    def getSeason(self):
+        return self.__season
 
     def getMaxSpice(self):
         return self.__maxSpice
@@ -111,12 +116,21 @@ class Cell:
             self.__neighbors.append(self.getEastNeighbor())
             self.__neighbors.append(self.getWestNeighbor())
 
+    def setSeason(self, season):
+        self.__season = season
+
     def setX(self, x):
         self.__x = x
 
     def setY(self, y):
         self.__y = y
- 
+
+    def updateSeason(self):
+        if self.__season == "summer":
+            self.__season = "winter"
+        else:
+            self.__season = "summer"
+
     def unsetAgent(self):
         self.setAgent(None)
  
