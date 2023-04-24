@@ -17,7 +17,7 @@ class Agent:
         self.__sex = sex
         self.__id = agentID
         # Debugging print statement
-        print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex))
+        #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex))
 
     def collectResourcesAtCell(self):
         if self.__cell != None:

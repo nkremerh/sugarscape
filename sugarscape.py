@@ -74,7 +74,6 @@ class Sugarscape:
         # Determine count of male agents and set as switch for agent generation
         if maleToFemaleRatio != None and maleToFemaleRatio != 0:
             sexDistributionCountdown = math.floor(sexDistributionCountdown / (maleToFemaleRatio + 1)) * maleToFemaleRatio
-        print("Sex distribution countdown: {0}".format(sexDistributionCountdown))
         for i in range(initialAgents):
             randX = random.randrange(self.__environmentHeight)
             randY = random.randrange(self.__environmentWidth)
