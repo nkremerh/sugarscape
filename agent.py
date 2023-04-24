@@ -1,7 +1,7 @@
 import random
 
 class Agent:
-    def __init__(self, agentID, cell, metabolism=0, vision=0, maxAge=0, sugar=0):
+    def __init__(self, agentID, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None):
         self.__cell = cell
         self.__metabolism = metabolism
         self.__vision = vision
@@ -14,9 +14,10 @@ class Agent:
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.__socialNetwork = {}
+        self.__sex = sex
         self.__id = agentID
         # Debugging print statement
-        #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar))
+        print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex))
 
     def collectResourcesAtCell(self):
         if self.__cell != None:

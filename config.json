@@ -16,6 +16,7 @@
     "environmentSeasonInterval": 0,
     "environmentSugarRegrowRate": 1,
     "initialAgents": 250,
+    "initialMaleToFemaleRatio": 1,
     "logfile": "log.json",
     "seed": 12345
 }

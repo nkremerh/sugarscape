@@ -23,7 +23,8 @@ class Sugarscape:
         self.__environmentWidth = configOptions["environmentWidth"]
         self.configureEnvironment(configOptions["environmentMaxSugar"])
         self.__agents = []
-        self.configureAgents(configOptions["initialAgents"], configOptions["agentMaxVision"], configOptions["agentMaxMetabolism"], configOptions["agentMaxInitialWealth"], configOptions["agentMaxAgeHigh"], configOptions["agentMaxAgeLow"])
+        self.configureAgents(configOptions["initialAgents"], configOptions["agentMaxVision"], configOptions["agentMaxMetabolism"], configOptions["agentMaxInitialWealth"],
+                             configOptions["agentMaxAgeHigh"], configOptions["agentMaxAgeLow"], configOptions["initialMaleToFemaleRatio"])
         self.__gui = gui.GUI(self)
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
@@ -57,7 +58,7 @@ class Sugarscape:
                     self.__environment.getCell(i, j).setMaxSugar(cellMaxCapacity)
                     self.__environment.getCell(i, j).setCurrSugar(cellMaxCapacity)
  
-    def configureAgents(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth, maxAgeHigh, maxAgeLow):
+    def configureAgents(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth, maxAgeHigh, maxAgeLow, maleToFemaleRatio):
         if self.__environment == None:
             return
         totalCells = self.__environmentHeight * self.__environmentWidth
@@ -69,6 +70,11 @@ class Sugarscape:
             maxAgeHigh = -1
             maxAgeLow = -1
         agentEndowments = self.randomizeAgentEndowments(initialAgents, maxVision, maxMetabolism, maxInitialWealth, maxAgeHigh, maxAgeLow)
+        sexDistributionCountdown = initialAgents
+        # Determine count of male agents and set as switch for agent generation
+        if maleToFemaleRatio != None and maleToFemaleRatio != 0:
+            sexDistributionCountdown = math.floor(sexDistributionCountdown / (maleToFemaleRatio + 1)) * maleToFemaleRatio
+        print("Sex distribution countdown: {0}".format(sexDistributionCountdown))
         for i in range(initialAgents):
             randX = random.randrange(self.__environmentHeight)
             randY = random.randrange(self.__environmentWidth)
@@ -82,7 +88,14 @@ class Sugarscape:
             currWealth = agentEndowments[i][3]
             # Generate random UUID for agent identification
             agentID = str(uuid.uuid4())
-            a = agent.Agent(agentID, c, currMetabolism, currVision, currMaxAge, currWealth)
+            initial = None
+            if maleToFemaleRatio != None and maleToFemaleRatio != 0:
+                if sexDistributionCountdown == 0:
+                    initial = "female"
+                else:
+                    initial = "male"
+                    sexDistributionCountdown -= 1
+            a = agent.Agent(agentID, c, currMetabolism, currVision, currMaxAge, currWealth, initial)
             c.setAgent(a)
             self.__agents.append(a)
 
@@ -203,7 +216,8 @@ class Sugarscape:
     def replaceDeadAgents(self):
         if len(self.__agents) < self.__configOptions["initialAgents"]:
             numReplacements = (self.__configOptions["initialAgents"] - len(self.__agents)) * self.__configOptions["agentReplacement"]
-            self.configureAgents(numReplacements, self.__configOptions["agentMaxVision"], self.__configOptions["agentMaxMetabolism"], self.__configOptions["agentMaxInitialWealth"], self.__configOptions["agentMaxAgeHigh"], self.__configOptions["agentMaxAgeLow"])
+            self.configureAgents(numReplacements, self.__configOptions["agentMaxVision"], self.__configOptions["agentMaxMetabolism"], self.__configOptions["agentMaxInitialWealth"],
+                                 self.__configOptions["agentMaxAgeHigh"], self.__configOptions["agentMaxAgeLow"], self.__configOptions["initialMaleToFemaleRatio"])
             self.__gui.doTimestep()
 
     def runSimulation(self, timesteps=5):
@@ -345,7 +359,7 @@ def printHelp():
 if __name__ == "__main__":
     # Set default values for simulation configuration
     configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250, "agentReplacement": 0,
-                     "agentMaxAgeHigh": 100, "agentMaxAgeLow": 60,
+                     "agentMaxAgeHigh": 100, "agentMaxAgeLow": 60, "initialMaleToFemaleRatio": 1,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10,
