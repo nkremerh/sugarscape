@@ -123,6 +123,9 @@ class Agent:
     def getMooreNeighbors(self):
         return self.__mooreNeighbors
 
+    def getSex(self):
+        return self.__sex
+
     def getSocialNetwork(self):
         return self.__socialNetwork
 
@@ -168,6 +171,9 @@ class Agent:
 
     def setMooreNeighbors(self, mooreNeighbors):
         self.__mooreNeighbors = mooreNeighbors
+
+    def setSex(self, sex):
+        self.__sex = sex
 
     def setSocialNetwork(self, socialNetwork):
         self.__socialNetwork = socialNetwork

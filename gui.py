@@ -8,12 +8,15 @@ class GUI:
         self.__window = None
         self.__canvas = None
         self.__grid = [[None for j in range(screenWidth)]for i in range(screenHeight)]
-        self.__colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#BF8232", "agentNoSex": "#FA3232", "agentFemale": "#FA32FA", "agentMale": "#3232FA", "pollution": "#88C641"}
+        self.__colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#BF8232", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#88C641"}
         self.__widgets = {}
+        self.__lastSelectedAgentColor = None
+        self.__lastSelectedEnvironmentColor = None
+        self.__activeColorOptions = {"agent": None, "environment": None}
         self.configureWindow()
 
     def configureAgentColorNames(self):
-        return []
+        return ["Sex"]
 
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
@@ -29,10 +32,10 @@ class GUI:
         agentColorNames = self.configureAgentColorNames()
         agentColorNames.sort()
         agentColorNames.insert(0, "Default")
-        lastSelectedAgentColor = tkinter.StringVar(window)
-        lastSelectedAgentColor.set(agentColorNames[0])  # Default 
+        self.__lastSelectedAgentColor = tkinter.StringVar(window)
+        self.__lastSelectedAgentColor.set(agentColorNames[0])  # Default 
         for name in agentColorNames:
-            agentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=lastSelectedAgentColor, command=self.doAgentColorMenu, indicatoron=True)
+            agentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.__lastSelectedAgentColor, command=self.doAgentColorMenu, indicatoron=True)
         agentColorButton.grid(row=0, column=3, sticky="nsew")
 
         environmentColorButton = tkinter.Menubutton(window, text="Environment Coloring", relief=tkinter.RAISED)
@@ -41,10 +44,10 @@ class GUI:
         environmentColorNames = self.configureEnvironmentColorNames()
         environmentColorNames.sort()
         environmentColorNames.insert(0, "Default")
-        lastSelectedEnvironmentColor = tkinter.StringVar(window)
-        lastSelectedEnvironmentColor.set(environmentColorNames[0])  # Default 
+        self.__lastSelectedEnvironmentColor = tkinter.StringVar(window)
+        self.__lastSelectedEnvironmentColor.set(environmentColorNames[0])  # Default 
         for name in environmentColorNames:
-            environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
+            environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.__lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
         environmentColorButton.grid(row=0, column=4, sticky="nsew")
 
         statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.LEFT)
@@ -103,8 +106,8 @@ class GUI:
     def destroyGUI(self):
         self.__window.destroy()
 
-    def doAgentColorMenu(self):
-        return
+    def doAgentColorMenu(self, *args):
+        self.__activeColorOptions["agent"] = self.__lastSelectedAgentColor.get()
 
     def doClick(self, event):
         return
@@ -177,9 +180,12 @@ class GUI:
         return hexval
 
     def lookupFillColor(self, cell):
-        if cell.getAgent() == None:
+        agent = cell.getAgent()
+        if agent == None:
             return self.recolorByResourceAmount(cell, self.__colors["sugar"])
-        return self.__colors["agentNoSex"]
+        elif agent.getSex() != None and self.__activeColorOptions["agent"] == "Sex":
+            return self.__colors[agent.getSex()]
+        return self.__colors["noSex"]
 
     def recolorByResourceAmount(self, cell, fillColor):
         recolorFactor = cell.getCurrSugar() / self.__sugarscape.getEnvironment().getGlobalMaxSugar()
