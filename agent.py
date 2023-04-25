@@ -1,5 +1,6 @@
 import math
 import random
+import uuid
 
 class Agent:
     def __init__(self, agentID, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0):
@@ -12,7 +13,7 @@ class Agent:
         self.__age = 0
         self.__maxAge = maxAge
         self.__cellsInVision = []
-        self.__lastMoved = 0
+        self.__lastMoved = self.__cell.getEnvironment().getSugarscape().getTimestep()
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.__socialNetwork = {}
@@ -28,8 +29,25 @@ class Agent:
 
     def addChildToCell(self, mate, cell, endowment):
         print("Agents {0}, {1} reproducing to create child at {2} with endowment {3}.".format(str(self), str(mate), cell, str(endowment)))
-        return
+        #endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge]
+        childMetabolism = endowment[0]
+        childVision = endowment[1]
+        childMaxAge = endowment[2]
+        childStartingSugar = endowment[3]
+        childSex = endowment[4]
+        childFertilityAge = endowment[5]
+        childInfertilityAge = endowment[6]
+        child = self.Agent(uuid.uuid4(), cell, childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge)
+        if self.__sex == "female":
+            child.setMother(self)
+            child.setFather(mate)
+        else:
+            child.setFather(self)
+            child.setMother(mate)
+        return child
 
+    def addAgentToSocialNetwork(self, agentID):
+        self.__socialNetwork[agentID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
@@ -72,6 +90,15 @@ class Agent:
                     emptyCell = emptyCells.pop()
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
+                    self.__children.append(child)
+                    childID = child.getID()
+                    self.addToSocialNetwork(childID)
+                    neighbor.addToSocialNetwork(childID)
+                    neighbor.updateTimesVisitedFromAgent(self.__id)
+                    neighbor.updateTimesReproducedWithAgent(self.__id)
+                    self.updateTimesReproducedWithAgent(neighborID)
+                    self.__sugar -= math.ceil(self.__startingSugar / 2)
+                    neighbor.setSugar(neighbor.getSugar() - math.ceil(neighbor.getStartingSugar() / 2))
 
     def doTimestep(self):
         timestep = self.__cell.getEnvironment().getSugarscape().getTimestep()
@@ -132,7 +159,6 @@ class Agent:
 
     def findChildEndowment(self, mate):
         random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
-    #def __init__(self, agentID, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0):
         parentMetabolisms = [self.__metabolism, mate.getMetabolism()]
         parentVisions = [self.__vision, mate.getVision()]
         parentMaxAges = [self.__maxAge, mate.getMaxAge()]
@@ -248,6 +274,10 @@ class Agent:
     def setInfertilityAge(self, infertilityAge):
         self.__infertilityAge = infertilityAge
 
+    def setFather(self, father):
+        self.__parent["father"] = faother
+        self.__socialNetwork[father.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
+
     def setFertile(self, fertile):
         self.__fertile = fertile
 
@@ -265,6 +295,10 @@ class Agent:
 
     def setMooreNeighbors(self, mooreNeighbors):
         self.__mooreNeighbors = mooreNeighbors
+
+    def setMother(self, mother):
+        self.__parent["mother"] = mother
+        self.__socialNetwork[mother.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def setSex(self, sex):
         self.__sex = sex
@@ -309,6 +343,19 @@ class Agent:
                 self.__socialNetwork[neighborID]["timesVisited"] += 1
             else:
                 self.__socialNetwork[neighborID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
+
+    def updateTimesReproducedWithAgent(agentID):
+        if agentID not in self.__socialNetwork:
+            self.addToSocialNetwork(agentID)
+            self.updateTimesReproducedWithAgent()
+        else:
+            self.__socialNetwork[agentID]["timesReproduced"] += 1
+
+    def updateTimesVisitedFromAgent(agentID):
+        if agentID not in self.__socialNetwork:
+            self.addToSocialNetwork(agentID)
+        else:
+            self.__socialNetwork[agentID]["timesVisited"] += 1
 
     def updateVonNeumannNeighbors(self):
         self.__vonNeumannNeighbors["north"] = self.__cell.getNorthNeighbor().getAgent()
