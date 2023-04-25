@@ -75,7 +75,7 @@ class GUI:
                 self.__grid[i][j] = {"rectangle": self.__canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
 
     def configureEnvironmentColorNames(self):
-        return []
+        return ["Pollution"]
 
     def configureWindow(self):
         numMenuColumns = 5
@@ -113,7 +113,7 @@ class GUI:
         return
 
     def doEnvironmentColorMenu(self):
-        return
+        self.__activeColorOptions["environment"] = self.__lastSelectedEnvironmentColor.get()
 
     def doPlayButton(self):
         self.__sugarscape.setRun()
@@ -182,13 +182,23 @@ class GUI:
     def lookupFillColor(self, cell):
         agent = cell.getAgent()
         if agent == None:
-            return self.recolorByResourceAmount(cell, self.__colors["sugar"])
+            if self.__activeColorOptions["environment"] == "Pollution":
+                return self.recolorByResourceAmount(cell, self.__colors["pollution"])
+            else:
+                return self.recolorByResourceAmount(cell, self.__colors["sugar"])
         elif agent.getSex() != None and self.__activeColorOptions["agent"] == "Sex":
             return self.__colors[agent.getSex()]
         return self.__colors["noSex"]
 
     def recolorByResourceAmount(self, cell, fillColor):
-        recolorFactor = cell.getCurrSugar() / self.__sugarscape.getEnvironment().getGlobalMaxSugar()
+        recolorFactor = 0
+        if self.__activeColorOptions["environment"] == "Pollution":
+            # Since global max pollution changes at each timestep, set constant to prevent misleading recoloring of cells
+            maxPollution = 20
+            # Once a cell has exceeded the number of colors made possible with maxPollution, keep using the max color
+            recolorFactor = min(1, cell.getCurrPollution() / maxPollution)
+        else:
+            recolorFactor = cell.getCurrSugar() / self.__sugarscape.getEnvironment().getGlobalMaxSugar()
         subcolors = self.hexToInt(fillColor)
         i = 0
         for color in subcolors:

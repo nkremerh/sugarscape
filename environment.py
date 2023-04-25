@@ -41,6 +41,7 @@ class Environment:
 
     def doTimestep(self):
         self.updateSeasons()
+        self.updatePollution()
         self.doCellUpdate()
         rows = list(range(self.__height))
         columns = list(range(self.__width))

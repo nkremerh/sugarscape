@@ -14,31 +14,31 @@ import sys
 import uuid
 
 class Sugarscape:
-    def __init__(self, configOptions):
-        self.__configOptions = configOptions
-        self.__environment = environment.Environment(configOptions["environmentHeight"], configOptions["environmentWidth"], self, configOptions["environmentMaxSugar"], configOptions["environmentSugarRegrowRate"],
-                                                     configOptions["environmentSeasonInterval"], configOptions["environmentSeasonalGrowbackDelay"], configOptions["environmentConsumptionPollutionRate"],
-                                                     configOptions["environmentProductionPollutionRate"], configOptions["environmentPollutionDiffusionDelay"])
-        self.__environmentHeight = configOptions["environmentHeight"]
-        self.__environmentWidth = configOptions["environmentWidth"]
-        self.configureEnvironment(configOptions["environmentMaxSugar"])
+    def __init__(self, configuration):
+        self.__configuration = configuration
+        self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, configuration["environmentMaxSugar"], configuration["environmentSugarRegrowRate"],
+                                                     configuration["environmentSeasonInterval"], configuration["environmentSeasonalGrowbackDelay"], configuration["environmentConsumptionPollutionRate"],
+                                                     configuration["environmentProductionPollutionRate"], configuration["environmentPollutionDiffusionDelay"])
+        self.__environmentHeight = configuration["environmentHeight"]
+        self.__environmentWidth = configuration["environmentWidth"]
+        self.configureEnvironment(configuration["environmentMaxSugar"])
         self.__agents = []
-        self.configureAgents(configOptions["startingAgents"])
-        self.__gui = gui.GUI(self) if configOptions["headlessMode"] == False else None
+        self.configureAgents(configuration["startingAgents"])
+        self.__gui = gui.GUI(self) if configuration["headlessMode"] == False else None
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
         self.__timestep = 0
         self.__runtimeStats = {"timestep": 0, "agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                                "meanTradePrice": 0, "meanTradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
         self.__lastLoggedTimestep = 0
-        self.__log = open(configOptions["logfile"], 'a') if configOptions["logfile"] != None else None
+        self.__log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
 
     # TODO: Make more consistent with book, dispersion more tightly concentrated than in book (ref: pg. 22)
     def addSugarPeak(self, startX, startY, radius, maxCapacity):
         height = self.__environment.getHeight()
         width = self.__environment.getWidth()
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        seasons = True if self.__configOptions["environmentSeasonInterval"] > 0 else False
+        seasons = True if self.__configuration["environmentSeasonInterval"] > 0 else False
         for i in range(height):
             for j in range(width):
                 if self.__environment.getCell(i, j) == None:
@@ -58,7 +58,7 @@ class Sugarscape:
                     self.__environment.getCell(i, j).setCurrSugar(cellMaxCapacity)
  
     def configureAgents(self, numAgents):
-        configs = self.__configOptions
+        configs = self.__configuration
         startingAgents = configs["startingAgents"]
         metabolism = configs["agentMetabolism"]
         vision = configs["agentVision"]
@@ -147,6 +147,9 @@ class Sugarscape:
     def getAgents(self):
         return self.__agents
 
+    def getConfiguration(self):
+        return self.__configuration
+
     def getEnd(self):
         return self.__end
 
@@ -169,7 +172,7 @@ class Sugarscape:
         return self.__runtimeStats
 
     def getSeed(self):
-        return self.__configOptions["seed"]
+        return self.__configuration["seed"]
 
     def getTimestep(self):
         return self.__timestep
@@ -291,8 +294,8 @@ class Sugarscape:
         return endowments
 
     def replaceDeadAgents(self):
-        if self.__configOptions["agentReplacement"] == True and len(self.__agents) < self.__configOptions["startingAgents"]:
-            numReplacements = self.__configOptions["startingAgents"] - len(self.__agents)
+        if self.__configuration["agentReplacement"] == True and len(self.__agents) < self.__configuration["startingAgents"]:
+            numReplacements = self.__configuration["startingAgents"] - len(self.__agents)
             self.configureAgents(numReplacements)
             if self.__gui != None:
                 self.__gui.doTimestep()
@@ -402,15 +405,15 @@ class Sugarscape:
         string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__lastLoggedTimestep, len(self.__agents))
         return string
 
-def parseConfigFile(configFile, configOptions):
+def parseConfigFile(configFile, configuration):
     file = open(configFile)
     options = json.loads(file.read())
-    for opt in configOptions:
+    for opt in configuration:
         if opt in options:
-            configOptions[opt] = options[opt]
-    return configOptions
+            configuration[opt] = options[opt]
+    return configuration
 
-def parseOptions(configOptions):
+def parseOptions(configuration):
     commandLineArgs = sys.argv[1:]
     shortOptions = "ch:"
     longOptions = ["conf=", "help"]
@@ -425,10 +428,10 @@ def parseOptions(configOptions):
             if currVal == "":
                 print("No config file provided.")
                 printHelp()
-            parseConfigFile(currVal, configOptions)
+            parseConfigFile(currVal, configuration)
         elif currArg in ("-h", "--help"):
             printHelp()
-    return configOptions
+    return configuration
 
 def printHelp():
     print("Usage:\n\tpython sugarscape.py --conf config.json\n\nOptions:\n\t-c,--conf\tUse specified config file for simulation settings.\n\t-h,--help\tDisplay this message.")
@@ -436,16 +439,16 @@ def printHelp():
 
 if __name__ == "__main__":
     # Set default values for simulation configuration
-    configOptions = {"agentVision": [1, 6], "agentMetabolism": [1, 4], "agentStartingWealth": [1, 5], "startingAgents": 250, "agentReplacement": False,
+    configuration = {"agentVision": [1, 6], "agentMetabolism": [1, 4], "agentStartingWealth": [1, 5], "startingAgents": 250, "agentReplacement": False,
                      "agentMaxAge": [60, 100], "agentMaleToFemaleRatio": 1, "agentFemaleFertilityAge": [12, 15], "agentMaleFertilityAge": [12, 15],
                      "agentFemaleInfertilityAge": [40, 50], "agentMaleInfertilityAge": [50, 60],
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10,
                      "logfile": None, "seed": 12345, "headlessMode": False}
-    configOptions = parseOptions(configOptions)
-    random.seed(configOptions["seed"])
-    S = Sugarscape(configOptions)
+    configuration = parseOptions(configuration)
+    random.seed(configuration["seed"])
+    S = Sugarscape(configuration)
     print(str(S))
     S.runSimulation(1000)
     #print(str(S))
