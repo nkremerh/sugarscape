@@ -85,13 +85,9 @@ class Sugarscape:
             maxAgeHigh = -1
             maxAgeLow = -1
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
-        agentEndowments = self.randomizeAgentEndowments(initialAgents, maxVision, maxMetabolism, maxInitialWealth, maxAgeHigh, maxAgeLow,
+        agentEndowments = self.randomizeAgentEndowments(initialAgents, maxVision, maxMetabolism, maxInitialWealth, maxAgeHigh, maxAgeLow, maleToFemaleRatio,
                                                         minFemaleFertilityAge, minMaleFertilityAge, maxFemaleFertilityAge, maxMaleFertilityAge,
                                                         minFemaleInfertilityAge, minMaleInfertilityAge, maxFemaleInfertilityAge, maxMaleInfertilityAge)
-        sexDistributionCountdown = numAgents
-        # Determine count of male agents and set as switch for agent generation
-        if maleToFemaleRatio != None and maleToFemaleRatio != 0:
-            sexDistributionCountdown = math.floor(sexDistributionCountdown / (maleToFemaleRatio + 1)) * maleToFemaleRatio
         for i in range(numAgents):
             randX = random.randrange(self.__environmentHeight)
             randY = random.randrange(self.__environmentWidth)
@@ -103,16 +99,12 @@ class Sugarscape:
             currVision = agentEndowments[i][1]
             currMaxAge = agentEndowments[i][2]
             currWealth = agentEndowments[i][3]
+            currSex = agentEndowments[i][4]
+            currFertilityAge = agentEndowments[i][5]
+            currInfertilityAge = agentEndowments[i][6]
             # Generate random UUID for agent identification
             agentID = str(uuid.uuid4())
-            initial = None
-            if maleToFemaleRatio != None and maleToFemaleRatio != 0:
-                if sexDistributionCountdown == 0:
-                    initial = "female"
-                else:
-                    initial = "male"
-                    sexDistributionCountdown -= 1
-            a = agent.Agent(agentID, c, currMetabolism, currVision, currMaxAge, currWealth, initial)
+            a = agent.Agent(agentID, c, currMetabolism, currVision, currMaxAge, currWealth, currSex, currFertilityAge, currInfertilityAge)
             c.setAgent(a)
             self.__agents.append(a)
 
@@ -194,7 +186,7 @@ class Sugarscape:
             if self.__gui != None:
                 self.__gui.getWindow().update()
 
-    def randomizeAgentEndowments(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth, maxAgeHigh, maxAgeLow,
+    def randomizeAgentEndowments(self, numAgents, maxMetabolism, maxVision, maxInitialWealth, maxAgeHigh, maxAgeLow, maleToFemaleRatio,
                                  minFemaleFertilityAge, minMaleFertilityAge, maxFemaleFertilityAge, maxMaleFertilityAge,
                                  minFemaleInfertilityAge, minMaleInfertilityAge, maxFemaleInfertilityAge, maxMaleInfertilityAge):
         endowments = []
@@ -207,6 +199,7 @@ class Sugarscape:
         maleFertilityAges = []
         femaleInfertilityAges = []
         maleInfertilityAges = []
+        
         minMetabolism = min(1, maxMetabolism) # Accept 0 case
         minVision = min(1, maxVision) # Accept 0 case
         minWealth = min(1, maxInitialWealth) # Accept 0 case
@@ -218,7 +211,13 @@ class Sugarscape:
         currMaleFertilityAge = minMaleFertilityAge
         currFemaleInfertilityAge = minFemaleInfertilityAge
         currMaleInfertilityAge = minMaleInfertilityAge
-        for i in range(initialAgents):
+
+        sexDistributionCountdown = numAgents
+        # Determine count of male agents and set as switch for agent generation
+        if maleToFemaleRatio != None and maleToFemaleRatio != 0:
+            sexDistributionCountdown = math.floor(sexDistributionCountdown / (maleToFemaleRatio + 1)) * maleToFemaleRatio
+        
+        for i in range(numAgents):
             metabolisms.append(currMetabolism)
             visions.append(currVision)
             ages.append(currMaxAge)
@@ -235,6 +234,16 @@ class Sugarscape:
             currMaleFertilityAge += 1
             currFemaleInfertilityAge += 1
             currMaleInfertilityAge += 1
+
+            if maleToFemaleRatio != None and maleToFemaleRatio != 0:
+                if sexDistributionCountdown == 0:
+                    sexes.append("female")
+                else:
+                    sexes.append("male")
+                    sexDistributionCountdown -= 1
+            else:
+                sexes.append(None)
+
             if currMetabolism > maxMetabolism:
                 currMetabolism = minMetabolism
             if currVision > maxVision:
@@ -251,12 +260,23 @@ class Sugarscape:
                 currFemaleInfertilityAge = minFemaleInfertilityAge
             if currMaleInfertilityAge > maxMaleInfertilityAge:
                 currMaleInfertilityAge = minMaleInfertilityAge
+        
         random.shuffle(metabolisms)
         random.shuffle(visions)
         random.shuffle(ages)
         random.shuffle(initialWealths)
-        for i in range(initialAgents):
-            endowments.append([metabolisms[i], visions[i], ages[i], initialWealths[i]])
+        random.shuffle(sexes)
+        random.shuffle(femaleFertilityAges)
+        random.shuffle(maleFertilityAges)
+        random.shuffle(femaleInfertilityAges)
+        random.shuffle(maleInfertilityAges)
+        for i in range(numAgents):
+            if sexes[i] == "female":
+                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), initialWealths.pop(), sexes[i], femaleFertilityAges.pop(), femaleInfertilityAges.pop()])
+            elif sexes[i] == "male":
+                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), initialWealths.pop(), sexes[i], maleFertilityAges.pop(), maleInfertilityAges.pop()])
+            else:
+                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), initialWealths.pop(), sexes[i], 0, 0])
         return endowments
 
     def replaceDeadAgents(self):
@@ -406,7 +426,10 @@ def printHelp():
 if __name__ == "__main__":
     # Set default values for simulation configuration
     configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250, "agentReplacement": 0,
-                     "agentMaxAgeHigh": 100, "agentMaxAgeLow": 60, "agentMaleToFemaleRatio": 1,
+                     "agentMaxAgeHigh": 100, "agentMaxAgeLow": 60, "agentMaleToFemaleRatio": 1, "agentMinFemaleFertilityAge": 12,
+                     "agentMaxFemaleFertilityAge": 15, "agentMinMaleFertilityAge": 12, "agentMaxMaleFertilityAge": 15,
+                     "agentMinFemaleInfertilityAge": 40, "agentMinMaleInfertilityAge": 50, "agentMaxFemaleInfertilityAge": 50,
+                     "agentMaxMaleInfertilityAge": 60,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10,
