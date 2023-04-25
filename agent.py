@@ -1,3 +1,4 @@
+import math
 import random
 
 class Agent:
@@ -6,6 +7,7 @@ class Agent:
         self.__metabolism = metabolism
         self.__vision = vision
         self.__sugar = sugar
+        self.__startingSugar = sugar
         self.__alive = True
         self.__age = 0
         self.__maxAge = maxAge
@@ -19,9 +21,15 @@ class Agent:
         self.__sex = sex
         self.__fertilityAge = fertilityAge
         self.__infertilityAge = infertilityAge
+        self.__fertile = False
         self.__id = agentID
         # Debugging print statement
-        print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
+        #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
+
+    def addChildToCell(self, mate, cell, endowment):
+        print("Agents {0}, {1} reproducing to create child at {2} with endowment {3}.".format(str(self), str(mate), cell, str(endowment)))
+        return
+
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
@@ -44,6 +52,27 @@ class Agent:
             self.setAlive(False)
             self.unsetCell()
 
+    def doReproduction(self):
+        # Agent marked for removal should not reproduce
+        if self.__alive == False:
+            return
+        random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
+        neighborCells = self.__cell.getNeighbors()
+        random.shuffle(neighborCells)
+        emptyCells = []
+        for neighborCell in neighborCells:
+            if neighborCell.getAgent() == None:
+                emptyCells.append(neighborCell)
+        random.shuffle(emptyCells)
+        emptyCell = emptyCells[0] if len(emptyCells) > 0 else None
+        for neighborCell in neighborCells:
+            neighbor = neighborCell.getAgent()
+            if neighbor != None:
+                neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
+                if self.isFertile() == True and neighborCompatibility == True and emptyCell != None:
+                    childEndowment = self.findChildEndowment(neighbor)
+                    child = self.addChildToCell(neighbor, emptyCell, childEndowment)
+
     def doTimestep(self):
         timestep = self.__cell.getEnvironment().getSugarscape().getTimestep()
         # Prevent dead or already moved agent from moving
@@ -53,6 +82,7 @@ class Agent:
             self.updateNeighbors()
             self.collectResourcesAtCell()
             self.doMetabolism()
+            self.doReproduction()
             self.doAging()
 
     def findBestCellInVision(self):
@@ -97,8 +127,30 @@ class Agent:
                 southCells.append(southCells[-1].getSouthNeighbor())
                 eastCells.append(eastCells[-1].getEastNeighbor())
                 westCells.append(westCells[-1].getWestNeighbor())
-            # Keep only unique neighbors
+            # Keep only unique cells
             self.setCellsInVision(list(set(northCells + southCells + eastCells + westCells)))
+
+    def findChildEndowment(self, mate):
+        random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
+    #def __init__(self, agentID, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0):
+        parentMetabolisms = [self.__metabolism, mate.getMetabolism()]
+        parentVisions = [self.__vision, mate.getVision()]
+        parentMaxAges = [self.__maxAge, mate.getMaxAge()]
+        parentInfertilityAges = [self.__infertilityAge, mate.getInfertilityAge()]
+        parentFertilityAges = [self.__fertilityAge, mate.getFertilityAge()]
+        parentSexes = ["male", "female"]
+        startingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
+
+        childMetabolism = parentMetabolisms[random.randint(0, 1)]
+        childVision = parentVisions[random.randint(0, 1)]
+        childMaxAge = parentMaxAges[random.randint(0, 1)]
+        # TODO: Determine if fertility/infertility age should be inherited or use global configuration as random range
+        childInfertilityAge = parentInfertilityAges[random.randint(0, 1)]
+        childFertilityAge = parentFertilityAges[random.randint(0, 1)]
+        childSex = parentSexes[random.randint(0, 1)]
+        childStartingSugar = startingSugar
+        endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge]
+        return endowment
 
     def getAge(self):
         return self.__age
@@ -114,6 +166,15 @@ class Agent:
 
     def getEnvironment(self):
         return self.__cell.getEnvironment()
+
+    def getInfertilityAge(self):
+        return self.__infertilityAge
+
+    def getFertile(self):
+        return self.__fertile
+
+    def getFertilityAge(self):
+        return self.__fertilityAge
 
     def getID(self):
         return self.__id
@@ -133,6 +194,9 @@ class Agent:
     def getSocialNetwork(self):
         return self.__socialNetwork
 
+    def getStartingSugar(self):
+        return self.__startingSugar
+
     def getSugar(self):
         return self.__sugar
 
@@ -144,6 +208,23 @@ class Agent:
 
     def isAlive(self):
         return self.getAlive()
+
+    def isFertile(self):
+        if self.__sugar >= self.__startingSugar and self.__age >= self.__fertilityAge and self.__age < self.__infertilityAge:
+            return True
+        return False
+
+    def isNeighborReproductionCompatible(self, neighbor):
+        if neighbor == None:
+            return False
+        neighborSex = neighbor.getSex()
+        neighborFertility = neighbor.isFertile()
+        if self.__sex == "female" and (neighborSex == "male" and neighborFertility == True):
+            return True
+        elif self.__sex == "male" and (neighborSex == "female" and neighborFertility == True):
+            return True
+        else:
+            return False
 
     def moveToBestCellInVision(self):
         bestCell = self.findBestCellInVision()
@@ -163,6 +244,15 @@ class Agent:
 
     def setCellsInVision(self, cells):
         self.__cellsInVision = cells
+
+    def setInfertilityAge(self, infertilityAge):
+        self.__infertilityAge = infertilityAge
+
+    def setFertile(self, fertile):
+        self.__fertile = fertile
+
+    def setFertilityAge(self, fertilityAge):
+        self.__fertilityAge = fertilityAge
 
     def setID(self, agentID):
         self.__id = agentID
@@ -231,4 +321,4 @@ class Agent:
         self.__cell = None
 
     def __str__(self):
-        return "{0}".format(self.getSugar())
+        return "{0}".format(self.__id)

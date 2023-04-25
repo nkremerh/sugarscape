@@ -68,6 +68,8 @@ class Cell:
         return self.__maxSugar 
 
     def getNeighbors(self):
+        #if len(self.__neighbors) == 0:
+        self.setNeighbors()
         return self.__neighbors
 
     def getNorthNeighbor(self):
