@@ -23,9 +23,8 @@ class Sugarscape:
         self.__environmentWidth = configOptions["environmentWidth"]
         self.configureEnvironment(configOptions["environmentMaxSugar"])
         self.__agents = []
-        self.configureAgents(configOptions["initialAgents"], configOptions["agentMaxVision"], configOptions["agentMaxMetabolism"], configOptions["agentMaxInitialWealth"],
-                             configOptions["agentMaxAgeHigh"], configOptions["agentMaxAgeLow"], configOptions["initialMaleToFemaleRatio"])
-        self.__gui = gui.GUI(self)
+        self.configureAgents(configOptions["initialAgents"])
+        self.__gui = gui.GUI(self) if configOptions["headlessMode"] == False else None
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
         self.__timestep = 0
@@ -58,23 +57,42 @@ class Sugarscape:
                     self.__environment.getCell(i, j).setMaxSugar(cellMaxCapacity)
                     self.__environment.getCell(i, j).setCurrSugar(cellMaxCapacity)
  
-    def configureAgents(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth, maxAgeHigh, maxAgeLow, maleToFemaleRatio):
+    def configureAgents(self, numAgents):
+        configs = self.__configOptions
+        initialAgents = configs["initialAgents"]
+        maxMetabolism = configs["agentMaxMetabolism"]
+        maxVision = configs["agentMaxVision"]
+        maxInitialWealth = configs["agentMaxInitialWealth"]
+        maxAgeHigh = configs["agentMaxAgeHigh"]
+        maxAgeLow = configs["agentMaxAgeLow"]
+        maleToFemaleRatio = configs["agentMaleToFemaleRatio"]
+        minFemaleFertilityAge = configs["agentMinFemaleFertilityAge"]
+        minMaleFertilityAge = configs["agentMinMaleFertilityAge"]
+        maxFemaleFertilityAge = configs["agentMaxFemaleFertilityAge"]
+        maxMaleFertilityAge = configs["agentMaxMaleFertilityAge"]
+        minFemaleInfertilityAge = configs["agentMinFemaleInfertilityAge"]
+        minMaleInfertilityAge = configs["agentMinMaleInfertilityAge"]
+        maxFemaleInfertilityAge = configs["agentMaxFemaleInfertilityAge"]
+        maxMaleInfertilityAge = configs["agentMaxMaleInfertilityAge"]
         if self.__environment == None:
             return
         totalCells = self.__environmentHeight * self.__environmentWidth
-        if initialAgents > totalCells:
-            print("Could not allocate {0} agents. Allocating maximum of {1}.".format(initialAgents, totalCells))
-            initialAgents = totalCells
+        if numAgents > totalCells:
+            print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
+            numAgents = totalCells
         # Ensure infinitely-lived agents are properly initialized
         if maxAgeHigh < 0 or maxAgeLow < 0:
             maxAgeHigh = -1
             maxAgeLow = -1
-        agentEndowments = self.randomizeAgentEndowments(initialAgents, maxVision, maxMetabolism, maxInitialWealth, maxAgeHigh, maxAgeLow)
-        sexDistributionCountdown = initialAgents
+        # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
+        agentEndowments = self.randomizeAgentEndowments(initialAgents, maxVision, maxMetabolism, maxInitialWealth, maxAgeHigh, maxAgeLow,
+                                                        minFemaleFertilityAge, minMaleFertilityAge, maxFemaleFertilityAge, maxMaleFertilityAge,
+                                                        minFemaleInfertilityAge, minMaleInfertilityAge, maxFemaleInfertilityAge, maxMaleInfertilityAge)
+        sexDistributionCountdown = numAgents
         # Determine count of male agents and set as switch for agent generation
         if maleToFemaleRatio != None and maleToFemaleRatio != 0:
             sexDistributionCountdown = math.floor(sexDistributionCountdown / (maleToFemaleRatio + 1)) * maleToFemaleRatio
-        for i in range(initialAgents):
+        for i in range(numAgents):
             randX = random.randrange(self.__environmentHeight)
             randY = random.randrange(self.__environmentWidth)
             while self.__environment.getCell(randX, randY).getAgent() != None and len(self.__agents) <= (self.__environmentHeight * self.__environmentWidth):
@@ -120,9 +138,10 @@ class Sugarscape:
         for a in self.__agents:
             if a.isAlive() == False:
                 self.__agents.remove(a)
-        self.__gui.doTimestep()
-        self.__timestep += 1
+        if self.__gui != None:
+            self.__gui.doTimestep()
         print("Timestep: {0}".format(self.__timestep))
+        self.__timestep += 1
 
     def endLog(self):
         if self.__log == None:
@@ -172,14 +191,22 @@ class Sugarscape:
         while self.__run == False:
             if self.__end == True:
                 self.endSimulation()
-            self.__gui.getWindow().update()
+            if self.__gui != None:
+                self.__gui.getWindow().update()
 
-    def randomizeAgentEndowments(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth, maxAgeHigh, maxAgeLow):
+    def randomizeAgentEndowments(self, initialAgents, maxMetabolism, maxVision, maxInitialWealth, maxAgeHigh, maxAgeLow,
+                                 minFemaleFertilityAge, minMaleFertilityAge, maxFemaleFertilityAge, maxMaleFertilityAge,
+                                 minFemaleInfertilityAge, minMaleInfertilityAge, maxFemaleInfertilityAge, maxMaleInfertilityAge):
         endowments = []
         metabolisms = []
         visions = []
         ages = []
         initialWealths = []
+        sexes = []
+        femaleFertilityAges = []
+        maleFertilityAges = []
+        femaleInfertilityAges = []
+        maleInfertilityAges = []
         minMetabolism = min(1, maxMetabolism) # Accept 0 case
         minVision = min(1, maxVision) # Accept 0 case
         minWealth = min(1, maxInitialWealth) # Accept 0 case
@@ -187,15 +214,27 @@ class Sugarscape:
         currVision = random.randrange(minVision, maxVision + 1)
         currWealth = random.randrange(minWealth, maxInitialWealth + 1)
         currMaxAge = maxAgeLow
+        currFemaleFertilityAge = minFemaleFertilityAge
+        currMaleFertilityAge = minMaleFertilityAge
+        currFemaleInfertilityAge = minFemaleInfertilityAge
+        currMaleInfertilityAge = minMaleInfertilityAge
         for i in range(initialAgents):
             metabolisms.append(currMetabolism)
             visions.append(currVision)
             ages.append(currMaxAge)
             initialWealths.append(currWealth)
+            femaleFertilityAges.append(currFemaleFertilityAge)
+            maleFertilityAges.append(currMaleFertilityAge)
+            femaleInfertilityAges.append(currFemaleInfertilityAge)
+            maleInfertilityAges.append(currMaleInfertilityAge)
             currMetabolism += 1
             currVision += 1
             currMaxAge += 1
             currWealth += 1
+            currFemaleFertilityAge += 1
+            currMaleFertilityAge += 1
+            currFemaleInfertilityAge += 1
+            currMaleInfertilityAge += 1
             if currMetabolism > maxMetabolism:
                 currMetabolism = minMetabolism
             if currVision > maxVision:
@@ -204,6 +243,14 @@ class Sugarscape:
                 currMaxAge = maxAgeLow
             if currWealth > maxInitialWealth:
                 currWealth = minWealth
+            if currFemaleFertilityAge > maxFemaleFertilityAge:
+                currFemaleFertilityAge = minFemaleFertilityAge
+            if currMaleFertilityAge > maxMaleFertilityAge:
+                currMaleFertilityAge = minMaleFertilityAge
+            if currFemaleInfertilityAge > maxFemaleInfertilityAge:
+                currFemaleInfertilityAge = minFemaleInfertilityAge
+            if currMaleInfertilityAge > maxMaleInfertilityAge:
+                currMaleInfertilityAge = minMaleInfertilityAge
         random.shuffle(metabolisms)
         random.shuffle(visions)
         random.shuffle(ages)
@@ -215,19 +262,20 @@ class Sugarscape:
     def replaceDeadAgents(self):
         if len(self.__agents) < self.__configOptions["initialAgents"]:
             numReplacements = (self.__configOptions["initialAgents"] - len(self.__agents)) * self.__configOptions["agentReplacement"]
-            self.configureAgents(numReplacements, self.__configOptions["agentMaxVision"], self.__configOptions["agentMaxMetabolism"], self.__configOptions["agentMaxInitialWealth"],
-                                 self.__configOptions["agentMaxAgeHigh"], self.__configOptions["agentMaxAgeLow"], self.__configOptions["initialMaleToFemaleRatio"])
-            self.__gui.doTimestep()
+            self.configureAgents(numReplacements)
+            if self.__gui != None:
+                self.__gui.doTimestep()
 
     def runSimulation(self, timesteps=5):
         self.startLog()
-        self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
+        if self.__gui != None:
+            self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
         t = 0
         timesteps = timesteps - self.__timestep
         while t < timesteps:
             self.doTimestep()
             t += 1
-            if self.__run == False:
+            if self.__gui != None and self.__run == False:
                 self.pauseSimulation()
         self.endSimulation()
 
@@ -358,11 +406,11 @@ def printHelp():
 if __name__ == "__main__":
     # Set default values for simulation configuration
     configOptions = {"agentMaxVision": 6, "agentMaxMetabolism": 4, "agentMaxInitialWealth": 5, "initialAgents": 250, "agentReplacement": 0,
-                     "agentMaxAgeHigh": 100, "agentMaxAgeLow": 60, "initialMaleToFemaleRatio": 1,
+                     "agentMaxAgeHigh": 100, "agentMaxAgeLow": 60, "agentMaleToFemaleRatio": 1,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10,
-                     "logfile": None, "seed": 12345}
+                     "logfile": None, "seed": 12345, "headlessMode": False}
     configOptions = parseOptions(configOptions)
     random.seed(configOptions["seed"])
     S = Sugarscape(configOptions)

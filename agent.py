@@ -1,7 +1,7 @@
 import random
 
 class Agent:
-    def __init__(self, agentID, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None):
+    def __init__(self, agentID, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0):
         self.__cell = cell
         self.__metabolism = metabolism
         self.__vision = vision
@@ -14,10 +14,14 @@ class Agent:
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.__socialNetwork = {}
+        self.__parents = {"father": None, "mother": None}
+        self.__children = {}
         self.__sex = sex
+        self.__fertilityAge = fertilityAge
+        self.__infertilityAge = infertilityAge
         self.__id = agentID
         # Debugging print statement
-        #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex))
+        print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
@@ -214,7 +218,7 @@ class Agent:
                 self.__socialNetwork[neighborID]["lastSeen"] = self.__lastMoved
                 self.__socialNetwork[neighborID]["timesVisited"] += 1
             else:
-                self.__socialNetwork[neighborID] = {"lastSeen": self.__lastMoved, "timesVisited": 1}
+                self.__socialNetwork[neighborID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def updateVonNeumannNeighbors(self):
         self.__vonNeumannNeighbors["north"] = self.__cell.getNorthNeighbor().getAgent()

@@ -1,5 +1,6 @@
 {
     "__README__": "Default values for Sugarscape simulation provided here.",
+    "agentMaleToFemaleRatio": 1,
     "agentMaxInitialWealth": 5,
     "agentMaxMetabolism": 4,
     "agentMaxVision": 6,
@@ -23,8 +24,8 @@
     "environmentSeasonalGrowbackDelay": 0,
     "environmentSeasonInterval": 0,
     "environmentSugarRegrowRate": 1,
+    "headlessMode": false,
     "initialAgents": 250,
-    "initialMaleToFemaleRatio": 1,
     "logfile": "log.json",
     "seed": 12345
 }
