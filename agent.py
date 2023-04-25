@@ -64,12 +64,12 @@ class Agent:
             if neighborCell.getAgent() == None:
                 emptyCells.append(neighborCell)
         random.shuffle(emptyCells)
-        emptyCell = emptyCells[0] if len(emptyCells) > 0 else None
         for neighborCell in neighborCells:
             neighbor = neighborCell.getAgent()
             if neighbor != None:
                 neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
-                if self.isFertile() == True and neighborCompatibility == True and emptyCell != None:
+                if self.isFertile() == True and neighborCompatibility == True and len(emptyCells) != 0:
+                    emptyCell = emptyCells.pop()
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
 
