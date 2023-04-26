@@ -84,17 +84,15 @@ class Agent:
         random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
         neighborCells = self.__cell.getNeighbors()
         random.shuffle(neighborCells)
-        emptyCells = []
-        for neighborCell in neighborCells:
-            if neighborCell.getAgent() == None:
-                emptyCells.append(neighborCell)
-        random.shuffle(emptyCells)
+        emptyCells = self.findEmptyNeighborCells()
         for neighborCell in neighborCells:
             neighbor = neighborCell.getAgent()
             if neighbor != None:
                 neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
-                if self.isFertile() == True and neighborCompatibility == True and len(emptyCells) != 0:
-                    emptyCell = emptyCells.pop()
+                emptyCellsWithNeighbor = list(set(emptyCells + neighbor.findEmptyNeighborCells()))
+                random.shuffle(emptyCellsWithNeighbor)
+                if self.isFertile() == True and neighborCompatibility == True and len(emptyCellsWithNeighbor) != 0:
+                    emptyCell = emptyCellsWithNeighbor.pop()
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
                     self.__children.append(child)
@@ -185,6 +183,14 @@ class Agent:
         childStartingSugar = startingSugar
         endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge]
         return endowment
+
+    def findEmptyNeighborCells(self):
+        emptyCells = []
+        neighborCells = self.__cell.getNeighbors()
+        for neighborCell in neighborCells:
+            if neighborCell.getAgent() == None:
+                emptyCells.append(neighborCell)
+        return emptyCells
 
     def getAge(self):
         return self.__age
