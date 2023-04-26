@@ -102,6 +102,7 @@ class GUI:
 
         window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
         window.bind("<Escape>", self.doWindowClose)
+        window.bind("<space>", self.doPlayButton)
         canvas.bind("<Button-1>", self.doClick)
 
     def destroyGUI(self):
@@ -116,7 +117,7 @@ class GUI:
     def doEnvironmentColorMenu(self):
         self.__activeColorOptions["environment"] = self.__lastSelectedEnvironmentColor.get()
 
-    def doPlayButton(self):
+    def doPlayButton(self, *args):
         self.__sugarscape.setRun()
         self.__widgets["playButton"].config(text="  Play Simulation  " if self.__sugarscape.getRun() == False else "Pause Simulation")
 

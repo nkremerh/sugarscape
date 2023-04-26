@@ -21,6 +21,7 @@ class Agent:
         self.__socialNetwork = {}
         self.__parents = {"father": None, "mother": None}
         self.__children = []
+        self.__friends = []
         self.__sex = sex
         self.__fertilityAge = fertilityAge
         self.__infertilityAge = infertilityAge
@@ -53,6 +54,8 @@ class Agent:
         return child
 
     def addAgentToSocialNetwork(self, agentID):
+        if agentID in self.__socialNetwork:
+            return
         self.__socialNetwork[agentID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def collectResourcesAtCell(self):
@@ -157,8 +160,8 @@ class Agent:
         agentX = self.__cell.getX()
         agentY = self.__cell.getY()
         wraparound = self.__vision + 1
-        for i in range(len(self.__cellsInVision)):
-            currCell = self.__cellsInVision[i]
+        for currCell in self.__cellsInVision:
+            #currCell = self.__cellsInVision[i]
             # Either X or Y distance will be 0 due to cardinal direction movement only
             distanceX = (abs(agentX - currCell.getX()) % wraparound)
             distanceY = (abs(agentY - currCell.getY()) % wraparound)
@@ -201,7 +204,6 @@ class Agent:
         parentInfertilityAges = [self.__infertilityAge, mate.getInfertilityAge()]
         parentFertilityAges = [self.__fertilityAge, mate.getFertilityAge()]
         parentSexes = [self.__sex, mate.getSex()]
-        parentTags = [self.__tags, mate.getTags()]
         startingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
 
         childMetabolism = parentMetabolisms[random.randrange(2)]
@@ -211,7 +213,14 @@ class Agent:
         childInfertilityAge = parentInfertilityAges[random.randrange(2)]
         childFertilityAge = parentFertilityAges[random.randrange(2)]
         childSex = parentSexes[random.randrange(2)]
-        childTags = parentTags[random.randrange(2)]
+        childTags = []
+        mateTags = mate.getTags()
+        mismatchTags = [0, 1]
+        for i in range(len(self.__tags)):
+            if self.__tags[i] == mateTags[i]:
+                childTags.append(self.__tags[i])
+            else:
+                childTags.append(mismatchTags[random.randrange(2)])
         childStartingSugar = startingSugar
         endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge, childTags]
         return endowment
@@ -223,6 +232,14 @@ class Agent:
             if neighborCell.getAgent() == None:
                 emptyCells.append(neighborCell)
         return emptyCells
+
+    def findHammingDistanceInTags(self, neighbor):
+        neighborTags = neighbor.getTags()
+        hammingDistance = 0
+        for i in range(len(self.__tags)):
+            if self.__tags[i] != neighborTags[i]:
+                hammingDistance += 1
+        return hammingDistance
 
     def findTribe(self):
         if self.__tags == None:
@@ -292,6 +309,9 @@ class Agent:
 
     def getSugar(self):
         return self.__sugar
+
+    def getTag(self, position):
+        return self.__tags[position]
 
     def getTags(self):
         return self.__tags
@@ -397,6 +417,28 @@ class Agent:
     def setVonNeumannNeighbors(self, vonNeumannNeigbors):
         self.__vonNeumannNeighbors = vonNeumannNeighbors
 
+    def updateFriends(self, neighbor):
+        neighborID = neighbor.getID()
+        neighborHammingDistance = self.findHammingDistanceInTags(neighbor)
+        neighborEntry = {"friend": neighborID, "hammingDistance": neighborHammingDistance}
+        if len(self.__friends) < 5:
+            self.__friends.append(neighborEntry)
+        else:
+            maxHammingDistance = 0
+            maxDifferenceFriend = None
+            for friend in self.__friends:
+                # If already a friend, update Hamming Distance
+                if friend["friend"] == neighborID:
+                    self.__friends.remove(friend)
+                    self.__friends.append(neighborEntry)
+                    return
+                if friend["hammingDistance"] > maxHammingDistance:
+                    maxDistanceFriend = friend
+                    maxHammingDistance = friend["hammingDistance"]
+            if maxHammingDistance > neighborHammingDistance:
+                self.__friends.remove(maxDistanceFriend)
+                self.__friends.append(neighborEntry)
+
     def updateMooreNeighbors(self):
         for direction, neighbor in self.__vonNeumannNeighbors.items():
             self.__mooreNeighbors[direction] = neighbor
@@ -426,7 +468,8 @@ class Agent:
             if neighborID in self.__socialNetwork:
                 self.updateTimesVisitedFromAgent(neighborID, self.__lastMoved)
             else:
-                self.__socialNetwork[neighborID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
+                self.addAgentToSocialNetwork(neighborID)
+            self.updateFriends(neighbor)
 
     def updateTimesReproducedWithAgent(self, agentID, timestep):
         if agentID not in self.__socialNetwork:
