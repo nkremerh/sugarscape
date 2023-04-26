@@ -65,8 +65,20 @@ class Agent:
         self.__age += 1
         # Die if reached max age and if not infinitely-lived
         if self.__age >= self.__maxAge and self.__maxAge != -1:
-            self.setAlive(False)
-            self.unsetCell()
+            self.doDeath()
+
+    def doDeath(self):
+        self.setAlive(False)
+        self.unsetCell()
+        livingChildren = []
+        # Provide inheritance for living children
+        for child in self.__children:
+            if child.isAlive() == True:
+                livingChildren.append(child)
+        if len(livingChildren) > 0:
+            inheritancePerChild = math.floor(self.__sugar / len(livingChildren))
+            for child in livingChildren:
+                child.setSugar(child.getSugar() + inheritancePerChild)
 
     def doMetabolism(self):
         if self.__alive == False:
