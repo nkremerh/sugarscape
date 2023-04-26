@@ -3,7 +3,7 @@ import random
 import uuid
 
 class Agent:
-    def __init__(self, agentID, birthday, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0):
+    def __init__(self, agentID, birthday, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0, tags=None):
         self.__id = agentID
         self.__born = birthday
         self.__cell = cell
@@ -25,6 +25,7 @@ class Agent:
         self.__fertilityAge = fertilityAge
         self.__infertilityAge = infertilityAge
         self.__fertile = False
+        self.__tags = tags
         # Debugging print statement
         #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
@@ -36,9 +37,10 @@ class Agent:
         childSex = endowment[4]
         childFertilityAge = endowment[5]
         childInfertilityAge = endowment[6]
+        childTags = endowment[7]
         sugarscape = self.__cell.getEnvironment().getSugarscape()
         timestep = sugarscape.getTimestep()
-        child = Agent(uuid.uuid4(), timestep, cell, childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge)
+        child = Agent(uuid.uuid4(), timestep, cell, childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge, childTags)
         child.setCell(cell)
         sugarscape.addAgent(child)
         if self.__sex == "female":
@@ -72,6 +74,7 @@ class Agent:
         self.unsetCell()
         livingChildren = []
         # Provide inheritance for living children
+        # TODO: Determine complexity of other inheritance mechanisms in book (pg. 67)
         for child in self.__children:
             if child.isAlive() == True:
                 livingChildren.append(child)
@@ -118,6 +121,18 @@ class Agent:
                     self.__sugar -= math.ceil(self.__startingSugar / 2)
                     neighbor.setSugar(neighbor.getSugar() - math.ceil(neighbor.getStartingSugar() / 2))
 
+    def doTagging(self):
+        if self.__tags == None or self.__alive == False:
+            return
+        neighborCells = self.__cell.getNeighbors()
+        random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
+        random.shuffle(neighborCells)
+        for neighborCell in neighborCells:
+            neighbor = neighborCell.getAgent()
+            if neighbor != None:
+                position = random.randrange(len(self.__tags))
+                neighbor.setTag(position, self.__tags[position])
+
     def doTimestep(self):
         timestep = self.__cell.getEnvironment().getSugarscape().getTimestep()
         # Prevent dead or already moved agent from moving
@@ -127,6 +142,7 @@ class Agent:
             self.updateNeighbors()
             self.collectResourcesAtCell()
             self.doMetabolism()
+            self.doTagging()
             self.doReproduction()
             self.doAging()
 
@@ -183,17 +199,19 @@ class Agent:
         parentInfertilityAges = [self.__infertilityAge, mate.getInfertilityAge()]
         parentFertilityAges = [self.__fertilityAge, mate.getFertilityAge()]
         parentSexes = [self.__sex, mate.getSex()]
+        parentTags = [self.__tags, mate.getTags()]
         startingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
 
-        childMetabolism = parentMetabolisms[random.randrange(0, 2)]
-        childVision = parentVisions[random.randrange(0, 2)]
-        childMaxAge = parentMaxAges[random.randrange(0, 2)]
+        childMetabolism = parentMetabolisms[random.randrange(2)]
+        childVision = parentVisions[random.randrange(2)]
+        childMaxAge = parentMaxAges[random.randrange(2)]
         # TODO: Determine if fertility/infertility age should be inherited or use global configuration as random range
-        childInfertilityAge = parentInfertilityAges[random.randrange(0, 2)]
-        childFertilityAge = parentFertilityAges[random.randrange(0, 2)]
-        childSex = parentSexes[random.randrange(0, 2)]
+        childInfertilityAge = parentInfertilityAges[random.randrange(2)]
+        childFertilityAge = parentFertilityAges[random.randrange(2)]
+        childSex = parentSexes[random.randrange(2)]
+        childTags = parentTags[random.randrange(2)]
         childStartingSugar = startingSugar
-        endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge]
+        endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge, childTags]
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -222,6 +240,9 @@ class Agent:
     def getInfertilityAge(self):
         return self.__infertilityAge
 
+    def getFather(self):
+        return self.__parents["father"]
+
     def getFertile(self):
         return self.__fertile
 
@@ -240,6 +261,9 @@ class Agent:
     def getMooreNeighbors(self):
         return self.__mooreNeighbors
 
+    def getMother(self):
+        return self.__parents["mother"]
+
     def getSex(self):
         return self.__sex
 
@@ -251,6 +275,9 @@ class Agent:
 
     def getSugar(self):
         return self.__sugar
+
+    def getTags(self):
+        return self.__tags
 
     def getVision(self):
         return self.__vision
@@ -334,6 +361,12 @@ class Agent:
 
     def setSugar(self, sugar):
         self.__sugar = sugar
+
+    def setTag(self, position, value):
+        self.__tags[position] = value
+
+    def setTags(self, tags):
+        self.__tags = tags
 
     def setVision(self, vision):
         self.__vision = vision

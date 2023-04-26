@@ -72,6 +72,7 @@ class Sugarscape:
         maleFertilityAge = configs["agentMaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         maleInfertilityAge = configs["agentMaleInfertilityAge"]
+        tagStringLength = configs["agentTagStringLength"]
 
         if self.__environment == None:
             return
@@ -85,7 +86,8 @@ class Sugarscape:
             maxAge[1] = -1
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(startingAgents, metabolism, vision, startingWealth, maxAge, maleToFemaleRatio,
-                                                        femaleFertilityAge, maleFertilityAge, femaleInfertilityAge, maleInfertilityAge)
+                                                        femaleFertilityAge, maleFertilityAge, femaleInfertilityAge, maleInfertilityAge,
+                                                        tagStringLength)
         for i in range(numAgents):
             randX = random.randrange(self.__environmentHeight)
             randY = random.randrange(self.__environmentWidth)
@@ -100,9 +102,10 @@ class Sugarscape:
             currSex = agentEndowments[i][4]
             currFertilityAge = agentEndowments[i][5]
             currInfertilityAge = agentEndowments[i][6]
+            currTags = agentEndowments[i][7]
             # Generate random UUID for agent identification
             agentID = str(uuid.uuid4())
-            a = agent.Agent(agentID, self.__timestep, c, currMetabolism, currVision, currMaxAge, currWealth, currSex, currFertilityAge, currInfertilityAge)
+            a = agent.Agent(agentID, self.__timestep, c, currMetabolism, currVision, currMaxAge, currWealth, currSex, currFertilityAge, currInfertilityAge, currTags)
             c.setAgent(a)
             self.__agents.append(a)
 
@@ -188,7 +191,8 @@ class Sugarscape:
                 self.__gui.getWindow().update()
 
     def randomizeAgentEndowments(self, numAgents, metabolism, vision, startingWealth, maxAge, maleToFemaleRatio,
-                                 femaleFertilityAge, maleFertilityAge, femaleInfertilityAge, maleInfertilityAge):
+                                 femaleFertilityAge, maleFertilityAge, femaleInfertilityAge, maleInfertilityAge,
+                                 tagStringLength):
         endowments = []
         metabolisms = []
         visions = []
@@ -199,6 +203,7 @@ class Sugarscape:
         maleFertilityAges = []
         femaleInfertilityAges = []
         maleInfertilityAges = []
+        tags = []
         
         minMetabolism = metabolism[0]
         minVision = vision[0]
@@ -243,6 +248,7 @@ class Sugarscape:
             maleFertilityAges.append(currMaleFertilityAge)
             femaleInfertilityAges.append(currFemaleInfertilityAge)
             maleInfertilityAges.append(currMaleInfertilityAge)
+            tags.append([random.randrange(2) for i in range(tagStringLength)])
             currMetabolism += 1
             currVision += 1
             currMaxAge += 1
@@ -289,11 +295,11 @@ class Sugarscape:
         random.shuffle(maleInfertilityAges)
         for i in range(numAgents):
             if sexes[i] == "female":
-                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], femaleFertilityAges.pop(), femaleInfertilityAges.pop()])
+                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], femaleFertilityAges.pop(), femaleInfertilityAges.pop(), tags.pop()])
             elif sexes[i] == "male":
-                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], maleFertilityAges.pop(), maleInfertilityAges.pop()])
+                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], maleFertilityAges.pop(), maleInfertilityAges.pop(), tags.pop()])
             else:
-                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], 0, 0])
+                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], 0, 0, tags.pop()])
         return endowments
 
     def replaceDeadAgents(self):
@@ -444,7 +450,7 @@ if __name__ == "__main__":
     # Set default values for simulation configuration
     configuration = {"agentVision": [1, 6], "agentMetabolism": [1, 4], "agentStartingWealth": [1, 5], "startingAgents": 250, "agentReplacement": False,
                      "agentMaxAge": [60, 100], "agentMaleToFemaleRatio": 1, "agentFemaleFertilityAge": [12, 15], "agentMaleFertilityAge": [12, 15],
-                     "agentFemaleInfertilityAge": [40, 50], "agentMaleInfertilityAge": [50, 60],
+                     "agentFemaleInfertilityAge": [40, 50], "agentMaleInfertilityAge": [50, 60], "agentTagStringLength": 11,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10,

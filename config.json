@@ -10,6 +10,7 @@
     "agentStartingWealth": [50, 100],
     "agentVision": [1, 6],
     "agentReplacement": false,
+    "agentTagStringLength": 11,
     "environmentHeight": 50,
     "environmentWidth": 50,
     "environmentMaxSugar": 4,
