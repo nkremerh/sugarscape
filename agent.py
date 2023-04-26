@@ -26,6 +26,7 @@ class Agent:
         self.__infertilityAge = infertilityAge
         self.__fertile = False
         self.__tags = tags
+        self.__tribe = self.findTribe()
         # Debugging print statement
         #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
@@ -132,6 +133,7 @@ class Agent:
             if neighbor != None:
                 position = random.randrange(len(self.__tags))
                 neighbor.setTag(position, self.__tags[position])
+                neighbor.setTribe(neighbor.findTribe())
 
     def doTimestep(self):
         timestep = self.__cell.getEnvironment().getSugarscape().getTimestep()
@@ -222,6 +224,21 @@ class Agent:
                 emptyCells.append(neighborCell)
         return emptyCells
 
+    def findTribe(self):
+        if self.__tags == None:
+            return None
+        zeroes = 0
+        tribeCutoff = math.floor(len(self.__tags) / 3)
+        for tag in self.__tags:
+            if tag == 0:
+                zeroes += 1
+        if zeroes < tribeCutoff + 1:
+            return "green"
+        elif zeroes < (2 * tribeCutoff) + 1:
+            return "blue"
+        else:
+            return "red"
+
     def getAge(self):
         return self.__age
 
@@ -278,6 +295,9 @@ class Agent:
 
     def getTags(self):
         return self.__tags
+
+    def getTribe(self):
+        return self.__tribe
 
     def getVision(self):
         return self.__vision
@@ -367,6 +387,9 @@ class Agent:
 
     def setTags(self, tags):
         self.__tags = tags
+
+    def setTribe(self, tribe):
+        self.__tribe = tribe
 
     def setVision(self, vision):
         self.__vision = vision

@@ -8,7 +8,8 @@ class GUI:
         self.__window = None
         self.__canvas = None
         self.__grid = [[None for j in range(screenWidth)]for i in range(screenHeight)]
-        self.__colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#BF8232", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#88C641"}
+        self.__colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#BF8232", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
+                         "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232"}
         self.__widgets = {}
         self.__lastSelectedAgentColor = None
         self.__lastSelectedEnvironmentColor = None
@@ -16,7 +17,7 @@ class GUI:
         self.configureWindow()
 
     def configureAgentColorNames(self):
-        return ["Sex"]
+        return ["Sex", "Tribes"]
 
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
@@ -188,6 +189,8 @@ class GUI:
                 return self.recolorByResourceAmount(cell, self.__colors["sugar"])
         elif agent.getSex() != None and self.__activeColorOptions["agent"] == "Sex":
             return self.__colors[agent.getSex()]
+        elif agent.getTribe() != None and self.__activeColorOptions["agent"] == "Tribes":
+            return self.__colors[agent.getTribe()]
         return self.__colors["noSex"]
 
     def recolorByResourceAmount(self, cell, fillColor):
