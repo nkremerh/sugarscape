@@ -16,6 +16,7 @@ import uuid
 class Sugarscape:
     def __init__(self, configuration):
         self.__configuration = configuration
+        self.__timestep = 0
         self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, configuration["environmentMaxSugar"], configuration["environmentSugarRegrowRate"],
                                                      configuration["environmentSeasonInterval"], configuration["environmentSeasonalGrowbackDelay"], configuration["environmentConsumptionPollutionRate"],
                                                      configuration["environmentProductionPollutionRate"], configuration["environmentPollutionDiffusionDelay"])
@@ -27,11 +28,13 @@ class Sugarscape:
         self.__gui = gui.GUI(self) if configuration["headlessMode"] == False else None
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
-        self.__timestep = 0
         self.__runtimeStats = {"timestep": 0, "agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                                "meanTradePrice": 0, "meanTradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
         self.__lastLoggedTimestep = 0
         self.__log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
+
+    def addAgent(self, agent):
+        self.__agents.append(agent)
 
     # TODO: Make more consistent with book, dispersion more tightly concentrated than in book (ref: pg. 22)
     def addSugarPeak(self, startX, startY, radius, maxCapacity):
@@ -69,7 +72,7 @@ class Sugarscape:
         maleFertilityAge = configs["agentMaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         maleInfertilityAge = configs["agentMaleInfertilityAge"]
-        
+
         if self.__environment == None:
             return
         totalCells = self.__environmentHeight * self.__environmentWidth
@@ -99,7 +102,7 @@ class Sugarscape:
             currInfertilityAge = agentEndowments[i][6]
             # Generate random UUID for agent identification
             agentID = str(uuid.uuid4())
-            a = agent.Agent(agentID, c, currMetabolism, currVision, currMaxAge, currWealth, currSex, currFertilityAge, currInfertilityAge)
+            a = agent.Agent(agentID, self.__timestep, c, currMetabolism, currVision, currMaxAge, currWealth, currSex, currFertilityAge, currInfertilityAge)
             c.setAgent(a)
             self.__agents.append(a)
 
@@ -306,7 +309,7 @@ class Sugarscape:
             self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
         t = 0
         timesteps = timesteps - self.__timestep
-        while t < timesteps:
+        while t <= timesteps:
             self.doTimestep()
             t += 1
             if self.__gui != None and self.__run == False:

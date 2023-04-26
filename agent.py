@@ -3,7 +3,9 @@ import random
 import uuid
 
 class Agent:
-    def __init__(self, agentID, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0):
+    def __init__(self, agentID, birthday, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0):
+        self.__id = agentID
+        self.__born = birthday
         self.__cell = cell
         self.__metabolism = metabolism
         self.__vision = vision
@@ -13,23 +15,20 @@ class Agent:
         self.__age = 0
         self.__maxAge = maxAge
         self.__cellsInVision = []
-        self.__lastMoved = self.__cell.getEnvironment().getSugarscape().getTimestep()
+        self.__lastMoved = birthday
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.__socialNetwork = {}
         self.__parents = {"father": None, "mother": None}
-        self.__children = {}
+        self.__children = []
         self.__sex = sex
         self.__fertilityAge = fertilityAge
         self.__infertilityAge = infertilityAge
         self.__fertile = False
-        self.__id = agentID
         # Debugging print statement
         #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
     def addChildToCell(self, mate, cell, endowment):
-        print("Agents {0}, {1} reproducing to create child at {2} with endowment {3}.".format(str(self), str(mate), cell, str(endowment)))
-        #endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge]
         childMetabolism = endowment[0]
         childVision = endowment[1]
         childMaxAge = endowment[2]
@@ -37,7 +36,11 @@ class Agent:
         childSex = endowment[4]
         childFertilityAge = endowment[5]
         childInfertilityAge = endowment[6]
-        child = self.Agent(uuid.uuid4(), cell, childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge)
+        sugarscape = self.__cell.getEnvironment().getSugarscape()
+        timestep = sugarscape.getTimestep()
+        child = Agent(uuid.uuid4(), timestep, cell, childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge)
+        child.setCell(cell)
+        sugarscape.addAgent(child)
         if self.__sex == "female":
             child.setMother(self)
             child.setFather(mate)
@@ -47,7 +50,7 @@ class Agent:
         return child
 
     def addAgentToSocialNetwork(self, agentID):
-        self.__socialNetwork[agentID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
+        self.__socialNetwork[agentID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
@@ -57,6 +60,8 @@ class Agent:
             self.__cell.resetSugar()
 
     def doAging(self):
+        if self.__alive == False:
+            return
         self.__age += 1
         # Die if reached max age and if not infinitely-lived
         if self.__age >= self.__maxAge and self.__maxAge != -1:
@@ -64,6 +69,8 @@ class Agent:
             self.unsetCell()
 
     def doMetabolism(self):
+        if self.__alive == False:
+            return
         self.__sugar = self.__sugar - self.__metabolism
         self.__cell.doConsumptionPollution(self.__metabolism)
         if self.__sugar < 1:
@@ -92,18 +99,19 @@ class Agent:
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
                     self.__children.append(child)
                     childID = child.getID()
-                    self.addToSocialNetwork(childID)
-                    neighbor.addToSocialNetwork(childID)
-                    neighbor.updateTimesVisitedFromAgent(self.__id)
-                    neighbor.updateTimesReproducedWithAgent(self.__id)
-                    self.updateTimesReproducedWithAgent(neighborID)
+                    neighborID = neighbor.getID()
+                    self.addAgentToSocialNetwork(childID)
+                    neighbor.addAgentToSocialNetwork(childID)
+                    neighbor.updateTimesVisitedFromAgent(self.__id, self.__lastMoved)
+                    neighbor.updateTimesReproducedWithAgent(self.__id, self.__lastMoved)
+                    self.updateTimesReproducedWithAgent(neighborID, self.__lastMoved)
                     self.__sugar -= math.ceil(self.__startingSugar / 2)
                     neighbor.setSugar(neighbor.getSugar() - math.ceil(neighbor.getStartingSugar() / 2))
 
     def doTimestep(self):
         timestep = self.__cell.getEnvironment().getSugarscape().getTimestep()
         # Prevent dead or already moved agent from moving
-        if self.__alive == True and self.__lastMoved != timestep: 
+        if self.__alive == True and self.__lastMoved != timestep:
             self.__lastMoved = timestep
             self.moveToBestCellInVision()
             self.updateNeighbors()
@@ -164,16 +172,16 @@ class Agent:
         parentMaxAges = [self.__maxAge, mate.getMaxAge()]
         parentInfertilityAges = [self.__infertilityAge, mate.getInfertilityAge()]
         parentFertilityAges = [self.__fertilityAge, mate.getFertilityAge()]
-        parentSexes = ["male", "female"]
+        parentSexes = [self.__sex, mate.getSex()]
         startingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
 
-        childMetabolism = parentMetabolisms[random.randint(0, 1)]
-        childVision = parentVisions[random.randint(0, 1)]
-        childMaxAge = parentMaxAges[random.randint(0, 1)]
+        childMetabolism = parentMetabolisms[random.randrange(0, 2)]
+        childVision = parentVisions[random.randrange(0, 2)]
+        childMaxAge = parentMaxAges[random.randrange(0, 2)]
         # TODO: Determine if fertility/infertility age should be inherited or use global configuration as random range
-        childInfertilityAge = parentInfertilityAges[random.randint(0, 1)]
-        childFertilityAge = parentFertilityAges[random.randint(0, 1)]
-        childSex = parentSexes[random.randint(0, 1)]
+        childInfertilityAge = parentInfertilityAges[random.randrange(0, 2)]
+        childFertilityAge = parentFertilityAges[random.randrange(0, 2)]
+        childSex = parentSexes[random.randrange(0, 2)]
         childStartingSugar = startingSugar
         endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge]
         return endowment
@@ -275,7 +283,7 @@ class Agent:
         self.__infertilityAge = infertilityAge
 
     def setFather(self, father):
-        self.__parent["father"] = faother
+        self.__parents["father"] = father
         self.__socialNetwork[father.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def setFertile(self, fertile):
@@ -297,7 +305,7 @@ class Agent:
         self.__mooreNeighbors = mooreNeighbors
 
     def setMother(self, mother):
-        self.__parent["mother"] = mother
+        self.__parents["mother"] = mother
         self.__socialNetwork[mother.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def setSex(self, sex):
@@ -305,6 +313,9 @@ class Agent:
 
     def setSocialNetwork(self, socialNetwork):
         self.__socialNetwork = socialNetwork
+
+    def setSugar(self, sugar):
+        self.__sugar = sugar
 
     def setVision(self, vision):
         self.__vision = vision
@@ -339,23 +350,24 @@ class Agent:
                 continue
             neighborID = neighbor.getID()
             if neighborID in self.__socialNetwork:
-                self.__socialNetwork[neighborID]["lastSeen"] = self.__lastMoved
-                self.__socialNetwork[neighborID]["timesVisited"] += 1
+                self.updateTimesVisitedFromAgent(neighborID, self.__lastMoved)
             else:
                 self.__socialNetwork[neighborID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
-    def updateTimesReproducedWithAgent(agentID):
+    def updateTimesReproducedWithAgent(self, agentID, timestep):
         if agentID not in self.__socialNetwork:
             self.addToSocialNetwork(agentID)
-            self.updateTimesReproducedWithAgent()
+            self.updateTimesReproducedWithAgent(agentID, timestep)
         else:
             self.__socialNetwork[agentID]["timesReproduced"] += 1
+            self.__socialNetwork[agentID]["lastSeen"] = timestep
 
-    def updateTimesVisitedFromAgent(agentID):
+    def updateTimesVisitedFromAgent(self, agentID, timestep):
         if agentID not in self.__socialNetwork:
-            self.addToSocialNetwork(agentID)
+            self.addAgentToSocialNetwork(agentID)
         else:
             self.__socialNetwork[agentID]["timesVisited"] += 1
+            self.__socialNetwork[agentID]["lastSeen"] = timestep
 
     def updateVonNeumannNeighbors(self):
         self.__vonNeumannNeighbors["north"] = self.__cell.getNorthNeighbor().getAgent()
