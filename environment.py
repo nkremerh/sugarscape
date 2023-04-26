@@ -3,7 +3,8 @@ import random
 
 class Environment:
     # Assumption: grid is always indexed by [height][width]
-    def __init__(self, height, width, sugarscape, globalMaxSugar=0, sugarRegrowRate=0, seasonInterval=0, seasonalGrowbackDelay=0, consumptionPollutionRate=0, productionPollutionRate=0, pollutionDiffusionDelay=0):
+    def __init__(self, height, width, sugarscape, globalMaxSugar=0, sugarRegrowRate=0, seasonInterval=0, seasonalGrowbackDelay=0,
+                 consumptionPollutionRate=0, productionPollutionRate=0, pollutionDiffusionDelay=0, maxCombatLoot=0):
         self.__width = width
         self.__height = height
         self.__globalMaxSugar = globalMaxSugar
@@ -19,6 +20,7 @@ class Environment:
         self.__pollutionDiffusionCountdown = pollutionDiffusionDelay
         self.__consumptionPollutionRate = consumptionPollutionRate
         self.__productionPollutionRate = productionPollutionRate
+        self.__maxCombatLoot = maxCombatLoot
         # Populate grid with NoneType objects
         self.__grid = [[None for j in range(width)]for i in range(height)]
 
@@ -70,6 +72,9 @@ class Environment:
     def getHeight(self):
         return self.__height
 
+    def getMaxCombatLoot(self):
+        return self.__maxCombatLoot
+
     def getPollutionDiffusionCountdown(self):
         return self.__pollutionDiffusionCountdown
 
@@ -119,6 +124,9 @@ class Environment:
 
     def setHeight(self, height):
         self.__height = height
+
+    def setMaxCombatLoot(self, maxCombatLoot):
+        self.__maxCombatLoot = maxCombatLoot
 
     def setPollutionDiffusionCountdown(self, pollutionDiffusionCountdown):
         self.__pollutionDiffusionCountdown = pollutionDiffusionCountdown

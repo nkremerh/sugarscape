@@ -3,7 +3,7 @@ import random
 import uuid
 
 class Agent:
-    def __init__(self, agentID, birthday, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0, tags=None):
+    def __init__(self, agentID, birthday, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0, tags=None, aggressionFactor=0):
         self.__id = agentID
         self.__born = birthday
         self.__cell = cell
@@ -28,6 +28,8 @@ class Agent:
         self.__fertile = False
         self.__tags = tags
         self.__tribe = self.findTribe()
+        self.__aggression = aggressionFactor
+        self.__wealth = sugar
         # Debugging print statement
         #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
@@ -40,9 +42,11 @@ class Agent:
         childFertilityAge = endowment[5]
         childInfertilityAge = endowment[6]
         childTags = endowment[7]
+        childAggression = endowment[8]
         sugarscape = self.__cell.getEnvironment().getSugarscape()
         timestep = sugarscape.getTimestep()
-        child = Agent(uuid.uuid4(), timestep, cell, childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge, childTags)
+        child = Agent(uuid.uuid4(), timestep, cell, childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge,
+                      childInfertilityAge, childTags, childAggression)
         child.setCell(cell)
         sugarscape.addAgent(child)
         if self.__sex == "female":
@@ -62,6 +66,7 @@ class Agent:
         if self.__cell != None:
             sugarCollected = self.__cell.getCurrSugar()
             self.__sugar = self.__sugar + sugarCollected
+            self.__wealth = self.__sugar + sugarCollected
             self.__cell.doProductionPollution(sugarCollected)
             self.__cell.resetSugar()
 
@@ -73,6 +78,18 @@ class Agent:
         if self.__age >= self.__maxAge and self.__maxAge != -1:
             self.doDeath()
 
+    def doCombat(self, cell):
+        prey = cell.getAgent()
+        if prey != None:
+            maxCombatLoot = self.__cell.getEnvironment().getMaxCombatLoot()
+            preyWealth = prey.getWealth()
+            combatLoot = min(maxCombatLoot, preyWealth)
+            self.__sugar += combatLoot
+            self.__wealth += combatLoot
+            prey.setSugar(preyWealth - combatLoot)
+            prey.doDeath()
+        self.setCell(cell)
+
     def doDeath(self):
         self.setAlive(False)
         self.unsetCell()
@@ -83,9 +100,9 @@ class Agent:
             if child.isAlive() == True:
                 livingChildren.append(child)
         if len(livingChildren) > 0:
-            inheritancePerChild = math.floor(self.__sugar / len(livingChildren))
+            inheritancePerChild = math.floor(self.__wealth / len(livingChildren))
             for child in livingChildren:
-                child.setSugar(child.getSugar() + inheritancePerChild)
+                child.setSugar(child.getWealth() + inheritancePerChild)
 
     def doMetabolism(self):
         if self.__alive == False:
@@ -123,7 +140,7 @@ class Agent:
                     neighbor.updateTimesReproducedWithAgent(self.__id, self.__lastMoved)
                     self.updateTimesReproducedWithAgent(neighborID, self.__lastMoved)
                     self.__sugar -= math.ceil(self.__startingSugar / 2)
-                    neighbor.setSugar(neighbor.getSugar() - math.ceil(neighbor.getStartingSugar() / 2))
+                    neighbor.setSugar(neighbor.getWealth() - math.ceil(neighbor.getStartingSugar() / 2))
 
     def doTagging(self):
         if self.__tags == None or self.__alive == False:
@@ -151,14 +168,23 @@ class Agent:
             self.doReproduction()
             self.doAging()
 
+    def findAgentWealthAtCell(self, cell):
+        agent = cell.getAgent()
+        if agent == None:
+            return 0
+        else:
+            return agent.getWealth()
+
     def findBestCellInVision(self):
         self.findCellsInVision()
         random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
         random.shuffle(self.__cellsInVision)
         bestCell = None
         bestRange = max(self.__cell.getEnvironment().getHeight(), self.__cell.getEnvironment().getWidth())
+        bestSugar = 0
         agentX = self.__cell.getX()
         agentY = self.__cell.getY()
+        combatMaxLoot = self.__cell.getEnvironment().getMaxCombatLoot()
         wraparound = self.__vision + 1
         for currCell in self.__cellsInVision:
             #currCell = self.__cellsInVision[i]
@@ -166,17 +192,28 @@ class Agent:
             distanceX = (abs(agentX - currCell.getX()) % wraparound)
             distanceY = (abs(agentY - currCell.getY()) % wraparound)
             travelDistance = distanceX + distanceY
-            if(currCell.isOccupied() == True):
+            if currCell.isOccupied() == True and self.__aggression == 0:
+                continue
+            # TODO: incorporate retaliation into combat decisionmaking (agent from same tribe as prey bigger than self in sight)
+            agentInVision = currCell.getAgent()
+            if agentInVision != None and agentInVision.getTribe() == self.__tribe:
                 continue
             if bestCell == None:
                 bestCell = currCell
                 bestRange = travelDistance
-            currSugar = currCell.getCurrSugar() / (1 + currCell.getCurrPollution())
-            bestSugar = bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())
+                if agentInVision != None and agentInVision.getWealth() > self.__wealth:
+                    print("Agent {0} too strong (wealth {1}) for agent {2} (wealth {3})".format(str(agentInVision), agentInVision.getWealth(), str(self), self.__wealth))
+                    continue
+                bestSugar = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
+            currSugar = (currCell.getCurrSugar() / (1 + currCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
             # Move to closest cell with the most resources
             if currSugar > bestSugar or (currSugar == bestSugar and travelDistance < bestRange):
                 bestCell = currCell
                 bestRange = travelDistance
+                if agentInVision != None and agentInVision.getWealth() > self.__wealth:
+                    print("Agent {0} too strong (wealth {1}) for agent {2} (wealth {3})".format(str(agentInVision), agentInVision.getWealth(), str(self), self.__wealth))
+                    continue
+                bestSugar = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
         if bestCell == None:
             bestCell = self.__cell
         return bestCell
@@ -204,6 +241,7 @@ class Agent:
         parentInfertilityAges = [self.__infertilityAge, mate.getInfertilityAge()]
         parentFertilityAges = [self.__fertilityAge, mate.getFertilityAge()]
         parentSexes = [self.__sex, mate.getSex()]
+        parentAggressionFactors = [self.__aggression, mate.getAggression()]
         startingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
 
         childMetabolism = parentMetabolisms[random.randrange(2)]
@@ -222,7 +260,8 @@ class Agent:
             else:
                 childTags.append(mismatchTags[random.randrange(2)])
         childStartingSugar = startingSugar
-        endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge, childTags]
+        childAggression = parentAggressionFactors[random.randrange(2)]
+        endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge, childTags, childAggression]
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -258,6 +297,9 @@ class Agent:
 
     def getAge(self):
         return self.__age
+
+    def getAggression(self):
+        return self.__aggression
 
     def getAlive(self):
         return self.__alive
@@ -325,6 +367,9 @@ class Agent:
     def getVonNeumannNeighbors(self):
         return self.__vonNeumannNeigbbors
 
+    def getWealth(self):
+        return self.__sugar
+
     def isAlive(self):
         return self.getAlive()
 
@@ -347,10 +392,16 @@ class Agent:
 
     def moveToBestCellInVision(self):
         bestCell = self.findBestCellInVision()
-        self.setCell(bestCell)
+        if self.__aggression > 0:
+            self.doCombat(bestCell)
+        else:
+            self.setCell(bestCell)
 
     def setAge(self, age):
         self.__age = age
+
+    def setAggression(self, aggression):
+        self.__aggression = aggression
 
     def setAlive(self, alive):
         self.__alive = alive
@@ -417,10 +468,14 @@ class Agent:
     def setVonNeumannNeighbors(self, vonNeumannNeigbors):
         self.__vonNeumannNeighbors = vonNeumannNeighbors
 
+    def setWealth(self, wealth):
+        self.__wealth = wealth
+
     def updateFriends(self, neighbor):
         neighborID = neighbor.getID()
         neighborHammingDistance = self.findHammingDistanceInTags(neighbor)
         neighborEntry = {"friend": neighborID, "hammingDistance": neighborHammingDistance}
+        # TODO: Make max number of friends configurable, using book definition (pg. 80)
         if len(self.__friends) < 5:
             self.__friends.append(neighborEntry)
         else:

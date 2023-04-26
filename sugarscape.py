@@ -17,9 +17,11 @@ class Sugarscape:
     def __init__(self, configuration):
         self.__configuration = configuration
         self.__timestep = 0
-        self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, configuration["environmentMaxSugar"], configuration["environmentSugarRegrowRate"],
-                                                     configuration["environmentSeasonInterval"], configuration["environmentSeasonalGrowbackDelay"], configuration["environmentConsumptionPollutionRate"],
-                                                     configuration["environmentProductionPollutionRate"], configuration["environmentPollutionDiffusionDelay"])
+        self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, configuration["environmentMaxSugar"],
+                                                     configuration["environmentSugarRegrowRate"], configuration["environmentSeasonInterval"],
+                                                     configuration["environmentSeasonalGrowbackDelay"], configuration["environmentConsumptionPollutionRate"],
+                                                     configuration["environmentProductionPollutionRate"], configuration["environmentPollutionDiffusionDelay"],
+                                                     configuration["environmentMaxCombatLoot"])
         self.__environmentHeight = configuration["environmentHeight"]
         self.__environmentWidth = configuration["environmentWidth"]
         self.configureEnvironment(configuration["environmentMaxSugar"])
@@ -73,6 +75,7 @@ class Sugarscape:
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         maleInfertilityAge = configs["agentMaleInfertilityAge"]
         tagStringLength = configs["agentTagStringLength"]
+        aggressionFactor = configs["agentAggressionFactor"]
 
         if self.__environment == None:
             return
@@ -87,7 +90,7 @@ class Sugarscape:
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(startingAgents, metabolism, vision, startingWealth, maxAge, maleToFemaleRatio,
                                                         femaleFertilityAge, maleFertilityAge, femaleInfertilityAge, maleInfertilityAge,
-                                                        tagStringLength)
+                                                        tagStringLength, aggressionFactor)
         for i in range(numAgents):
             randX = random.randrange(self.__environmentHeight)
             randY = random.randrange(self.__environmentWidth)
@@ -103,9 +106,11 @@ class Sugarscape:
             currFertilityAge = agentEndowments[i][5]
             currInfertilityAge = agentEndowments[i][6]
             currTags = agentEndowments[i][7]
+            currAggression = agentEndowments[i][8]
             # Generate random UUID for agent identification
             agentID = str(uuid.uuid4())
-            a = agent.Agent(agentID, self.__timestep, c, currMetabolism, currVision, currMaxAge, currWealth, currSex, currFertilityAge, currInfertilityAge, currTags)
+            a = agent.Agent(agentID, self.__timestep, c, currMetabolism, currVision, currMaxAge, currWealth, currSex, currFertilityAge,
+                            currInfertilityAge, currTags, currAggression)
             c.setAgent(a)
             self.__agents.append(a)
 
@@ -192,7 +197,7 @@ class Sugarscape:
 
     def randomizeAgentEndowments(self, numAgents, metabolism, vision, startingWealth, maxAge, maleToFemaleRatio,
                                  femaleFertilityAge, maleFertilityAge, femaleInfertilityAge, maleInfertilityAge,
-                                 tagStringLength):
+                                 tagStringLength, aggressionFactor):
         endowments = []
         metabolisms = []
         visions = []
@@ -204,6 +209,7 @@ class Sugarscape:
         femaleInfertilityAges = []
         maleInfertilityAges = []
         tags = []
+        aggressionFactors = []
         
         minMetabolism = metabolism[0]
         minVision = vision[0]
@@ -214,6 +220,7 @@ class Sugarscape:
         minMaleInfertilityAge = maleInfertilityAge[0]
         minStartingWealth = startingWealth[0]
         minAge = maxAge[0]
+        minAggression = aggressionFactor[0]
 
         maxMetabolism = metabolism[1]
         maxVision = vision[1]
@@ -224,15 +231,17 @@ class Sugarscape:
         maxMaleInfertilityAge = maleInfertilityAge[1]
         maxStartingWealth = startingWealth[1]
         maxAge = maxAge[1]
+        maxAggression = aggressionFactor[1]
 
-        currMetabolism = random.randrange(minMetabolism, maxMetabolism + 1)
-        currVision = random.randrange(minVision, maxVision + 1)
-        currWealth = random.randrange(minWealth, maxStartingWealth + 1)
+        currMetabolism = minMetabolism
+        currVision = minVision
+        currWealth = minStartingWealth
         currMaxAge = minAge
         currFemaleFertilityAge = minFemaleFertilityAge
         currMaleFertilityAge = minMaleFertilityAge
         currFemaleInfertilityAge = minFemaleInfertilityAge
         currMaleInfertilityAge = minMaleInfertilityAge
+        currAggression = minAggression
 
         sexDistributionCountdown = numAgents
         # Determine count of male agents and set as switch for agent generation
@@ -249,6 +258,8 @@ class Sugarscape:
             femaleInfertilityAges.append(currFemaleInfertilityAge)
             maleInfertilityAges.append(currMaleInfertilityAge)
             tags.append([random.randrange(2) for i in range(tagStringLength)])
+            aggressionFactors.append(currAggression)
+            # Assume properties are integers which range from min to max
             currMetabolism += 1
             currVision += 1
             currMaxAge += 1
@@ -257,6 +268,7 @@ class Sugarscape:
             currMaleFertilityAge += 1
             currFemaleInfertilityAge += 1
             currMaleInfertilityAge += 1
+            currAggression += 1
 
             if maleToFemaleRatio != None and maleToFemaleRatio != 0:
                 if sexDistributionCountdown == 0:
@@ -283,7 +295,9 @@ class Sugarscape:
                 currFemaleInfertilityAge = minFemaleInfertilityAge
             if currMaleInfertilityAge > maxMaleInfertilityAge:
                 currMaleInfertilityAge = minMaleInfertilityAge
-        
+            if currAggression > maxAggression:
+                currAggression = minAggression
+
         random.shuffle(metabolisms)
         random.shuffle(visions)
         random.shuffle(ages)
@@ -293,13 +307,16 @@ class Sugarscape:
         random.shuffle(maleFertilityAges)
         random.shuffle(femaleInfertilityAges)
         random.shuffle(maleInfertilityAges)
+        random.shuffle(aggressionFactors)
         for i in range(numAgents):
             if sexes[i] == "female":
-                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], femaleFertilityAges.pop(), femaleInfertilityAges.pop(), tags.pop()])
+                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], femaleFertilityAges.pop(),
+                                   femaleInfertilityAges.pop(), tags.pop(), aggressionFactors.pop()])
             elif sexes[i] == "male":
-                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], maleFertilityAges.pop(), maleInfertilityAges.pop(), tags.pop()])
+                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], maleFertilityAges.pop(),
+                                   maleInfertilityAges.pop(), tags.pop(), aggressionFactors.pop()])
             else:
-                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], 0, 0, tags.pop()])
+                endowments.append([metabolisms.pop(), visions.pop(), ages.pop(), startingWealths.pop(), sexes[i], 0, 0, tags.pop(), aggressionFactors.pop()])
         return endowments
 
     def replaceDeadAgents(self):
@@ -355,7 +372,7 @@ class Sugarscape:
         self.__log.write("[\n")
 
     def updateGiniCoefficient(self):
-        agentWealths = sorted([agent.getSugar() for agent in self.__agents])
+        agentWealths = sorted([agent.getWealth() for agent in self.__agents])
         # Calculate area between line of equality and Lorenz curve of agent wealths
         height = 0
         area = 0
@@ -379,7 +396,7 @@ class Sugarscape:
         maxWealth = 0
         minWealth = sys.maxsize
         for agent in self.__agents:
-            agentWealth = agent.getSugar()
+            agentWealth = agent.getWealth()
             meanMetabolism += agent.getMetabolism()
             meanVision += agent.getVision()
             meanAge += agent.getAge()
@@ -451,9 +468,10 @@ if __name__ == "__main__":
     configuration = {"agentVision": [1, 6], "agentMetabolism": [1, 4], "agentStartingWealth": [1, 5], "startingAgents": 250, "agentReplacement": False,
                      "agentMaxAge": [60, 100], "agentMaleToFemaleRatio": 1, "agentFemaleFertilityAge": [12, 15], "agentMaleFertilityAge": [12, 15],
                      "agentFemaleInfertilityAge": [40, 50], "agentMaleInfertilityAge": [50, 60], "agentTagStringLength": 11,
+                     "agentAggressionFactor": [0, 0],
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
-                     "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10,
+                     "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1000,
                      "logfile": None, "seed": 12345, "headlessMode": False}
     configuration = parseOptions(configuration)
     random.seed(configuration["seed"])
