@@ -14,7 +14,6 @@
     "agentMovement": [1, 6],
     "agentStartingSpice": [50, 100],
     "agentStartingSugar": [50, 100],
-    "agentStartingWealth": [50, 100],
     "agentVision": [1, 6],
     "agentReplacement": false,
     "agentTagStringLength": 11,

@@ -3,17 +3,29 @@ import random
 import uuid
 
 class Agent:
-    def __init__(self, agentID, birthday, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0, tags=None, aggressionFactor=0, maxFriends=0):
+    def __init__(self, agentID, birthday, cell, configuration):
         self.__id = agentID
         self.__born = birthday
         self.__cell = cell
-        self.__metabolism = metabolism
-        self.__vision = vision
-        self.__sugar = sugar
-        self.__startingSugar = sugar
+        
+        self.__metabolism = configuration["metabolism"]
+        self.__movement = configuration["movement"]
+        self.__vision = configuration["vision"]
+        self.__sugar = configuration["sugar"]
+        self.__spice = configuration["spice"]
+        self.__startingSugar = configuration["sugar"]
+        self.__startingSpice = configuration["spice"]
+        self.__maxAge = configuration["maxAge"]
+        self.__sex = configuration["sex"]
+        self.__fertilityAge = configuration["fertilityAge"]
+        self.__infertilityAge = configuration["infertilityAge"]
+        self.__tags = configuration["tags"]
+        self.__aggression = configuration["aggressionFactor"]
+        self.__maxFriends = configuration["maxFriends"]
+        self.__wealth = configuration["sugar"] + configuration["spice"]
+        
         self.__alive = True
         self.__age = 0
-        self.__maxAge = maxAge
         self.__cellsInVision = []
         self.__lastMoved = birthday
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
@@ -22,32 +34,15 @@ class Agent:
         self.__parents = {"father": None, "mother": None}
         self.__children = []
         self.__friends = []
-        self.__sex = sex
-        self.__fertilityAge = fertilityAge
-        self.__infertilityAge = infertilityAge
         self.__fertile = False
-        self.__tags = tags
-        self.__tribe = self.findTribe()
-        self.__aggression = aggressionFactor
-        self.__wealth = sugar
-        self.__maxFriends = maxFriends
+        self.__tribe = self.findTribe() 
         # Debugging print statement
         #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
-    def addChildToCell(self, mate, cell, endowment):
-        childMetabolism = endowment[0]
-        childVision = endowment[1]
-        childMaxAge = endowment[2]
-        childStartingSugar = endowment[3]
-        childSex = endowment[4]
-        childFertilityAge = endowment[5]
-        childInfertilityAge = endowment[6]
-        childTags = endowment[7]
-        childAggression = endowment[8]
+    def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.__cell.getEnvironment().getSugarscape()
         timestep = sugarscape.getTimestep()
-        child = Agent(uuid.uuid4(), timestep, cell, childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge,
-                      childInfertilityAge, childTags, childAggression)
+        child = Agent(uuid.uuid4(), timestep, cell, childConfiguration)
         child.setCell(cell)
         sugarscape.addAgent(child)
         if self.__sex == "female":
@@ -246,21 +241,27 @@ class Agent:
     def findChildEndowment(self, mate):
         random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
         parentMetabolisms = [self.__metabolism, mate.getMetabolism()]
+        parentMovements = [self.__movement, mate.getMovement()]
         parentVisions = [self.__vision, mate.getVision()]
         parentMaxAges = [self.__maxAge, mate.getMaxAge()]
         parentInfertilityAges = [self.__infertilityAge, mate.getInfertilityAge()]
         parentFertilityAges = [self.__fertilityAge, mate.getFertilityAge()]
         parentSexes = [self.__sex, mate.getSex()]
         parentAggressionFactors = [self.__aggression, mate.getAggression()]
-        startingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
+        parentMaxFriends = [self.__maxFriends, mate.getMaxFriends()]
+        # Each parent gives 1/2 their starting endowment for child endowment
+        childStartingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
+        childStartingSpice = math.ceil(self.__startingSpice / 2) + math.ceil(mate.getStartingSpice() / 2)
 
         childMetabolism = parentMetabolisms[random.randrange(2)]
+        childMovement = parentMovements[random.randrange(2)]
         childVision = parentVisions[random.randrange(2)]
         childMaxAge = parentMaxAges[random.randrange(2)]
         # TODO: Determine if fertility/infertility age should be inherited or use global configuration as random range
         childInfertilityAge = parentInfertilityAges[random.randrange(2)]
         childFertilityAge = parentFertilityAges[random.randrange(2)]
         childSex = parentSexes[random.randrange(2)]
+        childMaxFriends = parentMaxFriends[random.randrange(2)]
         childTags = []
         mateTags = mate.getTags()
         mismatchTags = [0, 1]
@@ -269,9 +270,10 @@ class Agent:
                 childTags.append(self.__tags[i])
             else:
                 childTags.append(mismatchTags[random.randrange(2)])
-        childStartingSugar = startingSugar
         childAggression = parentAggressionFactors[random.randrange(2)]
-        endowment = [childMetabolism, childVision, childMaxAge, childStartingSugar, childSex, childFertilityAge, childInfertilityAge, childTags, childAggression]
+        endowment = {"metabolism": childMetabolism, "movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
+                     "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
+                     "aggressionFactor": childAggression, "maxFriends": childMaxFriends}
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -362,6 +364,9 @@ class Agent:
     def getMetabolism(self):
         return self.__metabolism
 
+    def getMovement(self):
+        return self.__movement
+
     def getMooreNeighbors(self):
         return self.__mooreNeighbors
 
@@ -373,6 +378,9 @@ class Agent:
 
     def getSocialNetwork(self):
         return self.__socialNetwork
+
+    def getStartingSpice(self):
+        return self.__startingSpice
 
     def getStartingSugar(self):
         return self.__startingSugar
@@ -467,6 +475,9 @@ class Agent:
 
     def setMetabolism(self, metabolism):
         self.__metabolism = metabolism
+
+    def setMovement(self, movement):
+        self.__movement = movement
 
     def setMooreNeighbors(self, mooreNeighbors):
         self.__mooreNeighbors = mooreNeighbors

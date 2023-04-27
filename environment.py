@@ -64,6 +64,9 @@ class Environment:
     def getEquator(self):
         return self.__equator
 
+    def getGlobalMaxSpice(self):
+        return self.__globalMaxSpice
+
     def getGlobalMaxSugar(self):
         return self.__globalMaxSugar
 
@@ -116,6 +119,9 @@ class Environment:
 
     def setEquator(self, equator):
         self.__equator = equator
+
+    def setGlobalMaxSpice(self, globalMaxSpice):
+        self.__globalMaxSpice = globalMaxSpice
 
     def setGlobalMaxSugar(self, globalMaxSugar):
         self.__globalMaxSugar = globalMaxSugar

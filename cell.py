@@ -159,7 +159,7 @@ class Cell:
     def __str__(self):
         string = ""
         if self.getAgent() != None:
-            string = 'A'
+            string = "-A-"
         else:
-            string = str(self.__currSugar)
+            string = "{0}/{1}".format(str(self.__currSugar), str(self.__currSpice))
         return string

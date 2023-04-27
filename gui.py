@@ -8,7 +8,7 @@ class GUI:
         self.__window = None
         self.__canvas = None
         self.__grid = [[None for j in range(screenWidth)]for i in range(screenHeight)]
-        self.__colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#BF8232", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
+        self.__colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
                          "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232"}
         self.__widgets = {}
         self.__lastSelectedAgentColor = None
@@ -187,7 +187,14 @@ class GUI:
             if self.__activeColorOptions["environment"] == "Pollution":
                 return self.recolorByResourceAmount(cell, self.__colors["pollution"])
             else:
-                return self.recolorByResourceAmount(cell, self.__colors["sugar"])
+                currSugar = cell.getCurrSugar()
+                currSpice = cell.getCurrSpice()
+                if currSugar > 0 and currSpice == 0:
+                    return self.recolorByResourceAmount(cell, self.__colors["sugar"])
+                elif currSpice > 0 and currSugar == 0:
+                    return self.recolorByResourceAmount(cell, self.__colors["spice"])
+                else:
+                    return self.recolorByResourceAmount(cell, self.__colors["sugarAndSpice"])
         elif agent.getSex() != None and self.__activeColorOptions["agent"] == "Sex":
             return self.__colors[agent.getSex()]
         elif agent.getTribe() != None and self.__activeColorOptions["agent"] == "Tribes":
@@ -202,7 +209,16 @@ class GUI:
             # Once a cell has exceeded the number of colors made possible with maxPollution, keep using the max color
             recolorFactor = min(1, cell.getCurrPollution() / maxPollution)
         else:
-            recolorFactor = cell.getCurrSugar() / self.__sugarscape.getEnvironment().getGlobalMaxSugar()
+            currSugar = cell.getCurrSugar()
+            currSpice = cell.getCurrSpice()
+            maxSugar = self.__sugarscape.getEnvironment().getGlobalMaxSugar()
+            maxSpice = self.__sugarscape.getEnvironment().getGlobalMaxSpice()
+            if currSugar > 0 and currSpice == 0:
+                recolorFactor = currSugar / maxSugar
+            elif currSpice > 0 and currSugar == 0:
+                recolorFactor = currSpice / maxSpice
+            else:
+                recolorFactor = (currSugar + currSpice) / (maxSugar + maxSpice)
         subcolors = self.hexToInt(fillColor)
         i = 0
         for color in subcolors:
