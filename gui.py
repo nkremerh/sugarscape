@@ -63,7 +63,7 @@ class GUI:
         self.__widgets["statsLabel"] = statsLabel
  
     def configureEnvironment(self):
-        borderOffset = 10
+        borderOffset = 30
         siteSize = (self.__screenHeight - borderOffset) / self.__sugarscape.getEnvironmentWidth()
         for i in range(self.__sugarscape.getEnvironmentHeight()):
             for j in range(self.__sugarscape.getEnvironmentWidth()):
