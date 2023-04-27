@@ -118,6 +118,7 @@ class Sugarscape:
             maxAge[0] = -1
             maxAge[1] = -1
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
+        random.seed(self.__seed)
         agentEndowments = self.randomizeAgentEndowments(startingAgents, sugarMetabolism, spiceMetabolism, movement, vision, startingSugar, startingSpice,
                                                         maxAge, maleToFemaleRatio, femaleFertilityAge, maleFertilityAge, femaleInfertilityAge,
                                                         maleInfertilityAge, tagStringLength, aggressionFactor, maxFriends)
@@ -166,7 +167,6 @@ class Sugarscape:
                 self.__agents.remove(agent)
         if self.__gui != None:
             self.__gui.doTimestep()
-        print("Timestep: {0}".format(self.__timestep))
         self.__timestep += 1
 
     def endLog(self):
@@ -302,6 +302,7 @@ class Sugarscape:
             maleFertilityAges.append(currMaleFertilityAge)
             femaleInfertilityAges.append(currFemaleInfertilityAge)
             maleInfertilityAges.append(currMaleInfertilityAge)
+            random.seed(self.__seed)
             tags.append([random.randrange(2) for i in range(tagStringLength)])
             aggressionFactors.append(currAggression)
             friends.append(currFriends)
@@ -475,7 +476,7 @@ class Sugarscape:
                 minWealth = agentWealth
             if agentWealth > maxWealth:
                 maxWealth = agentWealth
-        meanMetabolism = (meanSugarMetabolism + meanSpiceMetabolism) / (numAgents * 2)
+        meanMetabolism = (meanSugarMetabolism + meanSpiceMetabolism) / numAgents
         meanVision = meanVision / numAgents
         meanAge = meanAge / numAgents
         meanWealth = meanWealth / numAgents
@@ -543,11 +544,12 @@ if __name__ == "__main__":
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1000,
                      "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1,
-                     "logfile": None, "seed": 12345, "headlessMode": False}
+                     "logfile": None, "seed": 12345, "headlessMode": False, "timesteps": 1000}
     configuration = parseOptions(configuration)
+    # TODO: Simulation no longer deterministic from random seed
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
     print(str(S))
-    S.runSimulation(1000)
+    S.runSimulation(configuration["timesteps"])
     #print(str(S))
     exit(0)
