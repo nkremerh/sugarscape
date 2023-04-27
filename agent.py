@@ -23,11 +23,12 @@ class Agent:
         self.__aggression = configuration["aggressionFactor"]
         self.__maxFriends = configuration["maxFriends"]
         self.__wealth = configuration["sugar"] + configuration["spice"]
-        
+        self.__seed = configuration["seed"]
+
         self.__alive = True
         self.__age = 0
         self.__cellsInVision = []
-        self.__lastMoved = birthday
+        self.__lastMoved = -1
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.__socialNetwork = {}
@@ -35,14 +36,14 @@ class Agent:
         self.__children = []
         self.__friends = []
         self.__fertile = False
-        self.__tribe = self.findTribe() 
+        self.__tribe = self.findTribe()
+        self.__timestep = birthday
         # Debugging print statement
         #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.__cell.getEnvironment().getSugarscape()
-        timestep = sugarscape.getTimestep()
-        child = Agent(uuid.uuid4(), timestep, cell, childConfiguration)
+        child = Agent(uuid.uuid4(), self.__timestep, cell, childConfiguration)
         child.setCell(cell)
         sugarscape.addAgent(child)
         if self.__sex == "female":
@@ -61,10 +62,14 @@ class Agent:
     def collectResourcesAtCell(self):
         if self.__cell != None:
             sugarCollected = self.__cell.getCurrSugar()
-            self.__sugar = self.__sugar + sugarCollected
-            self.__wealth = self.__sugar + sugarCollected
+            spiceCollected = self.__cell.getCurrSpice()
+            self.__sugar += sugarCollected
+            self.__spice += spiceCollected
+            self.__wealth += sugarCollected + spiceCollected
             self.__cell.doProductionPollution(sugarCollected)
+            self.__cell.doProductionPollution(spiceCollected)
             self.__cell.resetSugar()
+            self.__cell.resetSpice()
 
     def doAging(self):
         if self.__alive == False:
@@ -113,7 +118,7 @@ class Agent:
         # Agent marked for removal should not reproduce
         if self.__alive == False:
             return
-        random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
+        random.seed(self.__seed)
         neighborCells = self.__cell.getNeighbors()
         random.shuffle(neighborCells)
         emptyCells = self.findEmptyNeighborCells()
@@ -136,13 +141,15 @@ class Agent:
                     neighbor.updateTimesReproducedWithAgent(self.__id, self.__lastMoved)
                     self.updateTimesReproducedWithAgent(neighborID, self.__lastMoved)
                     self.__sugar -= math.ceil(self.__startingSugar / 2)
-                    neighbor.setSugar(neighbor.getWealth() - math.ceil(neighbor.getStartingSugar() / 2))
+                    self.__spice -= math.ceil(self.__startingSpice / 2)
+                    neighbor.setSugar(neighbor.getSugar() - math.ceil(neighbor.getStartingSugar() / 2))
+                    neighbor.setSpice(neighbor.getSpice() - math.ceil(neighbor.getStartingSpice() / 2))
 
     def doTagging(self):
         if self.__tags == None or self.__alive == False:
             return
         neighborCells = self.__cell.getNeighbors()
-        random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
+        random.seed(self.__seed)
         random.shuffle(neighborCells)
         for neighborCell in neighborCells:
             neighbor = neighborCell.getAgent()
@@ -151,11 +158,11 @@ class Agent:
                 neighbor.setTag(position, self.__tags[position])
                 neighbor.setTribe(neighbor.findTribe())
 
-    def doTimestep(self):
-        timestep = self.__cell.getEnvironment().getSugarscape().getTimestep()
+    def doTimestep(self, timestep):
+        self.__timestep = timestep
         # Prevent dead or already moved agent from moving
-        if self.__alive == True and self.__lastMoved != timestep:
-            self.__lastMoved = timestep
+        if self.__alive == True and self.__lastMoved != self.__timestep:
+            self.__lastMoved = self.__timestep
             self.moveToBestCellInVision()
             self.updateNeighbors()
             self.collectResourcesAtCell()
@@ -178,7 +185,7 @@ class Agent:
         blueRetaliation = True if self.__tribe == "blue" or retaliators["blue"] > self.__wealth else False
         redRetaliation = True if self.__tribe == "red" or retaliators["red"] > self.__wealth else False
         retaliationPossible = {"green": greenRetaliation, "blue": blueRetaliation, "red": redRetaliation, "empty": False}
-        random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
+        random.seed(self.__seed)
         random.shuffle(self.__cellsInVision)
         bestCell = None
         bestRange = max(self.__cell.getEnvironment().getHeight(), self.__cell.getEnvironment().getWidth())
@@ -239,7 +246,7 @@ class Agent:
             self.setCellsInVision(list(set(northCells + southCells + eastCells + westCells)))
 
     def findChildEndowment(self, mate):
-        random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
+        random.seed(self.__seed)
         parentMetabolisms = [self.__metabolism, mate.getMetabolism()]
         parentMovements = [self.__movement, mate.getMovement()]
         parentVisions = [self.__vision, mate.getVision()]
@@ -273,7 +280,7 @@ class Agent:
         childAggression = parentAggressionFactors[random.randrange(2)]
         endowment = {"metabolism": childMetabolism, "movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
-                     "aggressionFactor": childAggression, "maxFriends": childMaxFriends}
+                     "aggressionFactor": childAggression, "maxFriends": childMaxFriends, "seed": self.__seed}
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -385,6 +392,9 @@ class Agent:
     def getStartingSugar(self):
         return self.__startingSugar
 
+    def getSpice(self):
+        return self.__spice
+
     def getSugar(self):
         return self.__sugar
 
@@ -410,7 +420,7 @@ class Agent:
         return self.getAlive()
 
     def isFertile(self):
-        if self.__sugar >= self.__startingSugar and self.__age >= self.__fertilityAge and self.__age < self.__infertilityAge:
+        if self.__sugar >= self.__startingSugar and self.__spice >= self.__startingSpice and self.__age >= self.__fertilityAge and self.__age < self.__infertilityAge:
             return True
         return False
 
@@ -491,6 +501,9 @@ class Agent:
 
     def setSocialNetwork(self, socialNetwork):
         self.__socialNetwork = socialNetwork
+
+    def setSpice(self, spice):
+        self.__spice = spice
 
     def setSugar(self, sugar):
         self.__sugar = sugar

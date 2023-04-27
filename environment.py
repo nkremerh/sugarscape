@@ -11,6 +11,8 @@ class Environment:
         self.__globalMaxSpice = configuration["globalMaxSpice"]
         self.__spiceRegrowRate = configuration["spiceRegrowRate"]
         self.__sugarscape = sugarscape
+        self.__timestep = 0
+        self.__seed = configuration["sugarscapeSeed"]
         self.__seasonInterval = configuration["seasonInterval"]
         self.__seasonalGrowbackDelay = configuration["seasonalGrowbackDelay"]
         self.__seasonNorth = "summer" if configuration["seasonInterval"] > 0 else None
@@ -26,14 +28,13 @@ class Environment:
         self.__grid = [[None for j in range(width)]for i in range(height)]
 
     def doCellUpdate(self):
-        timestep = self.__sugarscape.getTimestep()
         for i in range(self.__height):
             for j in range(self.__width):
                 cellCurrSugar = self.__grid[i][j].getCurrSugar()
                 cellMaxSugar = self.__grid[i][j].getMaxSugar()
                 cellSeason = self.__grid[i][j].getSeason()
                 if self.__seasonInterval > 0:
-                    if timestep % self.__seasonInterval == 0:
+                    if self.__timestep % self.__seasonInterval == 0:
                         self.__grid[i][j].updateSeason()
                     if (cellSeason == "summer") or (cellSeason == "winter" and self.__seasonalGrowbackCountdown == self.__seasonalGrowbackDelay):
                         self.__grid[i][j].setCurrSugar(min(cellCurrSugar + self.__sugarRegrowRate, cellMaxSugar))
@@ -42,18 +43,19 @@ class Environment:
                 if self.__pollutionDiffusionDelay > 0 and self.__pollutionDiffusionCountdown == self.__pollutionDiffusionDelay:
                     self.__grid[i][j].doPollutionDiffusion()
 
-    def doTimestep(self):
+    def doTimestep(self, timestep):
+        self.__timestep = timestep
         self.updateSeasons()
         self.updatePollution()
         self.doCellUpdate()
         rows = list(range(self.__height))
         columns = list(range(self.__width))
         cells = [(x, y) for x in rows for y in columns]
-        random.seed(self.__sugarscape.getSeed())
+        random.seed(self.__seed)
         random.shuffle(cells)
         for coords in cells:
             if self.__grid[coords[0]][coords[1]] != None:
-                self.__grid[coords[0]][coords[1]].doTimestep()
+                self.__grid[coords[0]][coords[1]].doTimestep(timestep)
 
     def getCell(self, x, y):
         return self.__grid[x][y]
@@ -163,7 +165,6 @@ class Environment:
         self.__width = width
 
     def updatePollution(self):
-        timestep = self.__sugarscape.getTimestep()
         if self.__pollutionDiffusionDelay > 0:
             self.__pollutionDiffusionCountdown -= 1
             # Pollution diffusion delay over
@@ -171,13 +172,12 @@ class Environment:
                 self.__pollutionDiffusionCountdown = self.__pollutionDiffusionDelay
 
     def updateSeasons(self):
-        timestep = self.__sugarscape.getTimestep()
         if self.__seasonInterval > 0:
             self.__seasonalGrowbackCountdown -= 1
             # Seasonal growback delay over
             if self.__seasonalGrowbackCountdown == 0:
                 self.__seasonalGrowbackCountdown = self.__seasonalGrowbackDelay
-            if timestep % self.__seasonInterval == 0:
+            if self.__timestep % self.__seasonInterval == 0:
                 if self.__seasonNorth == "summer":
                     self.__seasonNorth = "winter"
                     self.__seasonSouth = "summer"

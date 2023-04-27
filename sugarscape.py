@@ -21,8 +21,9 @@ class Sugarscape:
                                     "seasonInterval": configuration["environmentSeasonInterval"], "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
                                     "consumptionPollutionRate": configuration["environmentConsumptionPollutionRate"], "productionPollutionRate": configuration["environmentProductionPollutionRate"],
                                     "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"], "maxCombatLoot": configuration["environmentMaxCombatLoot"],
-                                    "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"]}
+                                    "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"], "sugarscapeSeed": configuration["seed"]}
 
+        self.__seed = configuration["seed"]
         self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.__environmentHeight = configuration["environmentHeight"]
         self.__environmentWidth = configuration["environmentWidth"]
@@ -159,7 +160,7 @@ class Sugarscape:
         self.replaceDeadAgents()
         self.updateRuntimeStats()
         self.writeToLog()
-        self.__environment.doTimestep()
+        self.__environment.doTimestep(self.__timestep)
         for agent in self.__agents:
             if agent.isAlive() == False:
                 self.__agents.remove(agent)
@@ -210,7 +211,7 @@ class Sugarscape:
         return self.__runtimeStats
 
     def getSeed(self):
-        return self.__configuration["seed"]
+        return self.__seed
 
     def getTimestep(self):
         return self.__timestep
@@ -362,7 +363,7 @@ class Sugarscape:
         for i in range(numAgents):
             agentEndowment = {"metabolism": metabolisms.pop(), "movement": movements.pop(), "maxAge": ages.pop(), "sugar": startingSugars.pop(),
                               "spice": startingSpices.pop(), "sex": sexes[i], "tags": tags.pop(), "aggressionFactor": aggressionFactors.pop(),
-                              "maxFriends": friends.pop(), "vision": visions.pop()}
+                              "maxFriends": friends.pop(), "vision": visions.pop(), "seed": self.__seed}
             if sexes[i] == "female":
                 agentEndowment["fertilityAge"] = femaleFertilityAges.pop()
                 agentEndowment["infertilityAge"] = femaleInfertilityAges.pop()

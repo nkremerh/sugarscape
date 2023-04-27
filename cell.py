@@ -13,6 +13,7 @@ class Cell:
         self.__agent = None
         self.__hemisphere = "north" if self.__x >= self.__environment.getEquator() else "south"
         self.__season = None
+        self.__timestep = 0
         self.__neighbors = []
 
     def doConsumptionPollution(self, resourcesConsumed):
@@ -31,9 +32,9 @@ class Cell:
         productionPollutionRate = self.__environment.getProductionPollutionRate()
         self.__currPollution = self.__currPollution + (productionPollutionRate * resourcesProduced)
 
-    def doTimestep(self):
+    def doTimestep(self, timestep):
         if self.__agent != None:
-            self.__agent.doTimestep()
+            self.__agent.doTimestep(timestep)
 
     def getAgent(self):
         return self.__agent
@@ -105,8 +106,10 @@ class Cell:
     def isOccupied(self):
         return self.__agent != None
 
+    def resetSpice(self):
+        self.setCurrSpice(0)
+
     def resetSugar(self):
-        currSugar = self.__currSugar
         self.setCurrSugar(0)
 
     def setAgent(self, agent):
