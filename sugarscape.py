@@ -133,9 +133,9 @@ class Sugarscape:
         self.updateRuntimeStats()
         self.writeToLog()
         self.__environment.doTimestep()
-        for a in self.__agents:
-            if a.isAlive() == False:
-                self.__agents.remove(a)
+        for agent in self.__agents:
+            if agent.isAlive() == False:
+                self.__agents.remove(agent)
         if self.__gui != None:
             self.__gui.doTimestep()
         print("Timestep: {0}".format(self.__timestep))

@@ -202,7 +202,6 @@ class Agent:
                 bestCell = currCell
                 bestRange = travelDistance
                 if agentInVision != None and agentInVision.getWealth() > self.__wealth:
-                    print("Agent {0} too strong (wealth {1}) for agent {2} (wealth {3})".format(str(agentInVision), agentInVision.getWealth(), str(self), self.__wealth))
                     continue
                 bestSugar = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
             currSugar = (currCell.getCurrSugar() / (1 + currCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
@@ -211,7 +210,6 @@ class Agent:
                 bestCell = currCell
                 bestRange = travelDistance
                 if agentInVision != None and agentInVision.getWealth() > self.__wealth:
-                    print("Agent {0} too strong (wealth {1}) for agent {2} (wealth {3})".format(str(agentInVision), agentInVision.getWealth(), str(self), self.__wealth))
                     continue
                 bestSugar = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
         if bestCell == None:
