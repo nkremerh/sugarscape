@@ -3,24 +3,24 @@ import random
 
 class Environment:
     # Assumption: grid is always indexed by [height][width]
-    def __init__(self, height, width, sugarscape, globalMaxSugar=0, sugarRegrowRate=0, seasonInterval=0, seasonalGrowbackDelay=0,
-                 consumptionPollutionRate=0, productionPollutionRate=0, pollutionDiffusionDelay=0, maxCombatLoot=0):
+    def __init__(self, height, width, sugarscape, configuration):
         self.__width = width
         self.__height = height
-        self.__globalMaxSugar = globalMaxSugar
-        self.__sugarRegrowRate = sugarRegrowRate
+        self.__globalMaxSugar = configuration["globalMaxSugar"]
+        self.__sugarRegrowRate = configuration["sugarRegrowRate"]
+        self.__globalMaxSpice = configuration["globalMaxSpice"]
+        self.__spiceRegrowRate = configuration["spiceRegrowRate"]
         self.__sugarscape = sugarscape
-        self.__seasonInterval = seasonInterval
-        self.__seasonalGrowbackDelay = seasonalGrowbackDelay
-        self.__seasonNorth = "summer" if seasonInterval > 0 else None
-        self.__seasonSouth = "winter" if seasonInterval > 0 else None
-        self.__equator = math.ceil(self.__height / 2)
-        self.__seasonalGrowbackCountdown = seasonalGrowbackDelay
-        self.__pollutionDiffusionDelay = pollutionDiffusionDelay
-        self.__pollutionDiffusionCountdown = pollutionDiffusionDelay
-        self.__consumptionPollutionRate = consumptionPollutionRate
-        self.__productionPollutionRate = productionPollutionRate
-        self.__maxCombatLoot = maxCombatLoot
+        self.__seasonInterval = configuration["seasonInterval"]
+        self.__seasonalGrowbackDelay = configuration["seasonalGrowbackDelay"]
+        self.__seasonNorth = "summer" if configuration["seasonInterval"] > 0 else None
+        self.__seasonSouth = "winter" if configuration["seasonInterval"] > 0 else None
+        self.__seasonalGrowbackCountdown = configuration["seasonalGrowbackDelay"]
+        self.__pollutionDiffusionDelay = configuration["pollutionDiffusionDelay"]
+        self.__pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
+        self.__consumptionPollutionRate = configuration["consumptionPollutionRate"]
+        self.__productionPollutionRate = configuration["productionPollutionRate"]
+        self.__maxCombatLoot = configuration["maxCombatLoot"]
         # Populate grid with NoneType objects
         self.__grid = [[None for j in range(width)]for i in range(height)]
 
@@ -59,9 +59,6 @@ class Environment:
 
     def getConsumptionPollutionRate(self):
         return self.__consumptionPollutionRate
-
-    def getEquator(self):
-        return self.__equator
 
     def getGlobalMaxSugar(self):
         return self.__globalMaxSugar
@@ -112,9 +109,6 @@ class Environment:
 
     def setConsumptionPollutionRate(self, consumptionPollutionRate):
         self.__consumptionPollutionRate = consumptionPollutionRate
-
-    def setEquator(self, equator):
-        self.__equator = equator
 
     def setGlobalMaxSugar(self, globalMaxSugar):
         self.__globalMaxSugar = globalMaxSugar

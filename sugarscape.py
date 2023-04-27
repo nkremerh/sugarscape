@@ -17,11 +17,13 @@ class Sugarscape:
     def __init__(self, configuration):
         self.__configuration = configuration
         self.__timestep = 0
-        self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, configuration["environmentMaxSugar"],
-                                                     configuration["environmentSugarRegrowRate"], configuration["environmentSeasonInterval"],
-                                                     configuration["environmentSeasonalGrowbackDelay"], configuration["environmentConsumptionPollutionRate"],
-                                                     configuration["environmentProductionPollutionRate"], configuration["environmentPollutionDiffusionDelay"],
-                                                     configuration["environmentMaxCombatLoot"])
+        environmentConfiguration = {"globalMaxSugar": configuration["environmentMaxSugar"], "sugarRegrowRate": configuration["environmentSugarRegrowRate"],
+                                    "seasonInterval": configuration["environmentSeasonInterval"], "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
+                                    "consumptionPollutionRate": configuration["environmentConsumptionPollutionRate"], "productionPollutionRate": configuration["environmentProductionPollutionRate"],
+                                    "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"], "maxCombatLoot": configuration["environmentMaxCombatLoot"],
+                                    "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"]}
+
+        self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.__environmentHeight = configuration["environmentHeight"]
         self.__environmentWidth = configuration["environmentWidth"]
         self.configureEnvironment(configuration["environmentMaxSugar"])
@@ -479,10 +481,12 @@ if __name__ == "__main__":
     configuration = {"agentVision": [1, 6], "agentMetabolism": [1, 4], "agentStartingWealth": [1, 5], "startingAgents": 250, "agentReplacement": False,
                      "agentMaxAge": [60, 100], "agentMaleToFemaleRatio": 1, "agentFemaleFertilityAge": [12, 15], "agentMaleFertilityAge": [12, 15],
                      "agentFemaleInfertilityAge": [40, 50], "agentMaleInfertilityAge": [50, 60], "agentTagStringLength": 11,
-                     "agentAggressionFactor": [0, 0], "agentMaxFriends": 5,
+                     "agentAggressionFactor": [0, 0], "agentMaxFriends": 5, "agentMetabolismSugar": [1, 4], "agentMetabolismSpice": [1, 4],
+                     "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100],
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1000,
+                     "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1,
                      "logfile": None, "seed": 12345, "headlessMode": False}
     configuration = parseOptions(configuration)
     random.seed(configuration["seed"])
