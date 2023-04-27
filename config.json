@@ -7,6 +7,7 @@
     "agentMaleFertilityAge": [12, 15],
     "agentMaleToFemaleRatio": 1,
     "agentMaxAge": [60, 100],
+    "agentMaxFriends": [5, 10],
     "agentMetabolism": [1, 4],
     "agentStartingWealth": [50, 100],
     "agentVision": [1, 6],
@@ -23,7 +24,7 @@
     "environmentSeasonInterval": 0,
     "environmentSugarRegrowRate": 1,
     "headlessMode": false,
-    "startingAgents": 250,
+    "startingAgents": 500,
     "logfile": "log.json",
     "seed": 12345
 }

@@ -3,7 +3,7 @@ import random
 import uuid
 
 class Agent:
-    def __init__(self, agentID, birthday, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0, tags=None, aggressionFactor=0):
+    def __init__(self, agentID, birthday, cell, metabolism=0, vision=0, maxAge=0, sugar=0, sex=None, fertilityAge=0, infertilityAge=0, tags=None, aggressionFactor=0, maxFriends=0):
         self.__id = agentID
         self.__born = birthday
         self.__cell = cell
@@ -30,6 +30,7 @@ class Agent:
         self.__tribe = self.findTribe()
         self.__aggression = aggressionFactor
         self.__wealth = sugar
+        self.__maxFriends = maxFriends
         # Debugging print statement
         #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
@@ -177,6 +178,11 @@ class Agent:
 
     def findBestCellInVision(self):
         self.findCellsInVision()
+        retaliators = self.findRetaliatorsInVision()
+        greenRetaliation = True if self.__tribe == "green" or retaliators["green"] > self.__wealth else False
+        blueRetaliation = True if self.__tribe == "blue" or retaliators["blue"] > self.__wealth else False
+        redRetaliation = True if self.__tribe == "red" or retaliators["red"] > self.__wealth else False
+        retaliationPossible = {"green": greenRetaliation, "blue": blueRetaliation, "red": redRetaliation, "empty": False}
         random.seed(self.__cell.getEnvironment().getSugarscape().getSeed())
         random.shuffle(self.__cellsInVision)
         bestCell = None
@@ -194,22 +200,28 @@ class Agent:
             travelDistance = distanceX + distanceY
             if currCell.isOccupied() == True and self.__aggression == 0:
                 continue
-            # TODO: incorporate retaliation into combat decisionmaking (agent from same tribe as prey bigger than self in sight)
-            agentInVision = currCell.getAgent()
-            if agentInVision != None and agentInVision.getTribe() == self.__tribe:
+            prey = currCell.getAgent()
+            # Avoid attacking agents from the same tribe
+            if prey != None and prey.getTribe() == self.__tribe:
                 continue
+            preyTribe = prey.getTribe() if prey != None else "empty"
+            preyWealth = prey.getWealth() if prey != None else 0
             if bestCell == None:
                 bestCell = currCell
                 bestRange = travelDistance
-                if agentInVision != None and agentInVision.getWealth() > self.__wealth:
+                # Avoid attacking stronger agents
+                if prey != None and preyWealth > self.__wealth:
                     continue
-                bestSugar = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
-            currSugar = (currCell.getCurrSugar() / (1 + currCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
+                # Avoid attacked prey when retaliation is possible
+                if retaliationPossible[preyTribe] == True:
+                    continue
+                bestSugar = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
+            currSugar = (currCell.getCurrSugar() / (1 + currCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
             # Move to closest cell with the most resources
             if currSugar > bestSugar or (currSugar == bestSugar and travelDistance < bestRange):
                 bestCell = currCell
                 bestRange = travelDistance
-                if agentInVision != None and agentInVision.getWealth() > self.__wealth:
+                if prey != None and prey.getWealth() > self.__wealth:
                     continue
                 bestSugar = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
         if bestCell == None:
@@ -278,6 +290,21 @@ class Agent:
                 hammingDistance += 1
         return hammingDistance
 
+    def findRetaliatorsInVision(self):
+        retaliators = {"green": 0, "blue": 0, "red": 0}
+        for cell in self.__cellsInVision:
+            agent = cell.getAgent()
+            if agent != None:
+                agentTribe = agent.getTribe()
+                agentStrength = agent.getWealth()
+                if agentTribe == "green" and agentStrength > retaliators["green"]:
+                    retaliators["green"] = agentStrength
+                elif agentTribe == "blue" and agentStrength > retaliators["blue"]:
+                    retaliators["blue"] = agentStrength
+                elif agentTribe == "red" and agentStrength > retaliators["red"]:
+                    retaliators["red"] = agentStrength
+        return retaliators
+
     def findTribe(self):
         if self.__tags == None:
             return None
@@ -328,6 +355,9 @@ class Agent:
 
     def getMaxAge(self):
         return self.__maxAge
+
+    def getMaxFriends(self):
+        return self.__maxFriends
 
     def getMetabolism(self):
         return self.__metabolism
@@ -432,6 +462,9 @@ class Agent:
     def setMaxAge(self, maxAge):
         self.__maxAge = maxAge
 
+    def setMaxFriends(self, maxFriends):
+        self.__maxFriends = maxFriends
+
     def setMetabolism(self, metabolism):
         self.__metabolism = metabolism
 
@@ -473,8 +506,7 @@ class Agent:
         neighborID = neighbor.getID()
         neighborHammingDistance = self.findHammingDistanceInTags(neighbor)
         neighborEntry = {"friend": neighborID, "hammingDistance": neighborHammingDistance}
-        # TODO: Make max number of friends configurable, using book definition (pg. 80)
-        if len(self.__friends) < 5:
+        if len(self.__friends) < self.__maxFriends:
             self.__friends.append(neighborEntry)
         else:
             maxHammingDistance = 0
