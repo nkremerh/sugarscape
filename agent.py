@@ -187,7 +187,7 @@ class Agent:
         random.shuffle(self.__cellsInVision)
         bestCell = None
         bestRange = max(self.__cell.getEnvironment().getHeight(), self.__cell.getEnvironment().getWidth())
-        bestSugar = 0
+        bestWealth = 0
         agentX = self.__cell.getX()
         agentY = self.__cell.getY()
         combatMaxLoot = self.__cell.getEnvironment().getMaxCombatLoot()
@@ -215,15 +215,15 @@ class Agent:
                 # Avoid attacked prey when retaliation is possible
                 if retaliationPossible[preyTribe] == True:
                     continue
-                bestSugar = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
-            currSugar = (currCell.getCurrSugar() / (1 + currCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
+                bestWealth = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
+            currWealth = (currCell.getCurrSugar() / (1 + currCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
             # Move to closest cell with the most resources
-            if currSugar > bestSugar or (currSugar == bestSugar and travelDistance < bestRange):
+            if currWealth > bestWealth or (currWealth == bestWealth and travelDistance < bestRange):
                 bestCell = currCell
                 bestRange = travelDistance
                 if prey != None and prey.getWealth() > self.__wealth:
                     continue
-                bestSugar = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
+                bestWealth = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
         if bestCell == None:
             bestCell = self.__cell
         return bestCell
