@@ -8,7 +8,8 @@ class Agent:
         self.__born = birthday
         self.__cell = cell
         
-        self.__metabolism = configuration["metabolism"]
+        self.__sugarMetabolism = configuration["sugarMetabolism"]
+        self.__spiceMetabolism = configuration["spiceMetabolism"]
         self.__movement = configuration["movement"]
         self.__vision = configuration["vision"]
         self.__sugar = configuration["sugar"]
@@ -108,9 +109,13 @@ class Agent:
     def doMetabolism(self):
         if self.__alive == False:
             return
-        self.__sugar = self.__sugar - self.__metabolism
-        self.__cell.doConsumptionPollution(self.__metabolism)
-        if self.__sugar < 1:
+        self.__sugar = self.__sugar - self.__sugarMetabolism
+        # Verify that spice alone is impacting agent behavior
+        #self.__spiceMetabolism = 0
+        self.__spice = self.__spice - self.__spiceMetabolism
+        self.__cell.doConsumptionPollution(self.__sugarMetabolism)
+        self.__cell.doConsumptionPollution(self.__spiceMetabolism)
+        if self.__sugar < 1 or self.__spice < 1:
             self.setAlive(False)
             self.unsetCell()
 
@@ -140,10 +145,15 @@ class Agent:
                     neighbor.updateTimesVisitedFromAgent(self.__id, self.__lastMoved)
                     neighbor.updateTimesReproducedWithAgent(self.__id, self.__lastMoved)
                     self.updateTimesReproducedWithAgent(neighborID, self.__lastMoved)
-                    self.__sugar -= math.ceil(self.__startingSugar / 2)
-                    self.__spice -= math.ceil(self.__startingSpice / 2)
-                    neighbor.setSugar(neighbor.getSugar() - math.ceil(neighbor.getStartingSugar() / 2))
-                    neighbor.setSpice(neighbor.getSpice() - math.ceil(neighbor.getStartingSpice() / 2))
+
+                    sugarCost = math.ceil(self.__startingSugar / 2)
+                    spiceCost = math.ceil(self.__startingSpice / 2)
+                    mateSugarCost = math.ceil(neighbor.getStartingSugar() / 2)
+                    mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 2)
+                    self.__sugar -= sugarCost
+                    self.__spice -= spiceCost
+                    neighbor.setSugar(neighbor.getSugar() - mateSugarCost)
+                    neighbor.setSpice(neighbor.getSpice() - mateSpiceCost)
 
     def doTagging(self):
         if self.__tags == None or self.__alive == False:
@@ -247,7 +257,8 @@ class Agent:
 
     def findChildEndowment(self, mate):
         random.seed(self.__seed)
-        parentMetabolisms = [self.__metabolism, mate.getMetabolism()]
+        parentSugarMetabolisms = [self.__sugarMetabolism, mate.getSugarMetabolism()]
+        parentSpiceMetabolisms = [self.__spiceMetabolism, mate.getSpiceMetabolism()]
         parentMovements = [self.__movement, mate.getMovement()]
         parentVisions = [self.__vision, mate.getVision()]
         parentMaxAges = [self.__maxAge, mate.getMaxAge()]
@@ -260,7 +271,8 @@ class Agent:
         childStartingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
         childStartingSpice = math.ceil(self.__startingSpice / 2) + math.ceil(mate.getStartingSpice() / 2)
 
-        childMetabolism = parentMetabolisms[random.randrange(2)]
+        childSugarMetabolism = parentSugarMetabolisms[random.randrange(2)]
+        childSpiceMetabolism = parentSpiceMetabolisms[random.randrange(2)]
         childMovement = parentMovements[random.randrange(2)]
         childVision = parentVisions[random.randrange(2)]
         childMaxAge = parentMaxAges[random.randrange(2)]
@@ -278,9 +290,10 @@ class Agent:
             else:
                 childTags.append(mismatchTags[random.randrange(2)])
         childAggression = parentAggressionFactors[random.randrange(2)]
-        endowment = {"metabolism": childMetabolism, "movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
+        endowment = {"movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
-                     "aggressionFactor": childAggression, "maxFriends": childMaxFriends, "seed": self.__seed}
+                     "aggressionFactor": childAggression, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
+                     "spiceMetabolism": childSpiceMetabolism}
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -368,9 +381,6 @@ class Agent:
     def getMaxFriends(self):
         return self.__maxFriends
 
-    def getMetabolism(self):
-        return self.__metabolism
-
     def getMovement(self):
         return self.__movement
 
@@ -395,8 +405,14 @@ class Agent:
     def getSpice(self):
         return self.__spice
 
+    def getSpiceMetabolism(self):
+        return self.__spiceMetabolism
+
     def getSugar(self):
         return self.__sugar
+
+    def getSugarMetabolism(self):
+        return self.__sugarMetabolism
 
     def getTag(self, position):
         return self.__tags[position]
@@ -483,9 +499,6 @@ class Agent:
     def setMaxFriends(self, maxFriends):
         self.__maxFriends = maxFriends
 
-    def setMetabolism(self, metabolism):
-        self.__metabolism = metabolism
-
     def setMovement(self, movement):
         self.__movement = movement
 
@@ -505,8 +518,14 @@ class Agent:
     def setSpice(self, spice):
         self.__spice = spice
 
+    def setSpiceMetabolism(self, spiceMetabolism):
+        self.__spiceMetabolism = spiceMetabolism
+
     def setSugar(self, sugar):
         self.__sugar = sugar
+
+    def setSugarMetabolism(self, sugarMetabolism):
+        self.__sugarMetabolism = sugarMetabolism
 
     def setTag(self, position, value):
         self.__tags[position] = value
