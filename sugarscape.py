@@ -482,7 +482,7 @@ if __name__ == "__main__":
                      "agentMaxAge": [60, 100], "agentMaleToFemaleRatio": 1, "agentFemaleFertilityAge": [12, 15], "agentMaleFertilityAge": [12, 15],
                      "agentFemaleInfertilityAge": [40, 50], "agentMaleInfertilityAge": [50, 60], "agentTagStringLength": 11,
                      "agentAggressionFactor": [0, 0], "agentMaxFriends": 5, "agentMetabolismSugar": [1, 4], "agentMetabolismSpice": [1, 4],
-                     "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100],
+                     "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100], "agentMovement": [1, 6],
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1000,

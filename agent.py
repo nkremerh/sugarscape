@@ -176,7 +176,7 @@ class Agent:
         else:
             return agent.getWealth()
 
-    def findBestCellInVision(self):
+    def findBestCell(self):
         self.findCellsInVision()
         retaliators = self.findRetaliatorsInVision()
         greenRetaliation = True if self.__tribe == "green" or retaliators["green"] > self.__wealth else False
@@ -419,7 +419,7 @@ class Agent:
             return False
 
     def moveToBestCellInVision(self):
-        bestCell = self.findBestCellInVision()
+        bestCell = self.findBestCell()
         if self.__aggression > 0:
             self.doCombat(bestCell)
         else:
