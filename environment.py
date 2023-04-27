@@ -21,6 +21,7 @@ class Environment:
         self.__consumptionPollutionRate = configuration["consumptionPollutionRate"]
         self.__productionPollutionRate = configuration["productionPollutionRate"]
         self.__maxCombatLoot = configuration["maxCombatLoot"]
+        self.__equator = math.ceil(self.__height / 2)
         # Populate grid with NoneType objects
         self.__grid = [[None for j in range(width)]for i in range(height)]
 
@@ -59,6 +60,9 @@ class Environment:
 
     def getConsumptionPollutionRate(self):
         return self.__consumptionPollutionRate
+
+    def getEquator(self):
+        return self.__equator
 
     def getGlobalMaxSugar(self):
         return self.__globalMaxSugar
@@ -109,6 +113,9 @@ class Environment:
 
     def setConsumptionPollutionRate(self, consumptionPollutionRate):
         self.__consumptionPollutionRate = consumptionPollutionRate
+
+    def setEquator(self, equator):
+        self.__equator = equator
 
     def setGlobalMaxSugar(self, globalMaxSugar):
         self.__globalMaxSugar = globalMaxSugar
