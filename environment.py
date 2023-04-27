@@ -31,15 +31,19 @@ class Environment:
         for i in range(self.__height):
             for j in range(self.__width):
                 cellCurrSugar = self.__grid[i][j].getCurrSugar()
+                cellCurrSpice = self.__grid[i][j].getCurrSpice()
                 cellMaxSugar = self.__grid[i][j].getMaxSugar()
+                cellMaxSpice = self.__grid[i][j].getMaxSpice()
                 cellSeason = self.__grid[i][j].getSeason()
                 if self.__seasonInterval > 0:
                     if self.__timestep % self.__seasonInterval == 0:
                         self.__grid[i][j].updateSeason()
                     if (cellSeason == "summer") or (cellSeason == "winter" and self.__seasonalGrowbackCountdown == self.__seasonalGrowbackDelay):
                         self.__grid[i][j].setCurrSugar(min(cellCurrSugar + self.__sugarRegrowRate, cellMaxSugar))
+                        self.__grid[i][j].setCurrSpice(min(cellCurrSpice + self.__spiceRegrowRate, cellMaxSpice))
                 else:
                     self.__grid[i][j].setCurrSugar(min(cellCurrSugar + self.__sugarRegrowRate, cellMaxSugar))
+                    self.__grid[i][j].setCurrSpice(min(cellCurrSpice + self.__spiceRegrowRate, cellMaxSpice))
                 if self.__pollutionDiffusionDelay > 0 and self.__pollutionDiffusionCountdown == self.__pollutionDiffusionDelay:
                     self.__grid[i][j].doPollutionDiffusion()
 

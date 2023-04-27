@@ -205,7 +205,6 @@ class Agent:
         combatMaxLoot = self.__cell.getEnvironment().getMaxCombatLoot()
         wraparound = self.__vision + 1
         for currCell in self.__cellsInVision:
-            #currCell = self.__cellsInVision[i]
             # Either X or Y distance will be 0 due to cardinal direction movement only
             distanceX = (abs(agentX - currCell.getX()) % wraparound)
             distanceY = (abs(agentY - currCell.getY()) % wraparound)
@@ -227,15 +226,16 @@ class Agent:
                 # Avoid attacked prey when retaliation is possible
                 if retaliationPossible[preyTribe] == True:
                     continue
-                bestWealth = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
-            currWealth = (currCell.getCurrSugar() / (1 + currCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
+                bestWealth = ((bestCell.getCurrSugar() + bestCell.getCurrSpice()) / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
+            # TODO: Modify relative value of cell by agent welfare function
+            currWealth = ((currCell.getCurrSugar() + currCell.getCurrSpice()) / (1 + currCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
             # Move to closest cell with the most resources
             if currWealth > bestWealth or (currWealth == bestWealth and travelDistance < bestRange):
                 bestCell = currCell
                 bestRange = travelDistance
                 if prey != None and prey.getWealth() > self.__wealth:
                     continue
-                bestWealth = (bestCell.getCurrSugar() / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, self.findAgentWealthAtCell(currCell)))
+                bestWealth = ((bestCell.getCurrSugar() + bestCell.getCurrSpice()) / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
         if bestCell == None:
             bestCell = self.__cell
         return bestCell
