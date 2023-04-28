@@ -84,12 +84,17 @@ class Agent:
         prey = cell.getAgent()
         if prey != None:
             maxCombatLoot = self.__cell.getEnvironment().getMaxCombatLoot()
-            preyWealth = prey.getWealth()
-            combatLoot = min(maxCombatLoot, preyWealth)
-            self.__sugar += combatLoot
-            self.__wealth += combatLoot
-            prey.setSugar(preyWealth - combatLoot)
+            preySugar = prey.getSugar()
+            preySpice = prey.getSpice()
+            sugarLoot = min(maxCombatLoot, preySugar)
+            spiceLoot = min(maxCombatLoot, preySpice)
+            self.__sugar += sugarLoot
+            self.__spice += spiceLoot
+            self.__wealth = self.__sugar + self.__spice
+            prey.setSugar(preySugar - sugarLoot)
+            prey.setSpice(preySpice - spiceLoot)
             prey.doDeath()
+            #print("Agent {0} ({1} tribe) killed agent {2} ({3} tribe) and gained {4} wealth".format(str(self), self.__tribe, str(prey), prey.getTribe(), sugarLoot + spiceLoot))
         self.setCell(cell)
 
     def doDeath(self):
@@ -105,25 +110,26 @@ class Agent:
             inheritancePerChild = math.floor(self.__wealth / len(livingChildren))
             for child in livingChildren:
                 child.setSugar(child.getWealth() + inheritancePerChild)
+        self.__sugar = 0
+        self.__spice = 0
 
     def doMetabolism(self):
         if self.__alive == False:
             return
-        self.__sugar = self.__sugar - self.__sugarMetabolism
+        self.__sugar -= self.__sugarMetabolism
         # Verify that spice alone is impacting agent behavior
         #self.__spiceMetabolism = 0
-        self.__spice = self.__spice - self.__spiceMetabolism
+        self.__spice -= self.__spiceMetabolism
         self.__cell.doConsumptionPollution(self.__sugarMetabolism)
         self.__cell.doConsumptionPollution(self.__spiceMetabolism)
         if self.__sugar < 1 or self.__spice < 1:
-            self.setAlive(False)
-            self.unsetCell()
+            self.doDeath()
 
     def doReproduction(self):
         # Agent marked for removal should not reproduce
         if self.__alive == False:
             return
-        random.seed(self.__seed)
+        #random.seed(self.__seed)
         neighborCells = self.__cell.getNeighbors()
         random.shuffle(neighborCells)
         emptyCells = self.findEmptyNeighborCells()
@@ -159,7 +165,7 @@ class Agent:
         if self.__tags == None or self.__alive == False:
             return
         neighborCells = self.__cell.getNeighbors()
-        random.seed(self.__seed)
+        #random.seed(self.__seed)
         random.shuffle(neighborCells)
         for neighborCell in neighborCells:
             neighbor = neighborCell.getAgent()
@@ -195,7 +201,7 @@ class Agent:
         blueRetaliation = True if self.__tribe == "blue" or retaliators["blue"] > self.__wealth else False
         redRetaliation = True if self.__tribe == "red" or retaliators["red"] > self.__wealth else False
         retaliationPossible = {"green": greenRetaliation, "blue": blueRetaliation, "red": redRetaliation, "empty": False}
-        random.seed(self.__seed)
+        #random.seed(self.__seed)
         random.shuffle(self.__cellsInVision)
         bestCell = None
         bestRange = max(self.__cell.getEnvironment().getHeight(), self.__cell.getEnvironment().getWidth())
@@ -226,16 +232,18 @@ class Agent:
                 # Avoid attacked prey when retaliation is possible
                 if retaliationPossible[preyTribe] == True:
                     continue
-                bestWealth = ((bestCell.getCurrSugar() + bestCell.getCurrSpice()) / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
+                bestWealth = ((bestCell.getCurrSugar() + bestCell.getCurrSpice()) + (self.__aggression * min(combatMaxLoot, preyWealth))) / (1 + bestCell.getCurrPollution())
             # TODO: Modify relative value of cell by agent welfare function
-            currWealth = ((currCell.getCurrSugar() + currCell.getCurrSpice()) / (1 + currCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
+            # TODO: Agent behavior is incredibly aggressive when driven by this wealth calculation
+            currWealth = ((currCell.getCurrSugar() + currCell.getCurrSpice()) + (self.__aggression * min(combatMaxLoot, preyWealth))) / (1 + currCell.getCurrPollution())
             # Move to closest cell with the most resources
             if currWealth > bestWealth or (currWealth == bestWealth and travelDistance < bestRange):
                 bestCell = currCell
                 bestRange = travelDistance
                 if prey != None and prey.getWealth() > self.__wealth:
                     continue
-                bestWealth = ((bestCell.getCurrSugar() + bestCell.getCurrSpice()) / (1 + bestCell.getCurrPollution())) + (self.__aggression * min(combatMaxLoot, preyWealth))
+                bestWealth = currWealth
+                #print("Agent {0} ranking cell ({1},{2}) occupied by agent {3} as best cell in vision".format(str(self), bestCell.getX(), bestCell.getY(), str(bestCell.getAgent())))
         if bestCell == None:
             bestCell = self.__cell
         return bestCell
@@ -256,7 +264,7 @@ class Agent:
             self.setCellsInVision(list(set(northCells + southCells + eastCells + westCells)))
 
     def findChildEndowment(self, mate):
-        random.seed(self.__seed)
+        #random.seed(self.__seed)
         parentSugarMetabolisms = [self.__sugarMetabolism, mate.getSugarMetabolism()]
         parentSpiceMetabolisms = [self.__spiceMetabolism, mate.getSpiceMetabolism()]
         parentMovements = [self.__movement, mate.getMovement()]

@@ -55,7 +55,7 @@ class Environment:
         rows = list(range(self.__height))
         columns = list(range(self.__width))
         cells = [(x, y) for x in rows for y in columns]
-        random.seed(self.__seed)
+        #random.seed(self.__seed)
         random.shuffle(cells)
         for coords in cells:
             if self.__grid[coords[0]][coords[1]] != None:

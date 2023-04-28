@@ -118,7 +118,7 @@ class Sugarscape:
             maxAge[0] = -1
             maxAge[1] = -1
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
-        random.seed(self.__seed)
+        #random.seed(self.__seed)
         agentEndowments = self.randomizeAgentEndowments(startingAgents, sugarMetabolism, spiceMetabolism, movement, vision, startingSugar, startingSpice,
                                                         maxAge, maleToFemaleRatio, femaleFertilityAge, maleFertilityAge, femaleInfertilityAge,
                                                         maleInfertilityAge, tagStringLength, aggressionFactor, maxFriends)
@@ -302,7 +302,7 @@ class Sugarscape:
             maleFertilityAges.append(currMaleFertilityAge)
             femaleInfertilityAges.append(currFemaleInfertilityAge)
             maleInfertilityAges.append(currMaleInfertilityAge)
-            random.seed(self.__seed)
+            #random.seed(self.__seed)
             tags.append([random.randrange(2) for i in range(tagStringLength)])
             aggressionFactors.append(currAggression)
             friends.append(currFriends)
@@ -498,7 +498,8 @@ class Sugarscape:
         self.__log.write(logString)
 
     def __str__(self):
-        string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__lastLoggedTimestep, len(self.__agents))
+        #string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__lastLoggedTimestep, len(self.__agents))
+        string = "Timestep: {0}\nLiving Agents: {1}".format(self.__lastLoggedTimestep, len(self.__agents))
         return string
 
 def parseConfigFile(configFile, configuration):
@@ -549,7 +550,7 @@ if __name__ == "__main__":
     # TODO: Simulation no longer deterministic from random seed
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
-    print(str(S))
+    #print(str(S))
     S.runSimulation(configuration["timesteps"])
     #print(str(S))
     exit(0)
