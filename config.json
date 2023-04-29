@@ -30,7 +30,7 @@
     "environmentSeasonInterval": 0,
     "environmentSpiceRegrowRate": 1,
     "environmentSugarRegrowRate": 1,
-    "timesteps": 500,
+    "timesteps": 200,
     "headlessMode": false,
     "startingAgents": 500,
     "logfile": "log.json",

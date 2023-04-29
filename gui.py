@@ -121,16 +121,13 @@ class GUI:
         self.__sugarscape.setRun()
         self.__widgets["playButton"].config(text="  Play Simulation  " if self.__sugarscape.getRun() == False else "Pause Simulation")
 
-    def doRenderButton(self):
+    def doStatsButton(self, *args):
         return
 
-    def doStatsButton(self):
+    def doStepBackwardButton(self, *args):
         return
 
-    def doStepBackwardButton(self):
-        return
-
-    def doStepForwardButton(self):
+    def doStepForwardButton(self, *args):
         if self.__sugarscape.getEnd() == True:
             self.__sugarscape.endSimulation()
         elif len(self.__sugarscape.getAgents()) == 0:

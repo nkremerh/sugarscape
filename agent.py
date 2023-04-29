@@ -1,6 +1,5 @@
 import math
 import random
-import uuid
 
 class Agent:
     def __init__(self, agentID, birthday, cell, configuration):
@@ -45,7 +44,8 @@ class Agent:
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.__cell.getEnvironment().getSugarscape()
-        child = Agent(uuid.uuid4(), self.__timestep, cell, childConfiguration)
+        childID = sugarscape.generateAgentID()
+        child = Agent(childID, self.__timestep, cell, childConfiguration)
         child.setCell(cell)
         sugarscape.addAgent(child)
         if self.__sex == "female":
@@ -95,6 +95,7 @@ class Agent:
             prey.setSugar(preySugar - sugarLoot)
             prey.setSpice(preySpice - spiceLoot)
             prey.doDeath()
+            # Debugging string
             #print("Agent {0} ({1} tribe) killed agent {2} ({3} tribe) and gained {4} wealth".format(str(self), self.__tribe, str(prey), prey.getTribe(), sugarLoot + spiceLoot))
         self.setCell(cell)
 
@@ -152,8 +153,6 @@ class Agent:
         if self.__alive == False:
             return
         self.__sugar -= self.__sugarMetabolism
-        # Verify that spice alone is impacting agent behavior
-        #self.__spiceMetabolism = 0
         self.__spice -= self.__spiceMetabolism
         self.__cell.doConsumptionPollution(self.__sugarMetabolism)
         self.__cell.doConsumptionPollution(self.__spiceMetabolism)
@@ -164,7 +163,6 @@ class Agent:
         # Agent marked for removal should not reproduce
         if self.__alive == False:
             return
-        #random.seed(self.__seed)
         neighborCells = self.__cell.getNeighbors()
         random.shuffle(neighborCells)
         emptyCells = self.findEmptyNeighborCells()
@@ -172,7 +170,7 @@ class Agent:
             neighbor = neighborCell.getAgent()
             if neighbor != None:
                 neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
-                emptyCellsWithNeighbor = list(set(emptyCells + neighbor.findEmptyNeighborCells()))
+                emptyCellsWithNeighbor = emptyCells + neighbor.findEmptyNeighborCells()
                 random.shuffle(emptyCellsWithNeighbor)
                 if self.isFertile() == True and neighborCompatibility == True and len(emptyCellsWithNeighbor) != 0:
                     emptyCell = emptyCellsWithNeighbor.pop()
@@ -186,28 +184,27 @@ class Agent:
                     neighbor.updateTimesVisitedFromAgent(self.__id, self.__lastMoved)
                     neighbor.updateTimesReproducedWithAgent(self.__id, self.__lastMoved)
                     self.updateTimesReproducedWithAgent(neighborID, self.__lastMoved)
+                    # Debugging string
+                    #print("Agents {0},{1} produced child at ({2},{3})".format(str(self), str(neighbor), emptyCell.getX(), emptyCell.getY()))
 
+                    # TODO: Reproduction cost from book high enough to kill initial population
                     #sugarCost = math.ceil(self.__startingSugar / 2)
                     #spiceCost = math.ceil(self.__startingSpice / 2)
-                    # TODO: Reproduction cost from book high enough to kill initial population
-                    sugarCost = math.ceil(self.__startingSugar / 4)
-                    spiceCost = math.ceil(self.__startingSpice / 4)
                     #mateSugarCost = math.ceil(neighbor.getStartingSugar() / 2)
                     #mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 2)
+                    sugarCost = math.ceil(self.__startingSugar / 4)
+                    spiceCost = math.ceil(self.__startingSpice / 4)
                     mateSugarCost = math.ceil(neighbor.getStartingSugar() / 4)
                     mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 4)
                     self.__sugar -= sugarCost
                     self.__spice -= spiceCost
-                    #self.__spice -= 2
                     neighbor.setSugar(neighbor.getSugar() - mateSugarCost)
                     neighbor.setSpice(neighbor.getSpice() - mateSpiceCost)
-                    #neighbor.setSpice(neighbor.getSpice() - 2)
 
     def doTagging(self):
         if self.__tags == None or self.__alive == False:
             return
         neighborCells = self.__cell.getNeighbors()
-        #random.seed(self.__seed)
         random.shuffle(neighborCells)
         for neighborCell in neighborCells:
             neighbor = neighborCell.getAgent()
@@ -221,7 +218,7 @@ class Agent:
         # Prevent dead or already moved agent from moving
         if self.__alive == True and self.__lastMoved != self.__timestep:
             self.__lastMoved = self.__timestep
-            self.moveToBestCellInVision()
+            self.moveToBestCell()
             self.updateNeighbors()
             self.collectResourcesAtCell()
             self.doMetabolism()
@@ -243,8 +240,16 @@ class Agent:
         blueRetaliation = True if self.__tribe == "blue" or retaliators["blue"] > self.__wealth else False
         redRetaliation = True if self.__tribe == "red" or retaliators["red"] > self.__wealth else False
         retaliationPossible = {"green": greenRetaliation, "blue": blueRetaliation, "red": redRetaliation, "empty": False}
-        #random.seed(self.__seed)
         random.shuffle(self.__cellsInVision)
+
+        # Debugging string
+        '''
+        coords = "Agent {0} can see: ".format(str(self))
+        for cell in self.__cellsInVision:
+            coords += "({0},{1}) ".format(cell.getX(), cell.getY())
+        print(coords)
+        '''
+
         bestCell = None
         bestRange = max(self.__cell.getEnvironment().getHeight(), self.__cell.getEnvironment().getWidth())
         bestWealth = 0
@@ -285,6 +290,7 @@ class Agent:
                 if prey != None and prey.getWealth() > self.__wealth:
                     continue
                 bestWealth = currWealth
+                # Debugging string
                 #print("Agent {0} ranking cell ({1},{2}) occupied by agent {3} as best cell in vision".format(str(self), bestCell.getX(), bestCell.getY(), str(bestCell.getAgent())))
         if bestCell == None:
             bestCell = self.__cell
@@ -302,11 +308,9 @@ class Agent:
                 southCells.append(southCells[-1].getSouthNeighbor())
                 eastCells.append(eastCells[-1].getEastNeighbor())
                 westCells.append(westCells[-1].getWestNeighbor())
-            # Keep only unique cells
-            self.setCellsInVision(list(set(northCells + southCells + eastCells + westCells)))
+            self.setCellsInVision(northCells + southCells + eastCells + westCells)
 
     def findChildEndowment(self, mate):
-        #random.seed(self.__seed)
         parentSugarMetabolisms = [self.__sugarMetabolism, mate.getSugarMetabolism()]
         parentSpiceMetabolisms = [self.__spiceMetabolism, mate.getSpiceMetabolism()]
         parentMovements = [self.__movement, mate.getMovement()]
@@ -414,7 +418,6 @@ class Agent:
 
     def getFather(self):
         return self.__socialNetwork["father"]
-        #return self.__parents["father"]
 
     def getFertile(self):
         return self.__fertile
@@ -442,7 +445,6 @@ class Agent:
 
     def getMother(self):
         return self.__socialNetwork["mother"]
-        #return self.__parents["mother"]
 
     def getSex(self):
         return self.__sex
@@ -506,12 +508,14 @@ class Agent:
         else:
             return False
 
-    def moveToBestCellInVision(self):
+    def moveToBestCell(self):
         bestCell = self.findBestCell()
         if self.__aggression > 0:
             self.doCombat(bestCell)
         else:
             self.setCell(bestCell)
+        # Debugging string
+        #print("Agent {0} moved to ({1},{2})".format(str(self), bestCell.getX(), bestCell.getY()))
 
     def setAge(self, age):
         self.__age = age
@@ -539,8 +543,6 @@ class Agent:
         if fatherID not in self.__socialNetwork:
             self.addAgentToSocialNetwork(father)
         self.__socialNetwork["father"] = father
-        #self.__parents["father"] = father
-        #self.__socialNetwork[father.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def setFertile(self, fertile):
         self.__fertile = fertile
@@ -571,8 +573,6 @@ class Agent:
         if motherID not in self.__socialNetwork:
             self.addAgentToSocialNetwork(mother)
         self.__socialNetwork["mother"] = mother
-        #self.__parents["mother"] = mother
-        #self.__socialNetwork[mother.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def setSex(self, sex):
         self.__sex = sex

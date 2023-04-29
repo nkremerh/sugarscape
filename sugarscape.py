@@ -10,12 +10,13 @@ import json
 import math
 import random
 import sys
-import uuid
 
 class Sugarscape:
     def __init__(self, configuration):
         self.__configuration = configuration
         self.__timestep = 0
+        self.__nextAgentID = 0
+        self.__lastLoggedTimestep = 0
         environmentConfiguration = {"globalMaxSugar": configuration["environmentMaxSugar"], "sugarRegrowRate": configuration["environmentSugarRegrowRate"],
                                     "seasonInterval": configuration["environmentSeasonInterval"], "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
                                     "consumptionPollutionRate": configuration["environmentConsumptionPollutionRate"], "productionPollutionRate": configuration["environmentProductionPollutionRate"],
@@ -34,8 +35,8 @@ class Sugarscape:
         self.__end = False # Simulation end flag
         self.__runtimeStats = {"timestep": 0, "agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                                "meanTradePrice": 0, "meanTradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
-        self.__lastLoggedTimestep = 0
         self.__log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
+        self.__logAgent = None
 
     def addAgent(self, agent):
         self.__agents.append(agent)
@@ -119,23 +120,31 @@ class Sugarscape:
             maxAge[0] = -1
             maxAge[1] = -1
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
-        #random.seed(self.__seed)
         agentEndowments = self.randomizeAgentEndowments(startingAgents, sugarMetabolism, spiceMetabolism, movement, vision, startingSugar, startingSpice,
                                                         maxAge, maleToFemaleRatio, femaleFertilityAge, maleFertilityAge, femaleInfertilityAge,
                                                         maleInfertilityAge, tagStringLength, aggressionFactor, maxFriends, inheritancePolicy)
+        # Debugging string
+        #print("Agent endowments: {0}".format(agentEndowments))
+        randCoords = []
+        for i in range(self.__environmentHeight):
+            for j in range(self.__environmentWidth):
+                randCoords.append([i, j])
+        random.shuffle(randCoords)
+
         for i in range(numAgents):
-            randX = random.randrange(self.__environmentHeight)
-            randY = random.randrange(self.__environmentWidth)
-            while self.__environment.getCell(randX, randY).getAgent() != None and len(self.__agents) <= (self.__environmentHeight * self.__environmentWidth):
-                randX = random.randrange(self.__environment.getHeight())
-                randY = random.randrange(self.__environment.getWidth())
-            c = self.__environment.getCell(randX, randY)
+            randCoord = randCoords.pop()
+            randCellX = randCoord[0]
+            randCellY = randCoord[1]
+            c = self.__environment.getCell(randCellX, randCellY)
             agentConfiguration = agentEndowments[i]
-            # Generate random UUID for agent identification
-            agentID = str(uuid.uuid4())
+            agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.__timestep, c, agentConfiguration)
             c.setAgent(a)
             self.__agents.append(a)
+            # Debugging string
+            #print("Agent {0} placed at ({1},{2})".format(str(a), randCellX, randCellY))
+        # Debugging string
+        #print("Agents: {0}".format(str([str(agent) for agent in self.__agents])))
 
     def configureEnvironment(self, maxCapacity):
         height = self.__environment.getHeight()
@@ -156,7 +165,11 @@ class Sugarscape:
         self.addSpicePeak(startX2, startY2, radius, maxCapacity)
         self.__environment.setCellNeighbors()
 
+    def logAgent(self):
+        return
+
     def doTimestep(self):
+        self.__timestep += 1
         if self.__end == True or len(self.__agents) == 0:
             self.endSimulation()
         self.replaceDeadAgents()
@@ -165,18 +178,20 @@ class Sugarscape:
         self.__environment.doTimestep(self.__timestep)
         random.shuffle(self.__agents)
         deadAgents = []
+        turnOrder = []
         for agent in self.__agents:
+            turnOrder.append(str(agent))
             if agent.isAlive() == False:
                 deadAgents.append(agent)
-                #self.__agents.remove(agent)
             else:
                 agent.doTimestep(self.__timestep)
         for agent in deadAgents:
             self.__agents.remove(agent)
         if self.__gui != None:
             self.__gui.doTimestep()
-        print("Timestep: {0}".format(self.__timestep))
-        self.__timestep += 1
+        print("Timestep: {0}".format(self.__timestep)) 
+        # Debugging string
+        #print("Agents at timestep {0}: {1}".format(self.__timestep, str(turnOrder)))
 
     def endLog(self):
         if self.__log == None:
@@ -191,6 +206,11 @@ class Sugarscape:
         self.endLog()
         print(str(self))
         exit(0)
+
+    def generateAgentID(self):
+        agentID = self.__nextAgentID
+        self.__nextAgentID += 1
+        return agentID
 
     def getAgents(self):
         return self.__agents
@@ -311,7 +331,6 @@ class Sugarscape:
             maleFertilityAges.append(currMaleFertilityAge)
             femaleInfertilityAges.append(currFemaleInfertilityAge)
             maleInfertilityAges.append(currMaleInfertilityAge)
-            #random.seed(self.__seed)
             tags.append([random.randrange(2) for i in range(tagStringLength)])
             aggressionFactors.append(currAggression)
             friends.append(currFriends)
@@ -407,7 +426,7 @@ class Sugarscape:
         self.startLog()
         if self.__gui != None:
             self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
-        t = 0
+        t = 1
         timesteps = timesteps - self.__timestep
         while t <= timesteps:
             self.doTimestep()
@@ -555,7 +574,6 @@ if __name__ == "__main__":
                      "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1,
                      "logfile": None, "seed": 12345, "headlessMode": False, "timesteps": 1000}
     configuration = parseOptions(configuration)
-    # TODO: Simulation no longer deterministic from random seed
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
     S.runSimulation(configuration["timesteps"])
