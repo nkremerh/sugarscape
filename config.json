@@ -3,6 +3,7 @@
     "agentAggressionFactor": [0, 0],
     "agentFemaleInfertilityAge": [40, 50],
     "agentFemaleFertilityAge": [12, 15],
+    "agentInheritancePolicy": "children",
     "agentMaleInfertilityAge": [50, 60],
     "agentMaleFertilityAge": [12, 15],
     "agentMaleToFemaleRatio": 1,

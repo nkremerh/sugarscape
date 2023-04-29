@@ -25,6 +25,7 @@ class Agent:
         self.__maxFriends = configuration["maxFriends"]
         self.__wealth = configuration["sugar"] + configuration["spice"]
         self.__seed = configuration["seed"]
+        self.__inheritancePolicy = configuration["inheritancePolicy"]
 
         self.__alive = True
         self.__age = 0
@@ -32,7 +33,7 @@ class Agent:
         self.__lastMoved = -1
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
-        self.__socialNetwork = {}
+        self.__socialNetwork = {"father": None, "mother": None, "children": [], "friends": []}
         self.__parents = {"father": None, "mother": None}
         self.__children = []
         self.__friends = []
@@ -100,16 +101,50 @@ class Agent:
     def doDeath(self):
         self.setAlive(False)
         self.unsetCell()
+        self.doInheritance()
+
+    def doInheritance(self):
+        # Provide inheritance for living children/sons/daughters/friends
         livingChildren = []
-        # Provide inheritance for living children
-        # TODO: Determine complexity of other inheritance mechanisms in book (pg. 67)
-        for child in self.__children:
+        livingSons = []
+        livingDaughters = []
+        livingFriends = []
+        for child in self.__socialNetwork["children"]:
             if child.isAlive() == True:
                 livingChildren.append(child)
-        if len(livingChildren) > 0:
-            inheritancePerChild = math.floor(self.__wealth / len(livingChildren))
+                childSex = child.getSex()
+                if childSex == "male":
+                    livingSons.append(child)
+                elif childSex == "female":
+                    livingDaughters.append(child)
+        for friend in self.__socialNetwork["friends"]:
+            if friend["friend"].isAlive() == True:
+                livingFriends.append(friend["friend"])
+
+        if self.__inheritancePolicy == "children" and len(livingChildren) > 0:
+            sugarInheritance = math.floor(self.__sugar / len(livingChildren))
+            spiceInheritance = math.floor(self.__spice / len(livingChildren))
             for child in livingChildren:
-                child.setSugar(child.getWealth() + inheritancePerChild)
+                child.setSugar(child.getSugar() + sugarInheritance)
+                child.setSpice(child.getSpice() + spiceInheritance)
+        elif self.__inheritancePolicy == "sons" and len(livingSons) > 0:
+            sugarInheritance = math.floor(self.__sugar / len(livingSons))
+            spiceInheritance = math.floor(self.__spice / len(livingSons))
+            for son in livingSons:
+                son.setSugar(son.getSugar() + sugarInheritance)
+                son.setSpice(son.getSpice() + spiceInheritance)
+        elif self.__inheritancePolicy == "daughters" and len(livingDaughters) > 0:
+            sugarInheritance = math.floor(self.__sugar / len(livingDaughters))
+            spiceInheritance = math.floor(self.__spice / len(livingDaughters))
+            for daughter in livingDaughters:
+                daughter.setSugar(daughter.getSugar() + sugarInheritance)
+                daughter.setSpice(daughter.getSpice() + spiceInheritance)
+        elif self.__inheritancePolicy == "friends" and len(livingFriends) > 0:
+            sugarInheritance = math.floor(self.__sugar / len(livingFriends))
+            spiceInheritance = math.floor(self.__spice / len(livingFriends))
+            for friend in livingFriends:
+                friend.setSugar(friend.getSugar() + sugarInheritance)
+                friend.setSpice(friend.getSpice() + spiceInheritance)
         self.__sugar = 0
         self.__spice = 0
 
@@ -143,7 +178,7 @@ class Agent:
                     emptyCell = emptyCellsWithNeighbor.pop()
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
-                    self.__children.append(child)
+                    self.__socialNetwork["children"].append(child)
                     childID = child.getID()
                     neighborID = neighbor.getID()
                     self.addAgentToSocialNetwork(childID)
@@ -308,7 +343,7 @@ class Agent:
         endowment = {"movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
                      "aggressionFactor": childAggression, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
-                     "spiceMetabolism": childSpiceMetabolism}
+                     "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy}
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -379,7 +414,8 @@ class Agent:
         return self.__infertilityAge
 
     def getFather(self):
-        return self.__parents["father"]
+        return self.__socialNetwork["father"]
+        #return self.__parents["father"]
 
     def getFertile(self):
         return self.__fertile
@@ -389,6 +425,9 @@ class Agent:
 
     def getID(self):
         return self.__id
+
+    def getInheritancePolicy(self):
+        return self.__inheritancePolicy
 
     def getMaxAge(self):
         return self.__maxAge
@@ -403,7 +442,8 @@ class Agent:
         return self.__mooreNeighbors
 
     def getMother(self):
-        return self.__parents["mother"]
+        return self.__socialNetwork["mother"]
+        #return self.__parents["mother"]
 
     def getSex(self):
         return self.__sex
@@ -496,8 +536,12 @@ class Agent:
         self.__infertilityAge = infertilityAge
 
     def setFather(self, father):
-        self.__parents["father"] = father
-        self.__socialNetwork[father.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
+        fatherID = father.getID()
+        if fatherID not in self.__socialNetwork:
+            self.addAgentToSocialNetwork(father)
+        self.__socialNetwork["father"] = father
+        #self.__parents["father"] = father
+        #self.__socialNetwork[father.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def setFertile(self, fertile):
         self.__fertile = fertile
@@ -507,6 +551,9 @@ class Agent:
 
     def setID(self, agentID):
         self.__id = agentID
+
+    def setInheritancePolicy(self, inheritancePolicy):
+        self.__inheritancePolicy = inheritancePolicy
 
     def setMaxAge(self, maxAge):
         self.__maxAge = maxAge
@@ -521,8 +568,12 @@ class Agent:
         self.__mooreNeighbors = mooreNeighbors
 
     def setMother(self, mother):
-        self.__parents["mother"] = mother
-        self.__socialNetwork[mother.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
+        motherID = mother.getID()
+        if motherID not in self.__socialNetwork:
+            self.addAgentToSocialNetwork(mother)
+        self.__socialNetwork["mother"] = mother
+        #self.__parents["mother"] = mother
+        #self.__socialNetwork[mother.getID()] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
 
     def setSex(self, sex):
         self.__sex = sex
@@ -563,24 +614,24 @@ class Agent:
     def updateFriends(self, neighbor):
         neighborID = neighbor.getID()
         neighborHammingDistance = self.findHammingDistanceInTags(neighbor)
-        neighborEntry = {"friend": neighborID, "hammingDistance": neighborHammingDistance}
-        if len(self.__friends) < self.__maxFriends:
-            self.__friends.append(neighborEntry)
+        neighborEntry = {"friend": neighbor, "hammingDistance": neighborHammingDistance}
+        if len(self.__socialNetwork["friends"]) < self.__maxFriends:
+            self.__socialNetwork["friends"].append(neighborEntry)
         else:
             maxHammingDistance = 0
             maxDifferenceFriend = None
-            for friend in self.__friends:
+            for friend in self.__socialNetwork["friends"]:
                 # If already a friend, update Hamming Distance
-                if friend["friend"] == neighborID:
-                    self.__friends.remove(friend)
-                    self.__friends.append(neighborEntry)
+                if friend["friend"].getID() == neighborID:
+                    self.__socialNetwork["friends"].remove(friend)
+                    self.__socialNetwork["friends"].append(neighborEntry)
                     return
                 if friend["hammingDistance"] > maxHammingDistance:
                     maxDistanceFriend = friend
                     maxHammingDistance = friend["hammingDistance"]
             if maxHammingDistance > neighborHammingDistance:
-                self.__friends.remove(maxDistanceFriend)
-                self.__friends.append(neighborEntry)
+                self.__socialNetwork["friends"].remove(maxDistanceFriend)
+                self.__socialNetwork["friends"].append(neighborEntry)
 
     def updateMooreNeighbors(self):
         for direction, neighbor in self.__vonNeumannNeighbors.items():

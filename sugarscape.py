@@ -106,6 +106,7 @@ class Sugarscape:
         tagStringLength = configs["agentTagStringLength"]
         aggressionFactor = configs["agentAggressionFactor"]
         maxFriends = configs["agentMaxFriends"]
+        inheritancePolicy = configs["agentInheritancePolicy"]
 
         if self.__environment == None:
             return
@@ -121,7 +122,7 @@ class Sugarscape:
         #random.seed(self.__seed)
         agentEndowments = self.randomizeAgentEndowments(startingAgents, sugarMetabolism, spiceMetabolism, movement, vision, startingSugar, startingSpice,
                                                         maxAge, maleToFemaleRatio, femaleFertilityAge, maleFertilityAge, femaleInfertilityAge,
-                                                        maleInfertilityAge, tagStringLength, aggressionFactor, maxFriends)
+                                                        maleInfertilityAge, tagStringLength, aggressionFactor, maxFriends, inheritancePolicy)
         for i in range(numAgents):
             randX = random.randrange(self.__environmentHeight)
             randY = random.randrange(self.__environmentWidth)
@@ -229,7 +230,7 @@ class Sugarscape:
 
     def randomizeAgentEndowments(self, numAgents, sugarMetabolism, spiceMetabolism, movement, vision, startingSugar, startingSpice,
                                  maxAge, maleToFemaleRatio, femaleFertilityAge, maleFertilityAge, femaleInfertilityAge,
-                                 maleInfertilityAge, tagStringLength, aggressionFactor, maxFriends):
+                                 maleInfertilityAge, tagStringLength, aggressionFactor, maxFriends, inheritancePolicy):
         endowments = []
         movements = []
         visions = []
@@ -378,7 +379,7 @@ class Sugarscape:
             agentEndowment = {"movement": movements.pop(), "maxAge": ages.pop(), "sugar": startingSugars.pop(),
                               "spice": startingSpices.pop(), "sex": sexes[i], "tags": tags.pop(), "aggressionFactor": aggressionFactors.pop(),
                               "maxFriends": friends.pop(), "vision": visions.pop(), "seed": self.__seed, "spiceMetabolism": spiceMetabolisms.pop(),
-                              "sugarMetabolism": sugarMetabolisms.pop()}
+                              "sugarMetabolism": sugarMetabolisms.pop(), "inheritancePolicy": inheritancePolicy}
             if sexes[i] == "female":
                 agentEndowment["fertilityAge"] = femaleFertilityAges.pop()
                 agentEndowment["infertilityAge"] = femaleInfertilityAges.pop()
@@ -451,8 +452,8 @@ class Sugarscape:
         for wealth in agentWealths:
             height += wealth
             area += (height - wealth) / 2
-        lineOfEquality = (height * max(1, len(agentWealths))) / 2
-        giniCoefficient = (lineOfEquality - area) / lineOfEquality
+        lineOfEquality = (height * len(agentWealths)) / 2
+        giniCoefficient = (lineOfEquality - area) / max(1, lineOfEquality)
         return giniCoefficient
 
     def updateRuntimeStats(self):
@@ -544,7 +545,7 @@ if __name__ == "__main__":
                      "agentMaxAge": [60, 100], "agentMaleToFemaleRatio": 1, "agentFemaleFertilityAge": [12, 15], "agentMaleFertilityAge": [12, 15],
                      "agentFemaleInfertilityAge": [40, 50], "agentMaleInfertilityAge": [50, 60], "agentTagStringLength": 11,
                      "agentAggressionFactor": [0, 0], "agentMaxFriends": 5, "agentSugarMetabolism": [1, 4], "agentSpiceMetabolism": [1, 4],
-                     "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100], "agentMovement": [1, 6],
+                     "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100], "agentMovement": [1, 6], "agentInheritancePolicy": "children",
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1000,
