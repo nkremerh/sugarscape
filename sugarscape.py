@@ -164,11 +164,15 @@ class Sugarscape:
         self.writeToLog()
         self.__environment.doTimestep(self.__timestep)
         random.shuffle(self.__agents)
+        deadAgents = []
         for agent in self.__agents:
             if agent.isAlive() == False:
-                self.__agents.remove(agent)
+                deadAgents.append(agent)
+                #self.__agents.remove(agent)
             else:
                 agent.doTimestep(self.__timestep)
+        for agent in deadAgents:
+            self.__agents.remove(agent)
         if self.__gui != None:
             self.__gui.doTimestep()
         print("Timestep: {0}".format(self.__timestep))
@@ -182,7 +186,7 @@ class Sugarscape:
         self.__log.flush()
         self.__log.close()
 
-    # TODO: Simulation does not terminate when stepping through to end condition (no living agents)
+    # TODO: Simulation terminates after stepping through a timestep no living agents rather than at that timestep
     def endSimulation(self):
         self.endLog()
         print(str(self))
@@ -223,10 +227,10 @@ class Sugarscape:
 
     def pauseSimulation(self):
         while self.__run == False:
+            if self.__gui != None and self.__end == False:
+                self.__gui.getWindow().update()
             if self.__end == True:
                 self.endSimulation()
-            if self.__gui != None:
-                self.__gui.getWindow().update()
 
     def randomizeAgentEndowments(self, numAgents, sugarMetabolism, spiceMetabolism, movement, vision, startingSugar, startingSpice,
                                  maxAge, maleToFemaleRatio, femaleFertilityAge, maleFertilityAge, femaleInfertilityAge,
@@ -503,8 +507,7 @@ class Sugarscape:
         self.__log.write(logString)
 
     def __str__(self):
-        #string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__lastLoggedTimestep, len(self.__agents))
-        string = "Timestep: {0}\nLiving Agents: {1}".format(self.__lastLoggedTimestep, len(self.__agents))
+        string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__lastLoggedTimestep, len(self.__agents))
         return string
 
 def parseConfigFile(configFile, configuration):
@@ -555,7 +558,5 @@ if __name__ == "__main__":
     # TODO: Simulation no longer deterministic from random seed
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
-    #print(str(S))
     S.runSimulation(configuration["timesteps"])
-    #print(str(S))
     exit(0)

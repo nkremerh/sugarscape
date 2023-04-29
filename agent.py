@@ -326,7 +326,6 @@ class Agent:
         childMovement = parentMovements[random.randrange(2)]
         childVision = parentVisions[random.randrange(2)]
         childMaxAge = parentMaxAges[random.randrange(2)]
-        # TODO: Determine if fertility/infertility age should be inherited or use global configuration as random range
         childInfertilityAge = parentInfertilityAges[random.randrange(2)]
         childFertilityAge = parentFertilityAges[random.randrange(2)]
         childSex = parentSexes[random.randrange(2)]

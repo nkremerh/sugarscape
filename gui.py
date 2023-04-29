@@ -131,7 +131,13 @@ class GUI:
         return
 
     def doStepForwardButton(self):
-        self.__sugarscape.doTimestep()
+        if self.__sugarscape.getEnd() == True:
+            self.__sugarscape.endSimulation()
+        elif len(self.__sugarscape.getAgents()) == 0:
+            self.__sugarscape.setEnd()
+        else:
+            self.__sugarscape.doTimestep()
+            self.__window.update()
 
     def doTimestep(self):
         for i in range(self.__sugarscape.getEnvironmentHeight()):
