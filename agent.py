@@ -152,14 +152,21 @@ class Agent:
                     neighbor.updateTimesReproducedWithAgent(self.__id, self.__lastMoved)
                     self.updateTimesReproducedWithAgent(neighborID, self.__lastMoved)
 
-                    sugarCost = math.ceil(self.__startingSugar / 2)
-                    spiceCost = math.ceil(self.__startingSpice / 2)
-                    mateSugarCost = math.ceil(neighbor.getStartingSugar() / 2)
-                    mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 2)
+                    #sugarCost = math.ceil(self.__startingSugar / 2)
+                    #spiceCost = math.ceil(self.__startingSpice / 2)
+                    # TODO: Reproduction cost from book high enough to kill initial population
+                    sugarCost = math.ceil(self.__startingSugar / 4)
+                    spiceCost = math.ceil(self.__startingSpice / 4)
+                    #mateSugarCost = math.ceil(neighbor.getStartingSugar() / 2)
+                    #mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 2)
+                    mateSugarCost = math.ceil(neighbor.getStartingSugar() / 4)
+                    mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 4)
                     self.__sugar -= sugarCost
                     self.__spice -= spiceCost
+                    #self.__spice -= 2
                     neighbor.setSugar(neighbor.getSugar() - mateSugarCost)
                     neighbor.setSpice(neighbor.getSpice() - mateSpiceCost)
+                    #neighbor.setSpice(neighbor.getSpice() - 2)
 
     def doTagging(self):
         if self.__tags == None or self.__alive == False:

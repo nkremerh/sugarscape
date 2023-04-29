@@ -33,8 +33,7 @@ class Cell:
         self.__currPollution = self.__currPollution + (productionPollutionRate * resourcesProduced)
 
     def doTimestep(self, timestep):
-        if self.__agent != None:
-            self.__agent.doTimestep(timestep)
+        return
 
     def getAgent(self):
         return self.__agent

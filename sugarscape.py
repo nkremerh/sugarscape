@@ -162,11 +162,15 @@ class Sugarscape:
         self.updateRuntimeStats()
         self.writeToLog()
         self.__environment.doTimestep(self.__timestep)
+        random.shuffle(self.__agents)
         for agent in self.__agents:
             if agent.isAlive() == False:
                 self.__agents.remove(agent)
+            else:
+                agent.doTimestep(self.__timestep)
         if self.__gui != None:
             self.__gui.doTimestep()
+        print("Timestep: {0}".format(self.__timestep))
         self.__timestep += 1
 
     def endLog(self):
@@ -447,7 +451,7 @@ class Sugarscape:
         for wealth in agentWealths:
             height += wealth
             area += (height - wealth) / 2
-        lineOfEquality = (height * len(agentWealths)) / 2
+        lineOfEquality = (height * max(1, len(agentWealths))) / 2
         giniCoefficient = (lineOfEquality - area) / lineOfEquality
         return giniCoefficient
 
