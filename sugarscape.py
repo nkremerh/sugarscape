@@ -169,29 +169,32 @@ class Sugarscape:
         return
 
     def doTimestep(self):
-        self.__timestep += 1
-        if self.__end == True or len(self.__agents) == 0:
-            self.endSimulation()
         self.replaceDeadAgents()
         self.updateRuntimeStats()
         self.writeToLog()
-        self.__environment.doTimestep(self.__timestep)
-        random.shuffle(self.__agents)
         deadAgents = []
         turnOrder = []
         for agent in self.__agents:
-            turnOrder.append(str(agent))
             if agent.isAlive() == False:
                 deadAgents.append(agent)
             else:
-                agent.doTimestep(self.__timestep)
+                turnOrder.append(str(agent))
         for agent in deadAgents:
             self.__agents.remove(agent)
-        if self.__gui != None:
-            self.__gui.doTimestep()
         print("Timestep: {0}".format(self.__timestep)) 
-        # Debugging string
-        #print("Agents at timestep {0}: {1}".format(self.__timestep, str(turnOrder)))
+
+        self.__timestep += 1
+        if self.__end == True or len(self.__agents) == 0:
+            self.setEnd()
+        else:
+            self.__environment.doTimestep(self.__timestep)
+            random.shuffle(self.__agents)
+            for agent in self.__agents:
+                agent.doTimestep(self.__timestep)
+            if self.__gui != None:
+                self.__gui.doTimestep()
+            # Debugging string
+            #print("Agents at timestep {0}: {1}".format(self.__timestep, str(turnOrder)))
 
     def endLog(self):
         if self.__log == None:
@@ -201,7 +204,6 @@ class Sugarscape:
         self.__log.flush()
         self.__log.close()
 
-    # TODO: Simulation terminates after stepping through a timestep no living agents rather than at that timestep
     def endSimulation(self):
         self.endLog()
         print(str(self))
@@ -416,8 +418,9 @@ class Sugarscape:
         return endowments
 
     def replaceDeadAgents(self):
-        if self.__configuration["agentReplacement"] == True and len(self.__agents) < self.__configuration["startingAgents"]:
-            numReplacements = self.__configuration["startingAgents"] - len(self.__agents)
+        numAgents = len(self.__agents)
+        if numAgents < self.__configuration["agentReplacements"]:
+            numReplacements = self.__configuration["agentReplacements"] - numAgents
             self.configureAgents(numReplacements)
             if self.__gui != None:
                 self.__gui.doTimestep()
@@ -426,9 +429,9 @@ class Sugarscape:
         self.startLog()
         if self.__gui != None:
             self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
-        t = 1
+        t = 0
         timesteps = timesteps - self.__timestep
-        while t <= timesteps:
+        while t <= timesteps and len(self.__agents) > 0:
             self.doTimestep()
             t += 1
             if self.__gui != None and self.__run == False:
@@ -483,6 +486,7 @@ class Sugarscape:
         numAgents = len(self.__agents)
         meanSugarMetabolism = 0
         meanSpiceMetabolism = 0
+        meanMetabolism = 0
         meanVision = 0
         meanWealth = 0
         meanAge = 0
@@ -504,10 +508,16 @@ class Sugarscape:
                 minWealth = agentWealth
             if agentWealth > maxWealth:
                 maxWealth = agentWealth
-        meanMetabolism = (meanSugarMetabolism + meanSpiceMetabolism) / numAgents
-        meanVision = meanVision / numAgents
-        meanAge = meanAge / numAgents
-        meanWealth = meanWealth / numAgents
+        if numAgents > 0:
+            meanMetabolism = (meanSugarMetabolism + meanSpiceMetabolism) / numAgents
+            meanVision = meanVision / numAgents
+            meanAge = meanAge / numAgents
+            meanWealth = meanWealth / numAgents
+        else:
+            meanMetabolism = 0
+            meanVision = 0
+            meanAge = 0
+            meanWealth = 0
         self.__runtimeStats["timestep"] = self.__timestep
         self.__runtimeStats["agents"] = numAgents
         self.__runtimeStats["meanMetabolism"] = meanMetabolism
@@ -563,7 +573,7 @@ def printHelp():
 
 if __name__ == "__main__":
     # Set default values for simulation configuration
-    configuration = {"agentVision": [1, 6], "agentMetabolism": [1, 4], "agentStartingSugar": [1, 5], "startingAgents": 250, "agentReplacement": False,
+    configuration = {"agentVision": [1, 6], "agentMetabolism": [1, 4], "agentStartingSugar": [1, 5], "startingAgents": 250, "agentReplacements": 0,
                      "agentMaxAge": [60, 100], "agentMaleToFemaleRatio": 1, "agentFemaleFertilityAge": [12, 15], "agentMaleFertilityAge": [12, 15],
                      "agentFemaleInfertilityAge": [40, 50], "agentMaleInfertilityAge": [50, 60], "agentTagStringLength": 11,
                      "agentAggressionFactor": [0, 0], "agentMaxFriends": 5, "agentSugarMetabolism": [1, 4], "agentSpiceMetabolism": [1, 4],

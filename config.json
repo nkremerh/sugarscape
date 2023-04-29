@@ -16,7 +16,7 @@
     "agentStartingSugar": [50, 100],
     "agentSugarMetabolism": [1, 4],
     "agentVision": [1, 6],
-    "agentReplacement": false,
+    "agentReplacements": 0,
     "agentTagStringLength": 11,
     "environmentHeight": 50,
     "environmentWidth": 50,
