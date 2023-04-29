@@ -1,6 +1,6 @@
 {
     "__README__": "Default values for Sugarscape simulation provided here. Details can be found in the README.",
-    "agentAggressionFactor": [0, 0],
+    "agentAggressionFactor": [1, 1],
     "agentFemaleInfertilityAge": [40, 50],
     "agentFemaleFertilityAge": [12, 15],
     "agentInheritancePolicy": "children",
@@ -20,7 +20,7 @@
     "agentTagStringLength": 11,
     "environmentHeight": 50,
     "environmentWidth": 50,
-    "environmentMaxCombatLoot": 2,
+    "environmentMaxCombatLoot": 1,
     "environmentMaxSpice": 4,
     "environmentMaxSugar": 4,
     "environmentConsumptionPollutionRate": 0,

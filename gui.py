@@ -103,6 +103,8 @@ class GUI:
         window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
         window.bind("<Escape>", self.doWindowClose)
         window.bind("<space>", self.doPlayButton)
+        window.bind("<Right>", self.doStepForwardButton)
+        window.bind("<Left>", self.doStepBackwardButton)
         canvas.bind("<Button-1>", self.doClick)
 
     def destroyGUI(self):
@@ -110,20 +112,24 @@ class GUI:
 
     def doAgentColorMenu(self, *args):
         self.__activeColorOptions["agent"] = self.__lastSelectedAgentColor.get()
+        self.doTimestep()
 
     def doClick(self, event):
         return
 
     def doEnvironmentColorMenu(self):
         self.__activeColorOptions["environment"] = self.__lastSelectedEnvironmentColor.get()
+        self.doTimestep()
 
     def doPlayButton(self, *args):
         self.__sugarscape.setRun()
         self.__widgets["playButton"].config(text="  Play Simulation  " if self.__sugarscape.getRun() == False else "Pause Simulation")
+        self.doTimestep()
 
     def doStatsButton(self, *args):
         return
 
+    # TODO: Go back one timestep
     def doStepBackwardButton(self, *args):
         return
 
@@ -134,7 +140,7 @@ class GUI:
             self.__sugarscape.setEnd()
         else:
             self.__sugarscape.doTimestep()
-            self.__window.update()
+            self.doTimestep()
 
     def doTimestep(self):
         for i in range(self.__sugarscape.getEnvironmentHeight()):

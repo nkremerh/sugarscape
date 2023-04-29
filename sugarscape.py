@@ -165,9 +165,6 @@ class Sugarscape:
         self.addSpicePeak(startX2, startY2, radius, maxCapacity)
         self.__environment.setCellNeighbors()
 
-    def logAgent(self):
-        return
-
     def doTimestep(self):
         self.replaceDeadAgents()
         self.updateRuntimeStats()
@@ -195,6 +192,7 @@ class Sugarscape:
                 self.__gui.doTimestep()
             # Debugging string
             #print("Agents at timestep {0}: {1}".format(self.__timestep, str(turnOrder)))
+        self.updateRuntimeStats()
 
     def endLog(self):
         if self.__log == None:
@@ -580,7 +578,7 @@ if __name__ == "__main__":
                      "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100], "agentMovement": [1, 6], "agentInheritancePolicy": "children",
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
-                     "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1000,
+                     "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1,
                      "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1,
                      "logfile": None, "seed": 12345, "headlessMode": False, "timesteps": 1000}
     configuration = parseOptions(configuration)

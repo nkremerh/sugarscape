@@ -211,6 +211,13 @@ class Agent:
             if neighbor != None:
                 position = random.randrange(len(self.__tags))
                 neighbor.setTag(position, self.__tags[position])
+                # Debugging string
+                '''
+                neighborTribe = neighbor.getTribe()
+                neighborNewTribe = neighbor.findTribe()
+                if neighborTribe != neighborNewTribe:
+                    print("Agent {0} switched from {1} tribe to {2} tribe from agent {3}".format(str(neighbor), neighborTribe, neighborNewTribe, str(self)))
+                '''
                 neighbor.setTribe(neighbor.findTribe())
 
     def doTimestep(self, timestep):
