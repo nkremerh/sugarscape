@@ -247,6 +247,9 @@ class Agent:
         blueRetaliation = True if self.__tribe == "blue" or retaliators["blue"] > self.__wealth else False
         redRetaliation = True if self.__tribe == "red" or retaliators["red"] > self.__wealth else False
         retaliationPossible = {"green": greenRetaliation, "blue": blueRetaliation, "red": redRetaliation, "empty": False}
+        totalMetabolism = self.__sugarMetabolism + self.__spiceMetabolism
+        sugarMetabolismProportion = self.__sugarMetabolism / totalMetabolism
+        spiceMetabolismProportion = self.__spiceMetabolism / totalMetabolism
         random.shuffle(self.__cellsInVision)
 
         # Debugging string
@@ -264,44 +267,63 @@ class Agent:
         agentY = self.__cell.getY()
         combatMaxLoot = self.__cell.getEnvironment().getMaxCombatLoot()
         wraparound = self.__vision + 1
-        for currCell in self.__cellsInVision:
+        for cell in self.__cellsInVision:
             # Either X or Y distance will be 0 due to cardinal direction movement only
-            distanceX = (abs(agentX - currCell.getX()) % wraparound)
-            distanceY = (abs(agentY - currCell.getY()) % wraparound)
+            distanceX = (abs(agentX - cell.getX()) % wraparound)
+            distanceY = (abs(agentY - cell.getY()) % wraparound)
             travelDistance = distanceX + distanceY
-            if currCell.isOccupied() == True and self.__aggression == 0:
+            
+            if cell.isOccupied() == True and self.__aggression == 0:
                 continue
-            prey = currCell.getAgent()
+            cellSugar = cell.getCurrSugar()
+            cellSpice = cell.getCurrSpice()
+            prey = cell.getAgent()
             # Avoid attacking agents from the same tribe
             if prey != None and prey.getTribe() == self.__tribe:
                 continue
             preyTribe = prey.getTribe() if prey != None else "empty"
             preyWealth = prey.getWealth() if prey != None else 0
-            if bestCell == None:
-                bestCell = currCell
-                bestRange = travelDistance
-                # Avoid attacking stronger agents
-                if prey != None and preyWealth > self.__wealth:
-                    continue
-                # Avoid attacked prey when retaliation is possible
-                if retaliationPossible[preyTribe] == True:
-                    continue
-                bestWealth = ((bestCell.getCurrSugar() + bestCell.getCurrSpice()) + (self.__aggression * min(combatMaxLoot, preyWealth))) / (1 + bestCell.getCurrPollution())
-            # TODO: Modify relative value of cell by agent welfare function
+            
             # TODO: Agent behavior is incredibly aggressive when driven by this wealth calculation
-            currWealth = ((currCell.getCurrSugar() + currCell.getCurrSpice()) + (self.__aggression * min(combatMaxLoot, preyWealth))) / (1 + currCell.getCurrPollution())
-            # Move to closest cell with the most resources
-            if currWealth > bestWealth or (currWealth == bestWealth and travelDistance < bestRange):
-                bestCell = currCell
+            # Modify value of cell relative to the metabolism needs of the agent
+            welfareFunction = ((self.__sugar + cellSugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice) ** spiceMetabolismProportion)
+            currWealth = (welfareFunction + (self.__aggression * min(combatMaxLoot, preyWealth))) / (1 + cell.getCurrPollution())
+            # Avoid attacking stronger agents or those protected from retaliation after killing prey
+            if prey != None and (preyWealth > self.__wealth or (retaliators[preyTribe] > self.__wealth + currWealth)):
+                # Debugging string
+                #print("Agent {0} ({1} tribe, {2} wealth) not attacking agent {3} ({4} tribe, {5} wealth) due to prey being stronger/protected".format(str(self), self.__tribe, self.__wealth, str(prey), preyTribe, preyWealth))
+                continue
+            
+            if bestCell == None:
+                bestCell = cell
                 bestRange = travelDistance
-                if prey != None and prey.getWealth() > self.__wealth:
-                    continue
                 bestWealth = currWealth
                 # Debugging string
+                #print("Agent {0} calculated best cell welfare of ({1},{2}) at distance {3} as {4}".format(str(self), cell.getX(), cell.getY(), bestRange, welfareFunction))
+            
+            # Select closest cell with the most resources
+            if currWealth > bestWealth or (currWealth == bestWealth and travelDistance < bestRange):
+                if prey != None and prey.getWealth() > self.__wealth:
+                    continue
+                bestRange = travelDistance
+                bestCell = cell
+                bestWealth = currWealth
+                # Debugging string
+                #print("Agent {0} calculated best cell welfare of ({1},{2}) at distance {3} as {4}".format(str(self), cell.getX(), cell.getY(), bestRange, welfareFunction))
                 #print("Agent {0} ranking cell ({1},{2}) occupied by agent {3} as best cell in vision".format(str(self), bestCell.getX(), bestCell.getY(), str(bestCell.getAgent())))
         if bestCell == None:
             bestCell = self.__cell
         return bestCell
+
+    def findBestFriend(self):
+        minHammingDistance = len(self.__tags)
+        bestFriend = None
+        for friend in self.__socialNetwork["friends"]:
+            # If already a friend, update Hamming Distance
+            if friend["hammingDistance"] < minHammingDistance:
+                bestFriend = friend
+                minHammingDistance = friend["hammingDistance"]
+        return bestFriend
 
     def findCellsInVision(self):
         if self.__vision > 0 and self.__cell != None:
@@ -387,6 +409,7 @@ class Agent:
                     retaliators["red"] = agentStrength
         return retaliators
 
+    # TODO: Make possible number of tribes configurable (ensure less than or equal to tag length)
     def findTribe(self):
         if self.__tags == None:
             return None
@@ -638,6 +661,7 @@ class Agent:
             if maxHammingDistance > neighborHammingDistance:
                 self.__socialNetwork["friends"].remove(maxDistanceFriend)
                 self.__socialNetwork["friends"].append(neighborEntry)
+        self.__socialNetwork["bestFriend"] = self.findBestFriend()
 
     def updateMooreNeighbors(self):
         for direction, neighbor in self.__vonNeumannNeighbors.items():
