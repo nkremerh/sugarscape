@@ -166,20 +166,11 @@ class Sugarscape:
         self.__environment.setCellNeighbors()
 
     def doTimestep(self):
+        self.removeDeadAgents()
         self.replaceDeadAgents()
         self.updateRuntimeStats()
         self.writeToLog()
-        deadAgents = []
-        turnOrder = []
-        for agent in self.__agents:
-            if agent.isAlive() == False:
-                deadAgents.append(agent)
-            else:
-                turnOrder.append(str(agent))
-        for agent in deadAgents:
-            self.__agents.remove(agent)
         print("Timestep: {0}".format(self.__timestep)) 
-
         self.__timestep += 1
         if self.__end == True or len(self.__agents) == 0:
             self.setEnd()
@@ -190,8 +181,6 @@ class Sugarscape:
                 agent.doTimestep(self.__timestep)
             if self.__gui != None:
                 self.__gui.doTimestep()
-            # Debugging string
-            #print("Agents at timestep {0}: {1}".format(self.__timestep, str(turnOrder)))
         self.updateRuntimeStats()
 
     def endLog(self):
@@ -203,6 +192,12 @@ class Sugarscape:
         self.__log.close()
 
     def endSimulation(self):
+        deadAgents = []
+        for agent in self.__agents:
+            if agent.isAlive() == False:
+                deadAgents.append(agent)
+        for agent in deadAgents:
+            self.__agents.remove(agent)
         self.endLog()
         print(str(self))
         exit(0)
@@ -414,6 +409,17 @@ class Sugarscape:
                 agentEndowment["infertilityAge"] = 0
             endowments.append(agentEndowment)
         return endowments
+
+    def removeDeadAgents(self):
+        deadAgents = []
+        for agent in self.__agents:
+            if agent.isAlive() == False:
+                deadAgents.append(agent)
+            elif agent.getCell() == None:
+                deadAgents.append(agent)
+                print("Agent {0} has no cell".format(str(agent)))
+        for agent in deadAgents:
+            self.__agents.remove(agent)
 
     def replaceDeadAgents(self):
         numAgents = len(self.__agents)

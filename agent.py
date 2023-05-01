@@ -39,6 +39,7 @@ class Agent:
         self.__fertile = False
         self.__tribe = self.findTribe()
         self.__timestep = birthday
+        self.__marginalRateOfSubstitution = 1
         # Debugging print statement
         #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
@@ -59,7 +60,12 @@ class Agent:
     def addAgentToSocialNetwork(self, agentID):
         if agentID in self.__socialNetwork:
             return
-        self.__socialNetwork[agentID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0}
+        self.__socialNetwork[agentID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0, "marginalRateOfSubstitution": 0}
+
+    def calculateMarginalRateOfSubstitution(self, sugar, spice):
+        spiceNeed = spice / self.__spiceMetabolism
+        sugarNeed = sugar / self.__sugarMetabolism
+        return spiceNeed / sugarNeed
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
@@ -100,6 +106,13 @@ class Agent:
         self.setCell(cell)
 
     def doDeath(self):
+        if self.__sugar < 1 or self.__spice < 1:
+            print("Agent {0} dying from starvation".format(str(self)))
+        elif self.__age >= self.__maxAge and self.__maxAge != -1:
+            print("Agent {0} dying from old age".format(str(self)))
+        else:
+            print("Agent {0} killed in combat".format(str(self)))
+
         self.setAlive(False)
         self.unsetCell()
         self.doInheritance()
@@ -174,6 +187,13 @@ class Agent:
                 random.shuffle(emptyCellsWithNeighbor)
                 if self.isFertile() == True and neighborCompatibility == True and len(emptyCellsWithNeighbor) != 0:
                     emptyCell = emptyCellsWithNeighbor.pop()
+                    while emptyCell.getAgent() != None and len(emptyCellsWithNeighbor) != 0:
+                        # Debugging string
+                        #print("Agent {0} could not produce child at ({1},{2}) since cell is not actually empty".format(str(self), emptyCell.getX(), emptyCell.getY()))
+                        emptyCell = emptyCellsWithNeighbor.pop()
+                    # If no adjacent empty cell is found, skip reproduction with this neighbor
+                    if emptyCell.getAgent() != None:
+                        continue
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
                     self.__socialNetwork["children"].append(child)
@@ -227,11 +247,76 @@ class Agent:
             self.__lastMoved = self.__timestep
             self.moveToBestCell()
             self.updateNeighbors()
+            # TODO: Determine order of operations for post-move actions
             self.collectResourcesAtCell()
+            self.doTrading()
             self.doMetabolism()
             self.doTagging()
             self.doReproduction()
             self.doAging()
+
+    def doTrading(self):
+        self.findMarginalRateOfSubstitution()
+        neighborCells = self.__cell.getNeighbors()
+        traders = []
+        for neighborCell in neighborCells:
+            neighbor = neighborCell.getAgent()
+            if neighbor != None and neighbor.isAlive() == True:
+                neighborMRS = neighbor.getMarginalRateOfSubstitution()
+                if neighborMRS != self.__marginalRateOfSubstitution:
+                    traders.append(neighbor)
+        random.shuffle(traders)
+        for trader in traders:
+            traderMRS = trader.getMarginalRateOfSubstitution()
+            spiceSeller = None
+            sugarSeller = None
+            tradeFlag = True
+
+            while tradeFlag == True:
+                if traderMRS > self.__marginalRateOfSubstitution:
+                    spiceSeller = trader
+                    sugarSeller = self
+                else:
+                    spiceSeller = self
+                    sugarSeller = trader
+                spiceSellerMRS = spiceSeller.getMarginalRateOfSubstitution()
+                sugarSellerMRS = sugarSeller.getMarginalRateOfSubstitution()
+
+                # Find geometric mean of spice and sugar seller MRS for trade price
+                tradePrice = int(math.ceil(math.sqrt(spiceSellerMRS * sugarSellerMRS)))
+                spiceSellerSpice = spiceSeller.getSpice()
+                spiceSellerSugar = spiceSeller.getSugar()
+                sugarSellerSpice = sugarSeller.getSpice()
+                sugarSellerSugar = sugarSeller.getSugar()
+                # If trade would be lethal, skip it
+                if spiceSellerSpice - tradePrice < 1 or sugarSellerSugar - 1 < 1:
+                    # Debugging string
+                    #print("Agent {0} skipping lethal trade with agent {1}".format(str(self), str(trader)))
+                    tradeFlag = False
+                    continue
+                spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSellerSugar + 1, spiceSellerSpice - tradePrice)
+                sugarSellerNewMRS = sugarSeller.calculateMarginalRateOfSubstitution(sugarSellerSugar - 1, sugarSellerSpice + tradePrice)
+
+                # Calculate absolute difference from perfect spice/sugar parity in MRS
+                betterForSpiceSeller = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
+                betterForSugarSeller = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
+
+                # Check that spice seller's new MRS does not cross over sugar seller's new MRS
+                # Evaluates to False for successful trades
+                checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
+                if betterForSpiceSeller and betterForSugarSeller and checkForMRSCrossing == False:
+                    # Debugging string
+                    #print("Agent {0} selling {1} spice to agent {2} for 1 sugar".format(str(spiceSeller), tradePrice, str(sugarSeller)))
+                    #print("Agent {0} MRS of {1} to new MRS of {2} and agent {3} MRS of {4} to new MRS of {5}".format(str(spiceSeller), spiceSellerMRS, spiceSellerNewMRS, str(sugarSeller), sugarSellerMRS, sugarSellerNewMRS))
+                    spiceSeller.setSpice(spiceSellerSpice - tradePrice)
+                    spiceSeller.setSugar(spiceSellerSugar + 1)
+                    sugarSeller.setSpice(spiceSellerSpice + tradePrice)
+                    sugarSeller.setSugar(spiceSellerSugar - 1)
+                    spiceSeller.findMarginalRateOfSubstitution()
+                    sugarSeller.findMarginalRateOfSubstitution()
+                else:
+                    tradeFlag = False
+                    continue
 
     def findAgentWealthAtCell(self, cell):
         agent = cell.getAgent()
@@ -284,9 +369,9 @@ class Agent:
             preyTribe = prey.getTribe() if prey != None else "empty"
             preyWealth = prey.getWealth() if prey != None else 0
             
-            # TODO: Agent behavior is incredibly aggressive when driven by this wealth calculation
             # Modify value of cell relative to the metabolism needs of the agent
             welfareFunction = ((self.__sugar + cellSugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice) ** spiceMetabolismProportion)
+            # TODO: Agent behavior is incredibly aggressive when driven by this wealth calculation
             currWealth = (welfareFunction + (self.__aggression * min(combatMaxLoot, preyWealth))) / (1 + cell.getCurrPollution())
             # Avoid attacking stronger agents or those protected from retaliation after killing prey
             if prey != None and (preyWealth > self.__wealth or (retaliators[preyTribe] > self.__wealth + currWealth)):
@@ -313,6 +398,9 @@ class Agent:
                 #print("Agent {0} ranking cell ({1},{2}) occupied by agent {3} as best cell in vision".format(str(self), bestCell.getX(), bestCell.getY(), str(bestCell.getAgent())))
         if bestCell == None:
             bestCell = self.__cell
+        # TODO: Verify agent selecting best cell within vision with respect to nearby starvation state
+        if (bestCell.getCurrSugar() == 0 or bestCell.getCurrSpice() == 0) and (self.__sugar <= self.__sugarMetabolism or self.__spice <= self.__spiceMetabolism):
+            print("Agent {0} moving to ({1},{2}) with [{3},{4}] while close to starvation with holds [{5},{6}]".format(str(self), bestCell.getX(), bestCell.getY(), bestCell.getCurrSugar(), bestCell.getCurrSpice(), self.__sugar, self.__spice))
         return bestCell
 
     def findBestFriend(self):
@@ -394,6 +482,17 @@ class Agent:
                 hammingDistance += 1
         return hammingDistance
 
+    def findMarginalRateOfSubstitution(self):
+        # TODO: Determine why sugar/spice allowed to reach zero before calling this
+        #print("Agent {0} has {1} sugar and {2} spice".format(str(self), self.__sugar, self.__spice))
+        if self.__sugar == 0 or self.__spice == 0:
+            print("Agent {0} calculating MRS without sugar or without spice".format(str(self)))
+            self.doDeath()
+        else:
+            spiceNeed = self.__spice / self.__spiceMetabolism
+            sugarNeed = self.__sugar / self.__sugarMetabolism
+            self.__marginalRateOfSubstitution = spiceNeed / sugarNeed
+
     def findRetaliatorsInVision(self):
         retaliators = {"green": 0, "blue": 0, "red": 0}
         for cell in self.__cellsInVision:
@@ -460,6 +559,9 @@ class Agent:
 
     def getInheritancePolicy(self):
         return self.__inheritancePolicy
+
+    def getMarginalRateOfSubstitution(self):
+        return self.__marginalRateOfSubstitution
 
     def getMaxAge(self):
         return self.__maxAge
@@ -586,6 +688,9 @@ class Agent:
     def setInheritancePolicy(self, inheritancePolicy):
         self.__inheritancePolicy = inheritancePolicy
 
+    def setMarginalRateOfSubstitution(self, mrs):
+        self.__marginalRateOfSubstitution = mrs
+
     def setMaxAge(self, maxAge):
         self.__maxAge = maxAge
 
@@ -691,17 +796,22 @@ class Agent:
             neighborID = neighbor.getID()
             if neighborID in self.__socialNetwork:
                 self.updateTimesVisitedFromAgent(neighborID, self.__lastMoved)
+                self.updateMarginalRateOfSubstitutionForAgent(neighbor)
             else:
                 self.addAgentToSocialNetwork(neighborID)
             self.updateFriends(neighbor)
 
+    def updateMarginalRateOfSubstitutionForAgent(self, agent):
+        agentID = agent.getID()
+        if agentID not in self.__socialNetwork:
+            self.addToSocialNetwork(agentID)
+        self.__socialNetwork[agentID]["marginalRateOfSubstitution"] = agent.getMarginalRateOfSubstitution()
+
     def updateTimesReproducedWithAgent(self, agentID, timestep):
         if agentID not in self.__socialNetwork:
             self.addToSocialNetwork(agentID)
-            self.updateTimesReproducedWithAgent(agentID, timestep)
-        else:
-            self.__socialNetwork[agentID]["timesReproduced"] += 1
-            self.__socialNetwork[agentID]["lastSeen"] = timestep
+        self.__socialNetwork[agentID]["timesReproduced"] += 1
+        self.__socialNetwork[agentID]["lastSeen"] = timestep
 
     def updateTimesVisitedFromAgent(self, agentID, timestep):
         if agentID not in self.__socialNetwork:
