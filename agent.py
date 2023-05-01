@@ -352,7 +352,9 @@ class Agent:
         agentY = self.__cell.getY()
         combatMaxLoot = self.__cell.getEnvironment().getMaxCombatLoot()
         wraparound = self.__vision + 1
+        cellFinds = "Agent {0} has [{1}/{2},{3}/{4}] and found cells in vision:\n".format(str(self), self.__sugar, self.__sugarMetabolism, self.__spice, self.__spiceMetabolism)
         for cell in self.__cellsInVision:
+            cellFinds += "({0},{1}) --> [{2},{3}]\n".format(cell.getX(), cell.getY(), cell.getCurrSugar(), cell.getCurrSpice())
             # Either X or Y distance will be 0 due to cardinal direction movement only
             distanceX = (abs(agentX - cell.getX()) % wraparound)
             distanceY = (abs(agentY - cell.getY()) % wraparound)
@@ -372,9 +374,9 @@ class Agent:
             # Modify value of cell relative to the metabolism needs of the agent
             welfareFunction = ((self.__sugar + cellSugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice) ** spiceMetabolismProportion)
             # TODO: Agent behavior is incredibly aggressive when driven by this wealth calculation
-            currWealth = (welfareFunction + (self.__aggression * min(combatMaxLoot, preyWealth))) / (1 + cell.getCurrPollution())
+            cellWealth = (welfareFunction + (self.__aggression * min(combatMaxLoot, preyWealth))) / (1 + cell.getCurrPollution())
             # Avoid attacking stronger agents or those protected from retaliation after killing prey
-            if prey != None and (preyWealth > self.__wealth or (retaliators[preyTribe] > self.__wealth + currWealth)):
+            if prey != None and (preyWealth > self.__wealth or (retaliators[preyTribe] > self.__wealth + cellWealth)):
                 # Debugging string
                 #print("Agent {0} ({1} tribe, {2} wealth) not attacking agent {3} ({4} tribe, {5} wealth) due to prey being stronger/protected".format(str(self), self.__tribe, self.__wealth, str(prey), preyTribe, preyWealth))
                 continue
@@ -382,17 +384,17 @@ class Agent:
             if bestCell == None:
                 bestCell = cell
                 bestRange = travelDistance
-                bestWealth = currWealth
+                bestWealth = cellWealth
                 # Debugging string
                 #print("Agent {0} calculated best cell welfare of ({1},{2}) at distance {3} as {4}".format(str(self), cell.getX(), cell.getY(), bestRange, welfareFunction))
             
             # Select closest cell with the most resources
-            if currWealth > bestWealth or (currWealth == bestWealth and travelDistance < bestRange):
+            if cellWealth > bestWealth or (cellWealth == bestWealth and travelDistance < bestRange):
                 if prey != None and prey.getWealth() > self.__wealth:
                     continue
                 bestRange = travelDistance
                 bestCell = cell
-                bestWealth = currWealth
+                bestWealth = cellWealth
                 # Debugging string
                 #print("Agent {0} calculated best cell welfare of ({1},{2}) at distance {3} as {4}".format(str(self), cell.getX(), cell.getY(), bestRange, welfareFunction))
                 #print("Agent {0} ranking cell ({1},{2}) occupied by agent {3} as best cell in vision".format(str(self), bestCell.getX(), bestCell.getY(), str(bestCell.getAgent())))
@@ -401,6 +403,8 @@ class Agent:
         # TODO: Verify agent selecting best cell within vision with respect to nearby starvation state
         if (bestCell.getCurrSugar() == 0 or bestCell.getCurrSpice() == 0) and (self.__sugar <= self.__sugarMetabolism or self.__spice <= self.__spiceMetabolism):
             print("Agent {0} moving to ({1},{2}) with [{3},{4}] while close to starvation with holds [{5},{6}]".format(str(self), bestCell.getX(), bestCell.getY(), bestCell.getCurrSugar(), bestCell.getCurrSpice(), self.__sugar, self.__spice))
+        cellFinds += "Selected ({0},{1}) --> [{2},{3}]\n\n".format(bestCell.getX(), bestCell.getY(), bestCell.getCurrSugar(), bestCell.getCurrSpice())
+        print(cellFinds)
         return bestCell
 
     def findBestFriend(self):
