@@ -560,9 +560,12 @@ def parseOptions(configuration):
     except getopt.GetoptError as err:
         print(err)
         printHelp()
+    nextArg = 0
     for currArg, currVal in args:
-        # TODO: Passing short option -c requires instead passing --c to grab config file name
-        if currArg in ("-c", "--conf"):
+        nextArg += 1
+        if currArg in("-c", "--conf"):
+            if currArg == "-c" and nextArg < len(commandLineArgs):
+                currVal = commandLineArgs[nextArg]
             if currVal == "":
                 print("No config file provided.")
                 printHelp()
