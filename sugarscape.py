@@ -326,7 +326,10 @@ class Sugarscape:
             maleFertilityAges.append(currMaleFertilityAge)
             femaleInfertilityAges.append(currFemaleInfertilityAge)
             maleInfertilityAges.append(currMaleInfertilityAge)
-            tags.append([random.randrange(2) for i in range(tagStringLength)])
+            if tagStringLength > 0:
+                tags.append([random.randrange(2) for i in range(tagStringLength)])
+            else:
+                tags.append(None)
             aggressionFactors.append(currAggression)
             friends.append(currFriends)
             # Assume properties are integers which range from min to max

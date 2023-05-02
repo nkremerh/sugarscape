@@ -205,15 +205,10 @@ class Agent:
                     # Debugging string
                     #print("Agents {0},{1} produced child at ({2},{3})".format(str(self), str(neighbor), emptyCell.getX(), emptyCell.getY()))
 
-                    # TODO: Reproduction cost from book high enough to kill initial population
                     sugarCost = math.ceil(self.__startingSugar / 2)
                     spiceCost = math.ceil(self.__startingSpice / 2)
                     mateSugarCost = math.ceil(neighbor.getStartingSugar() / 2)
                     mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 2)
-                    #sugarCost = math.ceil(self.__startingSugar / 4)
-                    #spiceCost = math.ceil(self.__startingSpice / 4)
-                    #mateSugarCost = math.ceil(neighbor.getStartingSugar() / 4)
-                    #mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 4)
                     self.__sugar -= sugarCost
                     self.__spice -= spiceCost
                     neighbor.setSugar(neighbor.getSugar() - mateSugarCost)
@@ -363,7 +358,6 @@ class Agent:
             
             # Modify value of cell relative to the metabolism needs of the agent
             welfareFunction = ((self.__sugar + cellSugar + welfarePreySugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice + welfarePreySpice) ** spiceMetabolismProportion)
-            # TODO: Agent behavior is incredibly aggressive when driven by this wealth calculation
             cellWealth = welfareFunction / (1 + cell.getCurrPollution())
             
             #if prey == None:
@@ -401,6 +395,8 @@ class Agent:
         return bestCell
 
     def findBestFriend(self):
+        if self.__tags == None:
+            return None
         minHammingDistance = len(self.__tags)
         bestFriend = None
         for friend in self.__socialNetwork["friends"]:
@@ -451,11 +447,14 @@ class Agent:
         childTags = []
         mateTags = mate.getTags()
         mismatchTags = [0, 1]
-        for i in range(len(self.__tags)):
-            if self.__tags[i] == mateTags[i]:
-                childTags.append(self.__tags[i])
-            else:
-                childTags.append(mismatchTags[random.randrange(2)])
+        if self.__tags == None:
+            childTags = None
+        else:
+            for i in range(len(self.__tags)):
+                if self.__tags[i] == mateTags[i]:
+                    childTags.append(self.__tags[i])
+                else:
+                    childTags.append(mismatchTags[random.randrange(2)])
         childAggression = parentAggressionFactors[random.randrange(2)]
         endowment = {"movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
@@ -472,6 +471,8 @@ class Agent:
         return emptyCells
 
     def findHammingDistanceInTags(self, neighbor):
+        if self.__tags == None:
+            return 0
         neighborTags = neighbor.getTags()
         hammingDistance = 0
         for i in range(len(self.__tags)):
