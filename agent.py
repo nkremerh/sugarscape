@@ -40,8 +40,6 @@ class Agent:
         self.__tribe = self.findTribe()
         self.__timestep = birthday
         self.__marginalRateOfSubstitution = 1
-        # Debugging print statement
-        #print("Agent stats: {0} vision, {1} metabolism, {2} max age, {3} initial wealth, {4} sex, {5} fertility age, {6} infertility age".format(self.__vision, self.__metabolism, self.__maxAge, self.__sugar, self.__sex, self.__fertilityAge, self.__infertilityAge))
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.__cell.getEnvironment().getSugarscape()
@@ -337,14 +335,6 @@ class Agent:
         spiceMetabolismProportion = self.__spiceMetabolism / totalMetabolism
         random.shuffle(self.__cellsInVision)
 
-        # Debugging string
-        '''
-        coords = "Agent {0} can see: ".format(str(self))
-        for cell in self.__cellsInVision:
-            coords += "({0},{1}) ".format(cell.getX(), cell.getY())
-        print(coords)
-        '''
-
         bestCell = None
         bestRange = max(self.__cell.getEnvironment().getHeight(), self.__cell.getEnvironment().getWidth())
         bestWealth = 0
@@ -352,13 +342,10 @@ class Agent:
         agentY = self.__cell.getY()
         combatMaxLoot = self.__cell.getEnvironment().getMaxCombatLoot()
         wraparound = self.__vision + 1
-        cellFinds = "Agent {0} has [{1}/{2},{3}/{4}] and found cells in vision:\n".format(str(self), self.__sugar, self.__sugarMetabolism, self.__spice, self.__spiceMetabolism)
-        for cell in self.__cellsInVision:
-            cellFinds += "({0},{1}) --> [{2},{3}]\n".format(cell.getX(), cell.getY(), cell.getCurrSugar(), cell.getCurrSpice())
-            # Either X or Y distance will be 0 due to cardinal direction movement only
-            distanceX = (abs(agentX - cell.getX()) % wraparound)
-            distanceY = (abs(agentY - cell.getY()) % wraparound)
-            travelDistance = distanceX + distanceY
+        #cellFinds = "Agent {0} at ({1},{2}) has [{3}/{4},{5}/{6}] and found cells in vision {7}:\n".format(str(self), self.__cell.getX(), self.__cell.getY(), self.__sugar, self.__sugarMetabolism, self.__spice, self.__spiceMetabolism, self.__vision)
+        for currCell in self.__cellsInVision:
+            cell = currCell["cell"]
+            travelDistance = currCell["distance"]
             
             if cell.isOccupied() == True and self.__aggression == 0:
                 continue
@@ -370,11 +357,21 @@ class Agent:
                 continue
             preyTribe = prey.getTribe() if prey != None else "empty"
             preyWealth = prey.getWealth() if prey != None else 0
+            preySugar = prey.getSugar() if prey != None else 0
+            preySpice = prey.getSpice() if prey != None else 0
+            welfarePreySugar = self.__aggression * min(combatMaxLoot, preySugar)
+            welfarePreySpice = self.__aggression * min(combatMaxLoot, preySpice)
             
             # Modify value of cell relative to the metabolism needs of the agent
-            welfareFunction = ((self.__sugar + cellSugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice) ** spiceMetabolismProportion)
+            welfareFunction = ((self.__sugar + cellSugar + welfarePreySugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice + welfarePreySpice) ** spiceMetabolismProportion)
             # TODO: Agent behavior is incredibly aggressive when driven by this wealth calculation
-            cellWealth = (welfareFunction + (self.__aggression * min(combatMaxLoot, preyWealth))) / (1 + cell.getCurrPollution())
+            cellWealth = welfareFunction / (1 + cell.getCurrPollution())
+            
+            #if prey == None:
+            #    cellFinds += "({0},{1}) --> [{2},{3}] with no prey for {4} wealth at distance {5}\n".format(cell.getX(), cell.getY(), cell.getCurrSugar(), cell.getCurrSpice(), cellWealth, travelDistance)
+            #else:
+            #    cellFinds += "({0},{1}) --> [{2},{3}] with [{4},{5}] prey for {6} wealth at distance {7}\n".format(cell.getX(), cell.getY(), cell.getCurrSugar(), cell.getCurrSpice(), prey.getSugar(), prey.getSpice(), cellWealth, travelDistance)
+
             # Avoid attacking stronger agents or those protected from retaliation after killing prey
             if prey != None and (preyWealth > self.__wealth or (retaliators[preyTribe] > self.__wealth + cellWealth)):
                 # Debugging string
@@ -395,16 +392,13 @@ class Agent:
                 bestRange = travelDistance
                 bestCell = cell
                 bestWealth = cellWealth
-                # Debugging string
-                #print("Agent {0} calculated best cell welfare of ({1},{2}) at distance {3} as {4}".format(str(self), cell.getX(), cell.getY(), bestRange, welfareFunction))
-                #print("Agent {0} ranking cell ({1},{2}) occupied by agent {3} as best cell in vision".format(str(self), bestCell.getX(), bestCell.getY(), str(bestCell.getAgent())))
+            #print("Current best cell ({0},{1}), current cell ({2},{3})".format(bestCell.getX(), bestCell.getY(), cell.getX(), cell.getY()))
         if bestCell == None:
             bestCell = self.__cell
-        # TODO: Verify agent selecting best cell within vision with respect to nearby starvation state
-        if (bestCell.getCurrSugar() == 0 or bestCell.getCurrSpice() == 0) and (self.__sugar <= self.__sugarMetabolism or self.__spice <= self.__spiceMetabolism):
-            print("Agent {0} moving to ({1},{2}) with [{3},{4}] while close to starvation with holds [{5},{6}]".format(str(self), bestCell.getX(), bestCell.getY(), bestCell.getCurrSugar(), bestCell.getCurrSpice(), self.__sugar, self.__spice))
-        cellFinds += "Selected ({0},{1}) --> [{2},{3}]\n\n".format(bestCell.getX(), bestCell.getY(), bestCell.getCurrSugar(), bestCell.getCurrSpice())
-        print(cellFinds)
+        #if (bestCell.getCurrSugar() == 0 or bestCell.getCurrSpice() == 0) and (self.__sugar <= self.__sugarMetabolism or self.__spice <= self.__spiceMetabolism):
+        #    print("Agent {0} moving to ({1},{2}) with [{3},{4}] while close to starvation with holds [{5},{6}]".format(str(self), bestCell.getX(), bestCell.getY(), bestCell.getCurrSugar(), bestCell.getCurrSpice(), self.__sugar, self.__spice))
+        #cellFinds += "Selected ({0},{1}) --> [{2},{3}] for {4} wealth at distance {5}\n".format(bestCell.getX(), bestCell.getY(), bestCell.getCurrSugar(), bestCell.getCurrSpice(), bestWealth, bestRange)
+        #print(cellFinds)
         return bestCell
 
     def findBestFriend(self):
@@ -419,16 +413,16 @@ class Agent:
 
     def findCellsInVision(self):
         if self.__vision > 0 and self.__cell != None:
-            northCells = [self.__cell.getNorthNeighbor()]
-            southCells = [self.__cell.getSouthNeighbor()]
-            eastCells = [self.__cell.getEastNeighbor()]
-            westCells = [self.__cell.getWestNeighbor()]
+            northCells = [{"cell": self.__cell.getNorthNeighbor(), "distance": 1}]
+            southCells = [{"cell": self.__cell.getSouthNeighbor(), "distance": 1}]
+            eastCells = [{"cell": self.__cell.getEastNeighbor(), "distance": 1}]
+            westCells = [{"cell": self.__cell.getWestNeighbor(), "distance": 1}]
             # Vision 1 accounted for in list setup
-            for i in range(self.__vision - 1):
-                northCells.append(northCells[-1].getNorthNeighbor())
-                southCells.append(southCells[-1].getSouthNeighbor())
-                eastCells.append(eastCells[-1].getEastNeighbor())
-                westCells.append(westCells[-1].getWestNeighbor())
+            for i in range(1, self.__vision):
+                northCells.append({"cell": northCells[-1]["cell"].getNorthNeighbor(), "distance": i + 1})
+                southCells.append({"cell": southCells[-1]["cell"].getSouthNeighbor(), "distance": i + 1})
+                eastCells.append({"cell": eastCells[-1]["cell"].getEastNeighbor(), "distance": i + 1})
+                westCells.append({"cell": westCells[-1]["cell"].getWestNeighbor(), "distance": i + 1})
             self.setCellsInVision(northCells + southCells + eastCells + westCells)
 
     def findChildEndowment(self, mate):
@@ -500,7 +494,7 @@ class Agent:
     def findRetaliatorsInVision(self):
         retaliators = {"green": 0, "blue": 0, "red": 0}
         for cell in self.__cellsInVision:
-            agent = cell.getAgent()
+            agent = cell["cell"].getAgent()
             if agent != None:
                 agentTribe = agent.getTribe()
                 agentStrength = agent.getWealth()
