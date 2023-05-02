@@ -594,9 +594,14 @@ if __name__ == "__main__":
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1,
-                     "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1,
+                     "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1, "environmentMaxTribes": 3,
                      "logfile": None, "seed": 12345, "headlessMode": False, "timesteps": 1000}
     configuration = parseOptions(configuration)
+
+    # Ensure at most number of tribes equal to agent tag string length
+    if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
+            configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
+
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
     S.runSimulation(configuration["timesteps"])

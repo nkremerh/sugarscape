@@ -8,8 +8,9 @@ class GUI:
         self.__window = None
         self.__canvas = None
         self.__grid = [[None for j in range(screenWidth)]for i in range(screenHeight)]
+        # TODO: Add arbitrary max number of tribe colors (or create tribe color generator)
         self.__colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
-                         "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232"}
+                         "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "purple": "#803280", "orange": "#CE7E00"}
         self.__widgets = {}
         self.__lastSelectedAgentColor = None
         self.__lastSelectedEnvironmentColor = None

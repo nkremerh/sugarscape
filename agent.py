@@ -320,10 +320,9 @@ class Agent:
     def findBestCell(self):
         self.findCellsInVision()
         retaliators = self.findRetaliatorsInVision()
-        greenRetaliation = True if self.__tribe == "green" or retaliators["green"] > self.__wealth else False
-        blueRetaliation = True if self.__tribe == "blue" or retaliators["blue"] > self.__wealth else False
-        redRetaliation = True if self.__tribe == "red" or retaliators["red"] > self.__wealth else False
-        retaliationPossible = {"green": greenRetaliation, "blue": blueRetaliation, "red": redRetaliation, "empty": False}
+        retaliationPossible = {}
+        for tribe in retaliators:
+            retaliationPossible[tribe] = True if self.__tribe == tribe or retaliators[tribe] > self.__wealth else False
         totalMetabolism = self.__sugarMetabolism + self.__spiceMetabolism
         sugarMetabolismProportion = self.__sugarMetabolism / totalMetabolism
         spiceMetabolismProportion = self.__spiceMetabolism / totalMetabolism
@@ -488,35 +487,35 @@ class Agent:
         self.__marginalRateOfSubstitution = spiceNeed / sugarNeed
 
     def findRetaliatorsInVision(self):
-        retaliators = {"green": 0, "blue": 0, "red": 0}
+        retaliators = {}
         for cell in self.__cellsInVision:
             agent = cell["cell"].getAgent()
             if agent != None:
                 agentTribe = agent.getTribe()
                 agentStrength = agent.getWealth()
-                if agentTribe == "green" and agentStrength > retaliators["green"]:
-                    retaliators["green"] = agentStrength
-                elif agentTribe == "blue" and agentStrength > retaliators["blue"]:
-                    retaliators["blue"] = agentStrength
-                elif agentTribe == "red" and agentStrength > retaliators["red"]:
-                    retaliators["red"] = agentStrength
+                if agentTribe not in retaliators:
+                    retaliators[agentTribe] = agentStrength
+                elif retaliators[agentTribe] < agentStrength:
+                    retaliators[agentTribe] = agentStrength
         return retaliators
 
-    # TODO: Make possible number of tribes configurable (ensure less than or equal to tag length)
+    # TODO: Create list of max tribe colors or create tribe color generator
     def findTribe(self):
         if self.__tags == None:
             return None
+        sugarscape = self.__cell.getEnvironment().getSugarscape()
+        numTribes = sugarscape.getConfiguration()["environmentMaxTribes"]
         zeroes = 0
-        tribeCutoff = math.floor(len(self.__tags) / 3)
+        tribeCutoff = math.floor(len(self.__tags) / numTribes)
+        colors = ["green", "blue", "red", "purple", "orange"]
         for tag in self.__tags:
             if tag == 0:
                 zeroes += 1
-        if zeroes < tribeCutoff + 1:
-            return "green"
-        elif zeroes < (2 * tribeCutoff) + 1:
-            return "blue"
-        else:
-            return "red"
+        for i in range(1, numTribes + 1):
+            if zeroes < (i * tribeCutoff) + 1:
+                return colors[i - 1]
+        # Default agent coloring
+        return "red"
 
     def getAge(self):
         return self.__age

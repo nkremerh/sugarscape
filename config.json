@@ -23,6 +23,7 @@
     "environmentMaxCombatLoot": 1,
     "environmentMaxSpice": 4,
     "environmentMaxSugar": 4,
+    "environmentMaxTribes": 3,
     "environmentConsumptionPollutionRate": 0,
     "environmentPollutionDiffusionDelay": 0,
     "environmentProductionPollutionRate": 0,
