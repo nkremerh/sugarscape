@@ -27,7 +27,7 @@ class Sugarscape:
         self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.__environmentHeight = configuration["environmentHeight"]
         self.__environmentWidth = configuration["environmentWidth"]
-        self.configureEnvironment(configuration["environmentMaxSugar"])
+        self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"])
         self.__agents = []
         self.configureAgents(configuration["startingAgents"])
         self.__gui = gui.GUI(self) if configuration["headlessMode"] == False else None
@@ -42,7 +42,7 @@ class Sugarscape:
         self.__agents.append(agent)
 
     # TODO: Make more consistent with book, dispersion more tightly concentrated than in book (ref: pg. 22)
-    def addSpicePeak(self, startX, startY, radius, maxCapacity):
+    def addSpicePeak(self, startX, startY, radius, maxSpice):
         height = self.__environment.getHeight()
         width = self.__environment.getWidth()
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
@@ -58,15 +58,15 @@ class Sugarscape:
                             newCell.setSeason("winter")
                     self.__environment.setCell(newCell, i, j)
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
-                currDispersion = 1 + maxCapacity * (1 - euclideanDistanceToStart / radialDispersion)
-                cellMaxCapacity = min(currDispersion, maxCapacity)
+                currDispersion = 1 + maxSpice * (1 - euclideanDistanceToStart / radialDispersion)
+                cellMaxCapacity = min(currDispersion, maxSpice)
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
                 if cellMaxCapacity > self.__environment.getCell(i, j).getMaxSpice():
                     self.__environment.getCell(i, j).setMaxSpice(cellMaxCapacity)
                     self.__environment.getCell(i, j).setCurrSpice(cellMaxCapacity)
 
     # TODO: Make more consistent with book, dispersion more tightly concentrated than in book (ref: pg. 22)
-    def addSugarPeak(self, startX, startY, radius, maxCapacity):
+    def addSugarPeak(self, startX, startY, radius, maxSugar):
         height = self.__environment.getHeight()
         width = self.__environment.getWidth()
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
@@ -82,8 +82,8 @@ class Sugarscape:
                             newCell.setSeason("winter")
                     self.__environment.setCell(newCell, i, j)
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
-                currDispersion = 1 + maxCapacity * (1 - euclideanDistanceToStart / radialDispersion)
-                cellMaxCapacity = min(currDispersion, maxCapacity)
+                currDispersion = 1 + maxSugar * (1 - euclideanDistanceToStart / radialDispersion)
+                cellMaxCapacity = min(currDispersion, maxSugar)
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
                 if cellMaxCapacity > self.__environment.getCell(i, j).getMaxSugar():
                     self.__environment.getCell(i, j).setMaxSugar(cellMaxCapacity)
@@ -146,7 +146,7 @@ class Sugarscape:
         # Debugging string
         #print("Agents: {0}".format(str([str(agent) for agent in self.__agents])))
 
-    def configureEnvironment(self, maxCapacity):
+    def configureEnvironment(self, maxSugar, maxSpice):
         height = self.__environment.getHeight()
         width = self.__environment.getWidth()
         startX1 = math.ceil(height * 0.7)
@@ -154,15 +154,15 @@ class Sugarscape:
         startY1 = math.ceil(width * 0.3)
         startY2 = math.ceil(width * 0.7)
         radius = math.ceil(math.sqrt(2 * (height + width)))
-        self.addSugarPeak(startX1, startY1, radius, maxCapacity)
-        self.addSugarPeak(startX2, startY2, radius, maxCapacity)
+        self.addSugarPeak(startX1, startY1, radius, maxSugar)
+        self.addSugarPeak(startX2, startY2, radius, maxSugar)
         
         startX1 = math.ceil(height * 0.7)
         startX2 = math.ceil(height * 0.3)
         startY1 = math.ceil(width * 0.7)
         startY2 = math.ceil(width * 0.3)
-        self.addSpicePeak(startX1, startY1, radius, maxCapacity)
-        self.addSpicePeak(startX2, startY2, radius, maxCapacity)
+        self.addSpicePeak(startX1, startY1, radius, maxSpice)
+        self.addSpicePeak(startX2, startY2, radius, maxSpice)
         self.__environment.setCellNeighbors()
 
     def doTimestep(self):
@@ -513,7 +513,10 @@ class Sugarscape:
             if agentWealth > maxWealth:
                 maxWealth = agentWealth
         if numAgents > 0:
-            meanMetabolism = (meanSugarMetabolism + meanSpiceMetabolism) / numAgents
+            combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism 
+            if meanSugarMetabolism > 0 and meanSpiceMetabolism > 0:
+                combinedMetabolism = combinedMetabolism / 2
+            meanMetabolism = combinedMetabolism / numAgents
             meanVision = meanVision / numAgents
             meanAge = meanAge / numAgents
             meanWealth = meanWealth / numAgents

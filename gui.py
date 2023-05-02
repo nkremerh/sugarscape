@@ -222,9 +222,9 @@ class GUI:
             currSpice = cell.getCurrSpice()
             maxSugar = self.__sugarscape.getEnvironment().getGlobalMaxSugar()
             maxSpice = self.__sugarscape.getEnvironment().getGlobalMaxSpice()
-            if currSugar > 0 and currSpice == 0:
+            if currSugar > 0 and currSpice == 0 and maxSugar > 0:
                 recolorFactor = currSugar / maxSugar
-            elif currSpice > 0 and currSugar == 0:
+            elif currSpice > 0 and currSugar == 0 and maxSpice > 0:
                 recolorFactor = currSpice / maxSpice
             else:
                 recolorFactor = (currSugar + currSpice) / (maxSugar + maxSpice)

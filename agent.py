@@ -61,8 +61,8 @@ class Agent:
         self.__socialNetwork[agentID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0, "marginalRateOfSubstitution": 0}
 
     def calculateMarginalRateOfSubstitution(self, sugar, spice):
-        spiceNeed = spice / self.__spiceMetabolism
-        sugarNeed = sugar / self.__sugarMetabolism
+        spiceNeed = spice / self.__spiceMetabolism if self.__spiceMetabolism > 0 else 1
+        sugarNeed = sugar / self.__sugarMetabolism if self.__sugarMetabolism > 0 else 1
         return spiceNeed / sugarNeed
 
     def collectResourcesAtCell(self):
@@ -87,7 +87,7 @@ class Agent:
 
     def doCombat(self, cell):
         prey = cell.getAgent()
-        if prey != None:
+        if prey != None and prey != self:
             maxCombatLoot = self.__cell.getEnvironment().getMaxCombatLoot()
             preySugar = prey.getSugar()
             preySpice = prey.getSpice()
@@ -167,7 +167,7 @@ class Agent:
         self.__spice -= self.__spiceMetabolism
         self.__cell.doConsumptionPollution(self.__sugarMetabolism)
         self.__cell.doConsumptionPollution(self.__spiceMetabolism)
-        if self.__sugar < 1 or self.__spice < 1:
+        if (self.__sugar < 1 and self.__sugarMetabolism > 0) or (self.__spice < 1 and self.__spiceMetabolism > 0):
             self.doDeath()
 
     def doReproduction(self):
@@ -206,14 +206,14 @@ class Agent:
                     #print("Agents {0},{1} produced child at ({2},{3})".format(str(self), str(neighbor), emptyCell.getX(), emptyCell.getY()))
 
                     # TODO: Reproduction cost from book high enough to kill initial population
-                    #sugarCost = math.ceil(self.__startingSugar / 2)
-                    #spiceCost = math.ceil(self.__startingSpice / 2)
-                    #mateSugarCost = math.ceil(neighbor.getStartingSugar() / 2)
-                    #mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 2)
-                    sugarCost = math.ceil(self.__startingSugar / 4)
-                    spiceCost = math.ceil(self.__startingSpice / 4)
-                    mateSugarCost = math.ceil(neighbor.getStartingSugar() / 4)
-                    mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 4)
+                    sugarCost = math.ceil(self.__startingSugar / 2)
+                    spiceCost = math.ceil(self.__startingSpice / 2)
+                    mateSugarCost = math.ceil(neighbor.getStartingSugar() / 2)
+                    mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 2)
+                    #sugarCost = math.ceil(self.__startingSugar / 4)
+                    #spiceCost = math.ceil(self.__startingSpice / 4)
+                    #mateSugarCost = math.ceil(neighbor.getStartingSugar() / 4)
+                    #mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 4)
                     self.__sugar -= sugarCost
                     self.__spice -= spiceCost
                     neighbor.setSugar(neighbor.getSugar() - mateSugarCost)
@@ -241,7 +241,7 @@ class Agent:
     def doTimestep(self, timestep):
         self.__timestep = timestep
         # Prevent dead or already moved agent from moving
-        if self.__alive == True and self.__lastMoved != self.__timestep:
+        if self.__alive == True and self.__cell != None and self.__lastMoved != self.__timestep:
             self.__lastMoved = self.__timestep
             self.moveToBestCell()
             self.updateNeighbors()
@@ -304,12 +304,11 @@ class Agent:
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller and betterForSugarSeller and checkForMRSCrossing == False:
                     # Debugging string
-                    #print("Agent {0} selling {1} spice to agent {2} for 1 sugar".format(str(spiceSeller), tradePrice, str(sugarSeller)))
-                    #print("Agent {0} MRS of {1} to new MRS of {2} and agent {3} MRS of {4} to new MRS of {5}".format(str(spiceSeller), spiceSellerMRS, spiceSellerNewMRS, str(sugarSeller), sugarSellerMRS, sugarSellerNewMRS))
+                    #print("Agent {0} [{1},{2}] ({3}-->{4}) selling {5} spice to agent {6} [{7},{8}] ({9}-->{10}) for 1 sugar".format(str(spiceSeller), spiceSeller.getSugar(), spiceSeller.getSpice(), spiceSellerMRS, spiceSellerNewMRS, tradePrice, str(sugarSeller), sugarSeller.getSugar(), sugarSeller.getSpice(), sugarSellerMRS, sugarSellerNewMRS))
                     spiceSeller.setSpice(spiceSellerSpice - tradePrice)
                     spiceSeller.setSugar(spiceSellerSugar + 1)
-                    sugarSeller.setSpice(spiceSellerSpice + tradePrice)
-                    sugarSeller.setSugar(spiceSellerSugar - 1)
+                    sugarSeller.setSpice(sugarSellerSpice + tradePrice)
+                    sugarSeller.setSugar(sugarSellerSugar - 1)
                     spiceSeller.findMarginalRateOfSubstitution()
                     sugarSeller.findMarginalRateOfSubstitution()
                 else:
@@ -481,15 +480,11 @@ class Agent:
         return hammingDistance
 
     def findMarginalRateOfSubstitution(self):
-        # TODO: Determine why sugar/spice allowed to reach zero before calling this
-        #print("Agent {0} has {1} sugar and {2} spice".format(str(self), self.__sugar, self.__spice))
-        if self.__sugar == 0 or self.__spice == 0:
-            print("Agent {0} calculating MRS without sugar or without spice".format(str(self)))
-            self.doDeath()
-        else:
-            spiceNeed = self.__spice / self.__spiceMetabolism
-            sugarNeed = self.__sugar / self.__sugarMetabolism
-            self.__marginalRateOfSubstitution = spiceNeed / sugarNeed
+        spiceNeed = self.__spice / self.__spiceMetabolism if self.__spiceMetabolism > 0 else 1
+        sugarNeed = self.__sugar / self.__sugarMetabolism if self.__sugarMetabolism > 0 else 1
+        # Debugging string
+        #print("Agent {0} sugar need {1}, spice need {2}".format(str(self), sugarNeed, spiceNeed))
+        self.__marginalRateOfSubstitution = spiceNeed / sugarNeed
 
     def findRetaliatorsInVision(self):
         retaliators = {"green": 0, "blue": 0, "red": 0}
