@@ -20,7 +20,8 @@ class Agent:
         self.__fertilityAge = configuration["fertilityAge"]
         self.__infertilityAge = configuration["infertilityAge"]
         self.__tags = configuration["tags"]
-        self.__aggression = configuration["aggressionFactor"]
+        self.__aggressionFactor = configuration["aggressionFactor"]
+        self.__tradeFactor = configuration["tradeFactor"]
         self.__maxFriends = configuration["maxFriends"]
         self.__wealth = configuration["sugar"] + configuration["spice"]
         self.__seed = configuration["seed"]
@@ -249,6 +250,9 @@ class Agent:
             self.doAging()
 
     def doTrading(self):
+        # If not a trader, skip trading
+        if self.__tradeFactor == 0:
+            return
         self.findMarginalRateOfSubstitution()
         neighborCells = self.__cell.getNeighbors()
         traders = []
@@ -340,7 +344,7 @@ class Agent:
             cell = currCell["cell"]
             travelDistance = currCell["distance"]
             
-            if cell.isOccupied() == True and self.__aggression == 0:
+            if cell.isOccupied() == True and self.__aggressionFactor == 0:
                 continue
             cellSugar = cell.getCurrSugar()
             cellSpice = cell.getCurrSpice()
@@ -352,8 +356,8 @@ class Agent:
             preyWealth = prey.getWealth() if prey != None else 0
             preySugar = prey.getSugar() if prey != None else 0
             preySpice = prey.getSpice() if prey != None else 0
-            welfarePreySugar = self.__aggression * min(combatMaxLoot, preySugar)
-            welfarePreySpice = self.__aggression * min(combatMaxLoot, preySpice)
+            welfarePreySugar = self.__aggressionFactor * min(combatMaxLoot, preySugar)
+            welfarePreySpice = self.__aggressionFactor * min(combatMaxLoot, preySpice)
             
             # Modify value of cell relative to the metabolism needs of the agent
             welfareFunction = ((self.__sugar + cellSugar + welfarePreySugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice + welfarePreySpice) ** spiceMetabolismProportion)
@@ -428,7 +432,8 @@ class Agent:
         parentInfertilityAges = [self.__infertilityAge, mate.getInfertilityAge()]
         parentFertilityAges = [self.__fertilityAge, mate.getFertilityAge()]
         parentSexes = [self.__sex, mate.getSex()]
-        parentAggressionFactors = [self.__aggression, mate.getAggression()]
+        parentAggressionFactors = [self.__aggressionFactor, mate.getAggressionFactor()]
+        parentTradeFactors = [self.__tradeFactor, mate.getTradeFactor()]
         parentMaxFriends = [self.__maxFriends, mate.getMaxFriends()]
         # Each parent gives 1/2 their starting endowment for child endowment
         childStartingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
@@ -454,11 +459,12 @@ class Agent:
                     childTags.append(self.__tags[i])
                 else:
                     childTags.append(mismatchTags[random.randrange(2)])
-        childAggression = parentAggressionFactors[random.randrange(2)]
+        childAggressionFactor = parentAggressionFactors[random.randrange(2)]
+        childTradeFactor = parentTradeFactors[random.randrange(2)]
         endowment = {"movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
-                     "aggressionFactor": childAggression, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
-                     "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy}
+                     "aggressionFactor": childAggressionFactor, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
+                     "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy, "tradeFactor": childTradeFactor}
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -484,7 +490,8 @@ class Agent:
         sugarNeed = self.__sugar / self.__sugarMetabolism if self.__sugarMetabolism > 0 else 1
         # Debugging string
         #print("Agent {0} sugar need {1}, spice need {2}".format(str(self), sugarNeed, spiceNeed))
-        self.__marginalRateOfSubstitution = spiceNeed / sugarNeed
+        # Trade factor may increase amount of spice traded for sugar in a transaction
+        self.__marginalRateOfSubstitution = self.__tradeFactor * (spiceNeed / sugarNeed)
 
     def findRetaliatorsInVision(self):
         retaliators = {}
@@ -521,8 +528,8 @@ class Agent:
     def getAge(self):
         return self.__age
 
-    def getAggression(self):
-        return self.__aggression
+    def getAggressionFactor(self):
+        return self.__aggressionFactor
 
     def getAlive(self):
         return self.__alive
@@ -602,6 +609,9 @@ class Agent:
     def getTags(self):
         return self.__tags
 
+    def getTradeFactor(self):
+        return self.__tradeFactor
+
     def getTribe(self):
         return self.__tribe
 
@@ -636,7 +646,7 @@ class Agent:
 
     def moveToBestCell(self):
         bestCell = self.findBestCell()
-        if self.__aggression > 0:
+        if self.__aggressionFactor > 0:
             self.doCombat(bestCell)
         else:
             self.setCell(bestCell)
@@ -646,8 +656,8 @@ class Agent:
     def setAge(self, age):
         self.__age = age
 
-    def setAggression(self, aggression):
-        self.__aggression = aggression
+    def setAggressionFactor(self, aggressionFactor):
+        self.__aggressionFactor = aggressionFactor
 
     def setAlive(self, alive):
         self.__alive = alive
@@ -726,6 +736,9 @@ class Agent:
 
     def setTags(self, tags):
         self.__tags = tags
+
+    def setTradeFactor(self, tradeFactor):
+        self.__tradeFactor = tradeFactor
 
     def setTribe(self, tribe):
         self.__tribe = tribe
