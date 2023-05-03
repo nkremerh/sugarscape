@@ -23,6 +23,7 @@ class Agent:
         self.__aggressionFactor = configuration["aggressionFactor"]
         self.__tradeFactor = configuration["tradeFactor"]
         self.__lookaheadFactor = configuration["lookaheadFactor"]
+        self.__lendingFactor = configuration["lendingFactor"]
         self.__maxFriends = configuration["maxFriends"]
         self.__wealth = configuration["sugar"] + configuration["spice"]
         self.__seed = configuration["seed"]
@@ -34,7 +35,7 @@ class Agent:
         self.__lastMoved = -1
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
-        self.__socialNetwork = {"father": None, "mother": None, "children": [], "friends": []}
+        self.__socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
         self.__parents = {"father": None, "mother": None}
         self.__children = []
         self.__friends = []
@@ -61,7 +62,9 @@ class Agent:
     def addAgentToSocialNetwork(self, agentID):
         if agentID in self.__socialNetwork:
             return
-        self.__socialNetwork[agentID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0, "marginalRateOfSubstitution": 0}
+        self.__socialNetwork[agentID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0,
+                                         "timesTraded": 0, "timesCredited": 0, "timesDebited": 0,
+                                         "marginalRateOfSubstitution": 0}
 
     def calculateMarginalRateOfSubstitution(self, sugar, spice):
         spiceNeed = spice / self.__spiceMetabolism if self.__spiceMetabolism > 0 else 1
@@ -163,6 +166,39 @@ class Agent:
         self.__sugar = 0
         self.__spice = 0
 
+    def doLending(self):
+        # If not a lender, skip lending
+        if self.__lendingFactor == 0:
+            return
+        # Fertile and not enough excess wealth to be a lender
+        if self.isFertile() == True and (self.__sugar == self.__startingSugar or self.__spice == self.__startingSpice):
+            print("Agent {0} cannot lend due to wealth".format(str(self)))
+            return
+        globalInterestRate = self.__cell.getEnvironment().getInterestRate()
+        # Maximum interest rate of 100%
+        interestRate = max(1, self.__lendingFactor * globalInterestRate)
+        neighborCells = self.__cell.getNeighbors()
+        borrowers = []
+        for neighborCell in neighborCells:
+            neighbor = neighborCell.getAgent()
+            if neighbor != None and neighbor.isAlive() == True:
+                neighborInfertilityByWealth = False
+                if neighbor.getAge() < neighbor.getInfertilityAge() and neighbor.isFertile() == False:
+                    neighborInfertilityByWealth = True
+                    print("Agent {0} a viable lender for agent {1}".format(str(self), str(neighbor)))
+                else:
+                    print("Agent {0} not a viable lender for agent {1}".format(str(self), str(neighbor)))
+                if neighborInfertilityByWealth == True:
+                    borrowers.append(neighbor)
+        random.shuffle(borrowers)
+        for borrower in borrowers:
+            credit = 0
+            debit = 0
+            duration = 0
+            self.updateCreditWithAgent(borrower.getID(), self.__lastMoved, credit, duration)
+            borrower.updateDebitWithAgent(self.getID(), self.__lastMoved, debit, duration)
+        return
+
     def doMetabolism(self):
         if self.__alive == False:
             return
@@ -202,7 +238,7 @@ class Agent:
                     neighborID = neighbor.getID()
                     self.addAgentToSocialNetwork(childID)
                     neighbor.addAgentToSocialNetwork(childID)
-                    neighbor.updateTimesVisitedFromAgent(self.__id, self.__lastMoved)
+                    neighbor.updateTimesVisitedWithAgent(self.__id, self.__lastMoved)
                     neighbor.updateTimesReproducedWithAgent(self.__id, self.__lastMoved)
                     self.updateTimesReproducedWithAgent(neighborID, self.__lastMoved)
                     # Debugging string
@@ -246,6 +282,7 @@ class Agent:
             # TODO: Determine order of operations for post-move actions
             self.collectResourcesAtCell()
             self.doTrading()
+            self.doLending()
             self.doMetabolism()
             self.doTagging()
             self.doReproduction()
@@ -270,6 +307,7 @@ class Agent:
             spiceSeller = None
             sugarSeller = None
             tradeFlag = True
+            transactions = 0
 
             while tradeFlag == True:
                 if traderMRS > self.__marginalRateOfSubstitution:
@@ -312,9 +350,12 @@ class Agent:
                     sugarSeller.setSugar(sugarSellerSugar - 1)
                     spiceSeller.findMarginalRateOfSubstitution()
                     sugarSeller.findMarginalRateOfSubstitution()
+                    transactions += 1
                 else:
                     tradeFlag = False
                     continue
+            spiceSeller.updateTimesTradedWithAgent(sugarSeller.getID(), self.__lastMoved, transactions)
+            sugarSeller.updateTimesTradedWithAgent(spiceSeller.getID(), self.__lastMoved, transactions)
 
     def findAgentWealthAtCell(self, cell):
         agent = cell.getAgent()
@@ -453,6 +494,7 @@ class Agent:
         parentAggressionFactors = [self.__aggressionFactor, mate.getAggressionFactor()]
         parentTradeFactors = [self.__tradeFactor, mate.getTradeFactor()]
         parentLookaheadFactors = [self.__lookaheadFactor, mate.getLookaheadFactor()]
+        parentLendingFactors = [self.__lendingFactor, mate.getLendingFactor()]
         parentMaxFriends = [self.__maxFriends, mate.getMaxFriends()]
         # Each parent gives 1/2 their starting endowment for child endowment
         childStartingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
@@ -481,11 +523,12 @@ class Agent:
         childAggressionFactor = parentAggressionFactors[random.randrange(2)]
         childTradeFactor = parentTradeFactors[random.randrange(2)]
         childLookaheadFactor = parentLookaheadFactors[random.randrange(2)]
+        childLendingFactor = parentLendingFactors[random.randrange(2)]
         endowment = {"movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
                      "aggressionFactor": childAggressionFactor, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
                      "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy, "tradeFactor": childTradeFactor,
-                     "lookaheadFactor": childLookaheadFactor}
+                     "lookaheadFactor": childLookaheadFactor, "lendingFactor": childLendingFactor}
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -581,6 +624,9 @@ class Agent:
 
     def getInheritancePolicy(self):
         return self.__inheritancePolicy
+
+    def getLendingFactor(self):
+        return self.__lendingFactor
 
     def getLookaheadFactor(self):
         return self.__lookaheadFactor
@@ -719,6 +765,9 @@ class Agent:
     def setInheritancePolicy(self, inheritancePolicy):
         self.__inheritancePolicy = inheritancePolicy
 
+    def setLendingFactor(self, lendingFactor):
+        self.__lendingFactor = lendingFactor
+
     def setLookaheadFactor(self, lookaheadFactor):
         self.__lookaheadFactor = lookaheadFactor
 
@@ -824,6 +873,18 @@ class Agent:
         self.__mooreNeighbors["southwest"] = south.getCell().getWestNeighbor() if south != None else None
         self.__mooreNeighbors["southwest"] = west.getCell().getSouthNeighbor() if west != None and self.__mooreNeighbors["southwest"] == None else None
 
+    def updateCreditWithAgent(self, agentID, timestep, credit, duration):
+        return
+
+    def updateDebitWithAgent(self, agentID, timestep, debit, duration):
+        return
+
+    def updateMarginalRateOfSubstitutionForAgent(self, agent):
+        agentID = agent.getID()
+        if agentID not in self.__socialNetwork:
+            self.addToSocialNetwork(agentID)
+        self.__socialNetwork[agentID]["marginalRateOfSubstitution"] = agent.getMarginalRateOfSubstitution()
+
     def updateNeighbors(self):
         self.updateVonNeumannNeighbors()
         self.updateMooreNeighbors()
@@ -835,17 +896,11 @@ class Agent:
                 continue
             neighborID = neighbor.getID()
             if neighborID in self.__socialNetwork:
-                self.updateTimesVisitedFromAgent(neighborID, self.__lastMoved)
+                self.updateTimesVisitedWithAgent(neighborID, self.__lastMoved)
                 self.updateMarginalRateOfSubstitutionForAgent(neighbor)
             else:
                 self.addAgentToSocialNetwork(neighborID)
             self.updateFriends(neighbor)
-
-    def updateMarginalRateOfSubstitutionForAgent(self, agent):
-        agentID = agent.getID()
-        if agentID not in self.__socialNetwork:
-            self.addToSocialNetwork(agentID)
-        self.__socialNetwork[agentID]["marginalRateOfSubstitution"] = agent.getMarginalRateOfSubstitution()
 
     def updateTimesReproducedWithAgent(self, agentID, timestep):
         if agentID not in self.__socialNetwork:
@@ -853,7 +908,13 @@ class Agent:
         self.__socialNetwork[agentID]["timesReproduced"] += 1
         self.__socialNetwork[agentID]["lastSeen"] = timestep
 
-    def updateTimesVisitedFromAgent(self, agentID, timestep):
+    def updateTimesTradedWithAgent(self, agentID, timestep, transactions=0):
+        if agentID not in self.__socialNetwork:
+            self.addAgentToSocialNetwork(agentID)
+        self.__socialNetwork[agentID]["timesTraded"] += transactions
+        self.__socialNetwork[agentID]["lastSeen"] = timestep
+
+    def updateTimesVisitedWithAgent(self, agentID, timestep):
         if agentID not in self.__socialNetwork:
             self.addAgentToSocialNetwork(agentID)
         else:

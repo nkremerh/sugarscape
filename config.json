@@ -4,6 +4,7 @@
     "agentFemaleInfertilityAge": [40, 50],
     "agentFemaleFertilityAge": [12, 15],
     "agentInheritancePolicy": "children",
+    "agentLendingFactor": [1, 1],
     "agentLookaheadFactor": [1, 10],
     "agentMaleInfertilityAge": [50, 60],
     "agentMaleFertilityAge": [12, 15],
@@ -20,7 +21,7 @@
     "agentReplacements": 0,
     "agentTagStringLength": 11,
     "environmentHeight": 50,
-    "environmentWidth": 50,
+    "environmentInterestRate": 0.10,
     "environmentMaxCombatLoot": 1,
     "environmentMaxSpice": 4,
     "environmentMaxSugar": 4,
@@ -32,9 +33,10 @@
     "environmentSeasonInterval": 0,
     "environmentSpiceRegrowRate": 1,
     "environmentSugarRegrowRate": 1,
-    "timesteps": 200,
+    "environmentWidth": 50,
     "headlessMode": false,
-    "startingAgents": 500,
     "logfile": "log.json",
-    "seed": 12345
+    "startingAgents": 500,
+    "seed": 12345,
+    "timesteps": 200
 }
