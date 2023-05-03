@@ -527,7 +527,6 @@ class Agent:
                     retaliators[agentTribe] = agentStrength
         return retaliators
 
-    # TODO: Create list of max tribe colors or create tribe color generator
     def findTribe(self):
         if self.__tags == None:
             return None
