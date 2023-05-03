@@ -555,6 +555,11 @@ def parseConfigFile(configFile, configuration):
     for opt in configuration:
         if opt in options:
             configuration[opt] = options[opt]
+    # Ensure at most number of tribes equal to agent tag string length
+    if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
+            configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
+    if configuration["environmentMaxTribes"] > 11:
+        configuration["environmentMaxTribes"] = 11
     return configuration
 
 def parseOptions(configuration):
@@ -597,11 +602,6 @@ if __name__ == "__main__":
                      "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1, "environmentMaxTribes": 3,
                      "logfile": None, "seed": 12345, "headlessMode": False, "timesteps": 1000}
     configuration = parseOptions(configuration)
-
-    # Ensure at most number of tribes equal to agent tag string length
-    if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
-            configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
-
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
     S.runSimulation(configuration["timesteps"])

@@ -507,12 +507,13 @@ class Agent:
         numTribes = sugarscape.getConfiguration()["environmentMaxTribes"]
         zeroes = 0
         tribeCutoff = math.floor(len(self.__tags) / numTribes)
-        colors = ["green", "blue", "red", "purple", "orange"]
+        # Up to 11 tribes possible without significant color conflicts
+        colors = ["green", "blue", "red", "orange", "purple", "teal", "pink", "mint", "blue2", "yellow", "salmon"]
         for tag in self.__tags:
             if tag == 0:
                 zeroes += 1
         for i in range(1, numTribes + 1):
-            if zeroes < (i * tribeCutoff) + 1:
+            if zeroes < (i * tribeCutoff) + 1 or i == numTribes:
                 return colors[i - 1]
         # Default agent coloring
         return "red"
