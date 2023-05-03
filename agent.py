@@ -41,6 +41,7 @@ class Agent:
         self.__tribe = self.findTribe()
         self.__timestep = birthday
         self.__marginalRateOfSubstitution = 1
+        self.__tagZeroes = 0
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.__cell.getEnvironment().getSugarscape()
@@ -360,7 +361,17 @@ class Agent:
             welfarePreySpice = self.__aggressionFactor * min(combatMaxLoot, preySpice)
             
             # Modify value of cell relative to the metabolism needs of the agent
-            welfareFunction = ((self.__sugar + cellSugar + welfarePreySugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice + welfarePreySpice) ** spiceMetabolismProportion)
+            welfareFunction = 1
+            if len(self.__tags) > 0:
+                self.findTribe()
+                fractionZeroesInTags = self.__tagZeroes / len(self.__tags)
+                fractionOnesInTags = 1 - fractionZeroesInTags
+                tagPreferences = (self.__sugarMetabolism * fractionZeroesInTags) + (self.__spiceMetabolism * fractionOnesInTags)
+                tagPreferencesSugar = (self.__sugarMetabolism / tagPreferences) * fractionZeroesInTags
+                tagPreferencesSpice = (self.__spiceMetabolism / tagPreferences) * fractionOnesInTags
+                welfareFunction = ((self.__sugar + cellSugar + welfarePreySugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice + welfarePreySpice) ** spiceMetabolismProportion)
+            else:
+                welfareFunction = ((self.__sugar + cellSugar + welfarePreySugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice + welfarePreySpice) ** spiceMetabolismProportion)
             cellWealth = welfareFunction / (1 + cell.getCurrPollution())
             
             #if prey == None:
@@ -519,6 +530,7 @@ class Agent:
         for tag in self.__tags:
             if tag == 0:
                 zeroes += 1
+        self.__tagZeroes = zeroes
         for i in range(1, numTribes + 1):
             if zeroes < (i * tribeCutoff) + 1 or i == numTribes:
                 return colors[i - 1]
@@ -608,6 +620,9 @@ class Agent:
 
     def getTags(self):
         return self.__tags
+
+    def getTagZeroes(self):
+        return self.__tagZeroes
 
     def getTradeFactor(self):
         return self.__tradeFactor
@@ -736,6 +751,9 @@ class Agent:
 
     def setTags(self, tags):
         self.__tags = tags
+
+    def setTagZeroes(self, tagZeroes):
+        self.__tagZeroes = tagZeroes
 
     def setTradeFactor(self, tradeFactor):
         self.__tradeFactor = tradeFactor
