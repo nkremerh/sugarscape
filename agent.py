@@ -24,6 +24,7 @@ class Agent:
         self.__tradeFactor = configuration["tradeFactor"]
         self.__lookaheadFactor = configuration["lookaheadFactor"]
         self.__lendingFactor = configuration["lendingFactor"]
+        self.__baseInterestRate = configuration["baseInterestRate"]
         self.__maxFriends = configuration["maxFriends"]
         self.__wealth = configuration["sugar"] + configuration["spice"]
         self.__seed = configuration["seed"]
@@ -174,9 +175,8 @@ class Agent:
         if self.isFertile() == True and (self.__sugar == self.__startingSugar or self.__spice == self.__startingSpice):
             print("Agent {0} cannot lend due to wealth".format(str(self)))
             return
-        globalInterestRate = self.__cell.getEnvironment().getInterestRate()
         # Maximum interest rate of 100%
-        interestRate = max(1, self.__lendingFactor * globalInterestRate)
+        interestRate = max(1, self.__lendingFactor * self.__baseInterestRate)
         neighborCells = self.__cell.getNeighbors()
         borrowers = []
         for neighborCell in neighborCells:
@@ -495,6 +495,7 @@ class Agent:
         parentTradeFactors = [self.__tradeFactor, mate.getTradeFactor()]
         parentLookaheadFactors = [self.__lookaheadFactor, mate.getLookaheadFactor()]
         parentLendingFactors = [self.__lendingFactor, mate.getLendingFactor()]
+        parentBaseInterestRates = [self.__baseInterestRate, mate.getBaseInterestRate()]
         parentMaxFriends = [self.__maxFriends, mate.getMaxFriends()]
         # Each parent gives 1/2 their starting endowment for child endowment
         childStartingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
@@ -524,11 +525,12 @@ class Agent:
         childTradeFactor = parentTradeFactors[random.randrange(2)]
         childLookaheadFactor = parentLookaheadFactors[random.randrange(2)]
         childLendingFactor = parentLendingFactors[random.randrange(2)]
+        childBaseInterestRate = parentBaseInterestRates[random.randrange(2)]
         endowment = {"movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
                      "aggressionFactor": childAggressionFactor, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
                      "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy, "tradeFactor": childTradeFactor,
-                     "lookaheadFactor": childLookaheadFactor, "lendingFactor": childLendingFactor}
+                     "lookaheadFactor": childLookaheadFactor, "lendingFactor": childLendingFactor, "baseInterestRate": childBaseInterestRate}
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -597,6 +599,9 @@ class Agent:
 
     def getAlive(self):
         return self.__alive
+
+    def getBaseInterestRate(self):
+        return self.__baseInterestRate
 
     def getCell(self):
         return self.__cell
@@ -734,7 +739,10 @@ class Agent:
 
     def setAlive(self, alive):
         self.__alive = alive
-    
+   
+    def setBaseInterestRate(self, baseInterestRate):
+        self.__baseInterestRate = baseInterestRate
+
     def setCell(self, cell):
         if(self.__cell != None):
             self.unsetCell()

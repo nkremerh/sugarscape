@@ -22,7 +22,6 @@ class Environment:
         self.__pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
         self.__consumptionPollutionRate = configuration["consumptionPollutionRate"]
         self.__productionPollutionRate = configuration["productionPollutionRate"]
-        self.__interestRate = configuration["interestRate"]
         self.__maxCombatLoot = configuration["maxCombatLoot"]
         self.__equator = math.ceil(self.__height / 2)
         # Populate grid with NoneType objects
@@ -74,9 +73,6 @@ class Environment:
 
     def getHeight(self):
         return self.__height
-
-    def getInterestRate(self):
-        return self.__interestRate
 
     def getMaxCombatLoot(self):
         return self.__maxCombatLoot
@@ -133,9 +129,6 @@ class Environment:
 
     def setHeight(self, height):
         self.__height = height
-
-    def setInterestRate(self, interestRate):
-        self.__interestRate = interestRate
 
     def setMaxCombatLoot(self, maxCombatLoot):
         self.__maxCombatLoot = maxCombatLoot
