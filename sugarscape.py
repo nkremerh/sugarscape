@@ -107,6 +107,7 @@ class Sugarscape:
         tagStringLength = configs["agentTagStringLength"]
         aggressionFactor = configs["agentAggressionFactor"]
         tradeFactor = configs["agentTradeFactor"]
+        lookaheadFactor = configs["agentLookaheadFactor"]
         maxFriends = configs["agentMaxFriends"]
         inheritancePolicy = configs["agentInheritancePolicy"]
 
@@ -123,7 +124,8 @@ class Sugarscape:
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(startingAgents, sugarMetabolism, spiceMetabolism, movement, vision, startingSugar, startingSpice,
                                                         maxAge, maleToFemaleRatio, femaleFertilityAge, maleFertilityAge, femaleInfertilityAge,
-                                                        maleInfertilityAge, tagStringLength, aggressionFactor, tradeFactor, maxFriends, inheritancePolicy)
+                                                        maleInfertilityAge, tagStringLength, aggressionFactor, tradeFactor, lookaheadFactor, maxFriends,
+                                                        inheritancePolicy)
         # Debugging string
         #print("Agent endowments: {0}".format(agentEndowments))
         randCoords = []
@@ -250,7 +252,8 @@ class Sugarscape:
 
     def randomizeAgentEndowments(self, numAgents, sugarMetabolism, spiceMetabolism, movement, vision, startingSugar, startingSpice,
                                  maxAge, maleToFemaleRatio, femaleFertilityAge, maleFertilityAge, femaleInfertilityAge,
-                                 maleInfertilityAge, tagStringLength, aggressionFactor, tradeFactor, maxFriends, inheritancePolicy):
+                                 maleInfertilityAge, tagStringLength, aggressionFactor, tradeFactor, lookaheadFactor, maxFriends,
+                                 inheritancePolicy):
         endowments = []
         movements = []
         visions = []
@@ -265,6 +268,7 @@ class Sugarscape:
         tags = []
         aggressionFactors = []
         tradeFactors = []
+        lookaheadFactors = []
         friends = []
         spiceMetabolisms = []
         sugarMetabolisms = []
@@ -282,6 +286,7 @@ class Sugarscape:
         minAge = maxAge[0]
         minAggression = aggressionFactor[0]
         minTrade = tradeFactor[0]
+        minLookahead = lookaheadFactor[0]
         minFriends = maxFriends[0]
 
         maxSpiceMetabolism = spiceMetabolism[1]
@@ -297,6 +302,7 @@ class Sugarscape:
         maxAge = maxAge[1]
         maxAggression = aggressionFactor[1]
         maxTrade = tradeFactor[1]
+        maxLookahead = lookaheadFactor[1]
         maxFriends = maxFriends[1]
 
         currSpiceMetabolism = minSpiceMetabolism
@@ -312,6 +318,7 @@ class Sugarscape:
         currMaleInfertilityAge = minMaleInfertilityAge
         currAggression = minAggression
         currTrade = minTrade
+        currLookahead = minLookahead
         currFriends = minFriends
 
         sexDistributionCountdown = numAgents
@@ -337,6 +344,7 @@ class Sugarscape:
                 tags.append(None)
             aggressionFactors.append(currAggression)
             tradeFactors.append(currTrade)
+            lookaheadFactors.append(currLookahead)
             friends.append(currFriends)
             # Assume properties are integers which range from min to max
             currSpiceMetabolism += 1
@@ -352,6 +360,7 @@ class Sugarscape:
             currMaleInfertilityAge += 1
             currAggression += 1
             currTrade += 1
+            currLookahead += 1
             currFriends += 1
 
             if maleToFemaleRatio != None and maleToFemaleRatio != 0:
@@ -391,6 +400,8 @@ class Sugarscape:
                 currTrade = minTrade
             if currFriends > maxFriends:
                 currFriends = minFriends
+            if currLookahead > maxLookahead:
+                currLookahead = minLookahead
 
         random.shuffle(spiceMetabolisms)
         random.shuffle(sugarMetabolisms)
@@ -405,12 +416,14 @@ class Sugarscape:
         random.shuffle(maleInfertilityAges)
         random.shuffle(aggressionFactors)
         random.shuffle(tradeFactors)
+        random.shuffle(lookaheadFactors)
         random.shuffle(friends)
         for i in range(numAgents):
             agentEndowment = {"movement": movements.pop(), "maxAge": ages.pop(), "sugar": startingSugars.pop(),
                               "spice": startingSpices.pop(), "sex": sexes[i], "tags": tags.pop(), "aggressionFactor": aggressionFactors.pop(),
                               "maxFriends": friends.pop(), "vision": visions.pop(), "seed": self.__seed, "spiceMetabolism": spiceMetabolisms.pop(),
-                              "sugarMetabolism": sugarMetabolisms.pop(), "inheritancePolicy": inheritancePolicy, "tradeFactor": tradeFactors.pop()}
+                              "sugarMetabolism": sugarMetabolisms.pop(), "inheritancePolicy": inheritancePolicy, "tradeFactor": tradeFactors.pop(),
+                              "lookaheadFactor": lookaheadFactors.pop()}
             if sexes[i] == "female":
                 agentEndowment["fertilityAge"] = femaleFertilityAges.pop()
                 agentEndowment["infertilityAge"] = femaleInfertilityAges.pop()
@@ -605,7 +618,7 @@ if __name__ == "__main__":
                      "agentMaleToFemaleRatio": 1, "agentFemaleFertilityAge": [12, 15], "agentMaleFertilityAge": [12, 15], "agentFemaleInfertilityAge": [40, 50],
                      "agentMaleInfertilityAge": [50, 60], "agentTagStringLength": 11, "agentAggressionFactor": [0, 0], "agentMaxFriends": 5,
                      "agentSugarMetabolism": [1, 4], "agentSpiceMetabolism": [1, 4], "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100],
-                     "agentMovement": [1, 6], "agentInheritancePolicy": "children", "agentTradeFactor": [1, 1],
+                     "agentMovement": [1, 6], "agentInheritancePolicy": "children", "agentTradeFactor": [1, 1], "agentLookaheadFactor": [1, 1],
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1,

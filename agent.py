@@ -22,6 +22,7 @@ class Agent:
         self.__tags = configuration["tags"]
         self.__aggressionFactor = configuration["aggressionFactor"]
         self.__tradeFactor = configuration["tradeFactor"]
+        self.__lookaheadFactor = configuration["lookaheadFactor"]
         self.__maxFriends = configuration["maxFriends"]
         self.__wealth = configuration["sugar"] + configuration["spice"]
         self.__seed = configuration["seed"]
@@ -361,7 +362,15 @@ class Agent:
             welfarePreySpice = self.__aggressionFactor * min(combatMaxLoot, preySpice)
             
             # Modify value of cell relative to the metabolism needs of the agent
-            welfareFunction = 1
+            sugarLookahead = self.__sugarMetabolism * self.__lookaheadFactor
+            spiceLookahead = self.__spiceMetabolism * self.__lookaheadFactor
+            cellSugarTotal = (self.__sugar + cellSugar + welfarePreySugar) - sugarLookahead
+            cellSpiceTotal = (self.__spice + cellSpice + welfarePreySpice) - spiceLookahead
+            if cellSugarTotal < 0:
+                cellSugarTotal = 0
+            if cellSpiceTotal < 0:
+                cellSpiceTotal = 0
+            welfareFunction = (cellSugarTotal ** sugarMetabolismProportion) * (cellSpiceTotal ** spiceMetabolismProportion)
             if len(self.__tags) > 0:
                 self.findTribe()
                 fractionZeroesInTags = self.__tagZeroes / len(self.__tags)
@@ -369,11 +378,9 @@ class Agent:
                 tagPreferences = (self.__sugarMetabolism * fractionZeroesInTags) + (self.__spiceMetabolism * fractionOnesInTags)
                 tagPreferencesSugar = (self.__sugarMetabolism / tagPreferences) * fractionZeroesInTags
                 tagPreferencesSpice = (self.__spiceMetabolism / tagPreferences) * fractionOnesInTags
-                welfareFunction = ((self.__sugar + cellSugar + welfarePreySugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice + welfarePreySpice) ** spiceMetabolismProportion)
-            else:
-                welfareFunction = ((self.__sugar + cellSugar + welfarePreySugar) ** sugarMetabolismProportion) * ((self.__spice + cellSpice + welfarePreySpice) ** spiceMetabolismProportion)
+                welfareFunction = (cellSugarTotal ** tagPreferencesSugar) * (cellSpiceTotal ** tagPreferencesSpice)
             cellWealth = welfareFunction / (1 + cell.getCurrPollution())
-            
+
             #if prey == None:
             #    cellFinds += "({0},{1}) --> [{2},{3}] with no prey for {4} wealth at distance {5}\n".format(cell.getX(), cell.getY(), cell.getCurrSugar(), cell.getCurrSpice(), cellWealth, travelDistance)
             #else:
@@ -445,6 +452,7 @@ class Agent:
         parentSexes = [self.__sex, mate.getSex()]
         parentAggressionFactors = [self.__aggressionFactor, mate.getAggressionFactor()]
         parentTradeFactors = [self.__tradeFactor, mate.getTradeFactor()]
+        parentLookaheadFactors = [self.__lookaheadFactor, mate.getLookaheadFactor()]
         parentMaxFriends = [self.__maxFriends, mate.getMaxFriends()]
         # Each parent gives 1/2 their starting endowment for child endowment
         childStartingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
@@ -472,10 +480,12 @@ class Agent:
                     childTags.append(mismatchTags[random.randrange(2)])
         childAggressionFactor = parentAggressionFactors[random.randrange(2)]
         childTradeFactor = parentTradeFactors[random.randrange(2)]
+        childLookaheadFactor = parentLookaheadFactors[random.randrange(2)]
         endowment = {"movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
                      "aggressionFactor": childAggressionFactor, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
-                     "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy, "tradeFactor": childTradeFactor}
+                     "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy, "tradeFactor": childTradeFactor,
+                     "lookaheadFactor": childLookaheadFactor}
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -572,6 +582,9 @@ class Agent:
 
     def getInheritancePolicy(self):
         return self.__inheritancePolicy
+
+    def getLookaheadFactor(self):
+        return self.__lookaheadFactor
 
     def getMarginalRateOfSubstitution(self):
         return self.__marginalRateOfSubstitution
@@ -706,6 +719,9 @@ class Agent:
 
     def setInheritancePolicy(self, inheritancePolicy):
         self.__inheritancePolicy = inheritancePolicy
+
+    def setLookaheadFactor(self, lookaheadFactor):
+        self.__lookaheadFactor = lookaheadFactor
 
     def setMarginalRateOfSubstitution(self, mrs):
         self.__marginalRateOfSubstitution = mrs
