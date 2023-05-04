@@ -6,6 +6,7 @@
     "agentFemaleFertilityAge": [12, 15],
     "agentInheritancePolicy": "children",
     "agentLendingFactor": [1, 1],
+    "agentLoanDuration": [5, 5],
     "agentLookaheadFactor": [1, 10],
     "agentMaleInfertilityAge": [50, 60],
     "agentMaleFertilityAge": [12, 15],

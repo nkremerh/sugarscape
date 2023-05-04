@@ -25,6 +25,7 @@ class Agent:
         self.__lookaheadFactor = configuration["lookaheadFactor"]
         self.__lendingFactor = configuration["lendingFactor"]
         self.__baseInterestRate = configuration["baseInterestRate"]
+        self.__loanDuration = configuration["loanDuration"]
         self.__maxFriends = configuration["maxFriends"]
         self.__wealth = configuration["sugar"] + configuration["spice"]
         self.__seed = configuration["seed"]
@@ -167,14 +168,24 @@ class Agent:
         self.__sugar = 0
         self.__spice = 0
 
+    # TODO: Book implies each step of agent's actions per timestep happen in waves not one agent doing all at once (pg. 131)
+    # TODO: Cannot implement book's definition of credit worthiness with current implementation (one agent doing all at once)
     def doLending(self):
         # If not a lender, skip lending
         if self.__lendingFactor == 0:
             return
         # Fertile and not enough excess wealth to be a lender
-        if self.isFertile() == True and (self.__sugar == self.__startingSugar or self.__spice == self.__startingSpice):
+        elif self.isFertile() == True and (self.__sugar == self.__startingSugar or self.__spice == self.__startingSpice):
             print("Agent {0} cannot lend due to wealth".format(str(self)))
             return
+        # Too young to reproduce, skip lending
+        elif self.__age < self.__fertilityAge:
+            return
+        maxSugarLoan = math.floor(self.__sugar / 2)
+        maxSpiceLoan = math.floor(self.__spice / 2)
+        if self.isFertile() == True:
+            maxSugarLoan = self.__sugar - self.__startingSugar
+            maxSpiceLoan = self.__spice - self.__startingSpice
         # Maximum interest rate of 100%
         interestRate = max(1, self.__lendingFactor * self.__baseInterestRate)
         neighborCells = self.__cell.getNeighbors()
@@ -182,22 +193,18 @@ class Agent:
         for neighborCell in neighborCells:
             neighbor = neighborCell.getAgent()
             if neighbor != None and neighbor.isAlive() == True:
-                neighborInfertilityByWealth = False
                 if neighbor.getAge() < neighbor.getInfertilityAge() and neighbor.isFertile() == False:
-                    neighborInfertilityByWealth = True
+                    borrowers.append(neighbor)
                     print("Agent {0} a viable lender for agent {1}".format(str(self), str(neighbor)))
                 else:
                     print("Agent {0} not a viable lender for agent {1}".format(str(self), str(neighbor)))
-                if neighborInfertilityByWealth == True:
-                    borrowers.append(neighbor)
         random.shuffle(borrowers)
         for borrower in borrowers:
-            credit = 0
-            debit = 0
-            duration = 0
-            self.updateCreditWithAgent(borrower.getID(), self.__lastMoved, credit, duration)
-            borrower.updateDebitWithAgent(self.getID(), self.__lastMoved, debit, duration)
-        return
+            if borrower.isCreditWorthy() == True:
+                credit = 0
+                debit = 0
+                self.updateCreditWithAgent(borrower.getID(), self.__lastMoved, credit, self.__loanDuration)
+                borrower.updateDebitWithAgent(self.getID(), self.__lastMoved, debit, self.__loanDuration)
 
     def doMetabolism(self):
         if self.__alive == False:
@@ -496,6 +503,7 @@ class Agent:
         parentLookaheadFactors = [self.__lookaheadFactor, mate.getLookaheadFactor()]
         parentLendingFactors = [self.__lendingFactor, mate.getLendingFactor()]
         parentBaseInterestRates = [self.__baseInterestRate, mate.getBaseInterestRate()]
+        parentLoanDuration = [self.__loanDuration, mate.getLoanDuration()]
         parentMaxFriends = [self.__maxFriends, mate.getMaxFriends()]
         # Each parent gives 1/2 their starting endowment for child endowment
         childStartingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
@@ -526,11 +534,13 @@ class Agent:
         childLookaheadFactor = parentLookaheadFactors[random.randrange(2)]
         childLendingFactor = parentLendingFactors[random.randrange(2)]
         childBaseInterestRate = parentBaseInterestRates[random.randrange(2)]
+        childLoanDuration = parentLoanDuration[random.randrange(2)]
         endowment = {"movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
                      "aggressionFactor": childAggressionFactor, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
                      "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy, "tradeFactor": childTradeFactor,
-                     "lookaheadFactor": childLookaheadFactor, "lendingFactor": childLendingFactor, "baseInterestRate": childBaseInterestRate}
+                     "lookaheadFactor": childLookaheadFactor, "lendingFactor": childLendingFactor, "baseInterestRate": childBaseInterestRate,
+                     "loanDuration": childLoanDuration}
         return endowment
 
     def findEmptyNeighborCells(self):
@@ -633,6 +643,9 @@ class Agent:
     def getLendingFactor(self):
         return self.__lendingFactor
 
+    def getLoanDuration(self):
+        return self.__loanDuration
+
     def getLookaheadFactor(self):
         return self.__lookaheadFactor
 
@@ -705,6 +718,9 @@ class Agent:
     def isAlive(self):
         return self.getAlive()
 
+    def isCreditWorthy(self):
+        return False
+
     def isFertile(self):
         if self.__sugar >= self.__startingSugar and self.__spice >= self.__startingSpice and self.__age >= self.__fertilityAge and self.__age < self.__infertilityAge:
             return True
@@ -775,6 +791,9 @@ class Agent:
 
     def setLendingFactor(self, lendingFactor):
         self.__lendingFactor = lendingFactor
+
+    def setLoanDuration(self, loanDuration):
+        self.__loanDuration = loanDuration
 
     def setLookaheadFactor(self, lookaheadFactor):
         self.__lookaheadFactor = lookaheadFactor
