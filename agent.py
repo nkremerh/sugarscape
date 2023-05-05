@@ -6,7 +6,7 @@ class Agent:
         self.__id = agentID
         self.__born = birthday
         self.__cell = cell
-        
+
         self.__sugarMetabolism = configuration["sugarMetabolism"]
         self.__spiceMetabolism = configuration["spiceMetabolism"]
         self.__movement = configuration["movement"]
@@ -38,14 +38,14 @@ class Agent:
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.__socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
-        self.__parents = {"father": None, "mother": None}
-        self.__children = []
         self.__friends = []
         self.__fertile = False
         self.__tribe = self.findTribe()
         self.__timestep = birthday
         self.__marginalRateOfSubstitution = 1
         self.__tagZeroes = 0
+        self.__sugarMeanIncome = 1
+        self.__spiceMeanIncome = 1
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.__cell.getEnvironment().getSugarscape()
@@ -53,6 +53,7 @@ class Agent:
         child = Agent(childID, self.__timestep, cell, childConfiguration)
         child.setCell(cell)
         sugarscape.addAgent(child)
+        child.collectResourcesAtCell()
         if self.__sex == "female":
             child.setMother(self)
             child.setFather(mate)
@@ -61,12 +62,35 @@ class Agent:
             child.setMother(mate)
         return child
 
-    def addAgentToSocialNetwork(self, agentID):
+    def addAgentToSocialNetwork(self, agent):
+        agentID = agent.getID()
         if agentID in self.__socialNetwork:
             return
-        self.__socialNetwork[agentID] = {"lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0,
-                                         "timesTraded": 0, "timesCredited": 0, "timesDebited": 0,
-                                         "marginalRateOfSubstitution": 0}
+        self.__socialNetwork[agentID] = {"agent": agent, "lastSeen": self.__lastMoved, "timesVisited": 1, "timesReproduced": 0,
+                                         "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
+
+    def addLoanToAgent(self, agent, timestep, sugarPrincipal, sugarLoan, spicePrincipal, spiceLoan, duration):
+        agentID = agent.getID()
+        if agentID not in self.__socialNetwork:
+            self.addAgentToSocialNetwork(agent)
+        self.__socialNetwork[agentID]["timesLoaned"] += 1
+        agent.addLoanFromAgent(self, timestep, sugarLoan, spiceLoan, duration)
+        loan = {"creditor": self.__id, "debtor": agentID, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
+                "loanOrigin": timestep}
+        self.__socialNetwork["debtors"].append(loan)
+        self.__sugar -= sugarPrincipal
+        self.__spice -= spicePrincipal
+        agent.setSugar(agent.getSugar() + sugarPrincipal)
+        agent.setSpice(agent.getSpice() + spicePrincipal)
+
+    def addLoanFromAgent(self, agent, timestep, sugarLoan, spiceLoan, duration):
+        agentID = agent.getID()
+        if agentID not in self.__socialNetwork:
+            self.addAgentToSocialNetwork(agent)
+        self.__socialNetwork[agentID]["timesLoaned"] += 1
+        loan = {"creditor": agentID, "debtor": self.__id, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
+                "loanOrigin": timestep}
+        self.__socialNetwork["creditors"].append(loan)
 
     def calculateMarginalRateOfSubstitution(self, sugar, spice):
         spiceNeed = spice / self.__spiceMetabolism if self.__spiceMetabolism > 0 else 1
@@ -80,10 +104,16 @@ class Agent:
             self.__sugar += sugarCollected
             self.__spice += spiceCollected
             self.__wealth += sugarCollected + spiceCollected
+            self.updateMeanIncome(sugarCollected, spiceCollected)
             self.__cell.doProductionPollution(sugarCollected)
             self.__cell.doProductionPollution(spiceCollected)
             self.__cell.resetSugar()
             self.__cell.resetSpice()
+
+    def defaultOnLoan(self, loan):
+        for creditor in self.__socialNetwork["creditors"]:
+            continue
+        return
 
     def doAging(self):
         if self.__alive == False:
@@ -107,23 +137,25 @@ class Agent:
             prey.setSugar(preySugar - sugarLoot)
             prey.setSpice(preySpice - spiceLoot)
             prey.doDeath()
-            # Debugging string
-            #print("Agent {0} ({1} tribe) killed agent {2} ({3} tribe) and gained {4} wealth".format(str(self), self.__tribe, str(prey), prey.getTribe(), sugarLoot + spiceLoot))
         self.setCell(cell)
 
     def doDeath(self):
+        # Debugging string
+        '''
         if self.__sugar < 1 or self.__spice < 1:
             print("Agent {0} dying from starvation".format(str(self)))
         elif self.__age >= self.__maxAge and self.__maxAge != -1:
             print("Agent {0} dying from old age".format(str(self)))
         else:
             print("Agent {0} killed in combat".format(str(self)))
-
+        '''
         self.setAlive(False)
         self.unsetCell()
         self.doInheritance()
 
     def doInheritance(self):
+        if self.__inheritancePolicy == "none":
+            return
         # Provide inheritance for living children/sons/daughters/friends
         livingChildren = []
         livingSons = []
@@ -171,12 +203,12 @@ class Agent:
     # TODO: Book implies each step of agent's actions per timestep happen in waves not one agent doing all at once (pg. 131)
     # TODO: Cannot implement book's definition of credit worthiness with current implementation (one agent doing all at once)
     def doLending(self):
+        self.updateLoans()
         # If not a lender, skip lending
         if self.__lendingFactor == 0:
             return
         # Fertile and not enough excess wealth to be a lender
         elif self.isFertile() == True and (self.__sugar == self.__startingSugar or self.__spice == self.__startingSpice):
-            print("Agent {0} cannot lend due to wealth".format(str(self)))
             return
         # Too young to reproduce, skip lending
         elif self.__age < self.__fertilityAge:
@@ -184,8 +216,8 @@ class Agent:
         maxSugarLoan = math.floor(self.__sugar / 2)
         maxSpiceLoan = math.floor(self.__spice / 2)
         if self.isFertile() == True:
-            maxSugarLoan = self.__sugar - self.__startingSugar
-            maxSpiceLoan = self.__spice - self.__startingSpice
+            maxSugarLoan = max(0, self.__sugar - self.__startingSugar)
+            maxSpiceLoan = max(0, self.__spice - self.__startingSpice)
         # Maximum interest rate of 100%
         interestRate = max(1, self.__lendingFactor * self.__baseInterestRate)
         neighborCells = self.__cell.getNeighbors()
@@ -193,18 +225,25 @@ class Agent:
         for neighborCell in neighborCells:
             neighbor = neighborCell.getAgent()
             if neighbor != None and neighbor.isAlive() == True:
-                if neighbor.getAge() < neighbor.getInfertilityAge() and neighbor.isFertile() == False:
+                neighborAge = neighbor.getAge()
+                if neighborAge > neighbor.getFertilityAge() and neighborAge < neighbor.getInfertilityAge() and neighbor.isFertile() == False:
                     borrowers.append(neighbor)
-                    print("Agent {0} a viable lender for agent {1}".format(str(self), str(neighbor)))
-                else:
-                    print("Agent {0} not a viable lender for agent {1}".format(str(self), str(neighbor)))
+                    #print("Agent {0} a viable lender for agent {1}".format(str(self), str(neighbor)))
+                #else:
+                    #print("Agent {0} not a viable lender for agent {1}".format(str(self), str(neighbor)))
         random.shuffle(borrowers)
         for borrower in borrowers:
-            if borrower.isCreditWorthy() == True:
-                credit = 0
-                debit = 0
-                self.updateCreditWithAgent(borrower.getID(), self.__lastMoved, credit, self.__loanDuration)
-                borrower.updateDebitWithAgent(self.getID(), self.__lastMoved, debit, self.__loanDuration)
+            sugarLoanNeed = max(0, borrower.getStartingSugar() - borrower.getSugar())
+            spiceLoanNeed = max(0, borrower.getStartingSpice() - borrower.getSpice())
+            sugarLoanAmount = min(maxSugarLoan, math.ceil(sugarLoanNeed + (sugarLoanNeed * interestRate)))
+            spiceLoanAmount = min(maxSpiceLoan, math.ceil(spiceLoanNeed + (spiceLoanNeed * interestRate)))
+            # If lending would cause lender to starve, skip lending to potential borrower
+            if self.__sugar - sugarLoanAmount < self.__sugarMetabolism or self.__spice - spiceLoanAmount < self.__spiceMetabolism:
+                continue
+            if borrower.isCreditWorthy(sugarLoanAmount, spiceLoanAmount, self.__loanDuration) == True:
+                # Debugging string
+                #print("Agent {0} lending [{1},{2}] to agent {3} to be paid in {4} timesteps".format(str(self), sugarLoanAmount, spiceLoanAmount, str(borrower), self.__loanDuration))
+                self.addLoanToAgent(borrower, self.__lastMoved, sugarLoanNeed, sugarLoanAmount, spiceLoanNeed, spiceLoanAmount, self.__loanDuration)
 
     def doMetabolism(self):
         if self.__alive == False:
@@ -243,11 +282,11 @@ class Agent:
                     self.__socialNetwork["children"].append(child)
                     childID = child.getID()
                     neighborID = neighbor.getID()
-                    self.addAgentToSocialNetwork(childID)
-                    neighbor.addAgentToSocialNetwork(childID)
-                    neighbor.updateTimesVisitedWithAgent(self.__id, self.__lastMoved)
-                    neighbor.updateTimesReproducedWithAgent(self.__id, self.__lastMoved)
-                    self.updateTimesReproducedWithAgent(neighborID, self.__lastMoved)
+                    self.addAgentToSocialNetwork(child)
+                    neighbor.addAgentToSocialNetwork(child)
+                    neighbor.updateTimesVisitedWithAgent(self, self.__lastMoved)
+                    neighbor.updateTimesReproducedWithAgent(self, self.__lastMoved)
+                    self.updateTimesReproducedWithAgent(neighbor, self.__lastMoved)
                     # Debugging string
                     #print("Agents {0},{1} produced child at ({2},{3})".format(str(self), str(neighbor), emptyCell.getX(), emptyCell.getY()))
 
@@ -288,10 +327,13 @@ class Agent:
             self.updateNeighbors()
             # TODO: Determine order of operations for post-move actions
             self.collectResourcesAtCell()
+            self.doMetabolism()
+            # If dead from metabolism, skip remainder of timestep
+            if self.__alive == False:
+                return
+            self.doTagging()
             self.doTrading()
             self.doLending()
-            self.doMetabolism()
-            self.doTagging()
             self.doReproduction()
             self.doAging()
 
@@ -334,8 +376,6 @@ class Agent:
                 sugarSellerSugar = sugarSeller.getSugar()
                 # If trade would be lethal, skip it
                 if spiceSellerSpice - tradePrice < 1 or sugarSellerSugar - 1 < 1:
-                    # Debugging string
-                    #print("Agent {0} skipping lethal trade with agent {1}".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
                 spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSellerSugar + 1, spiceSellerSpice - tradePrice)
@@ -349,8 +389,6 @@ class Agent:
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller and betterForSugarSeller and checkForMRSCrossing == False:
-                    # Debugging string
-                    #print("Agent {0} [{1},{2}] ({3}-->{4}) selling {5} spice to agent {6} [{7},{8}] ({9}-->{10}) for 1 sugar".format(str(spiceSeller), spiceSeller.getSugar(), spiceSeller.getSpice(), spiceSellerMRS, spiceSellerNewMRS, tradePrice, str(sugarSeller), sugarSeller.getSugar(), sugarSeller.getSpice(), sugarSellerMRS, sugarSellerNewMRS))
                     spiceSeller.setSpice(spiceSellerSpice - tradePrice)
                     spiceSeller.setSugar(spiceSellerSugar + 1)
                     sugarSeller.setSpice(sugarSellerSpice + tradePrice)
@@ -361,8 +399,8 @@ class Agent:
                 else:
                     tradeFlag = False
                     continue
-            spiceSeller.updateTimesTradedWithAgent(sugarSeller.getID(), self.__lastMoved, transactions)
-            sugarSeller.updateTimesTradedWithAgent(spiceSeller.getID(), self.__lastMoved, transactions)
+            spiceSeller.updateTimesTradedWithAgent(sugarSeller, self.__lastMoved, transactions)
+            sugarSeller.updateTimesTradedWithAgent(spiceSeller, self.__lastMoved, transactions)
 
     def findAgentWealthAtCell(self, cell):
         agent = cell.getAgent()
@@ -389,11 +427,10 @@ class Agent:
         agentY = self.__cell.getY()
         combatMaxLoot = self.__cell.getEnvironment().getMaxCombatLoot()
         wraparound = self.__vision + 1
-        #cellFinds = "Agent {0} at ({1},{2}) has [{3}/{4},{5}/{6}] and found cells in vision {7}:\n".format(str(self), self.__cell.getX(), self.__cell.getY(), self.__sugar, self.__sugarMetabolism, self.__spice, self.__spiceMetabolism, self.__vision)
         for currCell in self.__cellsInVision:
             cell = currCell["cell"]
             travelDistance = currCell["distance"]
-            
+
             if cell.isOccupied() == True and self.__aggressionFactor == 0:
                 continue
             cellSugar = cell.getCurrSugar()
@@ -408,7 +445,7 @@ class Agent:
             preySpice = prey.getSpice() if prey != None else 0
             welfarePreySugar = self.__aggressionFactor * min(combatMaxLoot, preySugar)
             welfarePreySpice = self.__aggressionFactor * min(combatMaxLoot, preySpice)
-            
+
             # Modify value of cell relative to the metabolism needs of the agent
             sugarLookahead = self.__sugarMetabolism * self.__lookaheadFactor
             spiceLookahead = self.__spiceMetabolism * self.__lookaheadFactor
@@ -429,24 +466,15 @@ class Agent:
                 welfareFunction = (cellSugarTotal ** tagPreferencesSugar) * (cellSpiceTotal ** tagPreferencesSpice)
             cellWealth = welfareFunction / (1 + cell.getCurrPollution())
 
-            #if prey == None:
-            #    cellFinds += "({0},{1}) --> [{2},{3}] with no prey for {4} wealth at distance {5}\n".format(cell.getX(), cell.getY(), cell.getCurrSugar(), cell.getCurrSpice(), cellWealth, travelDistance)
-            #else:
-            #    cellFinds += "({0},{1}) --> [{2},{3}] with [{4},{5}] prey for {6} wealth at distance {7}\n".format(cell.getX(), cell.getY(), cell.getCurrSugar(), cell.getCurrSpice(), prey.getSugar(), prey.getSpice(), cellWealth, travelDistance)
-
             # Avoid attacking stronger agents or those protected from retaliation after killing prey
             if prey != None and (preyWealth > self.__wealth or (retaliators[preyTribe] > self.__wealth + cellWealth)):
-                # Debugging string
-                #print("Agent {0} ({1} tribe, {2} wealth) not attacking agent {3} ({4} tribe, {5} wealth) due to prey being stronger/protected".format(str(self), self.__tribe, self.__wealth, str(prey), preyTribe, preyWealth))
                 continue
-            
+
             if bestCell == None:
                 bestCell = cell
                 bestRange = travelDistance
                 bestWealth = cellWealth
-                # Debugging string
-                #print("Agent {0} calculated best cell welfare of ({1},{2}) at distance {3} as {4}".format(str(self), cell.getX(), cell.getY(), bestRange, welfareFunction))
-            
+
             # Select closest cell with the most resources
             if cellWealth > bestWealth or (cellWealth == bestWealth and travelDistance < bestRange):
                 if prey != None and prey.getWealth() > self.__wealth:
@@ -454,13 +482,8 @@ class Agent:
                 bestRange = travelDistance
                 bestCell = cell
                 bestWealth = cellWealth
-            #print("Current best cell ({0},{1}), current cell ({2},{3})".format(bestCell.getX(), bestCell.getY(), cell.getX(), cell.getY()))
         if bestCell == None:
             bestCell = self.__cell
-        #if (bestCell.getCurrSugar() == 0 or bestCell.getCurrSpice() == 0) and (self.__sugar <= self.__sugarMetabolism or self.__spice <= self.__spiceMetabolism):
-        #    print("Agent {0} moving to ({1},{2}) with [{3},{4}] while close to starvation with holds [{5},{6}]".format(str(self), bestCell.getX(), bestCell.getY(), bestCell.getCurrSugar(), bestCell.getCurrSpice(), self.__sugar, self.__spice))
-        #cellFinds += "Selected ({0},{1}) --> [{2},{3}] for {4} wealth at distance {5}\n".format(bestCell.getX(), bestCell.getY(), bestCell.getCurrSugar(), bestCell.getCurrSpice(), bestWealth, bestRange)
-        #print(cellFinds)
         return bestCell
 
     def findBestFriend(self):
@@ -543,6 +566,18 @@ class Agent:
                      "loanDuration": childLoanDuration}
         return endowment
 
+    def findCurrentSpiceDebt(self):
+        spiceDebt = 0
+        for creditor in self.__socialNetwork["creditors"]:
+            spiceDebt += creditor["spiceLoan"] / creditor["loanDuration"]
+        return spiceDebt
+
+    def findCurrentSugarDebt(self):
+        sugarDebt = 0
+        for creditor in self.__socialNetwork["creditors"]:
+            sugarDebt += creditor["sugarLoan"] / creditor["loanDuration"]
+        return sugarDebt
+
     def findEmptyNeighborCells(self):
         emptyCells = []
         neighborCells = self.__cell.getNeighbors()
@@ -564,8 +599,6 @@ class Agent:
     def findMarginalRateOfSubstitution(self):
         spiceNeed = self.__spice / self.__spiceMetabolism if self.__spiceMetabolism > 0 else 1
         sugarNeed = self.__sugar / self.__sugarMetabolism if self.__sugarMetabolism > 0 else 1
-        # Debugging string
-        #print("Agent {0} sugar need {1}, spice need {2}".format(str(self), sugarNeed, spiceNeed))
         # Trade factor may increase amount of spice traded for sugar in a transaction
         self.__marginalRateOfSubstitution = self.__tradeFactor * (spiceNeed / sugarNeed)
 
@@ -718,7 +751,13 @@ class Agent:
     def isAlive(self):
         return self.getAlive()
 
-    def isCreditWorthy(self):
+    def isCreditWorthy(self, sugarLoanAmount, spiceLoanAmount, loanDuration):
+        sugarLoanCostPerTimestep = sugarLoanAmount / loanDuration
+        spiceLoanCostPerTimestep = spiceLoanAmount / loanDuration
+        sugarIncomePerTimestep = ((self.__sugarMeanIncome - self.__sugarMetabolism) - self.findCurrentSugarDebt()) - sugarLoanCostPerTimestep
+        spiceIncomePerTimestep = ((self.__spiceMeanIncome - self.__spiceMetabolism) - self.findCurrentSpiceDebt()) - spiceLoanCostPerTimestep
+        if sugarIncomePerTimestep >= 0 and spiceIncomePerTimestep >= 0:
+            return True
         return False
 
     def isFertile(self):
@@ -744,8 +783,71 @@ class Agent:
             self.doCombat(bestCell)
         else:
             self.setCell(bestCell)
-        # Debugging string
-        #print("Agent {0} moved to ({1},{2})".format(str(self), bestCell.getX(), bestCell.getY()))
+
+    def payDebt(self, loan):
+        creditorID = loan["creditor"]
+        creditor = self.__socialNetwork[creditorID]["agent"]
+        if creditor.isAlive() == False:
+            if creditor.getInheritancePolicy() != "children":
+                self.__socialNetwork["creditors"].remove(loan)
+                creditor.removeDebt(loan)
+            else:
+                # Debugging string
+                #print("Agent {0} cannot repay loan to dead creditor agent {1}".format(str(self), str(creditor)))
+                self.payDebtToCreditorChildren(loan)
+        elif self.__sugar - loan["sugarLoan"] > 0 and self.__spice - loan["spiceLoan"] > 0:
+            self.__sugar -= loan["sugarLoan"]
+            self.__spice -= loan["spiceLoan"]
+            creditor.setSugar(creditor.getSugar() + loan["sugarLoan"])
+            creditor.setSpice(creditor.getSpice() + loan["spiceLoan"])
+            # Debugging string
+            #print("Agent {0} repaid loan [{1},{2}] from agent {3}".format(str(self), loan["sugarLoan"], loan["spiceLoan"], str(creditor)))
+            self.__socialNetwork["creditors"].remove(loan)
+            creditor.removeDebt(loan)
+        else:
+            sugarPayout = math.floor(self.__sugar / 2)
+            spicePayout = math.floor(self.__spice / 2)
+            sugarRepaymentLeft = loan["sugarLoan"] - sugarPayout
+            spiceRepaymentLeft = loan["spiceLoan"] - spicePayout
+            self.__sugar -= sugarPayout
+            self.__spice -= spicePayout
+            creditor.setSugar(creditor.getSugar() + sugarPayout)
+            creditor.setSpice(creditor.getSpice() + spicePayout)
+            creditorInterestRate = creditor.getLendingFactor() * creditor.getBaseInterestRate()
+            newSugarLoan = sugarRepaymentLeft + (creditorInterestRate * sugarRepaymentLeft)
+            newSpiceLoan = spiceRepaymentLeft + (creditorInterestRate * spiceRepaymentLeft)
+            # Debugging string
+            #print("Agent {0} partially repaid loan [{1}/{2},{3}/{4}] from agent {5}".format(str(self), sugarPayout, loan["sugarLoan"], spicePayout, loan["spiceLoan"], str(creditor)))
+            self.__socialNetwork["creditors"].remove(loan)
+            creditor.removeDebt(loan)
+            # Initiate new loan with interest compounded on previous loan and not transferring any new principal
+            creditor.addLoanToAgent(self, self.__lastMoved, 0, newSugarLoan, 0, newSpiceLoan, credit.getLoanDuration())
+
+    def payDebtToCreditorChildren(self, loan):
+        creditorID = loan["creditor"]
+        creditor = self.__socialNetwork[creditorID]["agent"]
+        creditorChildren = creditor.getSocialNetwork()["children"]
+        livingCreditorChildren = []
+        for child in creditorChildren:
+            if child.isAlive() == True:
+                livingCreditorChildren.append(child)
+        numLivingChildren = len(livingCreditorChildren)
+        if numLivingChildren > 0:
+            sugarRepayment = math.floor(loan["sugarLoan"] / numLivingChildren)
+            spiceRepayment = math.floor(loan["spiceLoan"] / numLivingChildren)
+            for child in livingCreditorChildren:
+                # Debugging string
+                #print("Agent {0} transferring loan of [{1},{2}] to child {3} of creditor {4}".format(str(self), sugarRepayment, spiceRepayment, str(child), str(creditor)))
+                child.addLoanToAgent(self, self.__lastMoved, 0, sugarRepayment, 0, spiceRepayment, 1)
+        self.__socialNetwork["creditors"].remove(loan)
+        creditor.removeDebt(loan)
+
+    def removeDebt(self, loan):
+        debt = None
+        for debtor in self.__socialNetwork["debtors"]:
+            if debtor == loan:
+                self.__socialNetwork["debtors"].remove(debtor)
+                return
 
     def setAge(self, age):
         self.__age = age
@@ -755,7 +857,7 @@ class Agent:
 
     def setAlive(self, alive):
         self.__alive = alive
-   
+
     def setBaseInterestRate(self, baseInterestRate):
         self.__baseInterestRate = baseInterestRate
 
@@ -854,7 +956,7 @@ class Agent:
 
     def setVision(self, vision):
         self.__vision = vision
- 
+
     def setVonNeumannNeighbors(self, vonNeumannNeigbors):
         self.__vonNeumannNeighbors = vonNeumannNeighbors
 
@@ -884,6 +986,20 @@ class Agent:
                 self.__socialNetwork["friends"].append(neighborEntry)
         self.__socialNetwork["bestFriend"] = self.findBestFriend()
 
+    def updateLoans(self):
+        for debtor in self.__socialNetwork["debtors"]:
+            debtorID = debtor["debtor"]
+            debtorAgent = self.__socialNetwork[debtorID]["agent"]
+            # Cannot collect on debt since debtor is dead
+            if debtorAgent.isAlive() == False:
+                # Debugging string
+                #print("Agent {0} cannot collect on debt with agent {1} due to agent death".format(str(self), debtorID))
+                self.__socialNetwork["debtors"].remove(debtor)
+        for creditor in self.__socialNetwork["creditors"]:
+            timeRemaining = (self.__lastMoved - creditor["loanOrigin"]) - creditor["loanDuration"]
+            if timeRemaining == 0:
+                self.payDebt(creditor)
+
     def updateMooreNeighbors(self):
         for direction, neighbor in self.__vonNeumannNeighbors.items():
             self.__mooreNeighbors[direction] = neighbor
@@ -900,17 +1016,17 @@ class Agent:
         self.__mooreNeighbors["southwest"] = south.getCell().getWestNeighbor() if south != None else None
         self.__mooreNeighbors["southwest"] = west.getCell().getSouthNeighbor() if west != None and self.__mooreNeighbors["southwest"] == None else None
 
-    def updateCreditWithAgent(self, agentID, timestep, credit, duration):
-        return
-
-    def updateDebitWithAgent(self, agentID, timestep, debit, duration):
-        return
-
     def updateMarginalRateOfSubstitutionForAgent(self, agent):
         agentID = agent.getID()
         if agentID not in self.__socialNetwork:
-            self.addToSocialNetwork(agentID)
+            self.addAgentToSocialNetwork(agent)
         self.__socialNetwork[agentID]["marginalRateOfSubstitution"] = agent.getMarginalRateOfSubstitution()
+
+    def updateMeanIncome(self, sugarIncome, spiceIncome):
+        # Define weight for moving average
+        alpha = 0.05
+        self.__sugarMeanIncome = (alpha * sugarIncome) + ((1 - alpha) * self.__sugarMeanIncome)
+        self.__spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.__spiceMeanIncome)
 
     def updateNeighbors(self):
         self.updateVonNeumannNeighbors()
@@ -923,27 +1039,30 @@ class Agent:
                 continue
             neighborID = neighbor.getID()
             if neighborID in self.__socialNetwork:
-                self.updateTimesVisitedWithAgent(neighborID, self.__lastMoved)
+                self.updateTimesVisitedWithAgent(neighbor, self.__lastMoved)
                 self.updateMarginalRateOfSubstitutionForAgent(neighbor)
             else:
-                self.addAgentToSocialNetwork(neighborID)
+                self.addAgentToSocialNetwork(neighbor)
             self.updateFriends(neighbor)
 
-    def updateTimesReproducedWithAgent(self, agentID, timestep):
+    def updateTimesReproducedWithAgent(self, agent, timestep):
+        agentID = agent.getID()
         if agentID not in self.__socialNetwork:
-            self.addToSocialNetwork(agentID)
+            self.addAgentToSocialNetwork(agent)
         self.__socialNetwork[agentID]["timesReproduced"] += 1
         self.__socialNetwork[agentID]["lastSeen"] = timestep
 
-    def updateTimesTradedWithAgent(self, agentID, timestep, transactions=0):
+    def updateTimesTradedWithAgent(self, agent, timestep, transactions=0):
+        agentID = agent.getID()
         if agentID not in self.__socialNetwork:
-            self.addAgentToSocialNetwork(agentID)
+            self.addAgentToSocialNetwork(agent)
         self.__socialNetwork[agentID]["timesTraded"] += transactions
         self.__socialNetwork[agentID]["lastSeen"] = timestep
 
-    def updateTimesVisitedWithAgent(self, agentID, timestep):
+    def updateTimesVisitedWithAgent(self, agent, timestep):
+        agentID = agent.getID()
         if agentID not in self.__socialNetwork:
-            self.addAgentToSocialNetwork(agentID)
+            self.addAgentToSocialNetwork(agent)
         else:
             self.__socialNetwork[agentID]["timesVisited"] += 1
             self.__socialNetwork[agentID]["lastSeen"] = timestep
