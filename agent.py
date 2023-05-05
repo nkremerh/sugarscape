@@ -30,6 +30,7 @@ class Agent:
         self.__wealth = configuration["sugar"] + configuration["spice"]
         self.__seed = configuration["seed"]
         self.__inheritancePolicy = configuration["inheritancePolicy"]
+        self.__immuneSystem = configuration["immuneSystem"]
 
         self.__alive = True
         self.__age = 0
@@ -38,7 +39,7 @@ class Agent:
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.__socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
-        self.__friends = []
+        self.__diseases = []
         self.__fertile = False
         self.__tribe = self.findTribe()
         self.__timestep = birthday
@@ -542,8 +543,9 @@ class Agent:
         childSex = parentSexes[random.randrange(2)]
         childMaxFriends = parentMaxFriends[random.randrange(2)]
         childTags = []
+        childImmuneSystem = []
         mateTags = mate.getTags()
-        mismatchTags = [0, 1]
+        mismatchBits = [0, 1]
         if self.__tags == None:
             childTags = None
         else:
@@ -551,7 +553,16 @@ class Agent:
                 if self.__tags[i] == mateTags[i]:
                     childTags.append(self.__tags[i])
                 else:
-                    childTags.append(mismatchTags[random.randrange(2)])
+                    childTags.append(mismatchBits[random.randrange(2)])
+        mateImmuneSystem = mate.getImmuneSystem()
+        if self.__immuneSystem == None:
+            childImmuneSystem = None
+        else:
+            for i in range(len(self.__immuneSystem)):
+                if self.__immuneSystem[i] == mateImmuneSystem[i]:
+                    childImmuneSystem.append(self.__immuneSystem[i])
+                else:
+                    childImmuneSystem.append(mismatchBits[random.randrange(2)])
         childAggressionFactor = parentAggressionFactors[random.randrange(2)]
         childTradeFactor = parentTradeFactors[random.randrange(2)]
         childLookaheadFactor = parentLookaheadFactors[random.randrange(2)]
@@ -563,7 +574,7 @@ class Agent:
                      "aggressionFactor": childAggressionFactor, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
                      "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy, "tradeFactor": childTradeFactor,
                      "lookaheadFactor": childLookaheadFactor, "lendingFactor": childLendingFactor, "baseInterestRate": childBaseInterestRate,
-                     "loanDuration": childLoanDuration}
+                     "loanDuration": childLoanDuration, "immuneSystem": childImmuneSystem}
         return endowment
 
     def findCurrentSpiceDebt(self):
@@ -655,9 +666,6 @@ class Agent:
     def getEnvironment(self):
         return self.__cell.getEnvironment()
 
-    def getInfertilityAge(self):
-        return self.__infertilityAge
-
     def getFather(self):
         return self.__socialNetwork["father"]
 
@@ -668,7 +676,13 @@ class Agent:
         return self.__fertilityAge
 
     def getID(self):
-        return self.__id
+        return self.__id 
+
+    def getImmuneSystem(self):
+        return self.__immuneSystem
+
+    def getInfertilityAge(self):
+        return self.__infertilityAge
 
     def getInheritancePolicy(self):
         return self.__inheritancePolicy
@@ -870,9 +884,6 @@ class Agent:
     def setCellsInVision(self, cells):
         self.__cellsInVision = cells
 
-    def setInfertilityAge(self, infertilityAge):
-        self.__infertilityAge = infertilityAge
-
     def setFather(self, father):
         fatherID = father.getID()
         if fatherID not in self.__socialNetwork:
@@ -887,6 +898,12 @@ class Agent:
 
     def setID(self, agentID):
         self.__id = agentID
+
+    def setImmuneSystem(self, immuneSystem):
+        self.__immuneSystem = immuneSystem
+
+    def setInfertilityAge(self, infertilityAge):
+        self.__infertilityAge = infertilityAge
 
     def setInheritancePolicy(self, inheritancePolicy):
         self.__inheritancePolicy = inheritancePolicy

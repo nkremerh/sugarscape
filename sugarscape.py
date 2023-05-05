@@ -240,6 +240,7 @@ class Sugarscape:
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         maleInfertilityAge = configs["agentMaleInfertilityAge"]
         tagStringLength = configs["agentTagStringLength"]
+        immuneSystemLength = configs["agentImmuneSystemLength"]
         aggressionFactor = configs["agentAggressionFactor"]
         tradeFactor = configs["agentTradeFactor"]
         lookaheadFactor = configs["agentLookaheadFactor"]
@@ -261,6 +262,7 @@ class Sugarscape:
         femaleInfertilityAges = []
         maleInfertilityAges = []
         tags = []
+        immuneSystems = []
         aggressionFactors = []
         tradeFactors = []
         lookaheadFactors = []
@@ -349,6 +351,10 @@ class Sugarscape:
                 tags.append([random.randrange(2) for i in range(tagStringLength)])
             else:
                 tags.append(None)
+            if immuneSystemLength > 0:
+                immuneSystems.append([random.randrange(2) for i in range(immuneSystemLength)])
+            else:
+                immuneSystems.append(None)
             aggressionFactors.append(currAggression)
             tradeFactors.append(currTrade)
             lookaheadFactors.append(currLookahead)
@@ -446,7 +452,7 @@ class Sugarscape:
                               "maxFriends": friends.pop(), "vision": visions.pop(), "seed": self.__seed, "spiceMetabolism": spiceMetabolisms.pop(),
                               "sugarMetabolism": sugarMetabolisms.pop(), "inheritancePolicy": inheritancePolicy, "tradeFactor": tradeFactors.pop(),
                               "lookaheadFactor": lookaheadFactors.pop(), "lendingFactor": lendingFactors.pop(), "baseInterestRate": baseInterestRates.pop(),
-                              "loanDuration": loanDurations.pop()}
+                              "loanDuration": loanDurations.pop(), "immuneSystem": immuneSystems.pop()}
             if sexes[i] == "female":
                 agentEndowment["fertilityAge"] = femaleFertilityAges.pop()
                 agentEndowment["infertilityAge"] = femaleInfertilityAges.pop()
@@ -655,6 +661,7 @@ if __name__ == "__main__":
                      "agentSugarMetabolism": [1, 4], "agentSpiceMetabolism": [1, 4], "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100],
                      "agentMovement": [1, 6], "agentInheritancePolicy": "children", "agentTradeFactor": [1, 1], "agentLookaheadFactor": [1, 1],
                      "agentLendingFactor": [1, 1], "agentBaseInterestRate": [0.05, 0.10], "agentLoanDuration": [5, 5],
+                     "agentImmuneSystemLength": 50,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1,

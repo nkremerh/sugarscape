@@ -4,6 +4,7 @@
     "agentBaseInterestRate": [0.10, 0.10],
     "agentFemaleInfertilityAge": [40, 50],
     "agentFemaleFertilityAge": [12, 15],
+    "agentImmuneSystemLength": 50,
     "agentInheritancePolicy": "children",
     "agentLendingFactor": [1, 1],
     "agentLoanDuration": [5, 5],
