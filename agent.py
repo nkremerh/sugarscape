@@ -30,6 +30,7 @@ class Agent:
         self.__wealth = configuration["sugar"] + configuration["spice"]
         self.__seed = configuration["seed"]
         self.__inheritancePolicy = configuration["inheritancePolicy"]
+        self.__startingImmuneSystem = configuration["immuneSystem"]
         self.__immuneSystem = configuration["immuneSystem"]
 
         self.__alive = True
@@ -98,6 +99,11 @@ class Agent:
         sugarNeed = sugar / self.__sugarMetabolism if self.__sugarMetabolism > 0 else 1
         return spiceNeed / sugarNeed
 
+    # TODO: Implement disease catching
+    # Find substring in immune system with smallest Hamming distance from disease
+    def catchDisease(self, disease):
+        return
+
     def collectResourcesAtCell(self):
         if self.__cell != None:
             sugarCollected = self.__cell.getCurrSugar()
@@ -154,6 +160,11 @@ class Agent:
         self.unsetCell()
         self.doInheritance()
 
+    def doIllness(self):
+        for disease in self.__diseases:
+            continue
+        return
+
     def doInheritance(self):
         if self.__inheritancePolicy == "none":
             return
@@ -202,7 +213,6 @@ class Agent:
         self.__spice = 0
 
     # TODO: Book implies each step of agent's actions per timestep happen in waves not one agent doing all at once (pg. 131)
-    # TODO: Cannot implement book's definition of credit worthiness with current implementation (one agent doing all at once)
     def doLending(self):
         self.updateLoans()
         # If not a lender, skip lending
@@ -336,6 +346,7 @@ class Agent:
             self.doTrading()
             self.doLending()
             self.doReproduction()
+            self.doIllness()
             self.doAging()
 
     def doTrading(self):
@@ -554,13 +565,13 @@ class Agent:
                     childTags.append(self.__tags[i])
                 else:
                     childTags.append(mismatchBits[random.randrange(2)])
-        mateImmuneSystem = mate.getImmuneSystem()
-        if self.__immuneSystem == None:
+        mateStartingImmuneSystem = mate.getStartingImmuneSystem()
+        if self.__startingImmuneSystem == None:
             childImmuneSystem = None
         else:
             for i in range(len(self.__immuneSystem)):
-                if self.__immuneSystem[i] == mateImmuneSystem[i]:
-                    childImmuneSystem.append(self.__immuneSystem[i])
+                if self.__startingImmuneSystem[i] == mateStartingImmuneSystem[i]:
+                    childImmuneSystem.append(self.__startingImmuneSystem[i])
                 else:
                     childImmuneSystem.append(mismatchBits[random.randrange(2)])
         childAggressionFactor = parentAggressionFactors[random.randrange(2)]
@@ -731,6 +742,9 @@ class Agent:
 
     def getSpiceMetabolism(self):
         return self.__spiceMetabolism
+
+    def getStartingImmuneSystem(self):
+        return self.__startingImmuneSystem
 
     def getSugar(self):
         return self.__sugar
@@ -949,6 +963,9 @@ class Agent:
 
     def setSpiceMetabolism(self, spiceMetabolism):
         self.__spiceMetabolism = spiceMetabolism
+
+    def setStartingImmuneSystem(self, startingImmuneSystem):
+        self.__startingImmuneSystem = startingImmuneSystem
 
     def setSugar(self, sugar):
         self.__sugar = sugar
