@@ -32,6 +32,7 @@ class Sugarscape:
         self.__agents = []
         self.__diseases = []
         self.configureAgents(configuration["startingAgents"])
+        self.configureDiseases(configuration["startingDiseases"])
         self.__gui = gui.GUI(self) if configuration["headlessMode"] == False else None
         self.__run = False # Simulation start flag
         self.__end = False # Simulation end flag
@@ -101,7 +102,7 @@ class Sugarscape:
             numAgents = totalCells
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
-        agentEndowments = self.randomizeAgentEndowments()
+        agentEndowments = self.randomizeAgentEndowments(numAgents)
         # Debugging string
         #print("Agent endowments: {0}".format(agentEndowments))
         randCoords = []
@@ -124,6 +125,23 @@ class Sugarscape:
             #print("Agent {0} placed at ({1},{2})".format(str(a), randCellX, randCellY))
         # Debugging string
         #print("Agents: {0}".format(str([str(agent) for agent in self.__agents])))
+
+    def configureDiseases(self, numDiseases):
+        numAgents = len(self.__agents)
+        if numAgents == 0:
+            return
+        elif numAgents < numDiseases:
+            numDiseases = numAgents
+
+        diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
+        print("Generated {0} diseases".format(len(diseaseEndowments)))
+        random.shuffle(self.__agents)
+        for i in range(numDiseases):
+            agent = self.__agents[i]
+            diseaseConfiguration = diseaseEndowments[i]
+            newDisease = disease.Disease(None, diseaseConfiguration)
+            agent.catchDisease(newDisease)
+            self.__diseases.append(newDisease)
 
     def configureEnvironment(self, maxSugar, maxSpice):
         height = self.__environment.getHeight()
@@ -226,9 +244,98 @@ class Sugarscape:
             if self.__end == True:
                 self.endSimulation()
 
-    def randomizeAgentEndowments(self):
+    def randomizeDiseaseEndowments(self, numDiseases):
         configs = self.__configuration
-        numAgents = configs["startingAgents"]
+        sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
+        spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
+        movementPenalty = configs["diseaseMovementPenalty"]
+        visionPenalty = configs["diseaseVisionPenalty"]
+        fertilityPenalty = configs["diseaseFertilityPenalty"]
+        aggressionPenalty = configs["diseaseAggressionPenalty"]
+        tagLengths = configs["diseaseTagStringLength"]
+
+        minSugarMetabolismPenalty = sugarMetabolismPenalty[0]
+        minSpiceMetabolismPenalty = spiceMetabolismPenalty[0]
+        minMovementPenalty = movementPenalty[0]
+        minVisionPenalty = visionPenalty[0]
+        minFertilityPenalty = fertilityPenalty[0]
+        minAggressionPenalty = aggressionPenalty[0]
+        minTagLength = tagLengths[0]
+
+        maxSugarMetabolismPenalty = sugarMetabolismPenalty[1]
+        maxSpiceMetabolismPenalty = spiceMetabolismPenalty[1]
+        maxMovementPenalty = movementPenalty[1]
+        maxVisionPenalty = visionPenalty[1]
+        maxFertilityPenalty = fertilityPenalty[1]
+        maxAggressionPenalty = aggressionPenalty[1]
+        maxTagLength = tagLengths[1]
+
+        endowments = []
+        sugarMetabolismPenalties = []
+        spiceMetabolismPenalties = []
+        movementPenalties = []
+        visionPenalties = []
+        fertilityPenalties = []
+        aggressionPenalties = []
+        diseaseTags = []
+
+        currSugarMetabolismPenalty = minSugarMetabolismPenalty
+        currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
+        currMovementPenalty = minMovementPenalty
+        currVisionPenalty = minVisionPenalty
+        currFertilityPenalty = minFertilityPenalty
+        currAggressionPenalty = minAggressionPenalty
+        currTagLength = minTagLength
+
+        for i in range(numDiseases):
+            sugarMetabolismPenalties.append(currSugarMetabolismPenalty)
+            spiceMetabolismPenalties.append(currSpiceMetabolismPenalty)
+            movementPenalties.append(currMovementPenalty)
+            visionPenalties.append(currVisionPenalty)
+            fertilityPenalties.append(currFertilityPenalty)
+            aggressionPenalties.append(currAggressionPenalty)
+            diseaseTags.append([random.randrange(2) for i in range(currTagLength)])
+
+            currSugarMetabolismPenalty += 1
+            currSpiceMetabolismPenalty += 1
+            currMovementPenalty += 1
+            currVisionPenalty += 1
+            currFertilityPenalty += 1
+            currAggressionPenalty += 1
+            currTagLength += 1
+
+            if currSugarMetabolismPenalty > maxSugarMetabolismPenalty:
+                currSugarMetabolismPenalty = minSugarMetabolismPenalty
+            if currSpiceMetabolismPenalty > maxSpiceMetabolismPenalty:
+                currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
+            if currMovementPenalty > maxMovementPenalty:
+                currMovementPenalty = minMovementPenalty
+            if currVisionPenalty > maxVisionPenalty:
+                currVisionPenalty = minVisionPenalty
+            if currFertilityPenalty > maxFertilityPenalty:
+                currFertilityPenalty = minFertilityPenalty
+            if currAggressionPenalty > maxAggressionPenalty:
+                currAggressionPenalty = minAggressionPenalty
+            if currTagLength > maxTagLength:
+                currTagLength = minTagLength
+
+        random.shuffle(sugarMetabolismPenalties)
+        random.shuffle(spiceMetabolismPenalties)
+        random.shuffle(movementPenalties)
+        random.shuffle(visionPenalties)
+        random.shuffle(fertilityPenalties)
+        random.shuffle(aggressionPenalties)
+        random.shuffle(diseaseTags)
+
+        for i in range(numDiseases):
+            diseaseEndowment = {"sugarMetabolismPenalty": sugarMetabolismPenalties.pop(), "spiceMetabolismPenalty": spiceMetabolismPenalties.pop(),
+                                "movementPenalty": movementPenalties.pop(), "visionPenalty": visionPenalties.pop(), "fertilityPenalty": fertilityPenalties.pop(),
+                                "aggressionPenalty": aggressionPenalties.pop(), "tags": diseaseTags.pop()}
+            endowments.append(diseaseEndowment)
+        return endowments
+
+    def randomizeAgentEndowments(self, numAgents):
+        configs = self.__configuration
         spiceMetabolism = configs["agentSpiceMetabolism"]
         sugarMetabolism = configs["agentSugarMetabolism"]
         movement = configs["agentMovement"]
@@ -664,6 +771,9 @@ if __name__ == "__main__":
                      "agentMovement": [1, 6], "agentInheritancePolicy": "children", "agentTradeFactor": [1, 1], "agentLookaheadFactor": [1, 1],
                      "agentLendingFactor": [1, 1], "agentBaseInterestRate": [0.05, 0.10], "agentLoanDuration": [5, 5],
                      "agentImmuneSystemLength": 50,
+                     "diseaseAggressionPenalty": [0, 0], "diseaseFertilityPenalty": [0, 0], "diseaseMovementPenalty": [0, 0],
+                     "diseaseVisionPenalty": [0, 1], "diseaseSugarMetabolismPenalty": [0, 2], "diseaseSpiceMetabolismPenalty": [0, 2],
+                     "diseaseTagStringLength": [3, 11], "startingDiseases": 0,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
                      "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
                      "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1,

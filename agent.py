@@ -102,7 +102,7 @@ class Agent:
     # TODO: Implement disease catching
     # Find substring in immune system with smallest Hamming distance from disease
     def catchDisease(self, disease):
-        diseaseRangeInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
+        diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
         caughtDisease = {"disease": disease, "immuneSystemStartIndex": diseaseInImmuneSystem[0], "immuneSystemEndIndex": diseaseInImmuneSystem[1]}
         self.__diseases.append(caughtDisease)
 
