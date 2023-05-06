@@ -17,13 +17,13 @@ class Sugarscape:
         self.__configuration = configuration
         self.__timestep = 0
         self.__nextAgentID = 0
+        self.__nextDiseaseID = 0
         self.__lastLoggedTimestep = 0
         environmentConfiguration = {"globalMaxSugar": configuration["environmentMaxSugar"], "sugarRegrowRate": configuration["environmentSugarRegrowRate"],
                                     "seasonInterval": configuration["environmentSeasonInterval"], "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
                                     "consumptionPollutionRate": configuration["environmentConsumptionPollutionRate"], "productionPollutionRate": configuration["environmentProductionPollutionRate"],
                                     "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"], "maxCombatLoot": configuration["environmentMaxCombatLoot"],
                                     "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"], "sugarscapeSeed": configuration["seed"]}
-
         self.__seed = configuration["seed"]
         self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.__environmentHeight = configuration["environmentHeight"]
@@ -43,6 +43,12 @@ class Sugarscape:
 
     def addAgent(self, agent):
         self.__agents.append(agent)
+
+    def addDisease(self, oldDisease, agent):
+        diseaseID = oldDisease.getID()
+        diseaseConfig = oldDisease.getConfiguration()
+        newDisease = disease.Disease(diseaseID, diseaseConfig)
+        agent.catchDisease(newDisease)
 
     # TODO: Make more consistent with book, dispersion more tightly concentrated than in book (ref: pg. 22)
     def addSpicePeak(self, startX, startY, radius, maxSpice):
@@ -134,14 +140,25 @@ class Sugarscape:
             numDiseases = numAgents
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
-        print("Generated {0} diseases".format(len(diseaseEndowments)))
         random.shuffle(self.__agents)
+        diseases = []
         for i in range(numDiseases):
-            agent = self.__agents[i]
+            diseaseID = self.generateDiseaseID()
             diseaseConfiguration = diseaseEndowments[i]
-            newDisease = disease.Disease(None, diseaseConfiguration)
-            agent.catchDisease(newDisease)
-            self.__diseases.append(newDisease)
+            newDisease = disease.Disease(diseaseID, diseaseConfiguration)
+            diseases.append(newDisease)
+
+        unplacedDisease = 0
+        for agent in self.__agents:
+            for newDisease in diseases:
+                hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
+                if hammingDistance != 0:
+                    agent.catchDisease(newDisease)
+                    self.__diseases.append(newDisease)
+                    diseases.remove(newDisease)
+                    break
+        if len(diseases) > 0:
+            print("Could not place {0} diseases.".format(len(diseases)))
 
     def configureEnvironment(self, maxSugar, maxSpice):
         height = self.__environment.getHeight()
@@ -209,6 +226,11 @@ class Sugarscape:
 
     def getConfiguration(self):
         return self.__configuration
+
+    def generateDiseaseID(self):
+        diseaseID = self.__nextDiseaseID
+        self.__nextDiseaseID += 1
+        return diseaseID
 
     def getEnd(self):
         return self.__end

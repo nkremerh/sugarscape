@@ -1,3 +1,5 @@
+import disease
+
 import math
 import random
 
@@ -99,12 +101,24 @@ class Agent:
         sugarNeed = sugar / self.__sugarMetabolism if self.__sugarMetabolism > 0 else 1
         return spiceNeed / sugarNeed
 
-    # TODO: Implement disease catching
-    # Find substring in immune system with smallest Hamming distance from disease
     def catchDisease(self, disease):
+        diseaseID = disease.getID()
+        for currDisease in self.__diseases:
+            currDiseaseID = currDisease["disease"].getID()
+            # If currently sick with this disease, do not contract it again
+            if diseaseID == currDiseaseID:
+                return
         diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
-        caughtDisease = {"disease": disease, "immuneSystemStartIndex": diseaseInImmuneSystem[0], "immuneSystemEndIndex": diseaseInImmuneSystem[1]}
+        hammingDistance = diseaseInImmuneSystem["distance"]
+        # If immune to disease, do not contract it
+        if hammingDistance == 0:
+            return
+        startIndex = diseaseInImmuneSystem["start"]
+        endIndex = diseaseInImmuneSystem["end"]
+        caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex}
+        print("Agent {0} caught disease: {1} --> {2}".format(str(self), str(caughtDisease), str(disease)))
         self.__diseases.append(caughtDisease)
+        disease.setAgent(self)
 
     def collectResourcesAtCell(self):
         if self.__cell != None:
@@ -162,10 +176,39 @@ class Agent:
         self.unsetCell()
         self.doInheritance()
 
-    def doIllness(self):
-        for disease in self.__diseases:
+    def doDisease(self):
+        diseases = self.__diseases
+        for disease in diseases:
+            diseaseTags = disease["disease"].getTags()
+            start = disease["startIndex"]
+            end = disease["endIndex"] + 1
+            immuneResponse = [self.__immuneSystem[i] for i in range(disease["startIndex"], disease["endIndex"] + 1)]
+            i = start
+            j = 0
+            for i in range(len(diseaseTags)):
+                if immuneResponse[i] != diseaseTags[i]:
+                    self.__immuneSystem[start + i] = diseaseTags[i]
+                    break
+            immuneResponseCheck = [self.__immuneSystem[i] for i in range(disease["startIndex"], disease["endIndex"] + 1)]
+            print("Agent {0} checking disease tags [{1} / {2}] to [{3} / {4}]".format(str(self), str(diseaseTags), str(immuneResponse), str(diseaseTags), str(immuneResponseCheck)))
+            if diseaseTags == immuneResponseCheck:
+                print("Agent {0} recovered from disease {1}".format(str(self), disease["disease"].getID()))
+                self.__diseases.remove(disease)
             continue
-        return
+
+        neighborCells = self.__cell.getNeighbors()
+        neighbors = []
+        for neighborCell in neighborCells:
+            neighbor = neighborCell.getAgent()
+            if neighbor != None and neighbor.isAlive() == True:
+                neighbors.append(neighbor)
+        random.shuffle(neighbors)
+        random.shuffle(self.__diseases)
+        diseaseSpread = len(self.__diseases)
+        if diseaseSpread > len(neighbors):
+            diseaseSpread = len(neighbors)
+        for i in range(diseaseSpread):
+            self.spreadDisease(neighbors[i], self.__diseases[i]["disease"])
 
     def doInheritance(self):
         if self.__inheritancePolicy == "none":
@@ -348,7 +391,7 @@ class Agent:
             self.doTrading()
             self.doLending()
             self.doReproduction()
-            self.doIllness()
+            self.doDisease()
             self.doAging()
 
     def doTrading(self):
@@ -625,7 +668,8 @@ class Agent:
             if hammingDistance < bestHammingDistance:
                 bestHammingDistance = hammingDistance
                 bestRange = [i, i + (diseaseLength - 1)]
-        return bestRange
+        diseaseStats = {"distance": bestHammingDistance, "start": bestRange[0], "end": bestRange[1]}
+        return diseaseStats
 
     def findHammingDistanceInTags(self, neighbor):
         if self.__tags == None:
@@ -692,6 +736,9 @@ class Agent:
 
     def getCellsInVision(self):
         return self.__cellsInVision
+
+    def getDiseases(self):
+        return self.__diseases
 
     def getEnvironment(self):
         return self.__cell.getEnvironment()
@@ -917,6 +964,9 @@ class Agent:
     def setCellsInVision(self, cells):
         self.__cellsInVision = cells
 
+    def setDiseases(self, diseases):
+        self.__diseases = diseases
+
     def setFather(self, father):
         fatherID = father.getID()
         if fatherID not in self.__socialNetwork:
@@ -1015,6 +1065,10 @@ class Agent:
 
     def setWealth(self, wealth):
         self.__wealth = wealth
+
+    def spreadDisease(self, agent, disease):
+        sugarscape = self.__cell.getEnvironment().getSugarscape()
+        sugarscape.addDisease(disease, agent)
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.getID()

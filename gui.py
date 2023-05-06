@@ -18,7 +18,7 @@ class GUI:
         self.configureWindow()
 
     def configureAgentColorNames(self):
-        return ["Sex", "Tribes"]
+        return ["Disease", "Sex", "Tribes"]
 
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
@@ -209,6 +209,10 @@ class GUI:
             return self.__colors[agent.getSex()]
         elif agent.getTribe() != None and self.__activeColorOptions["agent"] == "Tribes":
             return self.__colors[agent.getTribe()]
+        elif len(agent.getDiseases()) > 0 and self.__activeColorOptions["agent"] == "Disease":
+            return self.__colors["red"]
+        elif len(agent.getDiseases()) == 0 and self.__activeColorOptions["agent"] == "Disease":
+            return self.__colors["green"]
         return self.__colors["noSex"]
 
     def recolorByResourceAmount(self, cell, fillColor):

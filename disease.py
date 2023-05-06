@@ -2,8 +2,8 @@ import math
 import random
 
 class Disease:
-    def __init__(self, agent, configuration):
-        self.__agent = agent
+    def __init__(self, diseaseID, configuration):
+        self.__id = diseaseID
         self.__sugarMetabolismPenalty = configuration["sugarMetabolismPenalty"]
         self.__spiceMetabolismPenalty = configuration["spiceMetabolismPenalty"]
         self.__visionPenalty = configuration["visionPenalty"]
@@ -11,6 +11,8 @@ class Disease:
         self.__fertilityPenalty = configuration["fertilityPenalty"]
         self.__aggressionPenalty = configuration["aggressionPenalty"]
         self.__tags = configuration["tags"]
+        self.__configuration = configuration
+        self.__agent = None
 
     def getAgent(self):
         return self.__agent
@@ -18,8 +20,14 @@ class Disease:
     def getAggressionPenalty(self):
         return self.__aggressionPenalty
 
+    def getConfiguration(self):
+        return self.__configuration
+
     def getFertilityPenalty(self):
         return self.__fertilityPenalty
+
+    def getID(self):
+        return self.__id
 
     def getMovementPenalty(self):
         return self.__movementPenalty
@@ -42,8 +50,14 @@ class Disease:
     def setAggressionPenalty(self, aggressionPenalty):
         self.__aggressionPenalty = aggressionPenalty
 
+    def setConfiguration(self, configuration):
+        self.__configuration = configuration
+
     def setFertilityPenalty(self, fertilityPenalty):
         self.__fertilityPenalty = fertilityPenalty
+
+    def setID(self, diseaseID):
+        self.__id = diseaseID
 
     def setMovementPenalty(self, movementPenalty):
         self.__movementPenalty = movementPenalty
@@ -59,3 +73,6 @@ class Disease:
 
     def setVisionPenalty(self, visionPenalty):
         self.__visionPenalty = visionPenalty
+
+    def __str__(self):
+        return "Disease stats: {0} - {1} ({2} {3} {4} {5} {6} {7})".format(len(self.__tags), self.__tags, self.__sugarMetabolismPenalty, self.__spiceMetabolismPenalty, self.__movementPenalty, self.__visionPenalty, self.__fertilityPenalty, self.__aggressionPenalty)
