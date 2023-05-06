@@ -2,6 +2,7 @@
 
 import agent
 import cell
+import disease
 import environment
 import gui
 
@@ -29,6 +30,7 @@ class Sugarscape:
         self.__environmentWidth = configuration["environmentWidth"]
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"])
         self.__agents = []
+        self.__diseases = []
         self.configureAgents(configuration["startingAgents"])
         self.__gui = gui.GUI(self) if configuration["headlessMode"] == False else None
         self.__run = False # Simulation start flag
