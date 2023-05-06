@@ -24,11 +24,11 @@
     "agentReplacements": 0,
     "agentTagStringLength": 11,
     "diseaseAggressionPenalty": [-1, 1],
-    "diseaseFertilityPenalty": [1, 3],
+    "diseaseFertilityPenalty": [-1, 0],
     "diseaseMovementPenalty": [0, 0],
     "diseaseSpiceMetabolismPenalty": [1, 3],
     "diseaseSugarMetabolismPenalty": [1, 3],
-    "diseaseTagStringLength": [7, 11], 
+    "diseaseTagStringLength": [11, 21],
     "diseaseVisionPenalty": [0, 0],
     "environmentHeight": 50,
     "environmentMaxCombatLoot": 1,
@@ -47,6 +47,6 @@
     "logfile": "log.json",
     "seed": 12345,
     "startingAgents": 500,
-    "startingDiseases": 10,
+    "startingDiseases": 50,
     "timesteps": 200
 }

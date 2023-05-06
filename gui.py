@@ -212,7 +212,7 @@ class GUI:
         elif len(agent.getDiseases()) > 0 and self.__activeColorOptions["agent"] == "Disease":
             return self.__colors["red"]
         elif len(agent.getDiseases()) == 0 and self.__activeColorOptions["agent"] == "Disease":
-            return self.__colors["green"]
+            return self.__colors["blue"]
         return self.__colors["noSex"]
 
     def recolorByResourceAmount(self, cell, fillColor):

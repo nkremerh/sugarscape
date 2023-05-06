@@ -26,6 +26,7 @@ class Agent:
         self.__tradeFactor = configuration["tradeFactor"]
         self.__lookaheadFactor = configuration["lookaheadFactor"]
         self.__lendingFactor = configuration["lendingFactor"]
+        self.__fertilityFactor = configuration["fertilityFactor"]
         self.__baseInterestRate = configuration["baseInterestRate"]
         self.__loanDuration = configuration["loanDuration"]
         self.__maxFriends = configuration["maxFriends"]
@@ -99,6 +100,11 @@ class Agent:
     def calculateMarginalRateOfSubstitution(self, sugar, spice):
         spiceNeed = spice / self.__spiceMetabolism if self.__spiceMetabolism > 0 else 1
         sugarNeed = sugar / self.__sugarMetabolism if self.__sugarMetabolism > 0 else 1
+        # If no sugar or no spice, make missing resource the maximum need in MRS
+        if spiceNeed == 0:
+            return self.__spiceMetabolism
+        elif sugarNeed == 0:
+            return 1 / self.__sugarMetabolism
         return spiceNeed / sugarNeed
 
     def catchDisease(self, disease):
@@ -116,8 +122,8 @@ class Agent:
         startIndex = diseaseInImmuneSystem["start"]
         endIndex = diseaseInImmuneSystem["end"]
         caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex}
-        print("Agent {0} caught disease: {1} --> {2}".format(str(self), str(caughtDisease), str(disease)))
         self.__diseases.append(caughtDisease)
+        self.updateDiseaseEffects(disease)
         disease.setAgent(self)
 
     def collectResourcesAtCell(self):
@@ -178,24 +184,25 @@ class Agent:
 
     def doDisease(self):
         diseases = self.__diseases
-        for disease in diseases:
-            diseaseTags = disease["disease"].getTags()
-            start = disease["startIndex"]
-            end = disease["endIndex"] + 1
-            immuneResponse = [self.__immuneSystem[i] for i in range(disease["startIndex"], disease["endIndex"] + 1)]
+        for diseaseRecord in diseases:
+            diseaseTags = diseaseRecord["disease"].getTags()
+            start = diseaseRecord["startIndex"]
+            end = diseaseRecord["endIndex"] + 1
+            immuneResponse = [self.__immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
             i = start
             j = 0
             for i in range(len(diseaseTags)):
                 if immuneResponse[i] != diseaseTags[i]:
                     self.__immuneSystem[start + i] = diseaseTags[i]
                     break
-            immuneResponseCheck = [self.__immuneSystem[i] for i in range(disease["startIndex"], disease["endIndex"] + 1)]
-            print("Agent {0} checking disease tags [{1} / {2}] to [{3} / {4}]".format(str(self), str(diseaseTags), str(immuneResponse), str(diseaseTags), str(immuneResponseCheck)))
+            immuneResponseCheck = [self.__immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
             if diseaseTags == immuneResponseCheck:
-                print("Agent {0} recovered from disease {1}".format(str(self), disease["disease"].getID()))
-                self.__diseases.remove(disease)
-            continue
+                self.__diseases.remove(diseaseRecord)
+                self.updateDiseaseEffects(diseaseRecord["disease"])
 
+        diseaseCount = len(self.__diseases)
+        if diseaseCount == 0:
+            return
         neighborCells = self.__cell.getNeighbors()
         neighbors = []
         for neighborCell in neighborCells:
@@ -203,12 +210,8 @@ class Agent:
             if neighbor != None and neighbor.isAlive() == True:
                 neighbors.append(neighbor)
         random.shuffle(neighbors)
-        random.shuffle(self.__diseases)
-        diseaseSpread = len(self.__diseases)
-        if diseaseSpread > len(neighbors):
-            diseaseSpread = len(neighbors)
-        for i in range(diseaseSpread):
-            self.spreadDisease(neighbors[i], self.__diseases[i]["disease"])
+        for neighbor in neighbors:
+            self.spreadDisease(neighbor, self.__diseases[random.randrange(diseaseCount)]["disease"])
 
     def doInheritance(self):
         if self.__inheritancePolicy == "none":
@@ -312,8 +315,8 @@ class Agent:
             self.doDeath()
 
     def doReproduction(self):
-        # Agent marked for removal should not reproduce
-        if self.__alive == False:
+        # Agent marked for removal or not interested in reproduction should not reproduce
+        if self.__alive == False or self.isFertile() == False:
             return
         neighborCells = self.__cell.getNeighbors()
         random.shuffle(neighborCells)
@@ -346,10 +349,10 @@ class Agent:
                     # Debugging string
                     #print("Agents {0},{1} produced child at ({2},{3})".format(str(self), str(neighbor), emptyCell.getX(), emptyCell.getY()))
 
-                    sugarCost = math.ceil(self.__startingSugar / 2)
-                    spiceCost = math.ceil(self.__startingSpice / 2)
-                    mateSugarCost = math.ceil(neighbor.getStartingSugar() / 2)
-                    mateSpiceCost = math.ceil(neighbor.getStartingSpice() / 2)
+                    sugarCost = math.ceil(self.__startingSugar / (self.__fertilityFactor * 2))
+                    spiceCost = math.ceil(self.__startingSpice / (self.__fertilityFactor * 2))
+                    mateSugarCost = math.ceil(neighbor.getStartingSugar() / (neighbor.getFertilityFactor() * 2))
+                    mateSpiceCost = math.ceil(neighbor.getStartingSpice() / (neighbor.getFertilityFactor() * 2))
                     self.__sugar -= sugarCost
                     self.__spice -= spiceCost
                     neighbor.setSugar(neighbor.getSugar() - mateSugarCost)
@@ -582,6 +585,7 @@ class Agent:
         parentTradeFactors = [self.__tradeFactor, mate.getTradeFactor()]
         parentLookaheadFactors = [self.__lookaheadFactor, mate.getLookaheadFactor()]
         parentLendingFactors = [self.__lendingFactor, mate.getLendingFactor()]
+        parentFertilityFactors = [self.__fertilityFactor, mate.getFertilityFactor()]
         parentBaseInterestRates = [self.__baseInterestRate, mate.getBaseInterestRate()]
         parentLoanDuration = [self.__loanDuration, mate.getLoanDuration()]
         parentMaxFriends = [self.__maxFriends, mate.getMaxFriends()]
@@ -596,6 +600,7 @@ class Agent:
         childMaxAge = parentMaxAges[random.randrange(2)]
         childInfertilityAge = parentInfertilityAges[random.randrange(2)]
         childFertilityAge = parentFertilityAges[random.randrange(2)]
+        childFertilityFactor = parentFertilityFactors[random.randrange(2)]
         childSex = parentSexes[random.randrange(2)]
         childMaxFriends = parentMaxFriends[random.randrange(2)]
         childTags = []
@@ -630,7 +635,7 @@ class Agent:
                      "aggressionFactor": childAggressionFactor, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
                      "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy, "tradeFactor": childTradeFactor,
                      "lookaheadFactor": childLookaheadFactor, "lendingFactor": childLendingFactor, "baseInterestRate": childBaseInterestRate,
-                     "loanDuration": childLoanDuration, "immuneSystem": childImmuneSystem}
+                     "loanDuration": childLoanDuration, "immuneSystem": childImmuneSystem, "fertilityFactor": childFertilityFactor}
         return endowment
 
     def findCurrentSpiceDebt(self):
@@ -752,6 +757,9 @@ class Agent:
     def getFertilityAge(self):
         return self.__fertilityAge
 
+    def getFertilityFactor(self):
+        return self.__fertilityFactor
+
     def getID(self):
         return self.__id 
 
@@ -855,7 +863,7 @@ class Agent:
         return False
 
     def isFertile(self):
-        if self.__sugar >= self.__startingSugar and self.__spice >= self.__startingSpice and self.__age >= self.__fertilityAge and self.__age < self.__infertilityAge:
+        if self.__sugar >= self.__startingSugar and self.__spice >= self.__startingSpice and self.__age >= self.__fertilityAge and self.__age < self.__infertilityAge and self.__fertilityFactor > 0:
             return True
         return False
 
@@ -979,6 +987,9 @@ class Agent:
     def setFertilityAge(self, fertilityAge):
         self.__fertilityAge = fertilityAge
 
+    def setFertilityFactor(self, fertilityFactor):
+        self.__fertilityFactor = fertilityFactor
+
     def setID(self, agentID):
         self.__id = agentID
 
@@ -1069,6 +1080,36 @@ class Agent:
     def spreadDisease(self, agent, disease):
         sugarscape = self.__cell.getEnvironment().getSugarscape()
         sugarscape.addDisease(disease, agent)
+
+    def updateDiseaseEffects(self, disease): 
+        # If disease not in list of diseases, agent has recovered and undo its effects
+        recoveryCheck = -1
+        for diseaseRecord in self.__diseases:
+            if disease == diseaseRecord["disease"]:
+                recoveryCheck = 1
+                break
+
+        sugarMetabolismPenalty = disease.getSugarMetabolismPenalty() * recoveryCheck
+        spiceMetabolismPenalty = disease.getSpiceMetabolismPenalty() * recoveryCheck
+        visionPenalty = disease.getVisionPenalty() * recoveryCheck
+        movementPenalty = disease.getMovementPenalty() * recoveryCheck
+        fertilityPenalty = disease.getFertilityPenalty() * recoveryCheck
+        aggressionPenalty = disease.getAggressionPenalty() * recoveryCheck
+
+        self.__sugarMetabolism = max(0, self.__sugarMetabolism + sugarMetabolismPenalty)
+        self.__spiceMetabolism = max(0, self.__spiceMetabolism + spiceMetabolismPenalty)
+        self.__vision = max(0, self.__vision + visionPenalty)
+        self.__movement = max(0, self.__movement + movementPenalty)
+        self.__fertilityFactor = max(0, self.__fertilityFactor + fertilityPenalty)
+        self.__aggressionFactor = max(0, self.__aggressionFactor + aggressionPenalty)
+
+        # Debugging string
+        '''
+        if recoveryCheck == 1:
+            print("Agent {0} contracting disease {1}: [{2}, {3}, {4}, {5}, {6}, {7}]".format(str(self), str(disease), self.__sugarMetabolism, self.__spiceMetabolism, self.__vision, self.__movement, self.__fertilityFactor, self.__aggressionFactor))
+        else:
+            print("Agent {0} recovering from disease {1}: [{2}, {3}, {4}, {5}, {6}, {7}]".format(str(self), str(disease), self.__sugarMetabolism, self.__spiceMetabolism, self.__vision, self.__movement, self.__fertilityFactor, self.__aggressionFactor))
+        '''
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.getID()

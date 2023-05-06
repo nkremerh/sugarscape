@@ -376,6 +376,7 @@ class Sugarscape:
         tradeFactor = configs["agentTradeFactor"]
         lookaheadFactor = configs["agentLookaheadFactor"]
         lendingFactor = configs["agentLendingFactor"]
+        fertilityFactor = configs["agentFertilityFactor"]
         loanDuration = configs["agentLoanDuration"]
         baseInterestRate = configs["agentBaseInterestRate"]
         maxFriends = configs["agentMaxFriends"]
@@ -398,6 +399,7 @@ class Sugarscape:
         tradeFactors = []
         lookaheadFactors = []
         lendingFactors = []
+        fertilityFactors = []
         baseInterestRates = []
         loanDurations = []
         friends = []
@@ -419,6 +421,7 @@ class Sugarscape:
         minTrade = tradeFactor[0]
         minLookahead = lookaheadFactor[0]
         minLending = lendingFactor[0]
+        minFertility = fertilityFactor[0]
         minInterestRate = baseInterestRate[0]
         minLoanDuration = loanDuration[0]
         minFriends = maxFriends[0]
@@ -438,6 +441,7 @@ class Sugarscape:
         maxTrade = tradeFactor[1]
         maxLookahead = lookaheadFactor[1]
         maxLending = lendingFactor[1]
+        maxFertility = fertilityFactor[1]
         maxInterestRate = baseInterestRate[1]
         maxLoanDuration = loanDuration[1]
         maxFriends = maxFriends[1]
@@ -457,6 +461,7 @@ class Sugarscape:
         currTrade = minTrade
         currLookahead = minLookahead
         currLending = minLending
+        currFertility = minFertility
         currInterestRate = minInterestRate
         currLoanDuration = minLoanDuration
         currFriends = minFriends
@@ -490,6 +495,7 @@ class Sugarscape:
             tradeFactors.append(currTrade)
             lookaheadFactors.append(currLookahead)
             lendingFactors.append(currLending)
+            fertilityFactors.append(currFertility)
             baseInterestRates.append(currInterestRate)
             loanDurations.append(currLoanDuration)
             friends.append(currFriends)
@@ -509,6 +515,7 @@ class Sugarscape:
             currTrade += 1
             currLookahead += 1
             currLending += 1
+            currFertility += 1
             currInterestRate += 0.01
             currLoanDuration += 1
             currFriends += 1
@@ -558,6 +565,8 @@ class Sugarscape:
                 currInterestRate = minInterestRate
             if currLoanDuration > maxLoanDuration:
                 currLoanDuration = minLoanDuration
+            if currFertility > maxFertility:
+                currFertility = minFertility
 
         random.shuffle(spiceMetabolisms)
         random.shuffle(sugarMetabolisms)
@@ -574,6 +583,7 @@ class Sugarscape:
         random.shuffle(tradeFactors)
         random.shuffle(lookaheadFactors)
         random.shuffle(lendingFactors)
+        random.shuffle(fertilityFactors)
         random.shuffle(baseInterestRates)
         random.shuffle(loanDurations)
         random.shuffle(friends)
@@ -583,7 +593,7 @@ class Sugarscape:
                               "maxFriends": friends.pop(), "vision": visions.pop(), "seed": self.__seed, "spiceMetabolism": spiceMetabolisms.pop(),
                               "sugarMetabolism": sugarMetabolisms.pop(), "inheritancePolicy": inheritancePolicy, "tradeFactor": tradeFactors.pop(),
                               "lookaheadFactor": lookaheadFactors.pop(), "lendingFactor": lendingFactors.pop(), "baseInterestRate": baseInterestRates.pop(),
-                              "loanDuration": loanDurations.pop(), "immuneSystem": immuneSystems.pop()}
+                              "loanDuration": loanDurations.pop(), "immuneSystem": immuneSystems.pop(), "fertilityFactor": fertilityFactors.pop()}
             if sexes[i] == "female":
                 agentEndowment["fertilityAge"] = femaleFertilityAges.pop()
                 agentEndowment["infertilityAge"] = femaleInfertilityAges.pop()
@@ -792,7 +802,7 @@ if __name__ == "__main__":
                      "agentSugarMetabolism": [1, 4], "agentSpiceMetabolism": [1, 4], "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100],
                      "agentMovement": [1, 6], "agentInheritancePolicy": "children", "agentTradeFactor": [1, 1], "agentLookaheadFactor": [1, 1],
                      "agentLendingFactor": [1, 1], "agentBaseInterestRate": [0.05, 0.10], "agentLoanDuration": [5, 5],
-                     "agentImmuneSystemLength": 50,
+                     "agentImmuneSystemLength": 50, "agentFertilityFactor": [1, 1],
                      "diseaseAggressionPenalty": [0, 0], "diseaseFertilityPenalty": [0, 0], "diseaseMovementPenalty": [0, 0],
                      "diseaseVisionPenalty": [0, 1], "diseaseSugarMetabolismPenalty": [0, 2], "diseaseSpiceMetabolismPenalty": [0, 2],
                      "diseaseTagStringLength": [3, 11], "startingDiseases": 0,

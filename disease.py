@@ -75,4 +75,4 @@ class Disease:
         self.__visionPenalty = visionPenalty
 
     def __str__(self):
-        return "Disease stats: {0} - {1} ({2} {3} {4} {5} {6} {7})".format(len(self.__tags), self.__tags, self.__sugarMetabolismPenalty, self.__spiceMetabolismPenalty, self.__movementPenalty, self.__visionPenalty, self.__fertilityPenalty, self.__aggressionPenalty)
+        return "{0}".format(self.__id)
