@@ -1,3 +1,4 @@
+import math
 import tkinter
 
 class GUI:
@@ -116,7 +117,15 @@ class GUI:
         self.doTimestep()
 
     def doClick(self, event):
-        return
+        # Account for padding in GUI cells
+        eventX = event.x - 5
+        eventY = event.y - 5
+        borderOffset = 30
+        cellSize = (self.__screenHeight - borderOffset) / self.__sugarscape.getEnvironmentWidth()
+        gridX = math.floor(eventX / cellSize)
+        gridY = math.floor(eventY / cellSize)
+        self.__sugarscape.printCell(gridX, gridY)
+        self.doTimestep()
 
     def doEnvironmentColorMenu(self):
         self.__activeColorOptions["environment"] = self.__lastSelectedEnvironmentColor.get()
@@ -126,9 +135,6 @@ class GUI:
         self.__sugarscape.setRun()
         self.__widgets["playButton"].config(text="  Play Simulation  " if self.__sugarscape.getRun() == False else "Pause Simulation")
         self.doTimestep()
-
-    def doStatsButton(self, *args):
-        return
 
     # TODO: Go back one timestep
     def doStepBackwardButton(self, *args):
@@ -164,7 +170,7 @@ class GUI:
     def getScreenHeight(self):
         return self.__screenHeight
 
-    def getscreenWidth(self):
+    def getScreenWidth(self):
         return self.__screenWidth
 
     def getSugarscape(self):

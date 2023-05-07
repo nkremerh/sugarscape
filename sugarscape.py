@@ -109,8 +109,6 @@ class Sugarscape:
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
-        # Debugging string
-        #print("Agent endowments: {0}".format(agentEndowments))
         randCoords = []
         for i in range(self.__environmentHeight):
             for j in range(self.__environmentWidth):
@@ -127,10 +125,6 @@ class Sugarscape:
             a = agent.Agent(agentID, self.__timestep, c, agentConfiguration)
             c.setAgent(a)
             self.__agents.append(a)
-            # Debugging string
-            #print("Agent {0} placed at ({1},{2})".format(str(a), randCellX, randCellY))
-        # Debugging string
-        #print("Agents: {0}".format(str([str(agent) for agent in self.__agents])))
 
     def configureDiseases(self, numDiseases):
         numAgents = len(self.__agents)
@@ -265,6 +259,16 @@ class Sugarscape:
                 self.__gui.getWindow().update()
             if self.__end == True:
                 self.endSimulation()
+
+    def printCell(self, cellX, cellY):
+        cell = self.__environment.getCell(cellX, cellY)
+        cellStats = "Cell ({0},{1}): {2}/{3} sugar, {4}/{5} spice, {6} pollution".format(cellX, cellY, cell.getCurrSugar(), cell.getMaxSugar(), cell.getCurrSpice(), cell.getMaxSpice(), cell.getCurrPollution())
+        agent = cell.getAgent()
+        if agent != None:
+            agentStats = "Agent {0}: {1} timesteps old, {2} vision, {3} movement, {4} sugar, {5} spice, {6} mean metabolism".format(str(agent), agent.getAge(), agent.getVision(), agent.getMovement(), agent.getSugar(),
+                                                                                                                                    agent.getSpice(), (agent.getSugarMetabolism() + agent.getSpiceMetabolism()) / 2)
+            cellStats += "\n  {0}".format(agentStats)
+        print(cellStats)
 
     def randomizeDiseaseEndowments(self, numDiseases):
         configs = self.__configuration
@@ -613,7 +617,6 @@ class Sugarscape:
                 deadAgents.append(agent)
             elif agent.getCell() == None:
                 deadAgents.append(agent)
-                print("Agent {0} has no cell".format(str(agent)))
         for agent in deadAgents:
             self.__agents.remove(agent)
 
