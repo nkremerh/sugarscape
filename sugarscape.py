@@ -102,17 +102,19 @@ class Sugarscape:
         if self.__environment == None:
             return
 
-        totalCells = self.__environmentHeight * self.__environmentWidth
+        activeCells = self.findActiveQuadrants()
+        if len(activeCells) == 0:
+            return
+
+        #totalCells = self.__environmentHeight * self.__environmentWidth
+        totalCells = len(activeCells)
         if len(self.__agents) + numAgents > totalCells:
             print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
             numAgents = totalCells
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
-        randCoords = []
-        for i in range(self.__environmentHeight):
-            for j in range(self.__environmentWidth):
-                randCoords.append([i, j])
+        randCoords = activeCells
         random.shuffle(randCoords)
 
         for i in range(numAgents):
@@ -209,6 +211,34 @@ class Sugarscape:
         self.endLog()
         print(str(self))
         exit(0)
+
+    def findActiveQuadrants(self):
+        quadrants = self.__configuration["agentStartingQuadrants"]
+        cellRange = []
+        halfWidth = math.floor(self.__environmentWidth / 2)
+        halfHeight = math.floor(self.__environmentHeight / 2)
+        # Quadrant I at origin in top left corner, other quadrants in clockwise order
+        if 1 in quadrants:
+            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth)]
+            for i in range(halfWidth):
+                for j in range(halfHeight):
+                    cellRange.append([i, j])
+        if 2 in quadrants:
+            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth, self.__environmentWidth)]
+            for i in range(halfWidth, self.__environmentWidth):
+                for j in range(halfHeight):
+                    cellRange.append([i, j])
+        if 3 in quadrants:
+            quadRange = [[(i, j) for j in range(halfHeight, self.__environmentHeight)] for i in range(halfWidth, self.__environmentWidth)]
+            for i in range(halfWidth, self.__environmentWidth):
+                for j in range(halfHeight, self.__environmentHeight):
+                    cellRange.append([i, j])
+        if 4 in quadrants:
+            quadRange = [[(i, j) for j in range(halfHeight, self.__environmentHeight)] for i in range(halfWidth)]
+            for i in range(halfWidth):
+                for j in range(halfHeight, self.__environmentHeight):
+                    cellRange.append([i, j])
+        return cellRange
 
     def generateAgentID(self):
         agentID = self.__nextAgentID
@@ -768,6 +798,9 @@ def parseConfigFile(configFile, configuration):
             configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
     if configuration["environmentMaxTribes"] > 11:
         configuration["environmentMaxTribes"] = 11
+
+    if len(configuration["agentStartingQuadrants"]) == 0:
+        configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
     return configuration
 
 def parseOptions(configuration):
@@ -805,7 +838,7 @@ if __name__ == "__main__":
                      "agentSugarMetabolism": [1, 4], "agentSpiceMetabolism": [1, 4], "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100],
                      "agentMovement": [1, 6], "agentInheritancePolicy": "children", "agentTradeFactor": [1, 1], "agentLookaheadFactor": [1, 1],
                      "agentLendingFactor": [1, 1], "agentBaseInterestRate": [0.05, 0.10], "agentLoanDuration": [5, 5],
-                     "agentImmuneSystemLength": 50, "agentFertilityFactor": [1, 1],
+                     "agentImmuneSystemLength": 50, "agentFertilityFactor": [1, 1], "agentStartingQuadrants": [1, 2, 3, 4],
                      "diseaseAggressionPenalty": [0, 0], "diseaseFertilityPenalty": [0, 0], "diseaseMovementPenalty": [0, 0],
                      "diseaseVisionPenalty": [0, 1], "diseaseSugarMetabolismPenalty": [0, 2], "diseaseSpiceMetabolismPenalty": [0, 2],
                      "diseaseTagStringLength": [3, 11], "startingDiseases": 0,

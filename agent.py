@@ -516,7 +516,7 @@ class Agent:
             if cellSpiceTotal < 0:
                 cellSpiceTotal = 0
             welfareFunction = (cellSugarTotal ** sugarMetabolismProportion) * (cellSpiceTotal ** spiceMetabolismProportion)
-            if len(self.__tags) > 0:
+            if self.__tags != None and len(self.__tags) > 0:
                 self.findTribe()
                 fractionZeroesInTags = self.__tagZeroes / len(self.__tags)
                 fractionOnesInTags = 1 - fractionZeroesInTags
