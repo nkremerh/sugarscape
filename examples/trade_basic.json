@@ -1,5 +1,5 @@
 {
-    "__README__": "Agent sugar and spice collection with constant sugar and spice growback (pgs. 96-99 of Growing Artificial Societies).",
+    "__README__": "Agent sugar and spice collection with trading and constant sugar and spice growback (pgs. 101-107 of Growing Artificial Societies).",
     "agentAggressionFactor": [0, 0],
     "agentBaseInterestRate": [0, 0],
     "agentFemaleInfertilityAge": [40, 50],
@@ -22,7 +22,7 @@
     "agentStartingSugar": [10, 40],
     "agentStartingQuadrants": [1, 2, 3, 4],
     "agentSugarMetabolism": [1, 4],
-    "agentTradeFactor": [0, 0],
+    "agentTradeFactor": [1, 1],
     "agentTagStringLength": 0,
     "agentVision": [1, 6],
     "diseaseAggressionPenalty": [0, 0],
