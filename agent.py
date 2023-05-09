@@ -134,8 +134,8 @@ class Agent:
             self.__spice += spiceCollected
             self.__wealth += sugarCollected + spiceCollected
             self.updateMeanIncome(sugarCollected, spiceCollected)
-            self.__cell.doProductionPollution(sugarCollected)
-            self.__cell.doProductionPollution(spiceCollected)
+            self.__cell.doSugarProductionPollution(sugarCollected)
+            self.__cell.doSpiceProductionPollution(spiceCollected)
             self.__cell.resetSugar()
             self.__cell.resetSpice()
 
@@ -309,8 +309,8 @@ class Agent:
             return
         self.__sugar -= self.__sugarMetabolism
         self.__spice -= self.__spiceMetabolism
-        self.__cell.doConsumptionPollution(self.__sugarMetabolism)
-        self.__cell.doConsumptionPollution(self.__spiceMetabolism)
+        self.__cell.doSugarConsumptionPollution(self.__sugarMetabolism)
+        self.__cell.doSpiceConsumptionPollution(self.__spiceMetabolism)
         if (self.__sugar < 1 and self.__sugarMetabolism > 0) or (self.__spice < 1 and self.__spiceMetabolism > 0):
             self.doDeath()
 

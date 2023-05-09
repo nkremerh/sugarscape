@@ -21,7 +21,10 @@ class Sugarscape:
         self.__lastLoggedTimestep = 0
         environmentConfiguration = {"globalMaxSugar": configuration["environmentMaxSugar"], "sugarRegrowRate": configuration["environmentSugarRegrowRate"],
                                     "seasonInterval": configuration["environmentSeasonInterval"], "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
-                                    "consumptionPollutionRate": configuration["environmentConsumptionPollutionRate"], "productionPollutionRate": configuration["environmentProductionPollutionRate"],
+                                    "spiceConsumptionPollutionRate": configuration["environmentSpiceConsumptionPollutionRate"],
+                                    "sugarConsumptionPollutionRate": configuration["environmentSugarConsumptionPollutionRate"],
+                                    "spiceProductionPollutionRate": configuration["environmentSpiceProductionPollutionRate"],
+                                    "sugarProductionPollutionRate": configuration["environmentSugarProductionPollutionRate"],
                                     "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"], "maxCombatLoot": configuration["environmentMaxCombatLoot"],
                                     "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"], "sugarscapeSeed": configuration["seed"]}
         self.__seed = configuration["seed"]
@@ -847,8 +850,9 @@ if __name__ == "__main__":
                      "diseaseVisionPenalty": [0, 0], "diseaseSugarMetabolismPenalty": [0, 0], "diseaseSpiceMetabolismPenalty": [0, 0],
                      "diseaseTagStringLength": [0, 0], "startingDiseases": 0,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
-                     "environmentSeasonInterval": 0, "environmentSeasonalGrowbackDelay": 0, "environmentConsumptionPollutionRate": 0,
-                     "environmentProductionPollutionRate": 0, "environmentPollutionDiffusionDelay": 0, "environmentMaxCombatLoot": 0,
+                     "environmentSeasonInterval": 0, "environmentSeasonalGrowbackDelay": 0, "environmentSpiceConsumptionPollutionRate": 0,
+                     "environmentSugarConsumptionPollutionRate": 0, "environmentSpiceProductionPollutionRate": 0,
+                     "environmentSugarProductionPollutionRate": 0, "environmentPollutionDiffusionDelay": 0, "environmentMaxCombatLoot": 0,
                      "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1, "environmentMaxTribes": 3,
                      "logfile": None, "seed": 12345, "headlessMode": False, "timesteps": 1000}
     configuration = parseOptions(configuration)

@@ -16,9 +16,13 @@ class Cell:
         self.__timestep = 0
         self.__neighbors = []
 
-    def doConsumptionPollution(self, resourcesConsumed):
-        consumptionPollutionRate = self.__environment.getConsumptionPollutionRate()
-        self.__currPollution = self.__currPollution + (consumptionPollutionRate * resourcesConsumed)
+    def doSpiceConsumptionPollution(self, spiceConsumed):
+        consumptionPollutionRate = self.__environment.getSpiceConsumptionPollutionRate()
+        self.__currPollution += consumptionPollutionRate * spiceConsumed
+
+    def doSugarConsumptionPollution(self, sugarConsumed):
+        consumptionPollutionRate = self.__environment.getSugarConsumptionPollutionRate()
+        self.__currPollution += consumptionPollutionRate * sugarConsumed
 
     def doPollutionDiffusion(self):
         meanPollution = 0
@@ -28,9 +32,13 @@ class Cell:
         for neighbor in self.__neighbors:
             neighbor.setCurrPollution(meanPollution)
 
-    def doProductionPollution(self, resourcesProduced):
-        productionPollutionRate = self.__environment.getProductionPollutionRate()
-        self.__currPollution = self.__currPollution + (productionPollutionRate * resourcesProduced)
+    def doSpiceProductionPollution(self, spiceProduced):
+        productionPollutionRate = self.__environment.getSpiceProductionPollutionRate()
+        self.__currPollution += productionPollutionRate * spiceProduced
+
+    def doSugarProductionPollution(self, sugarProduced):
+        productionPollutionRate = self.__environment.getSugarProductionPollutionRate()
+        self.__currPollution += productionPollutionRate * sugarProduced
 
     def doTimestep(self, timestep):
         return
