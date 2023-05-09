@@ -520,7 +520,11 @@ class Agent:
                 self.findTribe()
                 fractionZeroesInTags = self.__tagZeroes / len(self.__tags)
                 fractionOnesInTags = 1 - fractionZeroesInTags
+                spiceMetabolism = self.__spiceMetabolism if self.__spiceMetabolism != 0 else 1
+                sugarMetabolism = self.__sugarMetabolism if self.__sugarMetabolism != 0 else 1
                 tagPreferences = (self.__sugarMetabolism * fractionZeroesInTags) + (self.__spiceMetabolism * fractionOnesInTags)
+                if tagPreferences == 0:
+                    tagPreferences = 1
                 tagPreferencesSugar = (self.__sugarMetabolism / tagPreferences) * fractionZeroesInTags
                 tagPreferencesSpice = (self.__spiceMetabolism / tagPreferences) * fractionOnesInTags
                 welfareFunction = (cellSugarTotal ** tagPreferencesSugar) * (cellSpiceTotal ** tagPreferencesSpice)

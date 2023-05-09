@@ -765,9 +765,9 @@ class Sugarscape:
         self.__runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.__agents) > 1 else 0
 
     def writeToLog(self):
+        self.__lastLoggedTimestep = self.__timestep
         if self.__log == None:
             return
-        self.__lastLoggedTimestep = self.__timestep
         logString = '\t' + json.dumps(self.__runtimeStats) + ",\n"
         self.__log.write(logString)
 
