@@ -801,6 +801,10 @@ def parseConfigFile(configFile, configuration):
 
     if len(configuration["agentStartingQuadrants"]) == 0:
         configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
+
+    # Set timesteps to (seemingly) unlimited runtime
+    if configuration["timesteps"] < 0:
+        configuration["timestep"] = sys.maxsize
     return configuration
 
 def parseOptions(configuration):
@@ -834,17 +838,17 @@ if __name__ == "__main__":
     # Set default values for simulation configuration
     configuration = {"agentVision": [1, 6], "agentStartingSugar": [1, 5], "startingAgents": 250, "agentReplacements": 0, "agentMaxAge": [60, 100],
                      "agentMaleToFemaleRatio": 1, "agentFemaleFertilityAge": [12, 15], "agentMaleFertilityAge": [12, 15], "agentFemaleInfertilityAge": [40, 50],
-                     "agentMaleInfertilityAge": [50, 60], "agentTagStringLength": 11, "agentAggressionFactor": [0, 0], "agentMaxFriends": 5,
-                     "agentSugarMetabolism": [1, 4], "agentSpiceMetabolism": [1, 4], "agentStartingSpice": [50, 100], "agentStartingSugar": [50, 100],
-                     "agentMovement": [1, 6], "agentInheritancePolicy": "children", "agentTradeFactor": [1, 1], "agentLookaheadFactor": [1, 1],
-                     "agentLendingFactor": [1, 1], "agentBaseInterestRate": [0.05, 0.10], "agentLoanDuration": [5, 5],
-                     "agentImmuneSystemLength": 50, "agentFertilityFactor": [1, 1], "agentStartingQuadrants": [1, 2, 3, 4],
+                     "agentMaleInfertilityAge": [50, 60], "agentTagStringLength": 11, "agentAggressionFactor": [0, 0], "agentMaxFriends": [0, 0],
+                     "agentSugarMetabolism": [1, 4], "agentSpiceMetabolism": [1, 4], "agentStartingSpice": [25, 50], "agentStartingSugar": [25, 50],
+                     "agentMovement": [1, 6], "agentInheritancePolicy": "children", "agentTradeFactor": [0, 0], "agentLookaheadFactor": [1, 1],
+                     "agentLendingFactor": [0, 0], "agentBaseInterestRate": [0, 0], "agentLoanDuration": [0, 0],
+                     "agentImmuneSystemLength": 0, "agentFertilityFactor": [1, 1], "agentStartingQuadrants": [1, 2, 3, 4],
                      "diseaseAggressionPenalty": [0, 0], "diseaseFertilityPenalty": [0, 0], "diseaseMovementPenalty": [0, 0],
-                     "diseaseVisionPenalty": [0, 1], "diseaseSugarMetabolismPenalty": [0, 2], "diseaseSpiceMetabolismPenalty": [0, 2],
-                     "diseaseTagStringLength": [3, 11], "startingDiseases": 0,
+                     "diseaseVisionPenalty": [0, 0], "diseaseSugarMetabolismPenalty": [0, 0], "diseaseSpiceMetabolismPenalty": [0, 0],
+                     "diseaseTagStringLength": [0, 0], "startingDiseases": 0,
                      "environmentHeight": 50, "environmentWidth": 50, "environmentMaxSugar": 4, "environmentSugarRegrowRate": 1,
-                     "environmentSeasonInterval": 20, "environmentSeasonalGrowbackDelay": 2, "environmentConsumptionPollutionRate": 1,
-                     "environmentProductionPollutionRate": 1, "environmentPollutionDiffusionDelay": 10, "environmentMaxCombatLoot": 1,
+                     "environmentSeasonInterval": 0, "environmentSeasonalGrowbackDelay": 0, "environmentConsumptionPollutionRate": 0,
+                     "environmentProductionPollutionRate": 0, "environmentPollutionDiffusionDelay": 0, "environmentMaxCombatLoot": 0,
                      "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1, "environmentMaxTribes": 3,
                      "logfile": None, "seed": 12345, "headlessMode": False, "timesteps": 1000}
     configuration = parseOptions(configuration)
