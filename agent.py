@@ -476,8 +476,11 @@ class Agent:
         for tribe in retaliators:
             retaliationPossible[tribe] = True if self.__tribe == tribe or retaliators[tribe] > self.__wealth else False
         totalMetabolism = self.__sugarMetabolism + self.__spiceMetabolism
-        sugarMetabolismProportion = self.__sugarMetabolism / totalMetabolism
-        spiceMetabolismProportion = self.__spiceMetabolism / totalMetabolism
+        sugarMetabolismProportion = 0
+        spiceMetabolismProportion = 0
+        if totalMetabolism != 0: 
+            sugarMetabolismProportion = self.__sugarMetabolism / totalMetabolism
+            spiceMetabolismProportion = self.__spiceMetabolism / totalMetabolism
         random.shuffle(self.__cellsInVision)
 
         bestCell = None
