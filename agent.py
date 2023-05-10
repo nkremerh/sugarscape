@@ -930,7 +930,7 @@ class Agent:
             self.__socialNetwork["creditors"].remove(loan)
             creditor.removeDebt(loan)
             # Initiate new loan with interest compounded on previous loan and not transferring any new principal
-            creditor.addLoanToAgent(self, self.__lastMoved, 0, newSugarLoan, 0, newSpiceLoan, credit.getLoanDuration())
+            creditor.addLoanToAgent(self, self.__lastMoved, 0, newSugarLoan, 0, newSpiceLoan, creditor.getLoanDuration())
 
     def payDebtToCreditorChildren(self, loan):
         creditorID = loan["creditor"]
