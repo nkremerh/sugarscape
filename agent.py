@@ -2,6 +2,7 @@ import disease
 
 import math
 import random
+import sys
 
 class Agent:
     def __init__(self, agentID, birthday, cell, configuration):
@@ -35,10 +36,12 @@ class Agent:
         self.__inheritancePolicy = configuration["inheritancePolicy"]
         self.__startingImmuneSystem = configuration["immuneSystem"]
         self.__immuneSystem = configuration["immuneSystem"]
+        self.__ethicalFactor = configuration["ethicalFactor"]
 
         self.__alive = True
         self.__age = 0
         self.__cellsInVision = []
+        self.__neighborhood = []
         self.__lastMoved = -1
         self.__vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.__mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
@@ -106,6 +109,14 @@ class Agent:
         elif sugarNeed == 0:
             return 1 / self.__sugarMetabolism
         return spiceNeed / sugarNeed
+
+    def canReachCell(self, cell):
+        if len(self.__cellsInVision) == 0:
+            self.getCellsInVision()
+        for seenCell in self.__cellsInVision:
+            if seenCell["cell"] == cell:
+                return True
+        return False
 
     def catchDisease(self, disease):
         diseaseID = disease.getID()
@@ -471,6 +482,13 @@ class Agent:
 
     def findBestCell(self):
         self.findCellsInVision()
+        neighborhood = []
+        for neighborCell in self.__cellsInVision:
+            neighbor = neighborCell["cell"].getAgent()
+            if neighbor != None and neighbor.isAlive() == True:
+                neighborhood.append(neighbor)
+        neighborhood.append(self)
+        self.__neighborhood = neighborhood
         retaliators = self.findRetaliatorsInVision()
         retaliationPossible = {}
         for tribe in retaliators:
@@ -532,6 +550,8 @@ class Agent:
                 tagPreferencesSpice = (self.__spiceMetabolism / tagPreferences) * fractionOnesInTags
                 welfareFunction = (cellSugarTotal ** tagPreferencesSugar) * (cellSpiceTotal ** tagPreferencesSpice)
             cellWealth = welfareFunction / (1 + cell.getCurrPollution())
+            if self.__ethicalFactor > 0:
+                cellWealth = self.findActUtilitarianValueOfCell(cell)
 
             # Avoid attacking stronger agents or those protected from retaliation after killing prey
             if prey != None and (preyWealth > self.__wealth or (retaliators[preyTribe] > self.__wealth + cellWealth)):
@@ -552,6 +572,52 @@ class Agent:
         if bestCell == None:
             bestCell = self.__cell
         return bestCell
+
+    '''
+    We have concluded that intensity, duration, and certainty are correct. We need to normalize/scale them to either TTL or total resource value.
+    Certainty will change once we implement a separation of movement and vision.
+    Currently proximity is 1, because if you can see it, you can eat it. Again, this will change when we change movement from vision. (1/distance in time steps)
+    Fecundity/purity are a single magical variable named futureBliss. The futureBliss variable represents the probability of future pleasure.
+    Extent is # of agents in our vision.
+    We will assume omniscience within our own neighborhood.
+    utilicalcSugar:
+    a.	Intensity: [0 : 1] (1/1+daysToDeath)
+    b.	Duration: [0 : 1] [(cell site wealth / agent metabolism) / maxSiteWealth], which is rational
+    c.  Certainty: [1 : 1] if agent can reach move cell, [0 : 0] otherwise
+    d.  Proximity: [0 : 1] the (1/distance in time steps), which is currently 1
+    e.  FutureBliss: [0 : 1] probability of immediate (or limited by computational horizon) future pleasure subsequent to this action
+    f.  Extent: (0 : 1] number of agents in neighborhood  / #agents_visible_in_maxVision
+    utility_of_cell = certainty * proximity * (intensity + duration + discount * futureBliss * futureReward??? + extent)
+    We may wish to weight the variables inside the parenthesis based on some relative importance that we will make up, based on how we think Bentham thought.
+    And of course, we will be right.
+    '''
+    def findActUtilitarianValueOfCell(self, cell):
+        cellSiteWealth = cell.getCurrSugar() + cell.getCurrSpice()
+        cellMaxSiteWealth = cell.getMaxSugar() + cell.getMaxSpice()
+        cellValue = 0
+        for agent in self.__neighborhood:
+            agent.findCellsInVision()
+            # Timesteps to reach cell, currently 1 since agent vision and movement are equal
+            timestepDistance = 1
+            agentVision = agent.getVision()
+            agentMetabolism = agent.getSugarMetabolism() + agent.getSpiceMetabolism()
+            # If agent does not have metabolism, set duration to seemingly infinite
+            cellDuration = cellSiteWealth / agentMetabolism if agentMetabolism > 0 else sys.maxsize
+            certainty = 1 if agent.canReachCell(cell) == True else 0
+            proximity = 1 / timestepDistance
+            intensity = 1 / (1 + agent.findDaysToDeath())
+            duration = (cellSiteWealth / agentMetabolism) / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
+            # Agent discount, futureBliss, and futureReward deal with purity and fecundity, not currently included
+            discount = 0
+            futureBliss = 0
+            futureReward = 0
+            # Assuming agent can only see in four cardinal directions
+            extent = len(self.__neighborhood) / (agentVision * 4) if agentVision > 0 else 0
+            agentValueOfCell = agent.getEthicalFactor() * (certainty * proximity * (intensity + duration + (discount * futureBliss * futureReward) + extent))
+            print("Agent {0}'s neighbor agent {1} calculated value for cell ({2},{3}) as {4}".format(str(self), str(agent), cell.getX(), cell.getY(), agentValueOfCell))
+            cellValue += agentValueOfCell
+        print("Agent {0} found total value for cell ({1},{2}) as {3}".format(str(self), cell.getX(), cell.getY(), cellValue))
+        return cellValue
 
     def findBestFriend(self):
         if self.__tags == None:
@@ -596,6 +662,7 @@ class Agent:
         parentBaseInterestRates = [self.__baseInterestRate, mate.getBaseInterestRate()]
         parentLoanDuration = [self.__loanDuration, mate.getLoanDuration()]
         parentMaxFriends = [self.__maxFriends, mate.getMaxFriends()]
+        parentEthicalFactors = [self.__ethicalFactor, mate.getEthicalFactor()]
         # Each parent gives 1/2 their starting endowment for child endowment
         childStartingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
         childStartingSpice = math.ceil(self.__startingSpice / 2) + math.ceil(mate.getStartingSpice() / 2)
@@ -637,12 +704,14 @@ class Agent:
         childLendingFactor = parentLendingFactors[random.randrange(2)]
         childBaseInterestRate = parentBaseInterestRates[random.randrange(2)]
         childLoanDuration = parentLoanDuration[random.randrange(2)]
+        childEthicalFactor = parentEthicalFactors[random.randrange(2)]
         endowment = {"movement": childMovement, "vision": childVision, "maxAge": childMaxAge, "sugar": childStartingSugar,
                      "spice": childStartingSpice, "sex": childSex, "fertilityAge": childFertilityAge, "infertilityAge": childInfertilityAge, "tags": childTags,
                      "aggressionFactor": childAggressionFactor, "maxFriends": childMaxFriends, "seed": self.__seed, "sugarMetabolism": childSugarMetabolism,
                      "spiceMetabolism": childSpiceMetabolism, "inheritancePolicy": self.__inheritancePolicy, "tradeFactor": childTradeFactor,
                      "lookaheadFactor": childLookaheadFactor, "lendingFactor": childLendingFactor, "baseInterestRate": childBaseInterestRate,
-                     "loanDuration": childLoanDuration, "immuneSystem": childImmuneSystem, "fertilityFactor": childFertilityFactor}
+                     "loanDuration": childLoanDuration, "immuneSystem": childImmuneSystem, "fertilityFactor": childFertilityFactor,
+                     "ethicalFactor": childEthicalFactor}
         return endowment
 
     def findCurrentSpiceDebt(self):
@@ -656,6 +725,13 @@ class Agent:
         for creditor in self.__socialNetwork["creditors"]:
             sugarDebt += creditor["sugarLoan"] / creditor["loanDuration"]
         return sugarDebt
+
+    def findDaysToDeath(self):
+        # If no sugar or spice metabolism, set days to death for that resource to seemingly infinite
+        sugarDaysToDeath = self.__sugar / self.__sugarMetabolism if self.__sugarMetabolism > 0 else sys.maxsize
+        spiceDaysToDeath = self.__spice / self.__spiceMetabolism if self.__spiceMetabolism > 0 else sys.maxsize
+        daysToDeath = min(sugarDaysToDeath, spiceDaysToDeath)
+        return daysToDeath
 
     def findEmptyNeighborCells(self):
         emptyCells = []
@@ -755,6 +831,9 @@ class Agent:
     def getEnvironment(self):
         return self.__cell.getEnvironment()
 
+    def getEthicalFactor(self):
+        return self.__ethicalFactor
+
     def getFather(self):
         return self.__socialNetwork["father"]
 
@@ -805,6 +884,9 @@ class Agent:
 
     def getMother(self):
         return self.__socialNetwork["mother"]
+
+    def getNeighborhood(self):
+        return self.__neighborhood
 
     def getSex(self):
         return self.__sex
@@ -982,6 +1064,9 @@ class Agent:
     def setDiseases(self, diseases):
         self.__diseases = diseases
 
+    def setEthicalFactor(self, ethicalFactor):
+        self.__ethicalFactor = ethicalFactor
+
     def setFather(self, father):
         fatherID = father.getID()
         if fatherID not in self.__socialNetwork:
@@ -1038,6 +1123,9 @@ class Agent:
         if motherID not in self.__socialNetwork:
             self.addAgentToSocialNetwork(mother)
         self.__socialNetwork["mother"] = mother
+
+    def setNeighborhood(self, neighborhood):
+        self.__neighborhood = neighborhood
 
     def setSex(self, sex):
         self.__sex = sex

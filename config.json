@@ -2,6 +2,7 @@
     "__README__": "Default values for Sugarscape simulation provided here. Details can be found in the README.",
     "agentAggressionFactor": [1, 1],
     "agentBaseInterestRate": [0.10, 0.10],
+    "agentEthicalFactor": [1, 1],
     "agentFemaleInfertilityAge": [40, 50],
     "agentFemaleFertilityAge": [12, 15],
     "agentFertilityFactor": [1, 1],

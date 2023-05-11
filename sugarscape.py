@@ -418,6 +418,7 @@ class Sugarscape:
         baseInterestRate = configs["agentBaseInterestRate"]
         maxFriends = configs["agentMaxFriends"]
         inheritancePolicy = configs["agentInheritancePolicy"]
+        ethicalFactor = configs["agentEthicalFactor"]
 
         endowments = []
         movements = []
@@ -442,6 +443,7 @@ class Sugarscape:
         friends = []
         spiceMetabolisms = []
         sugarMetabolisms = []
+        ethicalFactors = []
         
         minSpiceMetabolism = spiceMetabolism[0]
         minSugarMetabolism = sugarMetabolism[0]
@@ -462,6 +464,7 @@ class Sugarscape:
         minInterestRate = baseInterestRate[0]
         minLoanDuration = loanDuration[0]
         minFriends = maxFriends[0]
+        minEthicalFactor = ethicalFactor[0]
 
         maxSpiceMetabolism = spiceMetabolism[1]
         maxSugarMetabolism = sugarMetabolism[1]
@@ -482,6 +485,7 @@ class Sugarscape:
         maxInterestRate = baseInterestRate[1]
         maxLoanDuration = loanDuration[1]
         maxFriends = maxFriends[1]
+        maxEthicalFactor = ethicalFactor[1]
 
         currSpiceMetabolism = minSpiceMetabolism
         currSugarMetabolism = minSugarMetabolism
@@ -502,6 +506,7 @@ class Sugarscape:
         currInterestRate = minInterestRate
         currLoanDuration = minLoanDuration
         currFriends = minFriends
+        currEthicalFactor = minEthicalFactor
 
         sexDistributionCountdown = numAgents
         # Determine count of male agents and set as switch for agent generation
@@ -536,6 +541,7 @@ class Sugarscape:
             baseInterestRates.append(currInterestRate)
             loanDurations.append(currLoanDuration)
             friends.append(currFriends)
+            ethicalFactors.append(currEthicalFactor)
             # Assume properties are integers which range from min to max
             currSpiceMetabolism += 1
             currSugarMetabolism += 1
@@ -556,6 +562,7 @@ class Sugarscape:
             currInterestRate += 0.01
             currLoanDuration += 1
             currFriends += 1
+            currEthicalFactor += 1
 
             if maleToFemaleRatio != None and maleToFemaleRatio != 0:
                 if sexDistributionCountdown == 0:
@@ -604,6 +611,8 @@ class Sugarscape:
                 currLoanDuration = minLoanDuration
             if currFertility > maxFertility:
                 currFertility = minFertility
+            if currEthicalFactor > maxEthicalFactor:
+                currEthicalFactor = minEthicalFactor
 
         random.shuffle(spiceMetabolisms)
         random.shuffle(sugarMetabolisms)
@@ -624,13 +633,15 @@ class Sugarscape:
         random.shuffle(baseInterestRates)
         random.shuffle(loanDurations)
         random.shuffle(friends)
+        random.shuffle(ethicalFactors)
         for i in range(numAgents):
             agentEndowment = {"movement": movements.pop(), "maxAge": ages.pop(), "sugar": startingSugars.pop(),
                               "spice": startingSpices.pop(), "sex": sexes[i], "tags": tags.pop(), "aggressionFactor": aggressionFactors.pop(),
                               "maxFriends": friends.pop(), "vision": visions.pop(), "seed": self.__seed, "spiceMetabolism": spiceMetabolisms.pop(),
                               "sugarMetabolism": sugarMetabolisms.pop(), "inheritancePolicy": inheritancePolicy, "tradeFactor": tradeFactors.pop(),
                               "lookaheadFactor": lookaheadFactors.pop(), "lendingFactor": lendingFactors.pop(), "baseInterestRate": baseInterestRates.pop(),
-                              "loanDuration": loanDurations.pop(), "immuneSystem": immuneSystems.pop(), "fertilityFactor": fertilityFactors.pop()}
+                              "loanDuration": loanDurations.pop(), "immuneSystem": immuneSystems.pop(), "fertilityFactor": fertilityFactors.pop(),
+                              "ethicalFactor": ethicalFactors.pop()}
             if sexes[i] == "female":
                 agentEndowment["fertilityAge"] = femaleFertilityAges.pop()
                 agentEndowment["infertilityAge"] = femaleInfertilityAges.pop()
@@ -846,6 +857,7 @@ if __name__ == "__main__":
                      "agentMovement": [1, 6], "agentInheritancePolicy": "children", "agentTradeFactor": [0, 0], "agentLookaheadFactor": [1, 1],
                      "agentLendingFactor": [0, 0], "agentBaseInterestRate": [0, 0], "agentLoanDuration": [0, 0],
                      "agentImmuneSystemLength": 0, "agentFertilityFactor": [1, 1], "agentStartingQuadrants": [1, 2, 3, 4],
+                     "agentEthicalFactor": [0, 0],
                      "diseaseAggressionPenalty": [0, 0], "diseaseFertilityPenalty": [0, 0], "diseaseMovementPenalty": [0, 0],
                      "diseaseVisionPenalty": [0, 0], "diseaseSugarMetabolismPenalty": [0, 0], "diseaseSpiceMetabolismPenalty": [0, 0],
                      "diseaseTagStringLength": [0, 0], "startingDiseases": 0,
