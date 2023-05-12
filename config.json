@@ -50,7 +50,7 @@
     "environmentWidth": 50,
     "headlessMode": false,
     "logfile": "log.json",
-    "seed": 12345,
+    "seed": -1,
     "startingAgents": 500,
     "startingDiseases": 50,
     "timesteps": 200

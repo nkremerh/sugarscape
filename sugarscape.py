@@ -786,7 +786,7 @@ class Sugarscape:
         self.__log.write(logString)
 
     def __str__(self):
-        string = "{0}Timestep: {1}\nLiving Agents: {2}".format(str(self.__environment), self.__lastLoggedTimestep, len(self.__agents))
+        string = "{0}Seed: {1}\nTimestep: {2}\nLiving Agents: {3}".format(str(self.__environment), self.__seed, self.__lastLoggedTimestep, len(self.__agents))
         return string
 
 def parseConfigFile(configFile, configuration):
@@ -819,6 +819,9 @@ def parseConfigFile(configFile, configuration):
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
         configuration["timestep"] = sys.maxsize
+
+    if configuration["seed"] == -1:
+        configuration["seed"] = random.randrange(sys.maxsize)
     return configuration
 
 def parseOptions(configuration):
@@ -866,7 +869,7 @@ if __name__ == "__main__":
                      "environmentSugarConsumptionPollutionRate": 0, "environmentSpiceProductionPollutionRate": 0,
                      "environmentSugarProductionPollutionRate": 0, "environmentPollutionDiffusionDelay": 0, "environmentMaxCombatLoot": 0,
                      "environmentMaxSpice": 4, "environmentSpiceRegrowRate": 1, "environmentMaxTribes": 3,
-                     "logfile": None, "seed": 12345, "headlessMode": False, "timesteps": 1000}
+                     "logfile": None, "seed": -1, "headlessMode": False, "timesteps": 1000}
     configuration = parseOptions(configuration)
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
