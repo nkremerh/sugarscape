@@ -818,10 +818,13 @@ def parseConfigFile(configFile, configuration):
 
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
-        configuration["timestep"] = sys.maxsize
+        configuration["timesteps"] = sys.maxsize
 
     if configuration["seed"] == -1:
         configuration["seed"] = random.randrange(sys.maxsize)
+
+    if configuration["logfile"] == "":
+        configuration["logfile"] = None
     return configuration
 
 def parseOptions(configuration):
