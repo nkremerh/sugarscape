@@ -457,6 +457,51 @@ class Agent:
         else:
             return agent.getWealth()
 
+    '''
+    We have concluded that intensity, duration, and certainty are correct. We need to normalize/scale them to either TTL or total resource value.
+    Certainty will change once we implement a separation of movement and vision.
+    Currently proximity is 1, because if you can see it, you can eat it. Again, this will change when we change movement from vision. (1/distance in time steps)
+    Fecundity/purity are a single magical variable named futureBliss. The futureBliss variable represents the probability of future pleasure.
+    Extent is # of agents in our vision.
+    We will assume omniscience within our own neighborhood.
+    utilicalcSugar:
+    a.	Intensity: [0 : 1] (1/1+daysToDeath)
+    b.	Duration: [0 : 1] [(cell site wealth / agent metabolism) / maxSiteWealth], which is rational
+    c.  Certainty: [1 : 1] if agent can reach move cell, [0 : 0] otherwise
+    d.  Proximity: [0 : 1] the (1/distance in time steps), which is currently 1
+    e.  FutureBliss: [0 : 1] probability of immediate (or limited by computational horizon) future pleasure subsequent to this action
+    f.  Extent: (0 : 1] number of agents in neighborhood  / #agents_visible_in_maxVision
+    utility_of_cell = certainty * proximity * (intensity + duration + discount * futureBliss * futureReward??? + extent)
+    We may wish to weight the variables inside the parenthesis based on some relative importance that we will make up, based on how we think Bentham thought.
+    And of course, we will be right.
+    '''
+    def findActUtilitarianValueOfCell(self, cell):
+        cellSiteWealth = cell.getCurrSugar() + cell.getCurrSpice()
+        cellMaxSiteWealth = cell.getMaxSugar() + cell.getMaxSpice()
+        cellValue = 0
+        for agent in self.__neighborhood:
+            # Timesteps to reach cell, currently 1 since agent vision and movement are equal
+            timestepDistance = 1
+            agentVision = agent.getVision()
+            agentMetabolism = agent.getSugarMetabolism() + agent.getSpiceMetabolism()
+            # If agent does not have metabolism, set duration to seemingly infinite
+            cellDuration = cellSiteWealth / agentMetabolism if agentMetabolism > 0 else 0
+            certainty = 1 if agent.canReachCell(cell) == True else 0
+            proximity = 1 / timestepDistance
+            intensity = 1 / (1 + agent.findDaysToDeath())
+            # if metabolism == 0 case
+            duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
+            # Agent discount, futureBliss, and futureReward deal with purity and fecundity, not currently included
+            discount = 0
+            futureBliss = 0
+            futureReward = 0
+            # Assuming agent can only see in four cardinal directions
+            extent = len(self.__neighborhood) / (agentVision * 4) if agentVision > 0 else 1
+            agentValueOfCell = agent.getEthicalFactor() * (certainty * proximity * (intensity + duration + (discount * futureBliss * futureReward) + extent))
+            cellValue += agentValueOfCell
+            #cellValue += 1
+        return cellValue
+
     def findBestCell(self):
         self.findCellsInVision()
         neighborhood = []
@@ -549,51 +594,6 @@ class Agent:
         if bestCell == None:
             bestCell = self.__cell
         return bestCell
-
-    '''
-    We have concluded that intensity, duration, and certainty are correct. We need to normalize/scale them to either TTL or total resource value.
-    Certainty will change once we implement a separation of movement and vision.
-    Currently proximity is 1, because if you can see it, you can eat it. Again, this will change when we change movement from vision. (1/distance in time steps)
-    Fecundity/purity are a single magical variable named futureBliss. The futureBliss variable represents the probability of future pleasure.
-    Extent is # of agents in our vision.
-    We will assume omniscience within our own neighborhood.
-    utilicalcSugar:
-    a.	Intensity: [0 : 1] (1/1+daysToDeath)
-    b.	Duration: [0 : 1] [(cell site wealth / agent metabolism) / maxSiteWealth], which is rational
-    c.  Certainty: [1 : 1] if agent can reach move cell, [0 : 0] otherwise
-    d.  Proximity: [0 : 1] the (1/distance in time steps), which is currently 1
-    e.  FutureBliss: [0 : 1] probability of immediate (or limited by computational horizon) future pleasure subsequent to this action
-    f.  Extent: (0 : 1] number of agents in neighborhood  / #agents_visible_in_maxVision
-    utility_of_cell = certainty * proximity * (intensity + duration + discount * futureBliss * futureReward??? + extent)
-    We may wish to weight the variables inside the parenthesis based on some relative importance that we will make up, based on how we think Bentham thought.
-    And of course, we will be right.
-    '''
-    def findActUtilitarianValueOfCell(self, cell):
-        cellSiteWealth = cell.getCurrSugar() + cell.getCurrSpice()
-        cellMaxSiteWealth = cell.getMaxSugar() + cell.getMaxSpice()
-        cellValue = 0
-        for agent in self.__neighborhood:
-            # Timesteps to reach cell, currently 1 since agent vision and movement are equal
-            timestepDistance = 1
-            agentVision = agent.getVision()
-            agentMetabolism = agent.getSugarMetabolism() + agent.getSpiceMetabolism()
-            # If agent does not have metabolism, set duration to seemingly infinite
-            cellDuration = cellSiteWealth / agentMetabolism if agentMetabolism > 0 else 0
-            certainty = 1 if agent.canReachCell(cell) == True else 0
-            proximity = 1 / timestepDistance
-            intensity = 1 / (1 + agent.findDaysToDeath())
-            # if metabolism == 0 case
-            duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            # Agent discount, futureBliss, and futureReward deal with purity and fecundity, not currently included
-            discount = 0
-            futureBliss = 0
-            futureReward = 0
-            # Assuming agent can only see in four cardinal directions
-            extent = len(self.__neighborhood) / (agentVision * 4) if agentVision > 0 else 1
-            agentValueOfCell = agent.getEthicalFactor() * (certainty * proximity * (intensity + duration + (discount * futureBliss * futureReward) + extent))
-            cellValue += agentValueOfCell
-            #cellValue += 1
-        return cellValue
 
     def findBestFriend(self):
         if self.__tags == None:
