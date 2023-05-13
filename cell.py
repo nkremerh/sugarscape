@@ -17,28 +17,28 @@ class Cell:
         self.__neighbors = []
 
     def doSpiceConsumptionPollution(self, spiceConsumed):
-        consumptionPollutionRate = self.__environment.getSpiceConsumptionPollutionRate()
-        self.__currPollution += consumptionPollutionRate * spiceConsumed
+        consumptionPollutionFactor = self.__environment.getSpiceConsumptionPollutionFactor()
+        self.__currPollution += consumptionPollutionFactor * spiceConsumed
 
     def doSugarConsumptionPollution(self, sugarConsumed):
-        consumptionPollutionRate = self.__environment.getSugarConsumptionPollutionRate()
-        self.__currPollution += consumptionPollutionRate * sugarConsumed
+        consumptionPollutionFactor = self.__environment.getSugarConsumptionPollutionFactor()
+        self.__currPollution += consumptionPollutionFactor * sugarConsumed
 
     def doPollutionDiffusion(self):
         meanPollution = 0
         for neighbor in self.__neighbors:
             meanPollution += neighbor.getCurrPollution()
-        meanPollution = math.ceil(meanPollution / len(self.__neighbors))
+        meanPollution = meanPollution / len(self.__neighbors)
         for neighbor in self.__neighbors:
             neighbor.setCurrPollution(meanPollution)
 
     def doSpiceProductionPollution(self, spiceProduced):
-        productionPollutionRate = self.__environment.getSpiceProductionPollutionRate()
-        self.__currPollution += productionPollutionRate * spiceProduced
+        productionPollutionFactor = self.__environment.getSpiceProductionPollutionFactor()
+        self.__currPollution += productionPollutionFactor * spiceProduced
 
     def doSugarProductionPollution(self, sugarProduced):
-        productionPollutionRate = self.__environment.getSugarProductionPollutionRate()
-        self.__currPollution += productionPollutionRate * sugarProduced
+        productionPollutionFactor = self.__environment.getSugarProductionPollutionFactor()
+        self.__currPollution += productionPollutionFactor * sugarProduced
 
     def doTimestep(self, timestep):
         return

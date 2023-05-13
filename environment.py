@@ -20,10 +20,10 @@ class Environment:
         self.__seasonalGrowbackCountdown = configuration["seasonalGrowbackDelay"]
         self.__pollutionDiffusionDelay = configuration["pollutionDiffusionDelay"]
         self.__pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
-        self.__sugarConsumptionPollutionRate = configuration["sugarConsumptionPollutionRate"]
-        self.__spiceConsumptionPollutionRate = configuration["spiceConsumptionPollutionRate"]
-        self.__sugarProductionPollutionRate = configuration["sugarProductionPollutionRate"]
-        self.__spiceProductionPollutionRate = configuration["spiceProductionPollutionRate"]
+        self.__sugarConsumptionPollutionFactor = configuration["sugarConsumptionPollutionFactor"]
+        self.__spiceConsumptionPollutionFactor = configuration["spiceConsumptionPollutionFactor"]
+        self.__sugarProductionPollutionFactor = configuration["sugarProductionPollutionFactor"]
+        self.__spiceProductionPollutionFactor = configuration["spiceProductionPollutionFactor"]
         self.__maxCombatLoot = configuration["maxCombatLoot"]
         self.__equator = math.ceil(self.__height / 2)
         # Populate grid with NoneType objects
@@ -82,11 +82,11 @@ class Environment:
     def getPollutionDiffusionDelay(self):
         return self.__pollutionDiffusionDelay
 
-    def getSpiceProductionPollutionRate(self):
-        return self.__spiceProductionPollutionRate
+    def getSpiceProductionPollutionFactor(self):
+        return self.__spiceProductionPollutionFactor
 
-    def getSugarProductionPollutionRate(self):
-        return self.__sugarProductionPollutionRate
+    def getSugarProductionPollutionFactor(self):
+        return self.__sugarProductionPollutionFactor
 
     def getSeasonalGrowbackCountdown(self):
         return self.__seasonalGrowbackCountdown
@@ -100,11 +100,11 @@ class Environment:
     def getSeasonSouth(self):
         return self.__seasonSouth
 
-    def getSpiceConsumptionPollutionRate(self):
-        return self.__spiceConsumptionPollutionRate
+    def getSpiceConsumptionPollutionFactor(self):
+        return self.__spiceConsumptionPollutionFactor
 
-    def getSugarConsumptionPollutionRate(self):
-        return self.__sugarConsumptionPollutionRate
+    def getSugarConsumptionPollutionFactor(self):
+        return self.__sugarConsumptionPollutionFactor
 
     def getSugarscape(self):
         return self.__sugarscape
@@ -156,17 +156,17 @@ class Environment:
     def setSeasonSouth(self, seasonSouth):
         self.__seasonSouth = seasonSouth
 
-    def setSpiceConsumptionPollutionRate(self, spiceConsumptionPollutionRate):
-        self.__spiceConsumptionPollutionRate = spiceConsumptionPollutionRate
+    def setSpiceConsumptionPollutionFactor(self, spiceConsumptionPollutionFactor):
+        self.__spiceConsumptionPollutionFactor = spiceConsumptionPollutionFactor
 
-    def setSugarConsumptionPollutionRate(self, sugarConsumptionPollutionRate):
-        self.__sugarConsumptionPollutionRate = sugarConsumptionPollutionRate
+    def setSugarConsumptionPollutionFactor(self, sugarConsumptionPollutionFactor):
+        self.__sugarConsumptionPollutionFactor = sugarConsumptionPollutionFactor
 
-    def setSpiceProductionPollutionRate(self, spiceProductionPollutionRate):
-        self.__spiceProductionPollutionRate = spiceProductionPollutionRate
+    def setSpiceProductionPollutionFactor(self, spiceProductionPollutionFactor):
+        self.__spiceProductionPollutionFactor = spiceProductionPollutionFactor
  
-    def setSugarProductionPollutionRate(self, sugarProductionPollutionRate):
-        self.__sugarProductionPollutionRate = sugarProductionPollutionRate
+    def setSugarProductionPollutionFactor(self, sugarProductionPollutionFactor):
+        self.__sugarProductionPollutionFactor = sugarProductionPollutionFactor
 
     def setSugarscape(self, sugarscape):
         self.__sugarscape = sugarscape
