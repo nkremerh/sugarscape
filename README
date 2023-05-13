@@ -15,69 +15,90 @@ agentAggressionFactor: [int, int]
     Set the aggressiveness of an agent.
     The more aggressive an agent the more likely they will be enticed by combat options.
     Default: [0, 0]
+
 agentBaseInterestRate: [float, float]
     Set the interest rate for an agent's lending as a percentage.
     Default: [0.0, 0.0]
+
 agentEthicalFactor: [int, int]
     Set the agent weight of ethical decisionmaking over biological imperatives.
     Default: [0, 0]
+
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
     Default: [40, 50]
+
 agentFemaleFertilityAge: [int, int]
     Set the timestep age at which female agents become fertile.
     Default: [12, 15]
+
 agentFertilityFactor: [int, int]
     Set the fertility bonus for the agent.
     The higher the factor, the fewer resources the agent expends to reproduce.
     Default: [1, 1]
+
 agentImmuneSystemLength: int
     Set the length of agent immune system tags to integer length.
     Default: 0
+
 agentInheritancePolicy: string
     Set wealth inheritance policy on agent death to given string.
     Options: "children". "daughters", "friends", "none", "sons"
     Default: "none"
+
 agentLendingFactor: [int, int]
     Set lending aggressiveness of agent.
     The more aggressive an agent is to lend, the higher the offered interest rate will be.
     Default: [0, 0]
+
 agentLoanDuration: [int, int]
     Set the agent's provided loan duration in timesteps.
     Default: [0, 0]
+
 agentLookaheadFactor: [int, int]
     Set the agent's consideration of metabolic costs in timesteps ahead.
     Default: [1, 1]
+
 agentMaleInfertilityAge: [int, int]
     Set the timestep age at which male agents become infertile.
     Default: [50, 60]
+
 agentMaleFertilityAge: [int, int]
     Set the timestep age at which male agents become fertile.
     Default: [12, 15].
+
 agentMaleToFemaleRatio: float
     Set the ratio of males to females in starting population as a real number.
     Default: 1.0
+
 agentMaxAge: [int, int]
     Set maximum agent age in timesteps.
     Default: [60, 100]
+
 agentMaxFriends: [int, int]
     Set maximum number of friends tracked by an agent.
     Default: [0, 0]
+
 agentMovement: [int, int]
     Set maximum movement distance per timestep for agent.
     Default: [1, 6]
+
 agentReplacements: int
     Set maximum number of agents to replace in environment on agent death.
     Default: 0
+
 agentSpiceMetabolism: [int, int]
     Set agent metabolism for spice per timestep.
     Default: [1, 4]
+
 agentStartingSpice: [int, int]
     Set agent starting spice hold.
     Default: [10, 40]
+
 agentStartingSugar: [int, int]
     Set agent starting sugar hold.
     Default: [10, 40]
+
 agentStartingQuadrants: [int (,int, int, int)]
     Set quadrants agents will initially be placed.
     Quadrant 1 begins in the top left.
@@ -85,114 +106,146 @@ agentStartingQuadrants: [int (,int, int, int)]
     Quadrant 3 begins in the bottom right.
     Quadrant 4 begins in the bottom left.
     Default: [1, 2, 3, 4]
+
 agentSugarMetabolism: [int, int]
     Set agent metabolism for sugar per timestep.
     Default: [1, 4]
+
 agentTagStringLength: int
     Set agent cultural tags string length.
     Default: 0
+
 agentTradeFactor: [int, int]
     Set agent trade aggressiveness.
     The more aggressive in trading an agent, the more resources they will attempt to trade.
     Default: [0, 0]
+
 agentVision: [int, int]
     Set the distance in the four cardinal directions an agent can see.
     Default: [1, 6]
+
 diseaseAggressionPenalty: [int, int]
     Set the impact a disease will have on an agent's aggressiveness.
     Note: Negative values constitute an aggressiveness decrease.
     Default: [0, 0]
+
 diseaseFertilityPenalty: [int, int]
     Set the impact a disease will have on an agent's fertility.
     Note: Negative values constitute a lack of fertility.
     Default: [0, 0]
+
 diseaseMovementPenalty: [int, int]
     Set the impact a disease will have on an agent's movement distance.
     Note: Negative values constitute a decrease in movement range.
     Default: [0, 0]
+
 diseaseSpiceMetabolismPenalty: [int, int]
     Set the impact a disease will have on an agent's spice metabolism rate.
     Note: Negative values constitute a decrease in agent metabolism.
     Default: [0, 0]
+
 diseaseSugarMetabolismPenalty: [int, int]
     Set the impact a disease will have on an agent's sugar metabolism rate.
     Note: Negative values constitute a decrease in agent metabolism.
     Default: [0, 0]
+
 diseaseTagStringLength: [int, int]
     Set the length of disease tags.
     The longer the length, the longer an agent will have the disease.
     Default: [0, 0]
+
 diseaseVisionPenalty: [int, int]
     Set the impact a disease will have on an agent's vision.
     Note: Negative values constitute a decrease in agent vision.
     Default: [0, 0]
+
 environmentHeight: int
     Set the height in cells of the Sugarscape environment.
     Default: 50
+
 environmentMaxCombatLoot: int
     Set the maximum reward agents receive from winning combat.
     Default: 0
+
 environmentMaxSpice: int
     Set the maximum amount of spice at any cell in the environment.
     This amount will only be present at spice peaks.
     Default: 4
+
 environmentMaxSugar: int
     Set the maximum amount of sugar at any cell in the environment.
     This amount will only be present at sugar peaks.
     Default: 4
+
 environmentMaxTribes: int
     Set the maximum number of tribes in the starting population.
     Default: 0
+
 environmentPollutionDiffusionDelay: int
     Set the delay interval in timesteps when pollution is diffused across the environment.
     Default: 0
+
 environmentSeasonalGrowbackDelay: int
     Set the delay interval in timesteps when resources are regrown when cell is in a dry season.
     Default: 0
+
 environmentSeasonInterval: int
     Set the interval in timesteps when environment seasons change.
     Seasons change along the equator of the environment.
     Default: 0
+
 environmentSpiceConsumptionPollutionRate: int
     Set the amount of pollution generated by an agent consuming spice at a cell.
     Default: 0
+
 environmentSpiceProductionPollutionRate: int
     Set the amount of pollution generated by an agent collecting spice at a cell.
     Default: 0
+
 environmentSpiceRegrowRate: int
     Set the amount of spice regrown across the environment per timestep.
     Each cell can only grow up to their maximum spice value.
     Default: 1
+
 environmentSugarConsumptionPollutionRate: int
     Set the amount of pollution generated by an agent consuming sugar at a cell.
     Default: 0
+
 environmentSugarProductionPollutionRate: int
     Set the amount of pollution generated by an agent collecting sugar at a cell.
     Default: 0
+
 environmentSugarRegrowRate: int
     Set the amount of sugar regrown across the environment per timestep.
     Each cell can only grow up to their maximum sugar value.
     Default: 1
+
 environmentWidth: int
     Set the width in cells of the Sugarscape environment.
     Default: 50
+
 headlessMode: bool
     Set whether the GUI is enabled.
     Default: true
+
 logfile: path
     Set the path of the log file.
     Default: ""
+
 seed: int
     Set the seed value for the random number generator.
     Note: Value of -1 causes simulation to generate a random seed.
     Note: Reusing a seed ensures deterministic simulation outcomes.
     Default: -1
+
 startingAgents: int
     Set the number of agents placed in the initial population.
     Default: 500
+
 startingDiseases: int
     Set the number of diseases placed in the initial population.
     Default: 0
+
 timesteps: int
     Set the number of timesteps the simulation runs.
     Note: Value of -1 causes simulation to run forever or until there are no more living agents.
