@@ -183,7 +183,7 @@ class Sugarscape:
         self.replaceDeadAgents()
         self.updateRuntimeStats()
         self.writeToLog()
-        print("Timestep: {0}".format(self.__timestep)) 
+        print("Timestep: {0}\nLiving Agents: {1}".format(self.__timestep, len(self.__agents)))
         self.__timestep += 1
         if self.__end == True or len(self.__agents) == 0:
             self.setEnd()

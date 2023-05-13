@@ -10,7 +10,69 @@ Python 3
 Usage:
 python sugarscape.py
 
+Preconfigured Examples from Growing Artificial Societies:
+A selection of examples can be found in the examples directory.
+Each demonstrates a concept from the book Growing Artificial Societies.
+Examples are included to demonstrate adherence to or deviation from the source material.
+
+immediate_growback.json:
+    Agent sugar collection with immediate sugar growback (pgs. 21-26)
+
+constant_growback.json:
+    Agent sugar collection with constant sugar growback (pgs. 28-30)
+
+agent_replacement.json:
+    Agent replacement with constant sugar growback (pgs. 32-33).
+
+seasonal_migration.json:
+    Agent migration with seasonal sugar growback (pgs. 43-45)
+
+pollution_formation.json:
+    Agent sugar collection with constant sugar growback and pollution (pgs. 45-50)
+
+reproduction_basic.json:
+    Agent reproduction with constant sugar growback (pgs. 55-58)
+
+reproduction_limited.json:
+    Agent reproduction with lower infertility age, lower reproduction cost, and constant sugar growback (pgs. 64-66)
+
+reproduction_inheritance.json:
+    Agent reproduction with child wealth inheritance and constant sugar growback (pgs. 67-68)
+
+cultural_tagging.json
+    Agent cultural tagging with constant sugar growback (pgs. 72-79)
+
+combat_unlimited.json:
+    Agent combat with unlimited combat loot and constant sugar growback (pgs. 82-83)
+
+combat_limited.json:
+    Agent combat with unlimited combat loot and constant sugar growback (pgs. 86-90)
+
+spice_growback.json:
+    Agent sugar and spice collection with constant sugar and spice growback (pgs. 96-99)
+
+trade_basic.json:
+    Agent sugar and spice collection with trading and constant sugar and spice growback (pgs. 101-107)
+
+trade_replacement.json:
+    Agent trading with agent replacement and constant sugar and spice growback (pgs. 120-122)
+
+trade_pollution.json:
+    Agent trading with sugar pollution and constant sugar and spice growback (pgs. 127-129)
+
+foresight_basic.json:
+    Agent sugar and spice collection with foresight consideration and constant sugar and spice growback (pgs. 129-130)
+
+lending_basic.json:
+    Agent sugar and spice collection with lending and constant sugar and spice growback (pgs. 131-133)
+
+disease_basic.json:
+    Agent sugar and spice collection with disease and constant sugar and spice growback (pgs. 141-147)
+
 JSON Configuration File Options:
+The simulation provides a default set of options in a dictionary in the sugarscape.py file.
+A JSON configuration file can also be passed to the simulation, overwriting the default configuration using the --conf option.
+
 agentAggressionFactor: [int, int]
     Set the aggressiveness of an agent.
     The more aggressive an agent the more likely they will be enticed by combat options.
