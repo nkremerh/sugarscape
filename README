@@ -226,7 +226,7 @@ environmentWidth: int
 
 headlessMode: bool
     Set whether the GUI is enabled.
-    Default: true
+    Default: false
 
 logfile: path
     Set the path of the log file.
