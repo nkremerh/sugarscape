@@ -109,7 +109,6 @@ class Sugarscape:
         if len(activeCells) == 0:
             return
 
-        #totalCells = self.__environmentHeight * self.__environmentWidth
         totalCells = len(activeCells)
         if len(self.__agents) + numAgents > totalCells:
             print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
@@ -166,7 +165,8 @@ class Sugarscape:
         startX2 = math.ceil(height * 0.3)
         startY1 = math.ceil(width * 0.3)
         startY2 = math.ceil(width * 0.7)
-        radius = math.ceil(math.sqrt(2 * (height + width)))
+        sugarRadiusScale = 2
+        radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
         self.addSugarPeak(startX1, startY1, radius, maxSugar)
         self.addSugarPeak(startX2, startY2, radius, maxSugar)
         
@@ -174,6 +174,8 @@ class Sugarscape:
         startX2 = math.ceil(height * 0.3)
         startY1 = math.ceil(width * 0.7)
         startY2 = math.ceil(width * 0.3)
+        spiceRadiusScale = 2
+        radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
         self.addSpicePeak(startX1, startY1, radius, maxSpice)
         self.addSpicePeak(startX2, startY2, radius, maxSpice)
         self.__environment.setCellNeighbors()
@@ -859,23 +861,23 @@ if __name__ == "__main__":
     configuration = {"agentAggressionFactor": [0, 0],
                      "agentBaseInterestRate": [0.0, 0.0],
                      "agentEthicalFactor": [0, 0],
-                     "agentFemaleInfertilityAge": [40, 50],
-                     "agentFemaleFertilityAge": [12, 15],
-                     "agentFertilityFactor": [1, 1],
+                     "agentFemaleInfertilityAge": [0, 0],
+                     "agentFemaleFertilityAge": [0, 0],
+                     "agentFertilityFactor": [0, 0],
                      "agentImmuneSystemLength": 0,
                      "agentInheritancePolicy": "none",
                      "agentLendingFactor": [0, 0],
                      "agentLoanDuration": [0, 0],
-                     "agentLookaheadFactor": [1, 1],
-                     "agentMaleInfertilityAge": [50, 60],
-                     "agentMaleFertilityAge": [12, 15],
+                     "agentLookaheadFactor": [0, 0],
+                     "agentMaleInfertilityAge": [0, 0],
+                     "agentMaleFertilityAge": [0, 0],
                      "agentMaleToFemaleRatio": 1.0,
-                     "agentMaxAge": [60, 100],
+                     "agentMaxAge": [-1, -1],
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentReplacements": 0,
-                     "agentSpiceMetabolism": [1, 4],
-                     "agentStartingSpice": [10, 40],
+                     "agentSpiceMetabolism": [0, 0],
+                     "agentStartingSpice": [0, 0],
                      "agentStartingSugar": [10, 40],
                      "agentStartingQuadrants": [1, 2, 3, 4],
                      "agentSugarMetabolism": [1, 4],
@@ -891,7 +893,7 @@ if __name__ == "__main__":
                      "diseaseVisionPenalty": [0, 0],
                      "environmentHeight": 50,
                      "environmentMaxCombatLoot": 0,
-                     "environmentMaxSpice": 4,
+                     "environmentMaxSpice": 0,
                      "environmentMaxSugar": 4,
                      "environmentMaxTribes": 0,
                      "environmentPollutionDiffusionDelay": 0,
@@ -899,7 +901,7 @@ if __name__ == "__main__":
                      "environmentSeasonInterval": 0,
                      "environmentSpiceConsumptionPollutionFactor": 0,
                      "environmentSpiceProductionPollutionFactor": 0,
-                     "environmentSpiceRegrowRate": 1,
+                     "environmentSpiceRegrowRate": 0,
                      "environmentSugarConsumptionPollutionFactor": 0,
                      "environmentSugarProductionPollutionFactor": 0,
                      "environmentSugarRegrowRate": 1,

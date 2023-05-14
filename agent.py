@@ -407,6 +407,7 @@ class Agent:
             transactions = 0
 
             while tradeFlag == True:
+                # MRS > 1 indicates the agent has less need of spice and should become the spice seller
                 if traderMRS > self.__marginalRateOfSubstitution:
                     spiceSeller = trader
                     sugarSeller = self
@@ -417,7 +418,8 @@ class Agent:
                 sugarSellerMRS = sugarSeller.getMarginalRateOfSubstitution()
 
                 # Find geometric mean of spice and sugar seller MRS for trade price
-                tradePrice = int(math.ceil(math.sqrt(spiceSellerMRS * sugarSellerMRS)))
+                #tradePrice = int(math.ceil(math.sqrt(spiceSellerMRS * sugarSellerMRS)))
+                tradePrice = math.ceil(math.sqrt(spiceSellerMRS * sugarSellerMRS))
                 spiceSellerSpice = spiceSeller.getSpice()
                 spiceSellerSugar = spiceSeller.getSugar()
                 sugarSellerSpice = sugarSeller.getSpice()
@@ -512,9 +514,6 @@ class Agent:
         neighborhood.append(self)
         self.__neighborhood = neighborhood
         retaliators = self.findRetaliatorsInVision()
-        retaliationPossible = {}
-        for tribe in retaliators:
-            retaliationPossible[tribe] = True if self.__tribe == tribe or retaliators[tribe] > self.__wealth else False
         totalMetabolism = self.__sugarMetabolism + self.__spiceMetabolism
         sugarMetabolismProportion = 0
         spiceMetabolismProportion = 0
@@ -546,37 +545,44 @@ class Agent:
             preyWealth = prey.getWealth() if prey != None else 0
             preySugar = prey.getSugar() if prey != None else 0
             preySpice = prey.getSpice() if prey != None else 0
+            # Aggression factor may lead agent to see more reward than possible meaning combat itself is a reward
             welfarePreySugar = self.__aggressionFactor * min(combatMaxLoot, preySugar)
             welfarePreySpice = self.__aggressionFactor * min(combatMaxLoot, preySpice)
 
-            # Modify value of cell relative to the metabolism needs of the agent
-            sugarLookahead = self.__sugarMetabolism * self.__lookaheadFactor
-            spiceLookahead = self.__spiceMetabolism * self.__lookaheadFactor
-            cellSugarTotal = (self.__sugar + cellSugar + welfarePreySugar) - sugarLookahead
-            cellSpiceTotal = (self.__spice + cellSpice + welfarePreySpice) - spiceLookahead
-            if cellSugarTotal < 0:
-                cellSugarTotal = 0
-            if cellSpiceTotal < 0:
-                cellSpiceTotal = 0
-            welfareFunction = (cellSugarTotal ** sugarMetabolismProportion) * (cellSpiceTotal ** spiceMetabolismProportion)
-            if self.__tags != None and len(self.__tags) > 0:
-                self.findTribe()
-                fractionZeroesInTags = self.__tagZeroes / len(self.__tags)
-                fractionOnesInTags = 1 - fractionZeroesInTags
-                spiceMetabolism = self.__spiceMetabolism if self.__spiceMetabolism != 0 else 1
-                sugarMetabolism = self.__sugarMetabolism if self.__sugarMetabolism != 0 else 1
-                tagPreferences = (self.__sugarMetabolism * fractionZeroesInTags) + (self.__spiceMetabolism * fractionOnesInTags)
-                if tagPreferences == 0:
-                    tagPreferences = 1
-                tagPreferencesSugar = (self.__sugarMetabolism / tagPreferences) * fractionZeroesInTags
-                tagPreferencesSpice = (self.__spiceMetabolism / tagPreferences) * fractionOnesInTags
-                welfareFunction = (cellSugarTotal ** tagPreferencesSugar) * (cellSpiceTotal ** tagPreferencesSpice)
-            cellWealth = welfareFunction / (1 + cell.getCurrPollution())
-            if self.__ethicalFactor > 0:
-                cellWealth2 = self.findActUtilitarianValueOfCell(cell)
+            # Avoid attacking stronger agents
+            if prey != None and preyWealth > self.__wealth:
+                continue
 
-            # Avoid attacking stronger agents or those protected from retaliation after killing prey
-            if prey != None and (preyWealth > self.__wealth or (retaliators[preyTribe] > self.__wealth + cellWealth)):
+            cellWealth = 0
+            if self.__ethicalFactor > 0:
+                cellwealth = self.findActUtilitarianValueOfCell(cell)
+            else:
+                # Modify value of cell relative to the metabolism needs of the agent
+                sugarLookahead = self.__sugarMetabolism * self.__lookaheadFactor
+                spiceLookahead = self.__spiceMetabolism * self.__lookaheadFactor
+                cellSugarTotal = (self.__sugar + cellSugar + welfarePreySugar) - sugarLookahead
+                cellSpiceTotal = (self.__spice + cellSpice + welfarePreySpice) - spiceLookahead
+                if cellSugarTotal < 0:
+                    cellSugarTotal = 0
+                if cellSpiceTotal < 0:
+                    cellSpiceTotal = 0
+                welfareFunction = (cellSugarTotal ** sugarMetabolismProportion) * (cellSpiceTotal ** spiceMetabolismProportion)
+                if self.__tags != None and len(self.__tags) > 0:
+                    self.findTribe()
+                    fractionZeroesInTags = self.__tagZeroes / len(self.__tags)
+                    fractionOnesInTags = 1 - fractionZeroesInTags
+                    spiceMetabolism = self.__spiceMetabolism if self.__spiceMetabolism != 0 else 1
+                    sugarMetabolism = self.__sugarMetabolism if self.__sugarMetabolism != 0 else 1
+                    tagPreferences = (self.__sugarMetabolism * fractionZeroesInTags) + (self.__spiceMetabolism * fractionOnesInTags)
+                    if tagPreferences == 0:
+                        tagPreferences = 1
+                    tagPreferencesSugar = (self.__sugarMetabolism / tagPreferences) * fractionZeroesInTags
+                    tagPreferencesSpice = (self.__spiceMetabolism / tagPreferences) * fractionOnesInTags
+                    welfareFunction = (cellSugarTotal ** tagPreferencesSugar) * (cellSpiceTotal ** tagPreferencesSpice)
+                cellWealth = welfareFunction / (1 + cell.getCurrPollution())
+
+            # Avoid attacking agents protected via retaliation
+            if prey != None and retaliators[preyTribe] > self.__wealth + cellWealth:
                 continue
 
             if bestCell == None:
@@ -591,6 +597,7 @@ class Agent:
                 bestRange = travelDistance
                 bestCell = cell
                 bestWealth = cellWealth
+
         if bestCell == None:
             bestCell = self.__cell
         return bestCell
@@ -919,6 +926,8 @@ class Agent:
         return self.getAlive()
 
     def isCreditWorthy(self, sugarLoanAmount, spiceLoanAmount, loanDuration):
+        if loanDuration == 0:
+            return False
         sugarLoanCostPerTimestep = sugarLoanAmount / loanDuration
         spiceLoanCostPerTimestep = spiceLoanAmount / loanDuration
         sugarIncomePerTimestep = ((self.__sugarMeanIncome - self.__sugarMetabolism) - self.findCurrentSugarDebt()) - sugarLoanCostPerTimestep
