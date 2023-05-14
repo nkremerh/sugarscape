@@ -1,5 +1,3 @@
-import disease
-
 import math
 import random
 import sys
@@ -262,7 +260,6 @@ class Agent:
         self.__sugar = 0
         self.__spice = 0
 
-    # TODO: Book implies each step of agent's actions per timestep happen in waves not one agent doing all at once (pg. 131)
     def doLending(self):
         self.updateLoans()
         # If not a lender, skip lending
@@ -372,7 +369,6 @@ class Agent:
             self.__lastMoved = self.__timestep
             self.moveToBestCell()
             self.updateNeighbors()
-            # TODO: Determine order of operations for post-move actions
             self.collectResourcesAtCell()
             self.doMetabolism()
             # If dead from metabolism, skip remainder of timestep
@@ -418,7 +414,6 @@ class Agent:
                 sugarSellerMRS = sugarSeller.getMarginalRateOfSubstitution()
 
                 # Find geometric mean of spice and sugar seller MRS for trade price
-                #tradePrice = int(math.ceil(math.sqrt(spiceSellerMRS * sugarSellerMRS)))
                 tradePrice = math.ceil(math.sqrt(spiceSellerMRS * sugarSellerMRS))
                 spiceSellerSpice = spiceSeller.getSpice()
                 spiceSellerSugar = spiceSeller.getSugar()
@@ -501,7 +496,6 @@ class Agent:
             extent = len(self.__neighborhood) / (agentVision * 4) if agentVision > 0 else 1
             agentValueOfCell = agent.getEthicalFactor() * (certainty * proximity * (intensity + duration + (discount * futureBliss * futureReward) + extent))
             cellValue += agentValueOfCell
-            #cellValue += 1
         return cellValue
 
     def findBestCell(self):

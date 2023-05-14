@@ -53,7 +53,6 @@ class Sugarscape:
         newDisease = disease.Disease(diseaseID, diseaseConfig)
         agent.catchDisease(newDisease)
 
-    # TODO: Make more consistent with book, dispersion more tightly concentrated than in book (ref: pg. 22)
     def addSpicePeak(self, startX, startY, radius, maxSpice):
         height = self.__environment.getHeight()
         width = self.__environment.getWidth()
@@ -77,7 +76,6 @@ class Sugarscape:
                     self.__environment.getCell(i, j).setMaxSpice(cellMaxCapacity)
                     self.__environment.getCell(i, j).setCurrSpice(cellMaxCapacity)
 
-    # TODO: Make more consistent with book, dispersion more tightly concentrated than in book (ref: pg. 22)
     def addSugarPeak(self, startX, startY, radius, maxSugar):
         height = self.__environment.getHeight()
         width = self.__environment.getWidth()

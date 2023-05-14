@@ -24,10 +24,8 @@ class GUI:
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
         playButton.grid(row=0, column=0, sticky="nsew")
-        stepButton = tkinter.Button(window, text="Step Backward", command=self.doStepBackwardButton, relief=tkinter.RAISED)
-        stepButton.grid(row=0, column=1, sticky="nsew")
         stepButton = tkinter.Button(window, text="Step Forward", command=self.doStepForwardButton, relief=tkinter.RAISED)
-        stepButton.grid(row=0, column=2, sticky="nsew")
+        stepButton.grid(row=0, column=1, sticky="nsew")
 
         agentColorButton = tkinter.Menubutton(window, text="Agent Coloring", relief=tkinter.RAISED)
         agentColorMenu = tkinter.Menu(agentColorButton, tearoff=0)
@@ -39,7 +37,7 @@ class GUI:
         self.__lastSelectedAgentColor.set(agentColorNames[0])  # Default 
         for name in agentColorNames:
             agentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.__lastSelectedAgentColor, command=self.doAgentColorMenu, indicatoron=True)
-        agentColorButton.grid(row=0, column=3, sticky="nsew")
+        agentColorButton.grid(row=0, column=2, sticky="nsew")
 
         environmentColorButton = tkinter.Menubutton(window, text="Environment Coloring", relief=tkinter.RAISED)
         environmentColorMenu = tkinter.Menu(environmentColorButton, tearoff=0)
@@ -51,10 +49,10 @@ class GUI:
         self.__lastSelectedEnvironmentColor.set(environmentColorNames[0])  # Default 
         for name in environmentColorNames:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.__lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
-        environmentColorButton.grid(row=0, column=4, sticky="nsew")
+        environmentColorButton.grid(row=0, column=3, sticky="nsew")
 
         statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.LEFT)
-        statsLabel.grid(row=1, column=0, columnspan=5, sticky="nsew")
+        statsLabel.grid(row=1, column=0, columnspan=4, sticky="nsew")
 
         self.__widgets["playButton"] = playButton
         self.__widgets["stepButton"] = stepButton
@@ -81,7 +79,7 @@ class GUI:
         return ["Pollution"]
 
     def configureWindow(self):
-        numMenuColumns = 5
+        numMenuColumns = 4
         borderEdge = 5
         window = tkinter.Tk()
         self.__window = window
