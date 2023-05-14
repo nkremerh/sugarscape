@@ -104,7 +104,6 @@ class GUI:
         window.bind("<Escape>", self.doWindowClose)
         window.bind("<space>", self.doPlayButton)
         window.bind("<Right>", self.doStepForwardButton)
-        window.bind("<Left>", self.doStepBackwardButton)
         canvas.bind("<Button-1>", self.doClick)
 
     def destroyGUI(self):
@@ -133,10 +132,6 @@ class GUI:
         self.__sugarscape.setRun()
         self.__widgets["playButton"].config(text="  Play Simulation  " if self.__sugarscape.getRun() == False else "Pause Simulation")
         self.doTimestep()
-
-    # TODO: Go back one timestep
-    def doStepBackwardButton(self, *args):
-        return
 
     def doStepForwardButton(self, *args):
         if self.__sugarscape.getEnd() == True:
