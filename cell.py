@@ -25,12 +25,13 @@ class Cell:
         self.__currPollution += consumptionPollutionFactor * sugarConsumed
 
     def doPollutionDiffusion(self):
-        meanPollution = 0
+        meanPollution = self.__currPollution
         for neighbor in self.__neighbors:
             meanPollution += neighbor.getCurrPollution()
-        meanPollution = meanPollution / len(self.__neighbors)
+        meanPollution = meanPollution / (len(self.__neighbors) + 1)
         for neighbor in self.__neighbors:
             neighbor.setCurrPollution(meanPollution)
+        self.__currPollution = meanPollution
 
     def doSpiceProductionPollution(self, spiceProduced):
         productionPollutionFactor = self.__environment.getSpiceProductionPollutionFactor()
@@ -42,6 +43,13 @@ class Cell:
 
     def doTimestep(self, timestep):
         return
+
+    def findNeighbors(self):
+        self.__neighbors = []
+        self.__neighbors.append(self.getNorthNeighbor())
+        self.__neighbors.append(self.getSouthNeighbor())
+        self.__neighbors.append(self.getEastNeighbor())
+        self.__neighbors.append(self.getWestNeighbor())
 
     def getAgent(self):
         return self.__agent
@@ -76,8 +84,8 @@ class Cell:
         return self.__maxSugar 
 
     def getNeighbors(self):
-        #if len(self.__neighbors) == 0:
-        self.setNeighbors()
+        if len(self.__neighbors) == 0:
+            self.findNeighbors()
         return self.__neighbors
 
     def getNorthNeighbor(self):
@@ -140,13 +148,8 @@ class Cell:
     def setMaxSugar(self, maxSugar):
         self.__maxSugar = maxSugar
 
-    def setNeighbors(self):
-        if(len(self.__neighbors) < 4):
-            self.__neighbors = []
-            self.__neighbors.append(self.getNorthNeighbor())
-            self.__neighbors.append(self.getSouthNeighbor())
-            self.__neighbors.append(self.getEastNeighbor())
-            self.__neighbors.append(self.getWestNeighbor())
+    def setNeighbors(self, neighbors):
+        self.__neighbors = neighbors
 
     def setSeason(self, season):
         self.__season = season

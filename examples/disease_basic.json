@@ -51,5 +51,5 @@
     "seed": 12345,
     "startingAgents": 400,
     "startingDiseases": 10,
-    "timesteps": 200
+    "timesteps": 500
 }

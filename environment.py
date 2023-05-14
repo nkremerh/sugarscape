@@ -118,7 +118,7 @@ class Environment:
     def setCellNeighbors(self):
         for i in range(self.__height):
             for j in range(self.__width):
-                self.__grid[i][j].setNeighbors()
+                self.__grid[i][j].findNeighbors()
 
     def setEquator(self, equator):
         self.__equator = equator
