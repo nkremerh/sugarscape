@@ -789,13 +789,42 @@ class Sugarscape:
         string = "{0}Seed: {1}\nTimestep: {2}\nLiving Agents: {3}".format(str(self.__environment), self.__seed, self.__lastLoggedTimestep, len(self.__agents))
         return string
 
-def parseConfigFile(configFile, configuration):
+def parseConfiguration(configFile, configuration):
     file = open(configFile)
     options = json.loads(file.read())
     for opt in configuration:
         if opt in options:
             configuration[opt] = options[opt]
+    return configuration
 
+def parseOptions(configuration):
+    commandLineArgs = sys.argv[1:]
+    shortOptions = "ch:"
+    longOptions = ["conf=", "help"]
+    try:
+        args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
+    except getopt.GetoptError as err:
+        print(err)
+        printHelp()
+    nextArg = 0
+    for currArg, currVal in args:
+        nextArg += 1
+        if currArg in("-c", "--conf"):
+            if currArg == "-c" and nextArg < len(commandLineArgs):
+                currVal = commandLineArgs[nextArg]
+            if currVal == "":
+                print("No config file provided.")
+                printHelp()
+            parseConfiguration(currVal, configuration)
+        elif currArg in ("-h", "--help"):
+            printHelp()
+    return configuration
+
+def printHelp():
+    print("Usage:\n\tpython sugarscape.py --conf config.json\n\nOptions:\n\t-c,--conf\tUse specified config file for simulation settings.\n\t-h,--help\tDisplay this message.")
+    exit(0)
+
+def verifyConfiguration(configuration):
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
     if configuration["startingAgents"] > totalCells:
@@ -826,33 +855,6 @@ def parseConfigFile(configFile, configuration):
     if configuration["logfile"] == "":
         configuration["logfile"] = None
     return configuration
-
-def parseOptions(configuration):
-    commandLineArgs = sys.argv[1:]
-    shortOptions = "ch:"
-    longOptions = ["conf=", "help"]
-    try:
-        args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
-    except getopt.GetoptError as err:
-        print(err)
-        printHelp()
-    nextArg = 0
-    for currArg, currVal in args:
-        nextArg += 1
-        if currArg in("-c", "--conf"):
-            if currArg == "-c" and nextArg < len(commandLineArgs):
-                currVal = commandLineArgs[nextArg]
-            if currVal == "":
-                print("No config file provided.")
-                printHelp()
-            parseConfigFile(currVal, configuration)
-        elif currArg in ("-h", "--help"):
-            printHelp()
-    return configuration
-
-def printHelp():
-    print("Usage:\n\tpython sugarscape.py --conf config.json\n\nOptions:\n\t-c,--conf\tUse specified config file for simulation settings.\n\t-h,--help\tDisplay this message.")
-    exit(0)
 
 if __name__ == "__main__":
     # Set default values for simulation configuration
@@ -911,6 +913,7 @@ if __name__ == "__main__":
                      "startingDiseases": 0,
                      "timesteps": 200}
     configuration = parseOptions(configuration)
+    configuration = verifyConfiguration(configuration)
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
     S.runSimulation(configuration["timesteps"])
