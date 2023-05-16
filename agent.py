@@ -402,7 +402,19 @@ class Agent:
             tradeFlag = True
             transactions = 0
 
+            if traderMRS > 1 and self.__marginalRateOfSubstitution > 1:
+                continue
+            elif traderMRS < 1 and self.__marginalRateOfSubstitution < 1:
+                continue
+            elif traderMRS == self.__marginalRateOfSubstitution:
+                continue
+
             while tradeFlag == True:
+                # If both trying to sell the same commodity, stop trading
+                if traderMRS == self.__marginalRateOfSubstitution:
+                    tradeFlag = False
+                    continue
+
                 # MRS > 1 indicates the agent has less need of spice and should become the spice seller
                 if traderMRS > self.__marginalRateOfSubstitution:
                     spiceSeller = trader
@@ -413,26 +425,32 @@ class Agent:
                 spiceSellerMRS = spiceSeller.getMarginalRateOfSubstitution()
                 sugarSellerMRS = sugarSeller.getMarginalRateOfSubstitution()
 
+                # TODO: Allow sugar --> spice and spice --> sugar trades (figure out based on tradePrice - pg. 105)
                 # Find geometric mean of spice and sugar seller MRS for trade price
                 tradePrice = math.ceil(math.sqrt(spiceSellerMRS * sugarSellerMRS))
                 spiceSellerSpice = spiceSeller.getSpice()
                 spiceSellerSugar = spiceSeller.getSugar()
+                spiceSellerMetabolism = spiceSeller.getSpiceMetabolism()
                 sugarSellerSpice = sugarSeller.getSpice()
                 sugarSellerSugar = sugarSeller.getSugar()
+                sugarSellerMetabolism = sugarSeller.getSugarMetabolism()
                 # If trade would be lethal, skip it
-                if spiceSellerSpice - tradePrice < 1 or sugarSellerSugar - 1 < 1:
+                if spiceSellerSpice - tradePrice < spiceSellerMetabolism or sugarSellerSugar - 1 < sugarSellerMetabolism:
                     tradeFlag = False
                     continue
                 spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSellerSugar + 1, spiceSellerSpice - tradePrice)
                 sugarSellerNewMRS = sugarSeller.calculateMarginalRateOfSubstitution(sugarSellerSugar - 1, sugarSellerSpice + tradePrice)
 
+                # TODO: Replace with welfare function comparison
                 # Calculate absolute difference from perfect spice/sugar parity in MRS
                 betterForSpiceSeller = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
                 betterForSugarSeller = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
 
+                
                 # Check that spice seller's new MRS does not cross over sugar seller's new MRS
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
+                # TODO: Fix trade price to allow sugar --> spice or spice --> sugar
                 if betterForSpiceSeller and betterForSugarSeller and checkForMRSCrossing == False:
                     spiceSeller.setSpice(spiceSellerSpice - tradePrice)
                     spiceSeller.setSugar(spiceSellerSugar + 1)
@@ -444,8 +462,8 @@ class Agent:
                 else:
                     tradeFlag = False
                     continue
-            spiceSeller.updateTimesTradedWithAgent(sugarSeller, self.__lastMoved, transactions)
-            sugarSeller.updateTimesTradedWithAgent(spiceSeller, self.__lastMoved, transactions)
+            trader.updateTimesTradedWithAgent(self, self.__lastMoved, transactions)
+            self.updateTimesTradedWithAgent(trader, self.__lastMoved, transactions)
 
     def findAgentWealthAtCell(self, cell):
         agent = cell.getAgent()
