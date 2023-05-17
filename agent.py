@@ -108,6 +108,38 @@ class Agent:
             return 1 / self.__sugarMetabolism
         return spiceNeed / sugarNeed
 
+    def calculateWelfareFunction(self, sugarReward, spiceReward):
+        totalMetabolism = self.__sugarMetabolism + self.__spiceMetabolism
+        sugarMetabolismProportion = 0
+        spiceMetabolismProportion = 0
+        if totalMetabolism != 0:
+            sugarMetabolismProportion = self.__sugarMetabolism / totalMetabolism
+            spiceMetabolismProportion = self.__spiceMetabolism / totalMetabolism
+
+        sugarLookahead = self.__sugarMetabolism * self.__lookaheadFactor
+        spiceLookahead = self.__spiceMetabolism * self.__lookaheadFactor
+        totalSugar = (self.__sugar + sugarReward) - sugarLookahead
+        totalSpice = (self.__spice + spiceReward) - spiceLookahead
+        if totalSugar < 0:
+            totalSugar = 0
+        if totalSpice < 0:
+            totalSpice = 0
+
+        welfare = (totalSugar ** sugarMetabolismProportion) * (totalSpice ** spiceMetabolismProportion)
+        if self.__tags != None and len(self.__tags) > 0:
+            self.findTribe()
+            fractionZeroesInTags = self.__tagZeroes / len(self.__tags)
+            fractionOnesInTags = 1 - fractionZeroesInTags
+            spiceMetabolism = self.__spiceMetabolism if self.__spiceMetabolism != 0 else 1
+            sugarMetabolism = self.__sugarMetabolism if self.__sugarMetabolism != 0 else 1
+            tagPreferences = (self.__sugarMetabolism * fractionZeroesInTags) + (self.__spiceMetabolism * fractionOnesInTags)
+            if tagPreferences == 0:
+                tagPreferences = 1
+            tagPreferencesSugar = (self.__sugarMetabolism / tagPreferences) * fractionZeroesInTags
+            tagPreferencesSpice = (self.__spiceMetabolism / tagPreferences) * fractionOnesInTags
+            welfare = (totalSugar ** tagPreferencesSugar) * (totalSpice ** tagPreferencesSpice)
+        return welfare
+
     def canReachCell(self, cell):
         if len(self.__cellsInVision) == 0:
             self.getCellsInVision()
@@ -402,6 +434,7 @@ class Agent:
             tradeFlag = True
             transactions = 0
 
+            # If both trying to sell the same commodity, stop trading
             if traderMRS > 1 and self.__marginalRateOfSubstitution > 1:
                 continue
             elif traderMRS < 1 and self.__marginalRateOfSubstitution < 1:
@@ -410,7 +443,6 @@ class Agent:
                 continue
 
             while tradeFlag == True:
-                # If both trying to sell the same commodity, stop trading
                 if traderMRS == self.__marginalRateOfSubstitution:
                     tradeFlag = False
                     continue
@@ -425,9 +457,20 @@ class Agent:
                 spiceSellerMRS = spiceSeller.getMarginalRateOfSubstitution()
                 sugarSellerMRS = sugarSeller.getMarginalRateOfSubstitution()
 
-                # TODO: Allow sugar --> spice and spice --> sugar trades (figure out based on tradePrice - pg. 105)
                 # Find geometric mean of spice and sugar seller MRS for trade price
-                tradePrice = math.ceil(math.sqrt(spiceSellerMRS * sugarSellerMRS))
+                tradePrice = math.sqrt(spiceSellerMRS * sugarSellerMRS)
+                sugarPrice = 0
+                spicePrice = 0
+                # Set proper highest value commodity based on trade price
+                if tradePrice < 1:
+                    tradePrice = math.ceil(1 / tradePrice)
+                    spicePrice = 1
+                    sugarPrice = tradePrice
+                else:
+                    tradePrice = math.ceil(tradePrice)
+                    spicePrice = tradePrice
+                    sugarPrice = 1
+
                 spiceSellerSpice = spiceSeller.getSpice()
                 spiceSellerSugar = spiceSeller.getSugar()
                 spiceSellerMetabolism = spiceSeller.getSpiceMetabolism()
@@ -435,35 +478,38 @@ class Agent:
                 sugarSellerSugar = sugarSeller.getSugar()
                 sugarSellerMetabolism = sugarSeller.getSugarMetabolism()
                 # If trade would be lethal, skip it
-                if spiceSellerSpice - tradePrice < spiceSellerMetabolism or sugarSellerSugar - 1 < sugarSellerMetabolism:
+                if spiceSellerSpice - spicePrice < spiceSellerMetabolism or sugarSellerSugar - sugarPrice < sugarSellerMetabolism:
                     tradeFlag = False
                     continue
-                spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSellerSugar + 1, spiceSellerSpice - tradePrice)
-                sugarSellerNewMRS = sugarSeller.calculateMarginalRateOfSubstitution(sugarSellerSugar - 1, sugarSellerSpice + tradePrice)
+                spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSellerSugar + sugarPrice, spiceSellerSpice - spicePrice)
+                sugarSellerNewMRS = sugarSeller.calculateMarginalRateOfSubstitution(sugarSellerSugar - sugarPrice, sugarSellerSpice + spicePrice)
 
-                # TODO: Replace with welfare function comparison
+                # TODO: Determine why absolute difference from parity results in higher population across seeds than calculating welfare
                 # Calculate absolute difference from perfect spice/sugar parity in MRS
-                betterForSpiceSeller = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
-                betterForSugarSeller = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
+                #betterForSpiceSeller = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
+                #betterForSugarSeller = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
+                betterForSpiceSeller = spiceSeller.calculateWelfareFunction(sugarPrice, (-1 * spicePrice)) > spiceSeller.calculateWelfareFunction(0, 0)
+                betterForSugarSeller = sugarSeller.calculateWelfareFunction((-1 * sugarPrice), spicePrice) > sugarSeller.calculateWelfareFunction(0, 0)
 
                 
                 # Check that spice seller's new MRS does not cross over sugar seller's new MRS
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
-                # TODO: Fix trade price to allow sugar --> spice or spice --> sugar
                 if betterForSpiceSeller and betterForSugarSeller and checkForMRSCrossing == False:
-                    spiceSeller.setSpice(spiceSellerSpice - tradePrice)
-                    spiceSeller.setSugar(spiceSellerSugar + 1)
-                    sugarSeller.setSpice(sugarSellerSpice + tradePrice)
-                    sugarSeller.setSugar(sugarSellerSugar - 1)
+                    spiceSeller.setSpice(spiceSellerSpice - spicePrice)
+                    spiceSeller.setSugar(spiceSellerSugar + sugarPrice)
+                    sugarSeller.setSpice(sugarSellerSpice + spicePrice)
+                    sugarSeller.setSugar(sugarSellerSugar - sugarPrice)
                     spiceSeller.findMarginalRateOfSubstitution()
                     sugarSeller.findMarginalRateOfSubstitution()
                     transactions += 1
                 else:
                     tradeFlag = False
                     continue
-            trader.updateTimesTradedWithAgent(self, self.__lastMoved, transactions)
-            self.updateTimesTradedWithAgent(trader, self.__lastMoved, transactions)
+            # If a trade occurred, log it
+            if spiceSeller != None and sugarSeller != None:
+                trader.updateTimesTradedWithAgent(self, self.__lastMoved, transactions)
+                self.updateTimesTradedWithAgent(trader, self.__lastMoved, transactions)
 
     def findAgentWealthAtCell(self, cell):
         agent = cell.getAgent()
@@ -570,28 +616,8 @@ class Agent:
                 cellwealth = self.findActUtilitarianValueOfCell(cell)
             else:
                 # Modify value of cell relative to the metabolism needs of the agent
-                sugarLookahead = self.__sugarMetabolism * self.__lookaheadFactor
-                spiceLookahead = self.__spiceMetabolism * self.__lookaheadFactor
-                cellSugarTotal = (self.__sugar + cellSugar + welfarePreySugar) - sugarLookahead
-                cellSpiceTotal = (self.__spice + cellSpice + welfarePreySpice) - spiceLookahead
-                if cellSugarTotal < 0:
-                    cellSugarTotal = 0
-                if cellSpiceTotal < 0:
-                    cellSpiceTotal = 0
-                welfareFunction = (cellSugarTotal ** sugarMetabolismProportion) * (cellSpiceTotal ** spiceMetabolismProportion)
-                if self.__tags != None and len(self.__tags) > 0:
-                    self.findTribe()
-                    fractionZeroesInTags = self.__tagZeroes / len(self.__tags)
-                    fractionOnesInTags = 1 - fractionZeroesInTags
-                    spiceMetabolism = self.__spiceMetabolism if self.__spiceMetabolism != 0 else 1
-                    sugarMetabolism = self.__sugarMetabolism if self.__sugarMetabolism != 0 else 1
-                    tagPreferences = (self.__sugarMetabolism * fractionZeroesInTags) + (self.__spiceMetabolism * fractionOnesInTags)
-                    if tagPreferences == 0:
-                        tagPreferences = 1
-                    tagPreferencesSugar = (self.__sugarMetabolism / tagPreferences) * fractionZeroesInTags
-                    tagPreferencesSpice = (self.__spiceMetabolism / tagPreferences) * fractionOnesInTags
-                    welfareFunction = (cellSugarTotal ** tagPreferencesSugar) * (cellSpiceTotal ** tagPreferencesSpice)
-                cellWealth = welfareFunction / (1 + cell.getCurrPollution())
+                welfare = self.calculateWelfareFunction((cellSugar + welfarePreySugar), (cellSpice + welfarePreySpice))
+                cellWealth = welfare / (1 + cell.getCurrPollution())
 
             # Avoid attacking agents protected via retaliation
             if prey != None and retaliators[preyTribe] > self.__wealth + cellWealth:
