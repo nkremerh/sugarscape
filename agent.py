@@ -108,7 +108,7 @@ class Agent:
             return 1 / self.__sugarMetabolism
         return spiceNeed / sugarNeed
 
-    def calculateWelfareFunction(self, sugarReward, spiceReward):
+    def calculateWelfare(self, sugarReward, spiceReward):
         totalMetabolism = self.__sugarMetabolism + self.__spiceMetabolism
         sugarMetabolismProportion = 0
         spiceMetabolismProportion = 0
@@ -266,26 +266,26 @@ class Agent:
                 livingFriends.append(friend["friend"])
 
         if self.__inheritancePolicy == "children" and len(livingChildren) > 0:
-            sugarInheritance = math.floor(self.__sugar / len(livingChildren))
-            spiceInheritance = math.floor(self.__spice / len(livingChildren))
+            sugarInheritance = self.__sugar / len(livingChildren)
+            spiceInheritance = self.__spice / len(livingChildren)
             for child in livingChildren:
                 child.setSugar(child.getSugar() + sugarInheritance)
                 child.setSpice(child.getSpice() + spiceInheritance)
         elif self.__inheritancePolicy == "sons" and len(livingSons) > 0:
-            sugarInheritance = math.floor(self.__sugar / len(livingSons))
-            spiceInheritance = math.floor(self.__spice / len(livingSons))
+            sugarInheritance = self.__sugar / len(livingSons)
+            spiceInheritance = self.__spice / len(livingSons)
             for son in livingSons:
                 son.setSugar(son.getSugar() + sugarInheritance)
                 son.setSpice(son.getSpice() + spiceInheritance)
         elif self.__inheritancePolicy == "daughters" and len(livingDaughters) > 0:
-            sugarInheritance = math.floor(self.__sugar / len(livingDaughters))
-            spiceInheritance = math.floor(self.__spice / len(livingDaughters))
+            sugarInheritance = self.__sugar / len(livingDaughters)
+            spiceInheritance = self.__spice / len(livingDaughters)
             for daughter in livingDaughters:
                 daughter.setSugar(daughter.getSugar() + sugarInheritance)
                 daughter.setSpice(daughter.getSpice() + spiceInheritance)
         elif self.__inheritancePolicy == "friends" and len(livingFriends) > 0:
-            sugarInheritance = math.floor(self.__sugar / len(livingFriends))
-            spiceInheritance = math.floor(self.__spice / len(livingFriends))
+            sugarInheritance = self.__sugar / len(livingFriends)
+            spiceInheritance = self.__spice / len(livingFriends)
             for friend in livingFriends:
                 friend.setSugar(friend.getSugar() + sugarInheritance)
                 friend.setSpice(friend.getSpice() + spiceInheritance)
@@ -298,7 +298,7 @@ class Agent:
         if self.__lendingFactor == 0:
             return
         # Fertile and not enough excess wealth to be a lender
-        elif self.isFertile() == True and (self.__sugar == self.__startingSugar or self.__spice == self.__startingSpice):
+        elif self.isFertile() == True and (self.__sugar <= self.__startingSugar or self.__spice <= self.__startingSpice):
             return
         # Too young to reproduce, skip lending
         elif self.__age < self.__fertilityAge:
@@ -315,8 +315,8 @@ class Agent:
                     borrowers.append(neighbor)
         random.shuffle(borrowers)
         for borrower in borrowers:
-            maxSugarLoan = math.floor(self.__sugar / 2)
-            maxSpiceLoan = math.floor(self.__spice / 2)
+            maxSugarLoan = self.__sugar / 2
+            maxSpiceLoan = self.__spice / 2
             if self.isFertile() == True:
                 maxSugarLoan = max(0, self.__sugar - self.__startingSugar)
                 maxSpiceLoan = max(0, self.__spice - self.__startingSpice)
@@ -324,8 +324,8 @@ class Agent:
             spiceLoanNeed = max(0, borrower.getStartingSpice() - borrower.getSpice())
             sugarLoanPrincipal = min(maxSugarLoan, sugarLoanNeed)
             spiceLoanPrincipal = min(maxSpiceLoan, spiceLoanNeed)
-            sugarLoanAmount = math.ceil(sugarLoanPrincipal + (sugarLoanPrincipal * interestRate))
-            spiceLoanAmount = math.ceil(spiceLoanPrincipal + (spiceLoanPrincipal * interestRate))
+            sugarLoanAmount = sugarLoanPrincipal + (sugarLoanPrincipal * interestRate)
+            spiceLoanAmount = spiceLoanPrincipal + (spiceLoanPrincipal * interestRate)
             # If lending would cause lender to starve, skip lending to potential borrower
             if self.__sugar - sugarLoanPrincipal < self.__sugarMetabolism or self.__spice - spiceLoanPrincipal < self.__spiceMetabolism:
                 continue
@@ -373,10 +373,10 @@ class Agent:
                     neighbor.updateTimesReproducedWithAgent(self, self.__lastMoved)
                     self.updateTimesReproducedWithAgent(neighbor, self.__lastMoved)
 
-                    sugarCost = math.ceil(self.__startingSugar / (self.__fertilityFactor * 2))
-                    spiceCost = math.ceil(self.__startingSpice / (self.__fertilityFactor * 2))
-                    mateSugarCost = math.ceil(neighbor.getStartingSugar() / (neighbor.getFertilityFactor() * 2))
-                    mateSpiceCost = math.ceil(neighbor.getStartingSpice() / (neighbor.getFertilityFactor() * 2))
+                    sugarCost = self.__startingSugar / (self.__fertilityFactor * 2)
+                    spiceCost = self.__startingSpice / (self.__fertilityFactor * 2)
+                    mateSugarCost = neighbor.getStartingSugar() / (neighbor.getFertilityFactor() * 2)
+                    mateSpiceCost = neighbor.getStartingSpice() / (neighbor.getFertilityFactor() * 2)
                     self.__sugar -= sugarCost
                     self.__spice -= spiceCost
                     neighbor.setSugar(neighbor.getSugar() - mateSugarCost)
@@ -408,8 +408,8 @@ class Agent:
                 return
             self.doTagging()
             self.doTrading()
-            self.doLending()
             self.doReproduction()
+            self.doLending()
             self.doDisease()
             self.doAging()
 
@@ -463,22 +463,22 @@ class Agent:
                 spicePrice = 0
                 # Set proper highest value commodity based on trade price
                 if tradePrice < 1:
-                    tradePrice = math.ceil(1 / tradePrice)
                     spicePrice = 1
                     sugarPrice = tradePrice
                 else:
-                    tradePrice = math.ceil(tradePrice)
                     spicePrice = tradePrice
                     sugarPrice = 1
 
                 spiceSellerSpice = spiceSeller.getSpice()
                 spiceSellerSugar = spiceSeller.getSugar()
-                spiceSellerMetabolism = spiceSeller.getSpiceMetabolism()
+                spiceSellerSugarMetabolism = spiceSeller.getSugarMetabolism()
+                spiceSellerSpiceMetabolism = spiceSeller.getSpiceMetabolism()
                 sugarSellerSpice = sugarSeller.getSpice()
                 sugarSellerSugar = sugarSeller.getSugar()
-                sugarSellerMetabolism = sugarSeller.getSugarMetabolism()
+                sugarSellerSugarMetabolism = sugarSeller.getSugarMetabolism()
+                sugarSellerSpiceMetabolism = sugarSeller.getSpiceMetabolism()
                 # If trade would be lethal, skip it
-                if spiceSellerSpice - spicePrice < spiceSellerMetabolism or sugarSellerSugar - sugarPrice < sugarSellerMetabolism:
+                if spiceSellerSpice - spicePrice < spiceSellerSpiceMetabolism or sugarSellerSugar - sugarPrice < sugarSellerSugarMetabolism:
                     tradeFlag = False
                     continue
                 spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSellerSugar + sugarPrice, spiceSellerSpice - spicePrice)
@@ -486,16 +486,16 @@ class Agent:
 
                 # TODO: Determine why absolute difference from parity results in higher population across seeds than calculating welfare
                 # Calculate absolute difference from perfect spice/sugar parity in MRS
-                #betterForSpiceSeller = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
-                #betterForSugarSeller = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
-                betterForSpiceSeller = spiceSeller.calculateWelfareFunction(sugarPrice, (-1 * spicePrice)) > spiceSeller.calculateWelfareFunction(0, 0)
-                betterForSugarSeller = sugarSeller.calculateWelfareFunction((-1 * sugarPrice), spicePrice) > sugarSeller.calculateWelfareFunction(0, 0)
+                betterForSpiceSeller = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
+                betterForSugarSeller = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
 
+                #betterForSpiceSeller = spiceSeller.calculateWelfare(sugarPrice, (-1 * spicePrice)) > spiceSeller.calculateWelfare(0, 0)
+                #betterForSugarSeller = sugarSeller.calculateWelfare((-1 * sugarPrice), spicePrice) > sugarSeller.calculateWelfare(0, 0)
                 
                 # Check that spice seller's new MRS does not cross over sugar seller's new MRS
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
-                if betterForSpiceSeller and betterForSugarSeller and checkForMRSCrossing == False:
+                if betterForSpiceSeller == True and betterForSugarSeller == True and checkForMRSCrossing == False:
                     spiceSeller.setSpice(spiceSellerSpice - spicePrice)
                     spiceSeller.setSugar(spiceSellerSugar + sugarPrice)
                     sugarSeller.setSpice(sugarSellerSpice + spicePrice)
@@ -616,7 +616,7 @@ class Agent:
                 cellwealth = self.findActUtilitarianValueOfCell(cell)
             else:
                 # Modify value of cell relative to the metabolism needs of the agent
-                welfare = self.calculateWelfareFunction((cellSugar + welfarePreySugar), (cellSpice + welfarePreySpice))
+                welfare = self.calculateWelfare((cellSugar + welfarePreySugar), (cellSpice + welfarePreySpice))
                 cellWealth = welfare / (1 + cell.getCurrPollution())
 
             # Avoid attacking agents protected via retaliation
@@ -685,8 +685,8 @@ class Agent:
         parentMaxFriends = [self.__maxFriends, mate.getMaxFriends()]
         parentEthicalFactors = [self.__ethicalFactor, mate.getEthicalFactor()]
         # Each parent gives 1/2 their starting endowment for child endowment
-        childStartingSugar = math.ceil(self.__startingSugar / 2) + math.ceil(mate.getStartingSugar() / 2)
-        childStartingSpice = math.ceil(self.__startingSpice / 2) + math.ceil(mate.getStartingSpice() / 2)
+        childStartingSugar = (self.__startingSugar / 2) + (mate.getStartingSugar() / 2)
+        childStartingSpice = (self.__startingSpice / 2) + (mate.getStartingSpice() / 2)
 
         childSugarMetabolism = parentSugarMetabolisms[random.randrange(2)]
         childSpiceMetabolism = parentSpiceMetabolisms[random.randrange(2)]
@@ -1015,8 +1015,8 @@ class Agent:
             self.__socialNetwork["creditors"].remove(loan)
             creditor.removeDebt(loan)
         else:
-            sugarPayout = math.floor(self.__sugar / 2)
-            spicePayout = math.floor(self.__spice / 2)
+            sugarPayout = self.__sugar / 2
+            spicePayout = self.__spice / 2
             sugarRepaymentLeft = loan["sugarLoan"] - sugarPayout
             spiceRepaymentLeft = loan["spiceLoan"] - spicePayout
             self.__sugar -= sugarPayout
@@ -1041,8 +1041,8 @@ class Agent:
                 livingCreditorChildren.append(child)
         numLivingChildren = len(livingCreditorChildren)
         if numLivingChildren > 0:
-            sugarRepayment = math.floor(loan["sugarLoan"] / numLivingChildren)
-            spiceRepayment = math.floor(loan["spiceLoan"] / numLivingChildren)
+            sugarRepayment = loan["sugarLoan"] / numLivingChildren
+            spiceRepayment = loan["spiceLoan"] / numLivingChildren
             for child in livingCreditorChildren:
                 child.addLoanToAgent(self, self.__lastMoved, 0, sugarRepayment, 0, spiceRepayment, 1)
         self.__socialNetwork["creditors"].remove(loan)
