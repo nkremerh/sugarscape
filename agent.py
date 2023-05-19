@@ -666,9 +666,12 @@ class Agent:
             i += 1
         bestCell = None
         # TODO: From best to worst cell score, select cell that produces positive nice
-        #cells.reverse()
-        #for cell in cells:
-        #    ethicalScore = self.findBenthamActUtilitarianValueOfCell(cell["cell"])
+        cells.reverse()
+        for cell in cells:
+            ethicalScore = self.findBenthamActUtilitarianValueOfCell(cell["cell"])
+            if ethicalScore > 0:
+                bestCell = cell["cell"]
+                break
         if bestCell == None:
             bestCell = cells.pop()["cell"]
         return bestCell
