@@ -420,111 +420,62 @@ class Sugarscape:
         inheritancePolicy = configs["agentInheritancePolicy"]
         ethicalFactor = configs["agentEthicalFactor"]
 
+        configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
+                          "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
+                          "ethicalFactor": {"endowments": [], "curr": ethicalFactor[0], "min": ethicalFactor[0], "max": ethicalFactor[1]},
+                          "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
+                          "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
+                          "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
+                          "lendingFactor": {"endowments": [], "curr": lendingFactor[0], "min": lendingFactor[0], "max": lendingFactor[1]},
+                          "loanDuration": {"endowments": [], "curr": loanDuration[0], "min": loanDuration[0], "max": loanDuration[1]},
+                          "lookaheadFactor": {"endowments": [], "curr": lookaheadFactor[0], "min": lookaheadFactor[0], "max": lookaheadFactor[1]},
+                          "maleInfertilityAge": {"endowments": [], "curr": maleInfertilityAge[0], "min": maleInfertilityAge[0], "max": maleInfertilityAge[1]},
+                          "maleFertilityAge": {"endowments": [], "curr": maleFertilityAge[0], "min": maleFertilityAge[0], "max": maleFertilityAge[1]},
+                          "maxAge": {"endowments": [], "curr": maxAge[0], "min": maxAge[0], "max": maxAge[1]},
+                          "maxFriends": {"endowments": [], "curr": maxFriends[0], "min": maxFriends[0], "max": maxFriends[1]},
+                          "movement": {"endowments": [], "curr": movement[0], "min": movement[0], "max": movement[1]},
+                          "spice": {"endowments": [], "curr": startingSpice[0], "min": startingSpice[0], "max": startingSpice[1]},
+                          "spiceMetabolism": {"endowments": [], "curr": spiceMetabolism[0], "min": spiceMetabolism[0], "max": spiceMetabolism[1]},
+                          "sugar": {"endowments": [], "curr": startingSugar[0], "min": startingSugar[0], "max": startingSugar[1]},
+                          "sugarMetabolism": {"endowments": [], "curr": sugarMetabolism[0], "min": sugarMetabolism[0], "max": sugarMetabolism[1]},
+                          "tradeFactor": {"endowments": [], "curr": tradeFactor[0], "min": tradeFactor[0], "max": tradeFactor[1]},
+                          "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]}
+                          }
+
+        for config in configurations:
+            configMin = configurations[config]["min"]
+            configMax = configurations[config]["max"]
+            configMinDecimals = str(configMin).split('.')
+            configMaxDecimals = str(configMax).split('.')
+            decimalRange = []
+            if len(configMinDecimals) == 2:
+                configMinDecimals = len(configMinDecimals[1])
+                decimalRange.append(configMinDecimals)
+            if len(configMaxDecimals) == 2:
+                configMaxDecimals = len(configMaxDecimals[1])
+                decimalRange.append(configMaxDecimals)
+            # If no fractional component to configuration item, assume increment of 1
+            decimals = max(decimalRange) if len(decimalRange) > 0 else 0
+            increment = 10 ** (-1 * decimals)
+            configurations[config]["inc"] = increment
+
         endowments = []
-        movements = []
-        visions = []
-        ages = []
-        startingSugars = []
-        startingSpices = []
         sexes = []
-        femaleFertilityAges = []
-        maleFertilityAges = []
-        femaleInfertilityAges = []
-        maleInfertilityAges = []
         tags = []
         immuneSystems = []
-        aggressionFactors = []
-        tradeFactors = []
-        lookaheadFactors = []
-        lendingFactors = []
-        fertilityFactors = []
-        baseInterestRates = []
-        loanDurations = []
-        friends = []
-        spiceMetabolisms = []
-        sugarMetabolisms = []
-        ethicalFactors = []
         
-        minSpiceMetabolism = spiceMetabolism[0]
-        minSugarMetabolism = sugarMetabolism[0]
-        minMovement = movement[0]
-        minVision = vision[0]
-        minFemaleFertilityAge = femaleFertilityAge[0]
-        minMaleFertilityAge = maleFertilityAge[0]
-        minFemaleInfertilityAge = femaleInfertilityAge[0]
-        minMaleInfertilityAge = maleInfertilityAge[0]
-        minStartingSugar = startingSugar[0]
-        minStartingSpice = startingSpice[0]
-        minAge = maxAge[0]
-        minAggression = aggressionFactor[0]
-        minTrade = tradeFactor[0]
-        minLookahead = lookaheadFactor[0]
-        minLending = lendingFactor[0]
-        minFertility = fertilityFactor[0]
-        minInterestRate = baseInterestRate[0]
-        minLoanDuration = loanDuration[0]
-        minFriends = maxFriends[0]
-        minEthicalFactor = ethicalFactor[0]
-
-        maxSpiceMetabolism = spiceMetabolism[1]
-        maxSugarMetabolism = sugarMetabolism[1]
-        maxMovement = movement[1]
-        maxVision = vision[1]
-        maxFemaleFertilityAge = femaleFertilityAge[1]
-        maxMaleFertilityAge = maleFertilityAge[1]
-        maxFemaleInfertilityAge = femaleInfertilityAge[1]
-        maxMaleInfertilityAge = maleInfertilityAge[1]
-        maxStartingSugar = startingSugar[1]
-        maxStartingSpice = startingSpice[1]
-        maxAge = maxAge[1]
-        maxAggression = aggressionFactor[1]
-        maxTrade = tradeFactor[1]
-        maxLookahead = lookaheadFactor[1]
-        maxLending = lendingFactor[1]
-        maxFertility = fertilityFactor[1]
-        maxInterestRate = baseInterestRate[1]
-        maxLoanDuration = loanDuration[1]
-        maxFriends = maxFriends[1]
-        maxEthicalFactor = ethicalFactor[1]
-
-        currSpiceMetabolism = minSpiceMetabolism
-        currSugarMetabolism = minSugarMetabolism
-        currMovement = minMovement
-        currVision = minVision
-        currSugar = minStartingSugar
-        currSpice = minStartingSpice
-        currMaxAge = minAge
-        currFemaleFertilityAge = minFemaleFertilityAge
-        currMaleFertilityAge = minMaleFertilityAge
-        currFemaleInfertilityAge = minFemaleInfertilityAge
-        currMaleInfertilityAge = minMaleInfertilityAge
-        currAggression = minAggression
-        currTrade = minTrade
-        currLookahead = minLookahead
-        currLending = minLending
-        currFertility = minFertility
-        currInterestRate = minInterestRate
-        currLoanDuration = minLoanDuration
-        currFriends = minFriends
-        currEthicalFactor = minEthicalFactor
-
         sexDistributionCountdown = numAgents
         # Determine count of male agents and set as switch for agent generation
         if maleToFemaleRatio != None and maleToFemaleRatio != 0:
             sexDistributionCountdown = math.floor(sexDistributionCountdown / (maleToFemaleRatio + 1)) * maleToFemaleRatio
         
         for i in range(numAgents):
-            spiceMetabolisms.append(currSpiceMetabolism)
-            sugarMetabolisms.append(currSugarMetabolism)
-            movements.append(currMovement)
-            visions.append(currVision)
-            ages.append(currMaxAge)
-            startingSugars.append(currSugar)
-            startingSpices.append(currSpice)
-            femaleFertilityAges.append(currFemaleFertilityAge)
-            maleFertilityAges.append(currMaleFertilityAge)
-            femaleInfertilityAges.append(currFemaleInfertilityAge)
-            maleInfertilityAges.append(currMaleInfertilityAge)
+            for config in configurations:
+                configurations[config]["endowments"].append(configurations[config]["curr"])
+                configurations[config]["curr"] += 1
+                if configurations[config]["curr"] > configurations[config]["max"]:
+                    configurations[config]["curr"] = configurations[config]["min"]
+
             if tagStringLength > 0:
                 tags.append([random.randrange(2) for i in range(tagStringLength)])
             else:
@@ -533,36 +484,6 @@ class Sugarscape:
                 immuneSystems.append([random.randrange(2) for i in range(immuneSystemLength)])
             else:
                 immuneSystems.append(None)
-            aggressionFactors.append(currAggression)
-            tradeFactors.append(currTrade)
-            lookaheadFactors.append(currLookahead)
-            lendingFactors.append(currLending)
-            fertilityFactors.append(currFertility)
-            baseInterestRates.append(currInterestRate)
-            loanDurations.append(currLoanDuration)
-            friends.append(currFriends)
-            ethicalFactors.append(currEthicalFactor)
-            # Assume properties are integers which range from min to max
-            currSpiceMetabolism += 1
-            currSugarMetabolism += 1
-            currMovement += 1
-            currVision += 1
-            currMaxAge += 1
-            currSugar += 1
-            currSpice += 1
-            currFemaleFertilityAge += 1
-            currMaleFertilityAge += 1
-            currFemaleInfertilityAge += 1
-            currMaleInfertilityAge += 1
-            currAggression += 1
-            currTrade += 1
-            currLookahead += 1
-            currLending += 1
-            currFertility += 1
-            currInterestRate += 0.01
-            currLoanDuration += 1
-            currFriends += 1
-            currEthicalFactor += 1
 
             if maleToFemaleRatio != None and maleToFemaleRatio != 0:
                 if sexDistributionCountdown == 0:
@@ -573,82 +494,29 @@ class Sugarscape:
             else:
                 sexes.append(None)
 
-            if currSpiceMetabolism > maxSpiceMetabolism:
-                currSpiceMetabolism = minSpiceMetabolism
-            if currSugarMetabolism > maxSugarMetabolism:
-                currSugarMetabolism = minSugarMetabolism
-            if currMovement > maxMovement:
-                currMovement = minMovement
-            if currVision > maxVision:
-                currVision = minVision
-            if currMaxAge > maxAge:
-                currMaxAge = minAge
-            if currSugar > maxStartingSugar:
-                currSugar = minStartingSugar
-            if currSpice > maxStartingSpice:
-                currSpice = minStartingSpice
-            if currFemaleFertilityAge > maxFemaleFertilityAge:
-                currFemaleFertilityAge = minFemaleFertilityAge
-            if currMaleFertilityAge > maxMaleFertilityAge:
-                currMaleFertilityAge = minMaleFertilityAge
-            if currFemaleInfertilityAge > maxFemaleInfertilityAge:
-                currFemaleInfertilityAge = minFemaleInfertilityAge
-            if currMaleInfertilityAge > maxMaleInfertilityAge:
-                currMaleInfertilityAge = minMaleInfertilityAge
-            if currAggression > maxAggression:
-                currAggression = minAggression
-            if currTrade > maxTrade:
-                currTrade = minTrade
-            if currFriends > maxFriends:
-                currFriends = minFriends
-            if currLookahead > maxLookahead:
-                currLookahead = minLookahead
-            if currLending > maxLending:
-                currLending = minLending
-            if currInterestRate > maxInterestRate:
-                currInterestRate = minInterestRate
-            if currLoanDuration > maxLoanDuration:
-                currLoanDuration = minLoanDuration
-            if currFertility > maxFertility:
-                currFertility = minFertility
-            if currEthicalFactor > maxEthicalFactor:
-                currEthicalFactor = minEthicalFactor
-
-        random.shuffle(spiceMetabolisms)
-        random.shuffle(sugarMetabolisms)
-        random.shuffle(movements)
-        random.shuffle(visions)
-        random.shuffle(ages)
-        random.shuffle(startingSugars)
+        for config in configurations:
+            random.shuffle(configurations[config]["endowments"])
         random.shuffle(sexes)
-        random.shuffle(femaleFertilityAges)
-        random.shuffle(maleFertilityAges)
-        random.shuffle(femaleInfertilityAges)
-        random.shuffle(maleInfertilityAges)
-        random.shuffle(aggressionFactors)
-        random.shuffle(tradeFactors)
-        random.shuffle(lookaheadFactors)
-        random.shuffle(lendingFactors)
-        random.shuffle(fertilityFactors)
-        random.shuffle(baseInterestRates)
-        random.shuffle(loanDurations)
-        random.shuffle(friends)
-        random.shuffle(ethicalFactors)
         for i in range(numAgents):
-            agentEndowment = {"movement": movements.pop(), "maxAge": ages.pop(), "sugar": startingSugars.pop(),
-                              "spice": startingSpices.pop(), "sex": sexes[i], "tags": tags.pop(), "aggressionFactor": aggressionFactors.pop(),
-                              "maxFriends": friends.pop(), "vision": visions.pop(), "seed": self.__seed, "spiceMetabolism": spiceMetabolisms.pop(),
-                              "sugarMetabolism": sugarMetabolisms.pop(), "inheritancePolicy": inheritancePolicy, "tradeFactor": tradeFactors.pop(),
-                              "lookaheadFactor": lookaheadFactors.pop(), "lendingFactor": lendingFactors.pop(), "baseInterestRate": baseInterestRates.pop(),
-                              "loanDuration": loanDurations.pop(), "immuneSystem": immuneSystems.pop(), "fertilityFactor": fertilityFactors.pop(),
-                              "ethicalFactor": ethicalFactors.pop()}
-            if sexes[i] == "female":
-                agentEndowment["fertilityAge"] = femaleFertilityAges.pop()
-                agentEndowment["infertilityAge"] = femaleInfertilityAges.pop()
-            elif sexes[i] == "male":
-                agentEndowment["fertilityAge"] = maleFertilityAges.pop()
-                agentEndowment["infertilityAge"] = maleInfertilityAges.pop()
-            else:
+            agentEndowment = {"seed": self.__seed, "sex": sexes[i], "tags": tags.pop(),
+                              "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy}
+            for config in configurations:
+                # If sexes are enabled, ensure proper fertility and infertility ages are set
+                if sexes[i] == "female" and config == "femaleFertilityAge":
+                    agentEndowment["fertilityAge"] = configurations["femaleFertilityAge"]["endowments"].pop()
+                elif sexes[i] == "female" and config == "femaleInfertilityAge":
+                    agentEndowment["infertilityAge"] = configurations["femaleInfertilityAge"]["endowments"].pop()
+                elif sexes[i] == "male" and config == "maleFertilityAge":
+                    agentEndowment["fertilityAge"] = configurations["maleFertilityAge"]["endowments"].pop()
+                elif sexes[i] == "male" and config == "maleInfertilityAge":
+                    agentEndowment["infertilityAge"] = configurations["maleInfertilityAge"]["endowments"].pop()
+                elif sexes[i] == None and (config == "femaleInfertilityAge" or config == "femaleFertilityAge" or
+                                           config == "maleInfertilityAge" or config == "maleFertilityAge"):
+                    continue
+                else:
+                    agentEndowment[config] = configurations[config]["endowments"].pop()
+            
+            if sexes[i] == None:
                 agentEndowment["fertilityAge"] = 0
                 agentEndowment["infertilityAge"] = 0
             endowments.append(agentEndowment)
