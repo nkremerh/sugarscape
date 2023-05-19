@@ -435,15 +435,16 @@ class Agent:
             transactions = 0
 
             # If both trying to sell the same commodity, stop trading
-            if traderMRS > 1 and self.__marginalRateOfSubstitution > 1:
+            if traderMRS >= 1 and self.__marginalRateOfSubstitution >= 1:
+                print("Agent {0} and agent {1} both trying to sell spice".format(str(self), str(trader)))
                 continue
             elif traderMRS < 1 and self.__marginalRateOfSubstitution < 1:
-                continue
-            elif traderMRS == self.__marginalRateOfSubstitution:
+                print("Agent {0} and agent {1} both trying to sell sugar".format(str(self), str(trader)))
                 continue
 
             while tradeFlag == True:
                 if traderMRS == self.__marginalRateOfSubstitution:
+                    print("Agent {0} and agent {1} MRS is equivalent".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
 
@@ -479,6 +480,7 @@ class Agent:
                 sugarSellerSpiceMetabolism = sugarSeller.getSpiceMetabolism()
                 # If trade would be lethal, skip it
                 if spiceSellerSpice - spicePrice < spiceSellerSpiceMetabolism or sugarSellerSugar - sugarPrice < sugarSellerSugarMetabolism:
+                    print("Agent {0} and agent {1} aborting fatal trade".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
                 spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSellerSugar + sugarPrice, spiceSellerSpice - spicePrice)
@@ -496,14 +498,18 @@ class Agent:
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller == True and betterForSugarSeller == True and checkForMRSCrossing == False:
-                    spiceSeller.setSpice(spiceSellerSpice - spicePrice)
+                    print("Agent {0} and agent {1} confirming trade [{2}, {3}]\n\tSpice seller MRS: {4} --> {5}\n\tSugar seller MRS: {6} --> {7}".format(
+                        str(self), str(trader), sugarPrice, spicePrice, spiceSellerMRS, spiceSellerNewMRS, sugarSellerMRS, sugarSellerNewMRS))
                     spiceSeller.setSugar(spiceSellerSugar + sugarPrice)
-                    sugarSeller.setSpice(sugarSellerSpice + spicePrice)
+                    spiceSeller.setSpice(spiceSellerSpice - spicePrice)
                     sugarSeller.setSugar(sugarSellerSugar - sugarPrice)
+                    sugarSeller.setSpice(sugarSellerSpice + spicePrice)
                     spiceSeller.findMarginalRateOfSubstitution()
                     sugarSeller.findMarginalRateOfSubstitution()
                     transactions += 1
                 else:
+                    print("Agent {0} and agent {1} aborting bad trade:\n\tBetter for spice seller --> {2}\n\tBetter for sugar seller --> {3}\n\tMRS crossing --> {4}".format(
+                        str(self), str(trader), betterForSpiceSeller, betterForSugarSeller, checkForMRSCrossing))
                     tradeFlag = False
                     continue
             # If a trade occurred, log it
