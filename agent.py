@@ -52,6 +52,7 @@ class Agent:
         self.__tagZeroes = 0
         self.__sugarMeanIncome = 1
         self.__spiceMeanIncome = 1
+        self.__nice = 0
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.__cell.getEnvironment().getSugarscape()
@@ -542,7 +543,7 @@ class Agent:
     We may wish to weight the variables inside the parenthesis based on some relative importance that we will make up, based on how we think Bentham thought.
     And of course, we will be right.
     '''
-    def findActUtilitarianValueOfCell(self, cell):
+    def findBenthamActUtilitarianValueOfCell(self, cell):
         cellSiteWealth = cell.getCurrSugar() + cell.getCurrSpice()
         cellMaxSiteWealth = cell.getMaxSugar() + cell.getMaxSpice()
         cellValue = 0
@@ -619,7 +620,7 @@ class Agent:
 
             cellWealth = 0
             if self.__ethicalFactor > 0:
-                cellwealth = self.findActUtilitarianValueOfCell(cell)
+                cellwealth = self.findBenthamActUtilitarianValueOfCell(cell)
             else:
                 # Modify value of cell relative to the metabolism needs of the agent
                 welfare = self.calculateWelfare((cellSugar + welfarePreySugar), (cellSpice + welfarePreySpice))
@@ -915,6 +916,9 @@ class Agent:
     def getNeighborhood(self):
         return self.__neighborhood
 
+    def getNice(self):
+        return self.__nice
+
     def getSex(self):
         return self.__sex
 
@@ -1147,6 +1151,9 @@ class Agent:
 
     def setNeighborhood(self, neighborhood):
         self.__neighborhood = neighborhood
+
+    def setNice(self, nice):
+        self.__nice = nice
 
     def setSex(self, sex):
         self.__sex = sex
