@@ -437,15 +437,15 @@ class Agent:
 
             # If both trying to sell the same commodity, stop trading
             if traderMRS >= 1 and self.__marginalRateOfSubstitution >= 1:
-                print("Agent {0} and agent {1} both trying to sell spice".format(str(self), str(trader)))
+                #print("Agent {0} and agent {1} both trying to sell spice".format(str(self), str(trader)))
                 continue
             elif traderMRS < 1 and self.__marginalRateOfSubstitution < 1:
-                print("Agent {0} and agent {1} both trying to sell sugar".format(str(self), str(trader)))
+                #print("Agent {0} and agent {1} both trying to sell sugar".format(str(self), str(trader)))
                 continue
 
             while tradeFlag == True:
                 if traderMRS == self.__marginalRateOfSubstitution:
-                    print("Agent {0} and agent {1} MRS is equivalent".format(str(self), str(trader)))
+                    #print("Agent {0} and agent {1} MRS is equivalent".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
 
@@ -481,7 +481,7 @@ class Agent:
                 sugarSellerSpiceMetabolism = sugarSeller.getSpiceMetabolism()
                 # If trade would be lethal, skip it
                 if spiceSellerSpice - spicePrice < spiceSellerSpiceMetabolism or sugarSellerSugar - sugarPrice < sugarSellerSugarMetabolism:
-                    print("Agent {0} and agent {1} aborting fatal trade".format(str(self), str(trader)))
+                    #print("Agent {0} and agent {1} aborting fatal trade".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
                 spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSellerSugar + sugarPrice, spiceSellerSpice - spicePrice)
@@ -499,8 +499,8 @@ class Agent:
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller == True and betterForSugarSeller == True and checkForMRSCrossing == False:
-                    print("Agent {0} and agent {1} confirming trade [{2}, {3}]\n\tSpice seller MRS: {4} --> {5}\n\tSugar seller MRS: {6} --> {7}".format(
-                        str(self), str(trader), sugarPrice, spicePrice, spiceSellerMRS, spiceSellerNewMRS, sugarSellerMRS, sugarSellerNewMRS))
+                    #print("Agent {0} and agent {1} confirming trade [{2}, {3}]\n\tSpice seller MRS: {4} --> {5}\n\tSugar seller MRS: {6} --> {7}".format(
+                    #    str(self), str(trader), sugarPrice, spicePrice, spiceSellerMRS, spiceSellerNewMRS, sugarSellerMRS, sugarSellerNewMRS))
                     spiceSeller.setSugar(spiceSellerSugar + sugarPrice)
                     spiceSeller.setSpice(spiceSellerSpice - spicePrice)
                     sugarSeller.setSugar(sugarSellerSugar - sugarPrice)
@@ -509,8 +509,8 @@ class Agent:
                     sugarSeller.findMarginalRateOfSubstitution()
                     transactions += 1
                 else:
-                    print("Agent {0} and agent {1} aborting bad trade:\n\tBetter for spice seller --> {2}\n\tBetter for sugar seller --> {3}\n\tMRS crossing --> {4}".format(
-                        str(self), str(trader), betterForSpiceSeller, betterForSugarSeller, checkForMRSCrossing))
+                    #print("Agent {0} and agent {1} aborting bad trade:\n\tBetter for spice seller --> {2}\n\tBetter for sugar seller --> {3}\n\tMRS crossing --> {4}".format(
+                    #    str(self), str(trader), betterForSpiceSeller, betterForSugarSeller, checkForMRSCrossing))
                     tradeFlag = False
                     continue
             # If a trade occurred, log it
@@ -594,6 +594,8 @@ class Agent:
         agentY = self.__cell.getY()
         combatMaxLoot = self.__cell.getEnvironment().getMaxCombatLoot()
         wraparound = self.__vision + 1
+        potentialCells = []
+
         for currCell in self.__cellsInVision:
             cell = currCell["cell"]
             travelDistance = currCell["distance"]
@@ -619,12 +621,9 @@ class Agent:
                 continue
 
             cellWealth = 0
-            if self.__ethicalFactor > 0:
-                cellwealth = self.findBenthamActUtilitarianValueOfCell(cell)
-            else:
-                # Modify value of cell relative to the metabolism needs of the agent
-                welfare = self.calculateWelfare((cellSugar + welfarePreySugar), (cellSpice + welfarePreySpice))
-                cellWealth = welfare / (1 + cell.getCurrPollution())
+            # Modify value of cell relative to the metabolism needs of the agent
+            welfare = self.calculateWelfare((cellSugar + welfarePreySugar), (cellSpice + welfarePreySpice))
+            cellWealth = welfare / (1 + cell.getCurrPollution())
 
             # Avoid attacking agents protected via retaliation
             if prey != None and retaliators[preyTribe] > self.__wealth + cellWealth:
@@ -643,10 +642,35 @@ class Agent:
                 bestCell = cell
                 bestWealth = cellWealth
 
+            cellRecord = {"cell": cell, "wealth": cellWealth, "range": travelDistance}
+            potentialCells.append(cellRecord)
+
+        if self.__ethicalFactor > 0:
+            bestCell = self.findBestEthicalCell(potentialCells)
         if bestCell == None:
             bestCell = self.__cell
-        #TODO: Sort cells by wealth (using range as tiebreaker)
-        #      From best to worst, select cell that produces positive nice
+        return bestCell
+
+    def findBestEthicalCell(self, cells):
+        if len(cells) == 0:
+            return None
+        # Insertion sort of cells by wealth with range as a tiebreaker
+        i = 0
+        while i < len(cells):
+            j = i
+            while j > 0 and (cells[j - 1]["wealth"] > cells[j]["wealth"] or (cells[j - 1]["wealth"] == cells[j]["wealth"] and cells[j - 1]["range"] <= cells[j]["range"])):
+                currCell = cells[j]
+                cells[j] = cells[j - 1]
+                cells[j - 1] = currCell
+                j -= 1
+            i += 1
+        bestCell = None
+        # TODO: From best to worst cell score, select cell that produces positive nice
+        #cells.reverse()
+        #for cell in cells:
+        #    ethicalScore = self.findBenthamActUtilitarianValueOfCell(cell["cell"])
+        if bestCell == None:
+            bestCell = cells.pop()["cell"]
         return bestCell
 
     def findBestFriend(self):
