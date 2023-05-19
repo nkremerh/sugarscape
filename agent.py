@@ -645,6 +645,8 @@ class Agent:
 
         if bestCell == None:
             bestCell = self.__cell
+        #TODO: Sort cells by wealth (using range as tiebreaker)
+        #      From best to worst, select cell that produces positive nice
         return bestCell
 
     def findBestFriend(self):
