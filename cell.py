@@ -2,185 +2,117 @@ import math
 
 class Cell:
     def __init__(self, x, y, environment, maxSugar=0, maxSpice=0, growbackRate=0):
-        self.__x = x
-        self.__y = y
-        self.__environment = environment
-        self.__maxSugar = maxSugar
-        self.__currSugar = maxSugar
-        self.__maxSpice = maxSpice
-        self.__currSpice = maxSpice
-        self.__currPollution = 0
-        self.__agent = None
-        self.__hemisphere = "north" if self.__x >= self.__environment.getEquator() else "south"
-        self.__season = None
-        self.__timestep = 0
-        self.__neighbors = []
+        self.x = x
+        self.y = y
+        self.environment = environment
+        self.maxSugar = maxSugar
+        self.currSugar = maxSugar
+        self.maxSpice = maxSpice
+        self.currSpice = maxSpice
+        self.currPollution = 0
+        self.agent = None
+        self.hemisphere = "north" if self.x >= self.environment.equator else "south"
+        self.season = None
+        self.timestep = 0
+        self.neighbors = []
 
     def doSpiceConsumptionPollution(self, spiceConsumed):
-        consumptionPollutionFactor = self.__environment.getSpiceConsumptionPollutionFactor()
-        self.__currPollution += consumptionPollutionFactor * spiceConsumed
+        consumptionPollutionFactor = self.environment.spiceConsumptionPollutionFactor
+        self.currPollution += consumptionPollutionFactor * spiceConsumed
 
     def doSugarConsumptionPollution(self, sugarConsumed):
-        consumptionPollutionFactor = self.__environment.getSugarConsumptionPollutionFactor()
-        self.__currPollution += consumptionPollutionFactor * sugarConsumed
+        consumptionPollutionFactor = self.environment.sugarConsumptionPollutionFactor
+        self.currPollution += consumptionPollutionFactor * sugarConsumed
 
     def doPollutionDiffusion(self):
-        meanPollution = self.__currPollution
-        for neighbor in self.__neighbors:
-            meanPollution += neighbor.getCurrPollution()
-        meanPollution = meanPollution / (len(self.__neighbors) + 1)
-        for neighbor in self.__neighbors:
-            neighbor.setCurrPollution(meanPollution)
-        self.__currPollution = meanPollution
+        meanPollution = self.currPollution
+        for neighbor in self.neighbors:
+            meanPollution += neighbor.currPollution
+        meanPollution = meanPollution / (len(self.neighbors) + 1)
+        for neighbor in self.neighbors:
+            neighbor.currPollution = meanPollution
+        self.currPollution = meanPollution
 
     def doSpiceProductionPollution(self, spiceProduced):
-        productionPollutionFactor = self.__environment.getSpiceProductionPollutionFactor()
-        self.__currPollution += productionPollutionFactor * spiceProduced
+        productionPollutionFactor = self.environment.spiceProductionPollutionFactor
+        self.currPollution += productionPollutionFactor * spiceProduced
 
     def doSugarProductionPollution(self, sugarProduced):
-        productionPollutionFactor = self.__environment.getSugarProductionPollutionFactor()
-        self.__currPollution += productionPollutionFactor * sugarProduced
+        productionPollutionFactor = self.environment.sugarProductionPollutionFactor
+        self.currPollution += productionPollutionFactor * sugarProduced
 
     def doTimestep(self, timestep):
         return
 
     def findNeighborAgents(self):
         agents = []
-        for neighbor in self.__neighbors:
-            agent = neighbor.getAgent()
+        for neighbor in self.neighbors:
+            agent = neighbor.agent
             if agent != None:
                 agents.append(agent)
         return agents
 
     def findNeighbors(self):
-        self.__neighbors = []
-        self.__neighbors.append(self.getNorthNeighbor())
-        self.__neighbors.append(self.getSouthNeighbor())
-        self.__neighbors.append(self.getEastNeighbor())
-        self.__neighbors.append(self.getWestNeighbor())
+        self.neighbors = []
+        self.neighbors.append(self.findNorthNeighbor())
+        self.neighbors.append(self.findSouthNeighbor())
+        self.neighbors.append(self.findEastNeighbor())
+        self.neighbors.append(self.findWestNeighbor())
 
-    def getAgent(self):
-        return self.__agent
-
-    def getEnvironment(self):
-        return self.__environment
-
-    def getCurrPollution(self):
-        return self.__currPollution
-
-    def getCurrSpice(self):
-        return self.__currSpice
-    
-    def getCurrSugar(self):
-        return self.__currSugar
-
-    def getEastNeighbor(self):
-        eastWrapAround = self.__environment.getWidth()
-        eastIndex = self.__x + 1
+    def findEastNeighbor(self):
+        eastWrapAround = self.environment.width
+        eastIndex = self.x + 1
         if eastIndex >= eastWrapAround:
             eastIndex = 0
-        eastNeighbor = self.__environment.getCell(eastIndex, self.__y)
+        eastNeighbor = self.environment.findCell(eastIndex, self.y)
         return eastNeighbor
 
-    def getSeason(self):
-        return self.__season
-
-    def getMaxSpice(self):
-        return self.__maxSpice
-
-    def getMaxSugar(self):
-        return self.__maxSugar 
-
-    def getNeighbors(self):
-        if len(self.__neighbors) == 0:
-            self.findNeighbors()
-        return self.__neighbors
-
-    def getNorthNeighbor(self):
-        northWrapAround = self.__environment.getHeight()
-        northIndex = self.__y + 1
+    def findNorthNeighbor(self):
+        northWrapAround = self.environment.height
+        northIndex = self.y + 1
         if northIndex >= northWrapAround:
             northIndex = 0
-        northNeighbor = self.__environment.getCell(self.__x, northIndex)
+        northNeighbor = self.environment.findCell(self.x, northIndex)
         return northNeighbor
 
-    def getSouthNeighbor(self):
+    def findSouthNeighbor(self):
         southWrapAround = 0
-        southIndex = self.__y - 1
+        southIndex = self.y - 1
         if southIndex < southWrapAround:
-            southIndex = self.__environment.getHeight() - 1
-        southNeighbor = self.__environment.getCell(self.__x, southIndex)
+            southIndex = self.environment.height - 1
+        southNeighbor = self.environment.findCell(self.x, southIndex)
         return southNeighbor
 
-    def getWestNeighbor(self):
+    def findWestNeighbor(self):
         westWrapAround = 0
-        westIndex = self.__x - 1
+        westIndex = self.x - 1
         if westIndex < westWrapAround:
-            westIndex = self.__environment.getWidth() - 1
-        westNeighbor = self.__environment.getCell(westIndex, self.__y)
+            westIndex = self.environment.width - 1
+        westNeighbor = self.environment.findCell(westIndex, self.y)
         return westNeighbor
 
-    def getX(self):
-        return self.__x
-
-    def getY(self):
-        return self.__y
-
     def isOccupied(self):
-        return self.__agent != None
+        return self.agent != None
+
+    def resetAgent(self):
+        self.agent = None
 
     def resetSpice(self):
-        self.setCurrSpice(0)
+        self.currSpice = 0
 
     def resetSugar(self):
-        self.setCurrSugar(0)
-
-    def setAgent(self, agent):
-        self.__agent = agent
-
-    def setCurrPollution(self, currPollution):
-        self.__currPollution = currPollution
-
-    def setCurrSpice(self, currSpice):
-        self.__currSpice = currSpice
-
-    def setCurrSugar(self, currSugar):
-        self.__currSugar = currSugar
-
-    def setEnvironment(self, environment):
-        self.__environment = environment
-
-    def setMaxSpice(self, maxSpice):
-        self.__maxSpice = maxSpice
-
-    def setMaxSugar(self, maxSugar):
-        self.__maxSugar = maxSugar
-
-    def setNeighbors(self, neighbors):
-        self.__neighbors = neighbors
-
-    def setSeason(self, season):
-        self.__season = season
-
-    def setX(self, x):
-        self.__x = x
-
-    def setY(self, y):
-        self.__y = y
+        self.currSugar = 0
 
     def updateSeason(self):
-        if self.__season == "summer":
-            self.__season = "winter"
+        if self.season == "summer":
+            self.season = "winter"
         else:
-            self.__season = "summer"
+            self.season = "summer"
 
-    def unsetAgent(self):
-        self.setAgent(None)
- 
     def __str__(self):
         string = ""
-        if self.getAgent() != None:
+        if self.agent != None:
             string = "-A-"
         else:
-            string = "{0}/{1}".format(str(self.__currSugar), str(self.__currSpice))
+            string = "{0}/{1}".format(str(self.currSugar), str(self.currSpice))
         return string

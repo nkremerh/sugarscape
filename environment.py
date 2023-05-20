@@ -4,205 +4,97 @@ import random
 class Environment:
     # Assumption: grid is always indexed by [height][width]
     def __init__(self, height, width, sugarscape, configuration):
-        self.__width = width
-        self.__height = height
-        self.__globalMaxSugar = configuration["globalMaxSugar"]
-        self.__sugarRegrowRate = configuration["sugarRegrowRate"]
-        self.__globalMaxSpice = configuration["globalMaxSpice"]
-        self.__spiceRegrowRate = configuration["spiceRegrowRate"]
-        self.__sugarscape = sugarscape
-        self.__timestep = 0
-        self.__seed = configuration["sugarscapeSeed"]
-        self.__seasonInterval = configuration["seasonInterval"]
-        self.__seasonalGrowbackDelay = configuration["seasonalGrowbackDelay"]
-        self.__seasonNorth = "summer" if configuration["seasonInterval"] > 0 else None
-        self.__seasonSouth = "winter" if configuration["seasonInterval"] > 0 else None
-        self.__seasonalGrowbackCountdown = configuration["seasonalGrowbackDelay"]
-        self.__pollutionDiffusionDelay = configuration["pollutionDiffusionDelay"]
-        self.__pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
-        self.__sugarConsumptionPollutionFactor = configuration["sugarConsumptionPollutionFactor"]
-        self.__spiceConsumptionPollutionFactor = configuration["spiceConsumptionPollutionFactor"]
-        self.__sugarProductionPollutionFactor = configuration["sugarProductionPollutionFactor"]
-        self.__spiceProductionPollutionFactor = configuration["spiceProductionPollutionFactor"]
-        self.__maxCombatLoot = configuration["maxCombatLoot"]
-        self.__equator = math.ceil(self.__height / 2)
+        self.width = width
+        self.height = height
+        self.globalMaxSugar = configuration["globalMaxSugar"]
+        self.sugarRegrowRate = configuration["sugarRegrowRate"]
+        self.globalMaxSpice = configuration["globalMaxSpice"]
+        self.spiceRegrowRate = configuration["spiceRegrowRate"]
+        self.sugarscape = sugarscape
+        self.timestep = 0
+        self.seed = configuration["sugarscapeSeed"]
+        self.seasonInterval = configuration["seasonInterval"]
+        self.seasonalGrowbackDelay = configuration["seasonalGrowbackDelay"]
+        self.seasonNorth = "summer" if configuration["seasonInterval"] > 0 else None
+        self.seasonSouth = "winter" if configuration["seasonInterval"] > 0 else None
+        self.seasonalGrowbackCountdown = configuration["seasonalGrowbackDelay"]
+        self.pollutionDiffusionDelay = configuration["pollutionDiffusionDelay"]
+        self.pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
+        self.sugarConsumptionPollutionFactor = configuration["sugarConsumptionPollutionFactor"]
+        self.spiceConsumptionPollutionFactor = configuration["spiceConsumptionPollutionFactor"]
+        self.sugarProductionPollutionFactor = configuration["sugarProductionPollutionFactor"]
+        self.spiceProductionPollutionFactor = configuration["spiceProductionPollutionFactor"]
+        self.maxCombatLoot = configuration["maxCombatLoot"]
+        self.equator = math.ceil(self.height / 2)
         # Populate grid with NoneType objects
-        self.__grid = [[None for j in range(width)]for i in range(height)]
+        self.grid = [[None for j in range(width)]for i in range(height)]
 
     def doCellUpdate(self):
-        for i in range(self.__height):
-            for j in range(self.__width):
-                cellCurrSugar = self.__grid[i][j].getCurrSugar()
-                cellCurrSpice = self.__grid[i][j].getCurrSpice()
-                cellMaxSugar = self.__grid[i][j].getMaxSugar()
-                cellMaxSpice = self.__grid[i][j].getMaxSpice()
-                cellSeason = self.__grid[i][j].getSeason()
-                if self.__seasonInterval > 0:
-                    if self.__timestep % self.__seasonInterval == 0:
-                        self.__grid[i][j].updateSeason()
-                    if (cellSeason == "summer") or (cellSeason == "winter" and self.__seasonalGrowbackCountdown == self.__seasonalGrowbackDelay):
-                        self.__grid[i][j].setCurrSugar(min(cellCurrSugar + self.__sugarRegrowRate, cellMaxSugar))
-                        self.__grid[i][j].setCurrSpice(min(cellCurrSpice + self.__spiceRegrowRate, cellMaxSpice))
+        for i in range(self.height):
+            for j in range(self.width):
+                cellCurrSugar = self.grid[i][j].currSugar
+                cellCurrSpice = self.grid[i][j].currSpice
+                cellMaxSugar = self.grid[i][j].maxSugar
+                cellMaxSpice = self.grid[i][j].maxSpice
+                cellSeason = self.grid[i][j].season
+                if self.seasonInterval > 0:
+                    if self.timestep % self.seasonInterval == 0:
+                        self.grid[i][j].updateSeason()
+                    if (cellSeason == "summer") or (cellSeason == "winter" and self.seasonalGrowbackCountdown == self.seasonalGrowbackDelay):
+                        self.grid[i][j].currSugar = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
+                        self.grid[i][j].currSpice = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
                 else:
-                    self.__grid[i][j].setCurrSugar(min(cellCurrSugar + self.__sugarRegrowRate, cellMaxSugar))
-                    self.__grid[i][j].setCurrSpice(min(cellCurrSpice + self.__spiceRegrowRate, cellMaxSpice))
-                if self.__pollutionDiffusionDelay > 0 and self.__pollutionDiffusionCountdown == self.__pollutionDiffusionDelay:
-                    self.__grid[i][j].doPollutionDiffusion()
+                    self.grid[i][j].currSugar = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
+                    self.grid[i][j].currSpice = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
+                if self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
+                    self.grid[i][j].doPollutionDiffusion()
 
     def doTimestep(self, timestep):
-        self.__timestep = timestep
+        self.timestep = timestep
         self.updateSeasons()
         self.updatePollution()
         self.doCellUpdate()
 
-    def getCell(self, x, y):
-        return self.__grid[x][y]
-
-    def getEquator(self):
-        return self.__equator
-
-    def getGlobalMaxSpice(self):
-        return self.__globalMaxSpice
-
-    def getGlobalMaxSugar(self):
-        return self.__globalMaxSugar
-
-    def getGrid(self):
-        return self.__grid
-
-    def getHeight(self):
-        return self.__height
-
-    def getMaxCombatLoot(self):
-        return self.__maxCombatLoot
-
-    def getPollutionDiffusionCountdown(self):
-        return self.__pollutionDiffusionCountdown
-
-    def getPollutionDiffusionDelay(self):
-        return self.__pollutionDiffusionDelay
-
-    def getSpiceProductionPollutionFactor(self):
-        return self.__spiceProductionPollutionFactor
-
-    def getSugarProductionPollutionFactor(self):
-        return self.__sugarProductionPollutionFactor
-
-    def getSeasonalGrowbackCountdown(self):
-        return self.__seasonalGrowbackCountdown
-
-    def getSeasonInterval(self):
-        return self.__seasonInterval
-
-    def getSeasonNorth(self):
-        return self.__seasonNorth
-
-    def getSeasonSouth(self):
-        return self.__seasonSouth
-
-    def getSpiceConsumptionPollutionFactor(self):
-        return self.__spiceConsumptionPollutionFactor
-
-    def getSugarConsumptionPollutionFactor(self):
-        return self.__sugarConsumptionPollutionFactor
-
-    def getSugarscape(self):
-        return self.__sugarscape
-
-    def getWidth(self):
-        return self.__width
-
-    def setCell(self, cell, x, y):
-        self.__grid[x][y] = cell
-
-    def setCellNeighbors(self):
-        for i in range(self.__height):
-            for j in range(self.__width):
-                self.__grid[i][j].findNeighbors()
-
-    def setEquator(self, equator):
-        self.__equator = equator
-
-    def setGlobalMaxSpice(self, globalMaxSpice):
-        self.__globalMaxSpice = globalMaxSpice
-
-    def setGlobalMaxSugar(self, globalMaxSugar):
-        self.__globalMaxSugar = globalMaxSugar
-
-    def setGrid(self, grid):
-        self.__grid = grid
-
-    def setHeight(self, height):
-        self.__height = height
-
-    def setMaxCombatLoot(self, maxCombatLoot):
-        self.__maxCombatLoot = maxCombatLoot
-
-    def setPollutionDiffusionCountdown(self, pollutionDiffusionCountdown):
-        self.__pollutionDiffusionCountdown = pollutionDiffusionCountdown
-
-    def setPollutionDiffusionDelay(self, pollutionDiffusionDelay):
-        self.__pollutionDiffusionDelay = pollutionDiffisionDelay
-
-    def setSeasonalGrowbackCountdown(self, seasonalGrowbackCountdown):
-        self.__seasonalGrowbackCountdown = seasonalGrowbackCountdown
-
-    def setSeasonInterval(self, seasonInterval):
-        self.__seasonInterval = seasonInterval
-
-    def setSeasonNorth(self, seasonNorth):
-        self.__seasonNorth = seasonNorth
-
-    def setSeasonSouth(self, seasonSouth):
-        self.__seasonSouth = seasonSouth
-
-    def setSpiceConsumptionPollutionFactor(self, spiceConsumptionPollutionFactor):
-        self.__spiceConsumptionPollutionFactor = spiceConsumptionPollutionFactor
-
-    def setSugarConsumptionPollutionFactor(self, sugarConsumptionPollutionFactor):
-        self.__sugarConsumptionPollutionFactor = sugarConsumptionPollutionFactor
-
-    def setSpiceProductionPollutionFactor(self, spiceProductionPollutionFactor):
-        self.__spiceProductionPollutionFactor = spiceProductionPollutionFactor
+    def findCell(self, x, y):
+        return self.grid[x][y]
  
-    def setSugarProductionPollutionFactor(self, sugarProductionPollutionFactor):
-        self.__sugarProductionPollutionFactor = sugarProductionPollutionFactor
+    def findCellNeighbors(self):
+        for i in range(self.height):
+            for j in range(self.width):
+                self.grid[i][j].findNeighbors()
 
-    def setSugarscape(self, sugarscape):
-        self.__sugarscape = sugarscape
+    def placeCell(self, cell, x, y):
+        self.grid[x][y] = cell
 
-    def setWidth(self, width):
-        self.__width = width
+    def resetCell(self, x, y):
+        self.grid[x][y] = None
 
     def updatePollution(self):
-        if self.__pollutionDiffusionDelay > 0:
-            self.__pollutionDiffusionCountdown -= 1
+        if self.pollutionDiffusionDelay > 0:
+            self.pollutionDiffusionCountdown -= 1
             # Pollution diffusion delay over
-            if self.__pollutionDiffusionCountdown == 0:
-                self.__pollutionDiffusionCountdown = self.__pollutionDiffusionDelay
+            if self.pollutionDiffusionCountdown == 0:
+                self.pollutionDiffusionCountdown = self.pollutionDiffusionDelay
 
     def updateSeasons(self):
-        if self.__seasonInterval > 0:
-            self.__seasonalGrowbackCountdown -= 1
+        if self.seasonInterval > 0:
+            self.seasonalGrowbackCountdown -= 1
             # Seasonal growback delay over
-            if self.__seasonalGrowbackCountdown == 0:
-                self.__seasonalGrowbackCountdown = self.__seasonalGrowbackDelay
-            if self.__timestep % self.__seasonInterval == 0:
-                if self.__seasonNorth == "summer":
-                    self.__seasonNorth = "winter"
-                    self.__seasonSouth = "summer"
+            if self.seasonalGrowbackCountdown == 0:
+                self.seasonalGrowbackCountdown = self.seasonalGrowbackDelay
+            if self.timestep % self.seasonInterval == 0:
+                if self.seasonNorth == "summer":
+                    self.seasonNorth = "winter"
+                    self.seasonSouth = "summer"
                 else:
-                    self.__seasonNorth = "summer"
-                    self.__seasonSouth = "winter"
+                    self.seasonNorth = "summer"
+                    self.seasonSouth = "winter"
 
-    def unsetCell(self, x, y):
-        self.__grid[x][y] = None
-  
     def __str__(self):
         string = ""
-        for i in range(0, self.__height):
-            for j in range(0, self.__width):
-                cell = self.__grid[i][j]
+        for i in range(0, self.height):
+            for j in range(0, self.width):
+                cell = self.grid[i][j]
                 if cell == None:
                     cell = '_'
                 else:

@@ -14,11 +14,11 @@ import sys
 
 class Sugarscape:
     def __init__(self, configuration):
-        self.__configuration = configuration
-        self.__timestep = 0
-        self.__nextAgentID = 0
-        self.__nextDiseaseID = 0
-        self.__lastLoggedTimestep = 0
+        self.configuration = configuration
+        self.timestep = 0
+        self.nextAgentID = 0
+        self.nextDiseaseID = 0
+        self.lastLoggedTimestep = 0
         environmentConfiguration = {"globalMaxSugar": configuration["environmentMaxSugar"], "sugarRegrowRate": configuration["environmentSugarRegrowRate"],
                                     "seasonInterval": configuration["environmentSeasonInterval"], "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
                                     "spiceConsumptionPollutionFactor": configuration["environmentSpiceConsumptionPollutionFactor"],
@@ -27,80 +27,80 @@ class Sugarscape:
                                     "sugarProductionPollutionFactor": configuration["environmentSugarProductionPollutionFactor"],
                                     "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"], "maxCombatLoot": configuration["environmentMaxCombatLoot"],
                                     "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"], "sugarscapeSeed": configuration["seed"]}
-        self.__seed = configuration["seed"]
-        self.__environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
-        self.__environmentHeight = configuration["environmentHeight"]
-        self.__environmentWidth = configuration["environmentWidth"]
+        self.seed = configuration["seed"]
+        self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
+        self.environmentHeight = configuration["environmentHeight"]
+        self.environmentWidth = configuration["environmentWidth"]
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"])
-        self.__agents = []
-        self.__diseases = []
+        self.agents = []
+        self.diseases = []
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
-        self.__gui = gui.GUI(self) if configuration["headlessMode"] == False else None
-        self.__run = False # Simulation start flag
-        self.__end = False # Simulation end flag
-        self.__runtimeStats = {"timestep": 0, "agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
+        self.gui = gui.GUI(self) if configuration["headlessMode"] == False else None
+        self.run = False # Simulation start flag
+        self.end = False # Simulation end flag
+        self.runtimeStats = {"timestep": 0, "agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                                "meanTradePrice": 0, "meanTradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
-        self.__log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
-        self.__logAgent = None
+        self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
+        self.logAgent = None
 
     def addAgent(self, agent):
-        self.__agents.append(agent)
+        self.agents.append(agent)
 
     def addDisease(self, oldDisease, agent):
-        diseaseID = oldDisease.getID()
-        diseaseConfig = oldDisease.getConfiguration()
+        diseaseID = oldDisease.ID
+        diseaseConfig = oldDisease.configuration
         newDisease = disease.Disease(diseaseID, diseaseConfig)
         agent.catchDisease(newDisease)
 
     def addSpicePeak(self, startX, startY, radius, maxSpice):
-        height = self.__environment.getHeight()
-        width = self.__environment.getWidth()
+        height = self.environment.height
+        width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        seasons = True if self.__configuration["environmentSeasonInterval"] > 0 else False
+        seasons = True if self.configuration["environmentSeasonInterval"] > 0 else False
         for i in range(height):
             for j in range(width):
-                if self.__environment.getCell(i, j) == None:
-                    newCell = cell.Cell(i, j, self.__environment)
+                if self.environment.findCell(i, j) == None:
+                    newCell = cell.Cell(i, j, self.environment)
                     if seasons == True:
-                        if j >= self.__environment.getEquator():
-                            newCell.setSeason("summer")
+                        if j >= self.environment.equator:
+                            newCell.season = "summer"
                         else:
-                            newCell.setSeason("winter")
-                    self.__environment.setCell(newCell, i, j)
+                            newCell.season = "winter"
+                    self.environment.placeCell(newCell, i, j)
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSpice * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSpice)
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
-                if cellMaxCapacity > self.__environment.getCell(i, j).getMaxSpice():
-                    self.__environment.getCell(i, j).setMaxSpice(cellMaxCapacity)
-                    self.__environment.getCell(i, j).setCurrSpice(cellMaxCapacity)
+                if cellMaxCapacity > self.environment.findCell(i, j).maxSpice:
+                    self.environment.findCell(i, j).maxSpice = cellMaxCapacity
+                    self.environment.findCell(i, j).currSpice = cellMaxCapacity
 
     def addSugarPeak(self, startX, startY, radius, maxSugar):
-        height = self.__environment.getHeight()
-        width = self.__environment.getWidth()
+        height = self.environment.height
+        width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        seasons = True if self.__configuration["environmentSeasonInterval"] > 0 else False
+        seasons = True if self.configuration["environmentSeasonInterval"] > 0 else False
         for i in range(height):
             for j in range(width):
-                if self.__environment.getCell(i, j) == None:
-                    newCell = cell.Cell(i, j, self.__environment)
+                if self.environment.findCell(i, j) == None:
+                    newCell = cell.Cell(i, j, self.environment)
                     if seasons == True:
-                        if j >= self.__environment.getEquator():
-                            newCell.setSeason("summer")
+                        if j >= self.environment.equator:
+                            newCell.season = "summer"
                         else:
-                            newCell.setSeason("winter")
-                    self.__environment.setCell(newCell, i, j)
+                            newCell.season = "winter"
+                    self.environment.placeCell(newCell, i, j)
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSugar * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSugar)
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
-                if cellMaxCapacity > self.__environment.getCell(i, j).getMaxSugar():
-                    self.__environment.getCell(i, j).setMaxSugar(cellMaxCapacity)
-                    self.__environment.getCell(i, j).setCurrSugar(cellMaxCapacity)
+                if cellMaxCapacity > self.environment.findCell(i, j).maxSugar:
+                    self.environment.findCell(i, j).maxSugar = cellMaxCapacity
+                    self.environment.findCell(i, j).currSugar = cellMaxCapacity
  
     def configureAgents(self, numAgents):
-        if self.__environment == None:
+        if self.environment == None:
             return
 
         activeCells = self.findActiveQuadrants()
@@ -108,7 +108,7 @@ class Sugarscape:
             return
 
         totalCells = len(activeCells)
-        if len(self.__agents) + numAgents > totalCells:
+        if len(self.agents) + numAgents > totalCells:
             print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
             numAgents = totalCells
 
@@ -121,22 +121,22 @@ class Sugarscape:
             randCoord = randCoords.pop()
             randCellX = randCoord[0]
             randCellY = randCoord[1]
-            c = self.__environment.getCell(randCellX, randCellY)
+            c = self.environment.findCell(randCellX, randCellY)
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
-            a = agent.Agent(agentID, self.__timestep, c, agentConfiguration)
-            c.setAgent(a)
-            self.__agents.append(a)
+            a = agent.Agent(agentID, self.timestep, c, agentConfiguration)
+            c.agent = a
+            self.agents.append(a)
 
     def configureDiseases(self, numDiseases):
-        numAgents = len(self.__agents)
+        numAgents = len(self.agents)
         if numAgents == 0:
             return
         elif numAgents < numDiseases:
             numDiseases = numAgents
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
-        random.shuffle(self.__agents)
+        random.shuffle(self.agents)
         diseases = []
         for i in range(numDiseases):
             diseaseID = self.generateDiseaseID()
@@ -145,20 +145,20 @@ class Sugarscape:
             diseases.append(newDisease)
 
         unplacedDisease = 0
-        for agent in self.__agents:
+        for agent in self.agents:
             for newDisease in diseases:
                 hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
                 if hammingDistance != 0:
                     agent.catchDisease(newDisease)
-                    self.__diseases.append(newDisease)
+                    self.diseases.append(newDisease)
                     diseases.remove(newDisease)
                     break
         if len(diseases) > 0:
             print("Could not place {0} diseases.".format(len(diseases)))
 
     def configureEnvironment(self, maxSugar, maxSpice):
-        height = self.__environment.getHeight()
-        width = self.__environment.getWidth()
+        height = self.environment.height
+        width = self.environment.width
         startX1 = math.ceil(height * 0.7)
         startX2 = math.ceil(height * 0.3)
         startY1 = math.ceil(width * 0.3)
@@ -176,50 +176,50 @@ class Sugarscape:
         radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
         self.addSpicePeak(startX1, startY1, radius, maxSpice)
         self.addSpicePeak(startX2, startY2, radius, maxSpice)
-        self.__environment.setCellNeighbors()
+        self.environment.findCellNeighbors()
 
     def doTimestep(self):
         self.removeDeadAgents()
         self.replaceDeadAgents()
         self.updateRuntimeStats()
         self.writeToLog()
-        print("Timestep: {0}\nLiving Agents: {1}".format(self.__timestep, len(self.__agents)))
-        self.__timestep += 1
-        if self.__end == True or len(self.__agents) == 0:
-            self.setEnd()
+        print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
+        self.timestep += 1
+        if self.end == True or len(self.agents) == 0:
+            self.toggleEnd()
         else:
-            self.__environment.doTimestep(self.__timestep)
-            random.shuffle(self.__agents)
-            for agent in self.__agents:
-                agent.doTimestep(self.__timestep)
-            if self.__gui != None:
-                self.__gui.doTimestep()
+            self.environment.doTimestep(self.timestep)
+            random.shuffle(self.agents)
+            for agent in self.agents:
+                agent.doTimestep(self.timestep)
+            if self.gui != None:
+                self.gui.doTimestep()
         self.updateRuntimeStats()
 
     def endLog(self):
-        if self.__log == None:
+        if self.log == None:
             return
-        logString = '\t' + json.dumps(self.__runtimeStats) + "\n]"
-        self.__log.write(logString)
-        self.__log.flush()
-        self.__log.close()
+        logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
+        self.log.write(logString)
+        self.log.flush()
+        self.log.close()
 
     def endSimulation(self):
         deadAgents = []
-        for agent in self.__agents:
+        for agent in self.agents:
             if agent.isAlive() == False:
                 deadAgents.append(agent)
         for agent in deadAgents:
-            self.__agents.remove(agent)
+            self.agents.remove(agent)
         self.endLog()
         print(str(self))
         exit(0)
 
     def findActiveQuadrants(self):
-        quadrants = self.__configuration["agentStartingQuadrants"]
+        quadrants = self.configuration["agentStartingQuadrants"]
         cellRange = []
-        halfWidth = math.floor(self.__environmentWidth / 2)
-        halfHeight = math.floor(self.__environmentHeight / 2)
+        halfWidth = math.floor(self.environmentWidth / 2)
+        halfHeight = math.floor(self.environmentHeight / 2)
         # Quadrant I at origin in top left corner, other quadrants in clockwise order
         if 1 in quadrants:
             quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth)]
@@ -227,84 +227,51 @@ class Sugarscape:
                 for j in range(halfHeight):
                     cellRange.append([i, j])
         if 2 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth, self.__environmentWidth)]
-            for i in range(halfWidth, self.__environmentWidth):
+            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth, self.environmentWidth)]
+            for i in range(halfWidth, self.environmentWidth):
                 for j in range(halfHeight):
                     cellRange.append([i, j])
         if 3 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight, self.__environmentHeight)] for i in range(halfWidth, self.__environmentWidth)]
-            for i in range(halfWidth, self.__environmentWidth):
-                for j in range(halfHeight, self.__environmentHeight):
+            quadRange = [[(i, j) for j in range(halfHeight, self.environmentHeight)] for i in range(halfWidth, self.environmentWidth)]
+            for i in range(halfWidth, self.environmentWidth):
+                for j in range(halfHeight, self.environmentHeight):
                     cellRange.append([i, j])
         if 4 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight, self.__environmentHeight)] for i in range(halfWidth)]
+            quadRange = [[(i, j) for j in range(halfHeight, self.environmentHeight)] for i in range(halfWidth)]
             for i in range(halfWidth):
-                for j in range(halfHeight, self.__environmentHeight):
+                for j in range(halfHeight, self.environmentHeight):
                     cellRange.append([i, j])
         return cellRange
 
     def generateAgentID(self):
-        agentID = self.__nextAgentID
-        self.__nextAgentID += 1
+        agentID = self.nextAgentID
+        self.nextAgentID += 1
         return agentID
 
-    def getAgents(self):
-        return self.__agents
-
-    def getConfiguration(self):
-        return self.__configuration
-
     def generateDiseaseID(self):
-        diseaseID = self.__nextDiseaseID
-        self.__nextDiseaseID += 1
+        diseaseID = self.nextDiseaseID
+        self.nextDiseaseID += 1
         return diseaseID
 
-    def getEnd(self):
-        return self.__end
-
-    def getEnvironment(self):
-        return self.__environment
- 
-    def getEnvironmentHeight(self):
-        return self.__environmentHeight
-
-    def getEnvironmentWidth(self):
-        return self.__environmentWidth
-
-    def getGUI(self):
-        return self.__gui
-
-    def getRun(self):
-        return self.__run
-
-    def getRuntimeStats(self):
-        return self.__runtimeStats
-
-    def getSeed(self):
-        return self.__seed
-
-    def getTimestep(self):
-        return self.__timestep
-
     def pauseSimulation(self):
-        while self.__run == False:
-            if self.__gui != None and self.__end == False:
-                self.__gui.getWindow().update()
-            if self.__end == True:
+        while self.run == False:
+            if self.gui != None and self.end == False:
+                self.gui.window.update()
+            if self.end == True:
                 self.endSimulation()
 
     def printCell(self, cellX, cellY):
-        cell = self.__environment.getCell(cellX, cellY)
-        cellStats = "Cell ({0},{1}): {2}/{3} sugar, {4}/{5} spice, {6} pollution".format(cellX, cellY, cell.getCurrSugar(), cell.getMaxSugar(), cell.getCurrSpice(), cell.getMaxSpice(), cell.getCurrPollution())
-        agent = cell.getAgent()
+        cell = self.environment.findCell(cellX, cellY)
+        cellStats = "Cell ({0},{1}): {2}/{3} sugar, {4}/{5} spice, {6} pollution".format(cellX, cellY, cell.currSugar, cell.maxSugar, cell.currSpice, cell.maxSpice, cell.currPollution)
+        agent = cell.agent
         if agent != None:
-            agentStats = "Agent {0}: {1} timesteps old, {2} vision, {3} movement, {4} sugar, {5} spice, {6} mean metabolism".format(str(agent), agent.getAge(), agent.getVision(), agent.getMovement(), agent.getSugar(),
-                                                                                                                                    agent.getSpice(), (agent.getSugarMetabolism() + agent.getSpiceMetabolism()) / 2)
+            agentStats = "Agent {0}: {1} timesteps old, {2} vision, {3} movement, {4} sugar, {5} spice, {6} mean metabolism".format(str(agent), agent.age, agent.vision, agent.movement, agent.sugar,
+                                                                                                                                    agent.spice, (agent.sugarMetabolism + agent.spiceMetabolism) / 2)
             cellStats += "\n  {0}".format(agentStats)
         print(cellStats)
 
     def randomizeDiseaseEndowments(self, numDiseases):
-        configs = self.__configuration
+        configs = self.configuration
         sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
         spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
         movementPenalty = configs["diseaseMovementPenalty"]
@@ -394,7 +361,7 @@ class Sugarscape:
         return endowments
 
     def randomizeAgentEndowments(self, numAgents):
-        configs = self.__configuration
+        configs = self.configuration
         spiceMetabolism = configs["agentSpiceMetabolism"]
         sugarMetabolism = configs["agentSugarMetabolism"]
         movement = configs["agentMovement"]
@@ -498,7 +465,7 @@ class Sugarscape:
             random.shuffle(configurations[config]["endowments"])
         random.shuffle(sexes)
         for i in range(numAgents):
-            agentEndowment = {"seed": self.__seed, "sex": sexes[i], "tags": tags.pop(),
+            agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
@@ -524,69 +491,48 @@ class Sugarscape:
 
     def removeDeadAgents(self):
         deadAgents = []
-        for agent in self.__agents:
+        for agent in self.agents:
             if agent.isAlive() == False:
                 deadAgents.append(agent)
-            elif agent.getCell() == None:
+            elif agent.cell == None:
                 deadAgents.append(agent)
         for agent in deadAgents:
-            self.__agents.remove(agent)
+            self.agents.remove(agent)
 
     def replaceDeadAgents(self):
-        numAgents = len(self.__agents)
-        if numAgents < self.__configuration["agentReplacements"]:
-            numReplacements = self.__configuration["agentReplacements"] - numAgents
+        numAgents = len(self.agents)
+        if numAgents < self.configuration["agentReplacements"]:
+            numReplacements = self.configuration["agentReplacements"] - numAgents
             self.configureAgents(numReplacements)
-            if self.__gui != None:
-                self.__gui.doTimestep()
+            if self.gui != None:
+                self.gui.doTimestep()
 
     def runSimulation(self, timesteps=5):
         self.startLog()
-        if self.__gui != None:
+        if self.gui != None:
             self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
         t = 0
-        timesteps = timesteps - self.__timestep
-        while t <= timesteps and len(self.__agents) > 0:
+        timesteps = timesteps - self.timestep
+        while t <= timesteps and len(self.agents) > 0:
             self.doTimestep()
             t += 1
-            if self.__gui != None and self.__run == False:
+            if self.gui != None and self.run == False:
                 self.pauseSimulation()
         self.endSimulation()
 
-    def setAgents(self, agents):
-        self.__agents = agents
-
-    def setEnd(self):
-        self.__end = not self.__end
-
-    def setEnvironment(self, environment):
-        self.__environment = environment
-
-    def setEnvironmentHeight(self, environmentHeight):
-        self.__environmentHeight = environmentHeight
-
-    def setEnvironmentWidth(self, environmentWidth):
-        self.__environmentWidth = environmentWidth
-
-    def setGUI(self, gui):
-        self.__gui = gui
-
-    def setTimestep(self, timestep):
-        self.__timestep = timestep
-  
-    def setRun(self):
-        self.__run = not self.__run
-  
-    def setRuntimeStats(self, runtimeStats):
-        self.__runtimeStats = runtimeStats
-
     def startLog(self):
-        if self.__log == None:
+        if self.log == None:
             return
-        self.__log.write("[\n")
+        self.log.write("[\n")
+
+    def toggleEnd(self):
+        self.end = not self.end
+
+    def toggleRun(self):
+        self.run = not self.run
 
     def updateGiniCoefficient(self):
-        agentWealths = sorted([agent.getWealth() for agent in self.__agents])
+        agentWealths = sorted([agent.wealth for agent in self.agents])
         # Calculate area between line of equality and Lorenz curve of agent wealths
         height = 0
         area = 0
@@ -598,7 +544,7 @@ class Sugarscape:
         return giniCoefficient
 
     def updateRuntimeStats(self):
-        numAgents = len(self.__agents)
+        numAgents = len(self.agents)
         meanSugarMetabolism = 0
         meanSpiceMetabolism = 0
         meanMetabolism = 0
@@ -611,12 +557,12 @@ class Sugarscape:
         totalWealth = 0
         maxWealth = 0
         minWealth = sys.maxsize
-        for agent in self.__agents:
-            agentWealth = agent.getWealth()
-            meanSugarMetabolism += agent.getSugarMetabolism()
-            meanSpiceMetabolism += agent.getSpiceMetabolism()
-            meanVision += agent.getVision()
-            meanAge += agent.getAge()
+        for agent in self.agents:
+            agentWealth = agent.wealth
+            meanSugarMetabolism += agent.sugarMetabolism
+            meanSpiceMetabolism += agent.spiceMetabolism
+            meanVision += agent.vision
+            meanAge += agent.age
             meanWealth += agentWealth
             totalWealth += agentWealth
             if agentWealth < minWealth:
@@ -636,25 +582,25 @@ class Sugarscape:
             meanVision = 0
             meanAge = 0
             meanWealth = 0
-        self.__runtimeStats["timestep"] = self.__timestep
-        self.__runtimeStats["agents"] = numAgents
-        self.__runtimeStats["meanMetabolism"] = meanMetabolism
-        self.__runtimeStats["meanVision"] = meanVision
-        self.__runtimeStats["meanAge"] = meanAge
-        self.__runtimeStats["meanWealth"] = meanWealth
-        self.__runtimeStats["minWealth"] = minWealth
-        self.__runtimeStats["maxWealth"] = maxWealth
-        self.__runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.__agents) > 1 else 0
+        self.runtimeStats["timestep"] = self.timestep
+        self.runtimeStats["agents"] = numAgents
+        self.runtimeStats["meanMetabolism"] = meanMetabolism
+        self.runtimeStats["meanVision"] = meanVision
+        self.runtimeStats["meanAge"] = meanAge
+        self.runtimeStats["meanWealth"] = meanWealth
+        self.runtimeStats["minWealth"] = minWealth
+        self.runtimeStats["maxWealth"] = maxWealth
+        self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.agents) > 1 else 0
 
     def writeToLog(self):
-        self.__lastLoggedTimestep = self.__timestep
-        if self.__log == None:
+        self.lastLoggedTimestep = self.timestep
+        if self.log == None:
             return
-        logString = '\t' + json.dumps(self.__runtimeStats) + ",\n"
-        self.__log.write(logString)
+        logString = '\t' + json.dumps(self.runtimeStats) + ",\n"
+        self.log.write(logString)
 
     def __str__(self):
-        string = "{0}Seed: {1}\nTimestep: {2}\nLiving Agents: {3}".format(str(self.__environment), self.__seed, self.__lastLoggedTimestep, len(self.__agents))
+        string = "{0}Seed: {1}\nTimestep: {2}\nLiving Agents: {3}".format(str(self.environment), self.seed, self.lastLoggedTimestep, len(self.agents))
         return string
 
 def parseConfiguration(configFile, configuration):
