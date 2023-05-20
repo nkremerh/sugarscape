@@ -492,8 +492,8 @@ class Agent:
                 betterForSpiceSeller = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
                 betterForSugarSeller = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
 
-                #betterForSpiceSeller = spiceSeller.calculateWelfare(sugarPrice, (-1 * spicePrice)) > spiceSeller.calculateWelfare(0, 0)
-                #betterForSugarSeller = sugarSeller.calculateWelfare((-1 * sugarPrice), spicePrice) > sugarSeller.calculateWelfare(0, 0)
+                #betterForSpiceSeller = spiceSeller.calculateWelfare(sugarPrice, (-1 * spicePrice)) > spiceSeller.calculateWelfare(spiceSeller.getSugarMetabolism(), spiceSeller.getSpiceMetabolism())
+                #betterForSugarSeller = sugarSeller.calculateWelfare((-1 * sugarPrice), spicePrice) > sugarSeller.calculateWelfare(sugarSeller.getSugarMetabolism(), sugarSeller.getSpiceMetabolism())
                 
                 # Check that spice seller's new MRS does not cross over sugar seller's new MRS
                 # Evaluates to False for successful trades
@@ -544,6 +544,8 @@ class Agent:
     And of course, we will be right.
     '''
     def findBenthamActUtilitarianValueOfCell(self, cell):
+        # TODO: Consider neighbors of the potential cell for trading, lending, and reproduction (which generate nice)
+        cellNeighborAgents = cell.findNeighborAgents()
         cellSiteWealth = cell.getCurrSugar() + cell.getCurrSpice()
         cellMaxSiteWealth = cell.getMaxSugar() + cell.getMaxSpice()
         cellValue = 0
@@ -565,6 +567,10 @@ class Agent:
             futureReward = 0
             # Assuming agent can only see in four cardinal directions
             extent = len(self.__neighborhood) / (agentVision * 4) if agentVision > 0 else 1
+            # If not the agent moving, consider these as opportunity costs
+            if agent != self:
+                intensity = -1 * intensity
+                duration = -1 * duration
             agentValueOfCell = agent.getEthicalFactor() * (certainty * proximity * (intensity + duration + (discount * futureBliss * futureReward) + extent))
             cellValue += agentValueOfCell
         return cellValue
@@ -649,6 +655,10 @@ class Agent:
             bestCell = self.findBestEthicalCell(potentialCells)
         if bestCell == None:
             bestCell = self.__cell
+        if self.__ethicalFactor == 0:
+            print("Agent {0} moving to ({1},{2})".format(str(self), bestCell.getX(), bestCell.getY()))
+        else:
+            print("Agent {0} moving to ({1},{2})".format(str(self), bestCell.getX(), bestCell.getY()))
         return bestCell
 
     def findBestEthicalCell(self, cells):

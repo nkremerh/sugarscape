@@ -44,6 +44,14 @@ class Cell:
     def doTimestep(self, timestep):
         return
 
+    def findNeighborAgents(self):
+        agents = []
+        for neighbor in self.__neighbors:
+            agent = neighbor.getAgent()
+            if agent != None:
+                agents.append(agent)
+        return agents
+
     def findNeighbors(self):
         self.__neighbors = []
         self.__neighbors.append(self.getNorthNeighbor())
