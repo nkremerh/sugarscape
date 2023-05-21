@@ -306,15 +306,14 @@ class Agent:
         elif self.age < self.fertilityAge:
             return
         # Maximum interest rate of 100%
-        interestRate = max(1, self.lendingFactor * self.baseInterestRate)
-        neighborCells = self.cell.neighbors
+        interestRate = min(1, self.lendingFactor * self.baseInterestRate)
+        neighbors = self.cell.findNeighborAgents()
         borrowers = []
-        for neighborCell in neighborCells:
-            neighbor = neighborCell.agent
-            if neighbor != None and neighbor.isAlive() == True:
-                neighborAge = neighbor.age
-                if neighborAge > neighbor.fertilityAge and neighborAge < neighbor.infertilityAge and neighbor.isFertile() == False:
-                    borrowers.append(neighbor)
+        for neighbor in neighbors:
+            if neighbor.isAlive() == False:
+                continue
+            if neighbor.age >= neighbor.fertilityAge and neighbor.age < neighbor.infertilityAge and neighbor.isFertile() == False:
+                borrowers.append(neighbor)
         random.shuffle(borrowers)
         for borrower in borrowers:
             maxSugarLoan = self.sugar / 2
@@ -322,6 +321,9 @@ class Agent:
             if self.isFertile() == True:
                 maxSugarLoan = max(0, self.sugar - self.startingSugar)
                 maxSpiceLoan = max(0, self.spice - self.startingSpice)
+            # If not enough excess wealth to lend, stop lending
+            if maxSugarLoan == 0 and maxSpiceLoan == 0:
+                return
             sugarLoanNeed = max(0, borrower.startingSugar - borrower.sugar)
             spiceLoanNeed = max(0, borrower.startingSpice - borrower.spice)
             sugarLoanPrincipal = min(maxSugarLoan, sugarLoanNeed)
@@ -329,10 +331,11 @@ class Agent:
             sugarLoanAmount = sugarLoanPrincipal + (sugarLoanPrincipal * interestRate)
             spiceLoanAmount = spiceLoanPrincipal + (spiceLoanPrincipal * interestRate)
             # If lending would cause lender to starve, skip lending to potential borrower
-            if self.sugar - sugarLoanPrincipal < self.sugarMetabolism or self.spice - spiceLoanPrincipal < self.spiceMetabolism:
+            if self.sugar - sugarLoanPrincipal <= self.sugarMetabolism or self.spice - spiceLoanPrincipal <= self.spiceMetabolism:
                 continue
             elif borrower.isCreditWorthy(sugarLoanAmount, spiceLoanAmount, self.loanDuration) == True:
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
+                print("Agent {0} loaning [{1},{2}] to agent {3} for {4} timesteps with full payment [{5},{6}]".format(str(self), sugarLoanPrincipal, spiceLoanPrincipal, str(borrower), self.loanDuration, sugarLoanAmount, spiceLoanAmount))
 
     def doMetabolism(self):
         if self.alive == False:
@@ -430,22 +433,23 @@ class Agent:
                     traders.append(neighbor)
         random.shuffle(traders)
         for trader in traders:
-            traderMRS = trader.marginalRateOfSubstitution
             spiceSeller = None
             sugarSeller = None
             tradeFlag = True
             transactions = 0
 
-            # If both trying to sell the same commodity, stop trading
-            if traderMRS >= 1 and self.marginalRateOfSubstitution >= 1:
-                #print("Agent {0} and agent {1} both trying to sell spice".format(str(self), str(trader)))
-                continue
-            elif traderMRS < 1 and self.marginalRateOfSubstitution < 1:
-                #print("Agent {0} and agent {1} both trying to sell sugar".format(str(self), str(trader)))
-                continue
-
             while tradeFlag == True:
-                if traderMRS == self.marginalRateOfSubstitution:
+                traderMRS = trader.marginalRateOfSubstitution
+                # If both trying to sell the same commodity, stop trading
+                if traderMRS >= 1 and self.marginalRateOfSubstitution >= 1:
+                    #print("Agent {0} and agent {1} both trying to sell spice".format(str(self), str(trader)))
+                    tradeFlag = False
+                    continue
+                elif traderMRS < 1 and self.marginalRateOfSubstitution < 1:
+                    #print("Agent {0} and agent {1} both trying to sell sugar".format(str(self), str(trader)))
+                    tradeFlag = False
+                    continue
+                elif traderMRS == self.marginalRateOfSubstitution:
                     #print("Agent {0} and agent {1} MRS is equivalent".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
@@ -472,46 +476,37 @@ class Agent:
                     spicePrice = tradePrice
                     sugarPrice = 1
 
-                spiceSellerSpice = spiceSeller.spice
-                spiceSellerSugar = spiceSeller.sugar
-                spiceSellerSugarMetabolism = spiceSeller.sugarMetabolism
-                spiceSellerSpiceMetabolism = spiceSeller.spiceMetabolism
-                sugarSellerSpice = sugarSeller.spice
-                sugarSellerSugar = sugarSeller.sugar
-                sugarSellerSugarMetabolism = sugarSeller.sugarMetabolism
-                sugarSellerSpiceMetabolism = sugarSeller.spiceMetabolism
                 # If trade would be lethal, skip it
-                if spiceSellerSpice - spicePrice < spiceSellerSpiceMetabolism or sugarSellerSugar - sugarPrice < sugarSellerSugarMetabolism:
+                if spiceSeller.spice - spicePrice < spiceSeller.spiceMetabolism or sugarSeller.sugar - sugarPrice < sugarSeller.sugarMetabolism:
                     #print("Agent {0} and agent {1} aborting fatal trade".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
-                spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSellerSugar + sugarPrice, spiceSellerSpice - spicePrice)
-                sugarSellerNewMRS = sugarSeller.calculateMarginalRateOfSubstitution(sugarSellerSugar - sugarPrice, sugarSellerSpice + spicePrice)
+                spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSeller.sugar + sugarPrice, spiceSeller.spice - spicePrice)
+                sugarSellerNewMRS = sugarSeller.calculateMarginalRateOfSubstitution(sugarSeller.sugar - sugarPrice, sugarSeller.spice + spicePrice)
 
-                # TODO: Determine why absolute difference from parity results in higher population across seeds than calculating welfare
-                # Calculate absolute difference from perfect spice/sugar parity in MRS
-                betterForSpiceSeller = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
-                betterForSugarSeller = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
+                # Calculate absolute difference from perfect spice/sugar parity in MRS and change in agent welfare
+                betterSpiceSellerMRS = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
+                betterSugarSellerMRS = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
+                betterSpiceSellerWelfare = spiceSeller.calculateWelfare(sugarPrice, (-1 * spicePrice)) >= spiceSeller.calculateWelfare(0, 0)
+                betterSugarSellerWelfare = sugarSeller.calculateWelfare((-1 * sugarPrice), spicePrice) >= sugarSeller.calculateWelfare(0, 0)
+                # If either MRS or welfare is improved, mark the trade as better for agent
+                betterForSpiceSeller = betterSpiceSellerMRS or betterSpiceSellerWelfare
+                betterForSugarSeller = betterSugarSellerMRS or betterSugarSellerWelfare
 
-                #betterForSpiceSeller = spiceSeller.calculateWelfare(sugarPrice, (-1 * spicePrice)) > spiceSeller.calculateWelfare(spiceSeller.sugarMetabolism, spiceSeller.spiceMetabolism)
-                #betterForSugarSeller = sugarSeller.calculateWelfare((-1 * sugarPrice), spicePrice) > sugarSeller.calculateWelfare(sugarSeller.sugarMetabolism, sugarSeller.spiceMetabolism)
-                
                 # Check that spice seller's new MRS does not cross over sugar seller's new MRS
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller == True and betterForSugarSeller == True and checkForMRSCrossing == False:
-                    #print("Agent {0} and agent {1} confirming trade [{2}, {3}]\n\tSpice seller MRS: {4} --> {5}\n\tSugar seller MRS: {6} --> {7}".format(
-                    #    str(self), str(trader), sugarPrice, spicePrice, spiceSellerMRS, spiceSellerNewMRS, sugarSellerMRS, sugarSellerNewMRS))
-                    spiceSeller.sugar = spiceSellerSugar + sugarPrice
-                    spiceSeller.spice = spiceSellerSpice - spicePrice
-                    sugarSeller.sugar = sugarSellerSugar - sugarPrice
-                    sugarSeller.spice = sugarSellerSpice + spicePrice
+                    #print("Agent {0} and agent {1} confirming trade [{2}, {3}]\n\tSpice seller MRS: {4} --> {5}\n\tSugar seller MRS: {6} --> {7}".format(str(self), str(trader), sugarPrice, spicePrice, spiceSellerMRS, spiceSellerNewMRS, sugarSellerMRS, sugarSellerNewMRS))
+                    spiceSeller.sugar += sugarPrice
+                    spiceSeller.spice -= spicePrice
+                    sugarSeller.sugar -= sugarPrice
+                    sugarSeller.spice += spicePrice
                     spiceSeller.findMarginalRateOfSubstitution()
                     sugarSeller.findMarginalRateOfSubstitution()
                     transactions += 1
                 else:
-                    #print("Agent {0} and agent {1} aborting bad trade:\n\tBetter for spice seller --> {2}\n\tBetter for sugar seller --> {3}\n\tMRS crossing --> {4}".format(
-                    #    str(self), str(trader), betterForSpiceSeller, betterForSugarSeller, checkForMRSCrossing))
+                    #print("Agent {0} and agent {1} aborting bad trade:\n\tBetter for spice seller --> {2}\n\tBetter for sugar seller --> {3}\n\tMRS crossing --> {4}".format(str(self), str(trader), betterForSpiceSeller, betterForSugarSeller, checkForMRSCrossing))
                     tradeFlag = False
                     continue
             # If a trade occurred, log it
@@ -656,10 +651,12 @@ class Agent:
             bestCell = self.findBestEthicalCell(potentialCells)
         if bestCell == None:
             bestCell = self.cell
+        '''
         if self.ethicalFactor == 0:
             print("Agent {0} moving to ({1},{2})".format(str(self), bestCell.x, bestCell.y))
         else:
             print("Agent {0} moving to ({1},{2})".format(str(self), bestCell.x, bestCell.y))
+        '''
         return bestCell
 
     def findBestEthicalCell(self, cells):
@@ -973,10 +970,10 @@ class Agent:
         creditor.removeDebt(loan)
 
     def removeDebt(self, loan):
-        debt = None
         for debtor in self.socialNetwork["debtors"]:
             if debtor == loan:
                 self.socialNetwork["debtors"].remove(debtor)
+                print("Agent {0} removing debt of agent {1}".format(str(self), str(debtor["debtor"])))
                 return
 
     def resetCell(self):
