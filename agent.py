@@ -335,7 +335,6 @@ class Agent:
                 continue
             elif borrower.isCreditWorthy(sugarLoanAmount, spiceLoanAmount, self.loanDuration) == True:
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
-                print("Agent {0} loaning [{1},{2}] to agent {3} for {4} timesteps with full payment [{5},{6}]".format(str(self), sugarLoanPrincipal, spiceLoanPrincipal, str(borrower), self.loanDuration, sugarLoanAmount, spiceLoanAmount))
 
     def doMetabolism(self):
         if self.alive == False:
@@ -442,15 +441,12 @@ class Agent:
                 traderMRS = trader.marginalRateOfSubstitution
                 # If both trying to sell the same commodity, stop trading
                 if traderMRS >= 1 and self.marginalRateOfSubstitution >= 1:
-                    #print("Agent {0} and agent {1} both trying to sell spice".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
                 elif traderMRS < 1 and self.marginalRateOfSubstitution < 1:
-                    #print("Agent {0} and agent {1} both trying to sell sugar".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
                 elif traderMRS == self.marginalRateOfSubstitution:
-                    #print("Agent {0} and agent {1} MRS is equivalent".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
 
@@ -478,7 +474,6 @@ class Agent:
 
                 # If trade would be lethal, skip it
                 if spiceSeller.spice - spicePrice < spiceSeller.spiceMetabolism or sugarSeller.sugar - sugarPrice < sugarSeller.sugarMetabolism:
-                    #print("Agent {0} and agent {1} aborting fatal trade".format(str(self), str(trader)))
                     tradeFlag = False
                     continue
                 spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSeller.sugar + sugarPrice, spiceSeller.spice - spicePrice)
@@ -497,7 +492,6 @@ class Agent:
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller == True and betterForSugarSeller == True and checkForMRSCrossing == False:
-                    #print("Agent {0} and agent {1} confirming trade [{2}, {3}]\n\tSpice seller MRS: {4} --> {5}\n\tSugar seller MRS: {6} --> {7}".format(str(self), str(trader), sugarPrice, spicePrice, spiceSellerMRS, spiceSellerNewMRS, sugarSellerMRS, sugarSellerNewMRS))
                     spiceSeller.sugar += sugarPrice
                     spiceSeller.spice -= spicePrice
                     sugarSeller.sugar -= sugarPrice
@@ -506,7 +500,6 @@ class Agent:
                     sugarSeller.findMarginalRateOfSubstitution()
                     transactions += 1
                 else:
-                    #print("Agent {0} and agent {1} aborting bad trade:\n\tBetter for spice seller --> {2}\n\tBetter for sugar seller --> {3}\n\tMRS crossing --> {4}".format(str(self), str(trader), betterForSpiceSeller, betterForSugarSeller, checkForMRSCrossing))
                     tradeFlag = False
                     continue
             # If a trade occurred, log it
@@ -973,7 +966,6 @@ class Agent:
         for debtor in self.socialNetwork["debtors"]:
             if debtor == loan:
                 self.socialNetwork["debtors"].remove(debtor)
-                print("Agent {0} removing debt of agent {1}".format(str(self), str(debtor["debtor"])))
                 return
 
     def resetCell(self):
