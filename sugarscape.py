@@ -386,6 +386,7 @@ class Sugarscape:
         maxFriends = configs["agentMaxFriends"]
         inheritancePolicy = configs["agentInheritancePolicy"]
         ethicalFactor = configs["agentEthicalFactor"]
+        ethicalTheory = configs["agentEthicalTheory"]
 
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
@@ -466,7 +467,8 @@ class Sugarscape:
         random.shuffle(sexes)
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
-                              "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy}
+                              "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
+                              "ethicalTheory": ethicalTheory}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -675,6 +677,7 @@ if __name__ == "__main__":
     configuration = {"agentAggressionFactor": [0, 0],
                      "agentBaseInterestRate": [0.0, 0.0],
                      "agentEthicalFactor": [0, 0],
+                     "agentEthicalTheory": "none",
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
