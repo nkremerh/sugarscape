@@ -696,11 +696,10 @@ class Agent:
             i += 1
         # If not an ethical agent, return top selfish choice
         if self.ethicalTheory == "none":
-            bestCell = cells.pop()["cell"]
+            bestCell = cells[0]["cell"]
             return bestCell
         if self.ethicalTheory == "benthamAdvanced":
             for cell in cells:
-                #print("Agent {0} considering ({1},{2}) [{3},{4}]".format(str(self), cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"]))
                 ethicalScore = self.findBenthamAdvancedActUtilitarianValueOfCell(cell["cell"])
                 cell["wealth"] = ethicalScore
                 if ethicalScore > 0:
@@ -711,9 +710,7 @@ class Agent:
             for cell in cells:
                 ethicalScore = self.findBenthamSimpleActUtilitarianValueOfCell(cell["cell"])
                 cell["wealth"] = ethicalScore
-                #print("Agent {0} considering ({1},{2}) [{3},{4}]".format(str(self), cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"]))
             cells = self.sortCellsByWealth(cells)
-            cells.reverse()
             bestCell = cells.pop()
         if bestCell == None:
             bestCell = cells.pop()
