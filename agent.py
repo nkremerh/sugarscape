@@ -53,6 +53,9 @@ class Agent:
         self.tagZeroes = 0
         self.sugarMeanIncome = 1
         self.spiceMeanIncome = 1
+        self.tradeVolume = 0
+        self.spicePrice = 0
+        self.sugarPrice = 0
         self.nice = 0
 
     def addChildToCell(self, mate, cell, childConfiguration):
@@ -181,8 +184,8 @@ class Agent:
 
     def collectResourcesAtCell(self):
         if self.cell != None:
-            sugarCollected = self.cell.currSugar
-            spiceCollected = self.cell.currSpice
+            sugarCollected = self.cell.sugar
+            spiceCollected = self.cell.spice
             self.sugar += sugarCollected
             self.spice += spiceCollected
             self.wealth += sugarCollected + spiceCollected
@@ -429,6 +432,9 @@ class Agent:
         # If not a trader, skip trading
         if self.tradeFactor == 0:
             return
+        self.tradeVolume = 0
+        self.sugarPrice = 0
+        self.spicePrice = 0
         self.findMarginalRateOfSubstitution()
         neighborCells = self.cell.neighbors
         traders = []
@@ -506,6 +512,9 @@ class Agent:
                     continue
             # If a trade occurred, log it
             if spiceSeller != None and sugarSeller != None:
+                self.tradeVolume += sugarPrice + spicePrice
+                self.sugarPrice += sugarPrice
+                self.spicePrice += spicePrice
                 trader.updateTimesTradedWithAgent(self, self.lastMoved, transactions)
                 self.updateTimesTradedWithAgent(trader, self.lastMoved, transactions)
 
@@ -517,8 +526,10 @@ class Agent:
             return agent.wealth
 
     def findBenthamAdvancedActUtilitarianValueOfCell(self, cell):
-        cellSiteWealth = cell.currSugar + cell.currSpice
+        cellSiteWealth = cell.sugar + cell.spice
         cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
+        cellNeighborWealth = cell.findNeighborWealth()
+        globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
         cellValue = 0
         for agent in self.neighborhood:
             # TODO: Factor potentialNice into intensity, duration, and purity/fecundity
@@ -531,18 +542,21 @@ class Agent:
             cellDuration = cellSiteWealth / agentMetabolism if agentMetabolism > 0 else 0
             certainty = 1 if agent.canReachCell(cell) == True else 0
             proximity = 1 / timestepDistance
-            intensity = 1 / (1 + agent.findDaysToDeath())
+            intensity = (1 / (1 + agent.findDaysToDeath()) / (1 + cell.pollution))
             duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            # Agent discount, futureBliss, and futureReward deal with purity and fecundity, not currently included
-            discount = 0
-            futureBliss = 0
-            futureReward = 0
+            # Agent discount, futureBliss, and futureReward implement Bentham's purity and fecundity
+            discount = 0.5
+            futureBliss = (cellSiteWealth - agentMetabolism) / agentMetabolism if agentMetabolism > 0 else cellSiteWealth
+            futureBliss = futureBliss / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
+            futureReward = cellNeighborWealth / (globalMaxWealth * 4)
             # Assuming agent can only see in four cardinal directions
             extent = len(self.neighborhood) / (agentVision * 4) if agentVision > 0 else 1
             # If not the agent moving, consider these as opportunity costs
             if agent != self:
                 intensity = -1 * intensity
                 duration = -1 * duration
+                futureBliss = -1 * futureBliss
+                futureReward = -1 * futureReward
             agentValueOfCell = agent.ethicalFactor * (certainty * proximity * (intensity + duration + (discount * futureBliss * futureReward) + extent))
             cellValue += agentValueOfCell
         return cellValue
@@ -567,8 +581,10 @@ class Agent:
     '''
 
     def findBenthamSimpleActUtilitarianValueOfCell(self, cell):
-        cellSiteWealth = cell.currSugar + cell.currSpice
+        cellSiteWealth = cell.sugar + cell.spice
         cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
+        cellNeighborWealth = cell.findNeighborWealth()
+        globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
         cellValue = 0
         for agent in self.neighborhood:
             # Timesteps to reach cell, currently 1 since agent vision and movement are equal
@@ -579,18 +595,21 @@ class Agent:
             cellDuration = cellSiteWealth / agentMetabolism if agentMetabolism > 0 else 0
             certainty = 1 if agent.canReachCell(cell) == True else 0
             proximity = 1 / timestepDistance
-            intensity = 1 / (1 + agent.findDaysToDeath())
+            intensity = (1 / (1 + agent.findDaysToDeath()) / (1 + cell.pollution))
             duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            # Agent discount, futureBliss, and futureReward deal with purity and fecundity, not currently included
-            discount = 0
-            futureBliss = 0
-            futureReward = 0
+            # Agent discount, futureBliss, and futureReward implement Bentham's purity and fecundity
+            discount = 0.5
+            futureBliss = (cellSiteWealth - agentMetabolism) / agentMetabolism if agentMetabolism > 0 else cellSiteWealth
+            futureBliss = futureBliss / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
+            futureReward = cellNeighborWealth / (globalMaxWealth * 4)
             # Assuming agent can only see in four cardinal directions
             extent = len(self.neighborhood) / (agentVision * 4) if agentVision > 0 else 1
             # If not the agent moving, consider these as opportunity costs
             if agent != self:
                 intensity = -1 * intensity
                 duration = -1 * duration
+                futureBliss = -1 * futureBliss
+                futureReward = -1 * futureReward
             agentValueOfCell = agent.ethicalFactor * (certainty * proximity * (intensity + duration + (discount * futureBliss * futureReward) + extent))
             cellValue += agentValueOfCell
         return cellValue
@@ -628,8 +647,6 @@ class Agent:
 
             if cell.isOccupied() == True and self.aggressionFactor == 0:
                 continue
-            cellSugar = cell.currSugar
-            cellSpice = cell.currSpice
             prey = cell.agent
             # Avoid attacking agents from the same tribe
             if prey != None and prey.tribe == self.tribe:
@@ -648,8 +665,8 @@ class Agent:
 
             cellWealth = 0
             # Modify value of cell relative to the metabolism needs of the agent
-            welfare = self.calculateWelfare((cellSugar + welfarePreySugar), (cellSpice + welfarePreySpice))
-            cellWealth = welfare / (1 + cell.currPollution)
+            welfare = self.calculateWelfare((cell.sugar + welfarePreySugar), (cell.spice + welfarePreySpice))
+            cellWealth = welfare / (1 + cell.pollution)
 
             # Avoid attacking agents protected via retaliation
             if prey != None and retaliators[preyTribe] > self.wealth + cellWealth:
@@ -715,7 +732,8 @@ class Agent:
                     bestCell = cell["cell"]
                     break
         if bestCell == None:
-            bestCell = cells.pop()
+            bestCell = cells.pop()["cell"]
+            print("Agent {0} could not find an ethical cell".format(str(self)))
         return bestCell
 
     def findBestFriend(self):

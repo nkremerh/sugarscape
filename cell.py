@@ -6,10 +6,10 @@ class Cell:
         self.y = y
         self.environment = environment
         self.maxSugar = maxSugar
-        self.currSugar = maxSugar
+        self.sugar = maxSugar
         self.maxSpice = maxSpice
-        self.currSpice = maxSpice
-        self.currPollution = 0
+        self.spice = maxSpice
+        self.pollution = 0
         self.agent = None
         self.hemisphere = "north" if self.x >= self.environment.equator else "south"
         self.season = None
@@ -18,28 +18,28 @@ class Cell:
 
     def doSpiceConsumptionPollution(self, spiceConsumed):
         consumptionPollutionFactor = self.environment.spiceConsumptionPollutionFactor
-        self.currPollution += consumptionPollutionFactor * spiceConsumed
+        self.pollution += round(consumptionPollutionFactor * spiceConsumed, 2)
 
     def doSugarConsumptionPollution(self, sugarConsumed):
         consumptionPollutionFactor = self.environment.sugarConsumptionPollutionFactor
-        self.currPollution += consumptionPollutionFactor * sugarConsumed
+        self.pollution += round(consumptionPollutionFactor * sugarConsumed, 2)
 
     def doPollutionDiffusion(self):
-        meanPollution = self.currPollution
+        meanPollution = self.pollution
         for neighbor in self.neighbors:
-            meanPollution += neighbor.currPollution
-        meanPollution = meanPollution / (len(self.neighbors) + 1)
+            meanPollution += neighbor.pollution
+        meanPollution = round(meanPollution / (len(self.neighbors) + 1), 2)
         for neighbor in self.neighbors:
-            neighbor.currPollution = meanPollution
-        self.currPollution = meanPollution
+            neighbor.pollution = meanPollution
+        self.pollution = meanPollution
 
     def doSpiceProductionPollution(self, spiceProduced):
         productionPollutionFactor = self.environment.spiceProductionPollutionFactor
-        self.currPollution += productionPollutionFactor * spiceProduced
+        self.pollution += round(productionPollutionFactor * spiceProduced, 2)
 
     def doSugarProductionPollution(self, sugarProduced):
         productionPollutionFactor = self.environment.sugarProductionPollutionFactor
-        self.currPollution += productionPollutionFactor * sugarProduced
+        self.pollution += round(productionPollutionFactor * sugarProduced, 2)
 
     def doTimestep(self, timestep):
         return
@@ -58,6 +58,12 @@ class Cell:
         self.neighbors.append(self.findSouthNeighbor())
         self.neighbors.append(self.findEastNeighbor())
         self.neighbors.append(self.findWestNeighbor())
+
+    def findNeighborWealth(self):
+        neighborWealth = 0
+        for neighbor in self.neighbors:
+            neighborWealth += neighbor.sugar + neighbor.spice
+        return neighborWealth
 
     def findEastNeighbor(self):
         eastWrapAround = self.environment.width
@@ -98,10 +104,10 @@ class Cell:
         self.agent = None
 
     def resetSpice(self):
-        self.currSpice = 0
+        self.spice = 0
 
     def resetSugar(self):
-        self.currSugar = 0
+        self.sugar = 0
 
     def updateSeason(self):
         if self.season == "summer":
@@ -114,5 +120,5 @@ class Cell:
         if self.agent != None:
             string = "-A-"
         else:
-            string = "{0}/{1}".format(str(self.currSugar), str(self.currSpice))
+            string = "{0}/{1}".format(str(self.sugar), str(self.spice))
         return string

@@ -32,8 +32,8 @@ class Environment:
     def doCellUpdate(self):
         for i in range(self.height):
             for j in range(self.width):
-                cellCurrSugar = self.grid[i][j].currSugar
-                cellCurrSpice = self.grid[i][j].currSpice
+                cellCurrSugar = self.grid[i][j].sugar
+                cellCurrSpice = self.grid[i][j].spice
                 cellMaxSugar = self.grid[i][j].maxSugar
                 cellMaxSpice = self.grid[i][j].maxSpice
                 cellSeason = self.grid[i][j].season
@@ -41,11 +41,11 @@ class Environment:
                     if self.timestep % self.seasonInterval == 0:
                         self.grid[i][j].updateSeason()
                     if (cellSeason == "summer") or (cellSeason == "winter" and self.seasonalGrowbackCountdown == self.seasonalGrowbackDelay):
-                        self.grid[i][j].currSugar = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
-                        self.grid[i][j].currSpice = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
+                        self.grid[i][j].sugar = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
+                        self.grid[i][j].spice = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
                 else:
-                    self.grid[i][j].currSugar = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
-                    self.grid[i][j].currSpice = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
+                    self.grid[i][j].sugar = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
+                    self.grid[i][j].spice = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
                 if self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
                     self.grid[i][j].doPollutionDiffusion()
 

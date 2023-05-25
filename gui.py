@@ -178,11 +178,9 @@ class GUI:
             if self.activeColorOptions["environment"] == "Pollution":
                 return self.recolorByResourceAmount(cell, self.colors["pollution"])
             else:
-                currSugar = cell.currSugar
-                currSpice = cell.currSpice
-                if currSugar > 0 and currSpice == 0:
+                if cell.sugar > 0 and cell.spice == 0:
                     return self.recolorByResourceAmount(cell, self.colors["sugar"])
-                elif currSpice > 0 and currSugar == 0:
+                elif cell.spice > 0 and cell.sugar == 0:
                     return self.recolorByResourceAmount(cell, self.colors["spice"])
                 else:
                     return self.recolorByResourceAmount(cell, self.colors["sugarAndSpice"])
@@ -202,20 +200,18 @@ class GUI:
             # Since global max pollution changes at each timestep, set constant to prevent misleading recoloring of cells
             maxPollution = 20
             # Once a cell has exceeded the number of colors made possible with maxPollution, keep using the max color
-            recolorFactor = min(1, cell.currPollution / maxPollution)
+            recolorFactor = min(1, cell.pollution / maxPollution)
         else:
-            currSugar = cell.currSugar
-            currSpice = cell.currSpice
             maxSugar = self.sugarscape.environment.globalMaxSugar
             maxSpice = self.sugarscape.environment.globalMaxSpice
             if maxSugar == 0 and maxSpice == 0:
                 recolorFactor = 0
-            elif currSugar > 0 and currSpice == 0 and maxSugar > 0:
-                recolorFactor = currSugar / maxSugar
-            elif currSpice > 0 and currSugar == 0 and maxSpice > 0:
-                recolorFactor = currSpice / maxSpice
+            elif cell.sugar > 0 and cell.spice == 0 and maxSugar > 0:
+                recolorFactor = cell.sugar / maxSugar
+            elif cell.spice > 0 and cell.sugar == 0 and maxSpice > 0:
+                recolorFactor = cell.spice / maxSpice
             else:
-                recolorFactor = (currSugar + currSpice) / (maxSugar + maxSpice)
+                recolorFactor = (cell.sugar + cell.spice) / (maxSugar + maxSpice)
         subcolors = self.hexToInt(fillColor)
         i = 0
         for color in subcolors:
@@ -228,6 +224,6 @@ class GUI:
     def updateLabel(self):
         stats = self.sugarscape.runtimeStats
         statsString = "Timestep: {0} | Agents: {1} | Metabolism: {2:.2f} | Vision: {3:.2f} | Gini: {4:.2f} | Trade Price: {5:.2f} | Trade Volume: {6:.2f}".format(
-                self.sugarscape.timestep, stats["agents"], stats["meanMetabolism"], stats["meanVision"], stats["giniCoefficient"], stats["meanTradePrice"], stats["meanTradeVolume"])
+                self.sugarscape.timestep, stats["agents"], stats["meanMetabolism"], stats["meanVision"], stats["giniCoefficient"], stats["meanTradePrice"], stats["tradeVolume"])
         label = self.widgets["statsLabel"]
         label.config(text=statsString)

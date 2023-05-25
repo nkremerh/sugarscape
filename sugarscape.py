@@ -40,7 +40,7 @@ class Sugarscape:
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
         self.runtimeStats = {"timestep": 0, "agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
-                               "meanTradePrice": 0, "meanTradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
+                               "meanTradePrice": 0, "tradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logAgent = None
 
@@ -74,7 +74,7 @@ class Sugarscape:
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
                 if cellMaxCapacity > self.environment.findCell(i, j).maxSpice:
                     self.environment.findCell(i, j).maxSpice = cellMaxCapacity
-                    self.environment.findCell(i, j).currSpice = cellMaxCapacity
+                    self.environment.findCell(i, j).spice = cellMaxCapacity
 
     def addSugarPeak(self, startX, startY, radius, maxSugar):
         height = self.environment.height
@@ -97,7 +97,7 @@ class Sugarscape:
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
                 if cellMaxCapacity > self.environment.findCell(i, j).maxSugar:
                     self.environment.findCell(i, j).maxSugar = cellMaxCapacity
-                    self.environment.findCell(i, j).currSugar = cellMaxCapacity
+                    self.environment.findCell(i, j).sugar = cellMaxCapacity
 
     def configureAgents(self, numAgents):
         if self.environment == None:
@@ -262,7 +262,7 @@ class Sugarscape:
 
     def printCell(self, cellX, cellY):
         cell = self.environment.findCell(cellX, cellY)
-        cellStats = "Cell ({0},{1}): {2}/{3} sugar, {4}/{5} spice, {6} pollution".format(cellX, cellY, cell.currSugar, cell.maxSugar, cell.currSpice, cell.maxSpice, cell.currPollution)
+        cellStats = "Cell ({0},{1}): {2}/{3} sugar, {4}/{5} spice, {6} pollution".format(cellX, cellY, cell.sugar, cell.maxSugar, cell.spice, cell.maxSpice, cell.pollution)
         agent = cell.agent
         if agent != None:
             agentStats = "Agent {0}: {1} timesteps old, {2} vision, {3} movement, {4} sugar, {5} spice, {6} mean metabolism".format(str(agent), agent.age, agent.vision, agent.movement, agent.sugar,
@@ -542,7 +542,7 @@ class Sugarscape:
             height += wealth
             area += (height - wealth) / 2
         lineOfEquality = (height * len(agentWealths)) / 2
-        giniCoefficient = (lineOfEquality - area) / max(1, lineOfEquality)
+        giniCoefficient = round((lineOfEquality - area) / max(1, lineOfEquality), 2)
         return giniCoefficient
 
     def updateRuntimeStats(self):
@@ -554,36 +554,40 @@ class Sugarscape:
         meanWealth = 0
         meanAge = 0
         meanTradePrice = 0
-        meanTradeVolume = 0
+        tradeVolume = 0
         totalTradeVolume = 0
         totalWealth = 0
         maxWealth = 0
         minWealth = sys.maxsize
         for agent in self.agents:
-            agentWealth = agent.wealth
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
             meanVision += agent.vision
             meanAge += agent.age
-            meanWealth += agentWealth
-            totalWealth += agentWealth
-            if agentWealth < minWealth:
-                minWealth = agentWealth
-            if agentWealth > maxWealth:
-                maxWealth = agentWealth
+            meanWealth += agent.wealth
+            meanTradePrice += (agent.spicePrice / agent.sugarPrice) if agent.sugarPrice > 0 else 0
+            totalWealth += agent.wealth
+            tradeVolume += agent.tradeVolume
+            if agent.wealth < minWealth:
+                minWealth = agent.wealth
+            if agent.wealth > maxWealth:
+                maxWealth = agent.wealth
         if numAgents > 0:
             combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism
             if meanSugarMetabolism > 0 and meanSpiceMetabolism > 0:
-                combinedMetabolism = combinedMetabolism / 2
-            meanMetabolism = combinedMetabolism / numAgents
-            meanVision = meanVision / numAgents
-            meanAge = meanAge / numAgents
-            meanWealth = meanWealth / numAgents
+                combinedMetabolism = round(combinedMetabolism / 2, 2)
+            meanMetabolism = round(combinedMetabolism / numAgents, 2)
+            meanVision = round(meanVision / numAgents, 2)
+            meanAge = round(meanAge / numAgents, 2)
+            meanWealth = round(meanWealth / numAgents, 2)
+            meanTradePrice = round(meanTradePrice / numAgents, 2)
+            tradeVolume = round(tradeVolume, 2)
         else:
             meanMetabolism = 0
             meanVision = 0
             meanAge = 0
             meanWealth = 0
+            tradeVolume = 0
         self.runtimeStats["timestep"] = self.timestep
         self.runtimeStats["agents"] = numAgents
         self.runtimeStats["meanMetabolism"] = meanMetabolism
@@ -592,6 +596,8 @@ class Sugarscape:
         self.runtimeStats["meanWealth"] = meanWealth
         self.runtimeStats["minWealth"] = minWealth
         self.runtimeStats["maxWealth"] = maxWealth
+        self.runtimeStats["meanTradePrice"] = meanTradePrice
+        self.runtimeStats["tradeVolume"] = tradeVolume
         self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.agents) > 1 else 0
 
     def writeToLog(self):
