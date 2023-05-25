@@ -521,6 +521,7 @@ class Agent:
         cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
         cellValue = 0
         for agent in self.neighborhood:
+            # TODO: Factor potentialNice into intensity, duration, and purity/fecundity
             potentialNice = agent.findPotentialNiceOfCell(cell)
             # Timesteps to reach cell, currently 1 since agent vision and movement are equal
             timestepDistance = 1
@@ -674,7 +675,8 @@ class Agent:
             bestCell = self.findBestEthicalCell(potentialCells)
         if bestCell == None:
             bestCell = self.cell
-
+        
+        print("Agent {0} moving to ({1},{2})".format(str(self), bestCell.x, bestCell.y))
         return bestCell
 
     def findBestEthicalCell(self, cells):
@@ -703,19 +705,17 @@ class Agent:
                 ethicalScore = self.findBenthamAdvancedActUtilitarianValueOfCell(cell["cell"])
                 cell["wealth"] = ethicalScore
                 if ethicalScore > 0:
-                    #bestCell = cell["cell"]
-                    bestCell = cell
+                    bestCell = cell["cell"]
                     break
         elif self.ethicalTheory == "benthamSimple":
             for cell in cells:
                 ethicalScore = self.findBenthamSimpleActUtilitarianValueOfCell(cell["cell"])
                 cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            bestCell = cells.pop()
+                if ethicalScore > 0:
+                    bestCell = cell["cell"]
+                    break
         if bestCell == None:
             bestCell = cells.pop()
-        print("Agent {0} moving to ({1},{2}) [{3},{4}]".format(str(self), bestCell["cell"].x, bestCell["cell"].y, bestCell["wealth"], bestCell["range"]))
-        bestCell = bestCell["cell"]
         return bestCell
 
     def findBestFriend(self):
@@ -843,9 +843,13 @@ class Agent:
 
     # TODO: Tally factors of hedons/dolors for given cell
     def findPotentialNiceOfCell(self, cell):
+        # TODO: Reproduction nice capped at max number of times agent can reproduce
         potentialMates = []
+        # TODO: Trading nice capped at max number of resources traded to achieve MRS of 1
         potentialTraders = []
+        # TODO: Lending nice capped at max amount of wealth agent can lend
         potentialBorrowers = []
+        # TODO: Combat nice capped at wealth agent can score for tribe/neighborhood/etc.
         potentialPrey = []
         cellNeighborAgents = cell.findNeighborAgents()
         for agent in cellNeighborAgents:
