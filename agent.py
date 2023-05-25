@@ -608,7 +608,7 @@ class Agent:
         totalMetabolism = self.sugarMetabolism + self.spiceMetabolism
         sugarMetabolismProportion = 0
         spiceMetabolismProportion = 0
-        if totalMetabolism != 0: 
+        if totalMetabolism != 0:
             sugarMetabolismProportion = self.sugarMetabolism / totalMetabolism
             spiceMetabolismProportion = self.spiceMetabolism / totalMetabolism
         random.shuffle(self.cellsInVision)
@@ -675,7 +675,7 @@ class Agent:
             bestCell = self.findBestEthicalCell(potentialCells)
         if bestCell == None:
             bestCell = self.cell
-        
+
         print("Agent {0} moving to ({1},{2})".format(str(self), bestCell.x, bestCell.y))
         return bestCell
 
@@ -1089,7 +1089,7 @@ class Agent:
             i += 1
         return cells
 
-    def updateDiseaseEffects(self, disease): 
+    def updateDiseaseEffects(self, disease):
         # If disease not in list of diseases, agent has recovered and undo its effects
         recoveryCheck = -1
         for diseaseRecord in self.diseases:

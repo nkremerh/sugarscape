@@ -98,7 +98,7 @@ class Sugarscape:
                 if cellMaxCapacity > self.environment.findCell(i, j).maxSugar:
                     self.environment.findCell(i, j).maxSugar = cellMaxCapacity
                     self.environment.findCell(i, j).currSugar = cellMaxCapacity
- 
+
     def configureAgents(self, numAgents):
         if self.environment == None:
             return
@@ -167,7 +167,7 @@ class Sugarscape:
         radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
         self.addSugarPeak(startX1, startY1, radius, maxSugar)
         self.addSugarPeak(startX2, startY2, radius, maxSugar)
-        
+
         startX1 = math.ceil(height * 0.7)
         startX2 = math.ceil(height * 0.3)
         startY1 = math.ceil(width * 0.7)
@@ -431,12 +431,12 @@ class Sugarscape:
         sexes = []
         tags = []
         immuneSystems = []
-        
+
         sexDistributionCountdown = numAgents
         # Determine count of male agents and set as switch for agent generation
         if maleToFemaleRatio != None and maleToFemaleRatio != 0:
             sexDistributionCountdown = math.floor(sexDistributionCountdown / (maleToFemaleRatio + 1)) * maleToFemaleRatio
-        
+
         for i in range(numAgents):
             for config in configurations:
                 configurations[config]["endowments"].append(configurations[config]["curr"])
@@ -484,7 +484,7 @@ class Sugarscape:
                     continue
                 else:
                     agentEndowment[config] = configurations[config]["endowments"].pop()
-            
+
             if sexes[i] == None:
                 agentEndowment["fertilityAge"] = 0
                 agentEndowment["infertilityAge"] = 0
@@ -572,7 +572,7 @@ class Sugarscape:
             if agentWealth > maxWealth:
                 maxWealth = agentWealth
         if numAgents > 0:
-            combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism 
+            combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism
             if meanSugarMetabolism > 0 and meanSpiceMetabolism > 0:
                 combinedMetabolism = combinedMetabolism / 2
             meanMetabolism = combinedMetabolism / numAgents

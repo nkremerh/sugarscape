@@ -57,7 +57,7 @@ class Environment:
 
     def findCell(self, x, y):
         return self.grid[x][y]
- 
+
     def findCellNeighbors(self):
         for i in range(self.height):
             for j in range(self.width):

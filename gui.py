@@ -61,7 +61,7 @@ class GUI:
         self.widgets["agentColorMenu"] = agentColorMenu
         self.widgets["environmentColorMenu"] = environmentColorMenu
         self.widgets["statsLabel"] = statsLabel
- 
+
     def configureEnvironment(self):
         borderOffset = 30
         siteSize = (self.screenHeight - borderOffset) / self.sugarscape.environmentWidth
