@@ -32,6 +32,7 @@ class Sugarscape:
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"])
+        self.debugMode = configuration["debugMode"]
         self.agents = []
         self.diseases = []
         self.configureAgents(configuration["startingAgents"])
@@ -707,6 +708,7 @@ if __name__ == "__main__":
                      "agentTagStringLength": 0,
                      "agentTradeFactor": [0, 0],
                      "agentVision": [1, 6],
+                     "debugMode": False,
                      "diseaseAggressionPenalty": [0, 0],
                      "diseaseFertilityPenalty": [0, 0],
                      "diseaseMovementPenalty": [0, 0],

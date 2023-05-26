@@ -18,28 +18,28 @@ class Cell:
 
     def doSpiceConsumptionPollution(self, spiceConsumed):
         consumptionPollutionFactor = self.environment.spiceConsumptionPollutionFactor
-        self.pollution += round(consumptionPollutionFactor * spiceConsumed, 2)
+        self.pollution += consumptionPollutionFactor * spiceConsumed
 
     def doSugarConsumptionPollution(self, sugarConsumed):
         consumptionPollutionFactor = self.environment.sugarConsumptionPollutionFactor
-        self.pollution += round(consumptionPollutionFactor * sugarConsumed, 2)
+        self.pollution += consumptionPollutionFactor * sugarConsumed
 
     def doPollutionDiffusion(self):
         meanPollution = self.pollution
         for neighbor in self.neighbors:
             meanPollution += neighbor.pollution
-        meanPollution = round(meanPollution / (len(self.neighbors) + 1), 2)
+        meanPollution = meanPollution / (len(self.neighbors) + 1)
         for neighbor in self.neighbors:
             neighbor.pollution = meanPollution
         self.pollution = meanPollution
 
     def doSpiceProductionPollution(self, spiceProduced):
         productionPollutionFactor = self.environment.spiceProductionPollutionFactor
-        self.pollution += round(productionPollutionFactor * spiceProduced, 2)
+        self.pollution += productionPollutionFactor * spiceProduced
 
     def doSugarProductionPollution(self, sugarProduced):
         productionPollutionFactor = self.environment.sugarProductionPollutionFactor
-        self.pollution += round(productionPollutionFactor * sugarProduced, 2)
+        self.pollution += productionPollutionFactor * sugarProduced
 
     def doTimestep(self, timestep):
         return

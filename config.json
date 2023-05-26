@@ -27,6 +27,7 @@
     "agentTagStringLength": 11,
     "agentTradeFactor": [1, 1],
     "agentVision": [1, 6],
+    "debugMode": true,
     "diseaseAggressionPenalty": [-1, 1],
     "diseaseFertilityPenalty": [-1, 0],
     "diseaseMovementPenalty": [0, 0],

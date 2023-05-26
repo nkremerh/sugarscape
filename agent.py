@@ -7,6 +7,7 @@ class Agent:
         self.ID = agentID
         self.born = birthday
         self.cell = cell
+        self.debug = cell.environment.sugarscape.debugMode if cell != None else False
 
         self.sugarMetabolism = configuration["sugarMetabolism"]
         self.spiceMetabolism = configuration["spiceMetabolism"]
@@ -281,26 +282,26 @@ class Agent:
                 livingFriends.append(friend["friend"])
 
         if self.inheritancePolicy == "children" and len(livingChildren) > 0:
-            sugarInheritance = round(self.sugar / len(livingChildren), 2)
-            spiceInheritance = round(self.spice / len(livingChildren), 2)
+            sugarInheritance = self.sugar / len(livingChildren)
+            spiceInheritance = self.spice / len(livingChildren)
             for child in livingChildren:
                 child.sugar = child.sugar + sugarInheritance
                 child.spice = child.spice + spiceInheritance
         elif self.inheritancePolicy == "sons" and len(livingSons) > 0:
-            sugarInheritance = round(self.sugar / len(livingSons), 2)
-            spiceInheritance = round(self.spice / len(livingSons), 2)
+            sugarInheritance = self.sugar / len(livingSons)
+            spiceInheritance = self.spice / len(livingSons)
             for son in livingSons:
                 son.sugar = son.sugar + sugarInheritance
                 son.spice = son.spice + spiceInheritance
         elif self.inheritancePolicy == "daughters" and len(livingDaughters) > 0:
-            sugarInheritance = round(self.sugar / len(livingDaughters), 2)
-            spiceInheritance = round(self.spice / len(livingDaughters), 2)
+            sugarInheritance = self.sugar / len(livingDaughters)
+            spiceInheritance = self.spice / len(livingDaughters)
             for daughter in livingDaughters:
                 daughter.sugar = daughter.sugar + sugarInheritance
                 daughter.spice = daughter.spice + spiceInheritance
         elif self.inheritancePolicy == "friends" and len(livingFriends) > 0:
-            sugarInheritance = round(self.sugar / len(livingFriends), 2)
-            spiceInheritance = round(self.spice / len(livingFriends), 2)
+            sugarInheritance = self.sugar / len(livingFriends)
+            spiceInheritance = self.spice / len(livingFriends)
             for friend in livingFriends:
                 friend.sugar = friend.sugar + sugarInheritance
                 friend.spice = friend.spice + spiceInheritance
@@ -333,11 +334,11 @@ class Agent:
                 return
             sugarLoanNeed = max(0, borrower.startingSugar - borrower.sugar)
             spiceLoanNeed = max(0, borrower.startingSpice - borrower.spice)
-            # Find sugar and spice loans, rounded to 2 decimal places
-            sugarLoanPrincipal = round(min(maxSugarLoan, sugarLoanNeed), 2)
-            spiceLoanPrincipal = round(min(maxSpiceLoan, spiceLoanNeed), 2)
-            sugarLoanAmount = round(sugarLoanPrincipal + (sugarLoanPrincipal * interestRate), 2)
-            spiceLoanAmount = round(spiceLoanPrincipal + (spiceLoanPrincipal * interestRate), 2)
+            # Find sugar and spice loans
+            sugarLoanPrincipal = min(maxSugarLoan, sugarLoanNeed)
+            spiceLoanPrincipal = min(maxSpiceLoan, spiceLoanNeed)
+            sugarLoanAmount = sugarLoanPrincipal + (sugarLoanPrincipal * interestRate)
+            spiceLoanAmount = spiceLoanPrincipal + (spiceLoanPrincipal * interestRate)
             # If no loan needed within significant figures or lender excess resources exhausted
             if (sugarLoanNeed == 0 and spiceLoanNeed == 0) or (sugarLoanAmount == 0 and spiceLoanAmount == 0):
                 continue
@@ -345,6 +346,8 @@ class Agent:
             elif self.sugar - sugarLoanPrincipal <= self.sugarMetabolism or self.spice - spiceLoanPrincipal <= self.spiceMetabolism:
                 continue
             elif borrower.isCreditWorthy(sugarLoanAmount, spiceLoanAmount, self.loanDuration) == True:
+                if self.debug == True:
+                    print("Agent {0} lending [{1},{2}]".format(str(self), sugarLoanAmount, spiceLoanAmount))
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
 
     def doMetabolism(self):
@@ -388,10 +391,10 @@ class Agent:
                     neighbor.updateTimesReproducedWithAgent(self, self.lastMoved)
                     self.updateTimesReproducedWithAgent(neighbor, self.lastMoved)
 
-                    sugarCost = round(self.startingSugar / (self.fertilityFactor * 2), 2)
-                    spiceCost = round(self.startingSpice / (self.fertilityFactor * 2), 2)
-                    mateSugarCost = round(neighbor.startingSugar / (neighbor.fertilityFactor * 2), 2)
-                    mateSpiceCost = round(neighbor.startingSpice / (neighbor.fertilityFactor * 2), 2)
+                    sugarCost = self.startingSugar / (self.fertilityFactor * 2)
+                    spiceCost = self.startingSpice / (self.fertilityFactor * 2)
+                    mateSugarCost = neighbor.startingSugar / (neighbor.fertilityFactor * 2)
+                    mateSpiceCost = neighbor.startingSpice / (neighbor.fertilityFactor * 2)
                     self.sugar -= sugarCost
                     self.spice -= spiceCost
                     neighbor.sugar = neighbor.sugar - mateSugarCost
@@ -468,8 +471,8 @@ class Agent:
                 spiceSellerMRS = spiceSeller.marginalRateOfSubstitution
                 sugarSellerMRS = sugarSeller.marginalRateOfSubstitution
 
-                # Find geometric mean of spice and sugar seller MRS for trade price, rounded to 2 decimal places
-                tradePrice = round(math.sqrt(spiceSellerMRS * sugarSellerMRS), 2)
+                # Find geometric mean of spice and sugar seller MRS for trade price
+                tradePrice = math.sqrt(spiceSellerMRS * sugarSellerMRS)
                 sugarPrice = 0
                 spicePrice = 0
                 # Set proper highest value commodity based on trade price
@@ -500,6 +503,8 @@ class Agent:
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller == True and betterForSugarSeller == True and checkForMRSCrossing == False:
+                    if self.debug == True:
+                        print("Agent {0} trading [{1}, {2}]".format(str(self), sugarPrice, spicePrice))
                     spiceSeller.sugar += sugarPrice
                     spiceSeller.spice -= spicePrice
                     sugarSeller.sugar -= sugarPrice
@@ -693,7 +698,8 @@ class Agent:
         if bestCell == None:
             bestCell = self.cell
 
-        print("Agent {0} moving to ({1},{2})".format(str(self), bestCell.x, bestCell.y))
+        if self.debug == True:
+            print("Agent {0} moving to ({1},{2})".format(str(self), bestCell.x, bestCell.y))
         return bestCell
 
     def findBestEthicalCell(self, cells):
@@ -702,17 +708,18 @@ class Agent:
         bestCell = None
         cells = self.sortCellsByWealth(cells)
         cells.reverse()
-        i = 0
-        while i < len(cells):
-            cell = cells[i]
-            cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
-            if i == 0:
-                print("Best cell: " + cellString)
-            elif i == len(cells) - 1:
-                print("Worst cell: " + cellString)
-            else:
-                print("Cell: " + cellString)
-            i += 1
+        if self.debug == True:
+            i = 0
+            while i < len(cells):
+                cell = cells[i]
+                cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
+                if i == 0:
+                    print("Best cell: " + cellString)
+                elif i == len(cells) - 1:
+                    print("Worst cell: " + cellString)
+                else:
+                    print("Cell: " + cellString)
+                i += 1
         # If not an ethical agent, return top selfish choice
         if self.ethicalTheory == "none":
             bestCell = cells[0]["cell"]
@@ -734,6 +741,20 @@ class Agent:
         if bestCell == None:
             bestCell = cells.pop()["cell"]
             print("Agent {0} could not find an ethical cell".format(str(self)))
+        if self.debug == True:
+            cells = self.sortCellsByWealth(cells)
+            cells.reverse()
+            i = 0
+            while i < len(cells):
+                cell = cells[i]
+                cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
+                if i == 0:
+                    print("Best cell: " + cellString)
+                elif i == len(cells) - 1:
+                    print("Worst cell: " + cellString)
+                else:
+                    print("Cell: " + cellString)
+                i += 1
         return bestCell
 
     def findBestFriend(self):
@@ -781,8 +802,8 @@ class Agent:
         parentMaxFriends = [self.maxFriends, mate.maxFriends]
         parentEthicalFactors = [self.ethicalFactor, mate.ethicalFactor]
         # Each parent gives 1/2 their starting endowment for child endowment
-        childStartingSugar = round((self.startingSugar / 2) + (mate.startingSugar / 2), 2)
-        childStartingSpice = round((self.startingSpice / 2) + (mate.startingSpice / 2), 2)
+        childStartingSugar = (self.startingSugar / 2) + (mate.startingSugar / 2)
+        childStartingSpice = (self.startingSpice / 2) + (mate.startingSpice / 2)
 
         childSugarMetabolism = parentSugarMetabolisms[random.randrange(2)]
         childSpiceMetabolism = parentSpiceMetabolisms[random.randrange(2)]
@@ -920,7 +941,7 @@ class Agent:
         spiceNeed = self.spice / self.spiceMetabolism if self.spiceMetabolism > 0 else 1
         sugarNeed = self.sugar / self.sugarMetabolism if self.sugarMetabolism > 0 else 1
         # Trade factor may increase amount of spice traded for sugar in a transaction
-        self.marginalRateOfSubstitution = round(self.tradeFactor * (spiceNeed / sugarNeed), 2)
+        self.marginalRateOfSubstitution = self.tradeFactor * (spiceNeed / sugarNeed)
 
     def findRetaliatorsInVision(self):
         retaliators = {}
@@ -1189,8 +1210,8 @@ class Agent:
     def updateMeanIncome(self, sugarIncome, spiceIncome):
         # Define weight for moving average
         alpha = 0.05
-        self.sugarMeanIncome = round((alpha * sugarIncome) + ((1 - alpha) * self.sugarMeanIncome), 2)
-        self.spiceMeanIncome = round((alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome), 2)
+        self.sugarMeanIncome = (alpha * sugarIncome) + ((1 - alpha) * self.sugarMeanIncome)
+        self.spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome)
 
     def updateNeighbors(self):
         self.updateVonNeumannNeighbors()
