@@ -73,7 +73,7 @@ JSON Configuration File Options:
 The simulation provides a default set of options in a dictionary in the sugarscape.py file.
 A JSON configuration file can be passed to the simulation, overwriting the default configuration, with the --conf option.
 
-agentAggressionFactor: [int, int]
+agentAggressionFactor: [float, float]
     Set the aggressiveness of an agent.
     The more aggressive an agent the more likely they will be enticed by combat options.
     Default: [0, 0]
@@ -82,9 +82,13 @@ agentBaseInterestRate: [float, float]
     Set the interest rate for an agent's lending as a percentage.
     Default: [0.0, 0.0]
 
-agentEthicalFactor: [int, int]
+agentEthicalFactor: [float, float]
     Set the agent weight of ethical decisionmaking over biological imperatives.
     Default: [0, 0]
+
+agentEthicalTheory: string
+    Set the agent ethical theory for algorithmic decisionmaking.
+    Default: "none"
 
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
@@ -94,7 +98,7 @@ agentFemaleFertilityAge: [int, int]
     Set the timestep age at which female agents become fertile.
     Default: [0, 0]
 
-agentFertilityFactor: [int, int]
+agentFertilityFactor: [float, float]
     Set the fertility bonus for the agent.
     The higher the factor, the fewer resources the agent expends to reproduce.
     Default: [0, 0]
@@ -108,7 +112,7 @@ agentInheritancePolicy: string
     Options: "children". "daughters", "friends", "none", "sons"
     Default: "none"
 
-agentLendingFactor: [int, int]
+agentLendingFactor: [float, float]
     Set lending aggressiveness of agent.
     The more aggressive an agent is to lend, the higher the offered interest rate will be.
     Default: [0, 0]
@@ -150,15 +154,15 @@ agentReplacements: int
     Set maximum number of agents to replace in environment on agent death.
     Default: 0
 
-agentSpiceMetabolism: [int, int]
+agentSpiceMetabolism: [float, float]
     Set agent metabolism for spice per timestep.
     Default: [0, 0]
 
-agentStartingSpice: [int, int]
+agentStartingSpice: [float, float]
     Set agent starting spice hold.
     Default: [0, 0]
 
-agentStartingSugar: [int, int]
+agentStartingSugar: [float, float]
     Set agent starting sugar hold.
     Default: [10, 40]
 
@@ -170,7 +174,7 @@ agentStartingQuadrants: [int (,int, int, int)]
     Quadrant 4 begins in the bottom left.
     Default: [1, 2, 3, 4]
 
-agentSugarMetabolism: [int, int]
+agentSugarMetabolism: [float, float]
     Set agent metabolism for sugar per timestep.
     Default: [1, 4]
 
@@ -178,7 +182,7 @@ agentTagStringLength: int
     Set agent cultural tags string length.
     Default: 0
 
-agentTradeFactor: [int, int]
+agentTradeFactor: [float, float]
     Set agent trade aggressiveness.
     The more aggressive in trading an agent, the more resources they will attempt to trade.
     Default: [0, 0]
@@ -187,12 +191,16 @@ agentVision: [int, int]
     Set the distance in the four cardinal directions an agent can see.
     Default: [1, 6]
 
-diseaseAggressionPenalty: [int, int]
+debugMode: bool
+    Set the debug printing mode.
+    Default: False
+
+diseaseAggressionPenalty: [float, float]
     Set the impact a disease will have on an agent's aggressiveness.
     Note: Negative values constitute an aggressiveness decrease.
     Default: [0, 0]
 
-diseaseFertilityPenalty: [int, int]
+diseaseFertilityPenalty: [float, float]
     Set the impact a disease will have on an agent's fertility.
     Note: Negative values constitute a lack of fertility.
     Default: [0, 0]
@@ -202,12 +210,12 @@ diseaseMovementPenalty: [int, int]
     Note: Negative values constitute a decrease in movement range.
     Default: [0, 0]
 
-diseaseSpiceMetabolismPenalty: [int, int]
+diseaseSpiceMetabolismPenalty: [float, float]
     Set the impact a disease will have on an agent's spice metabolism rate.
     Note: Negative values constitute a decrease in agent metabolism.
     Default: [0, 0]
 
-diseaseSugarMetabolismPenalty: [int, int]
+diseaseSugarMetabolismPenalty: [float, float]
     Set the impact a disease will have on an agent's sugar metabolism rate.
     Note: Negative values constitute a decrease in agent metabolism.
     Default: [0, 0]
@@ -226,7 +234,7 @@ environmentHeight: int
     Set the height in cells of the Sugarscape environment.
     Default: 50
 
-environmentMaxCombatLoot: int
+environmentMaxCombatLoot: float
     Set the maximum reward agents receive from winning combat.
     Default: 0
 
