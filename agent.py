@@ -104,49 +104,6 @@ class Agent:
                 "loanOrigin": timestep}
         self.socialNetwork["creditors"].append(loan)
 
-    def calculateMarginalRateOfSubstitution(self, sugar, spice):
-        spiceNeed = spice / self.spiceMetabolism if self.spiceMetabolism > 0 else 1
-        sugarNeed = sugar / self.sugarMetabolism if self.sugarMetabolism > 0 else 1
-        # If no sugar or no spice, make missing resource the maximum need in MRS
-        if spiceNeed == 0:
-            return self.spiceMetabolism
-        elif sugarNeed == 0:
-            return 1 / self.sugarMetabolism
-        return spiceNeed / sugarNeed
-
-    def calculateWelfare(self, sugarReward, spiceReward):
-        totalMetabolism = self.sugarMetabolism + self.spiceMetabolism
-        sugarMetabolismProportion = 0
-        spiceMetabolismProportion = 0
-        if totalMetabolism != 0:
-            sugarMetabolismProportion = self.sugarMetabolism / totalMetabolism
-            spiceMetabolismProportion = self.spiceMetabolism / totalMetabolism
-
-        sugarLookahead = self.sugarMetabolism * self.lookaheadFactor
-        spiceLookahead = self.spiceMetabolism * self.lookaheadFactor
-        totalSugar = (self.sugar + sugarReward) - sugarLookahead
-        totalSpice = (self.spice + spiceReward) - spiceLookahead
-        if totalSugar < 0:
-            totalSugar = 0
-        if totalSpice < 0:
-            totalSpice = 0
-
-        welfare = (totalSugar ** sugarMetabolismProportion) * (totalSpice ** spiceMetabolismProportion)
-        if self.tags != None and len(self.tags) > 0:
-            # Tribe could have changed since last timestep, so recheck
-            self.tribe = self.findTribe()
-            fractionZeroesInTags = self.tagZeroes / len(self.tags)
-            fractionOnesInTags = 1 - fractionZeroesInTags
-            spiceMetabolism = self.spiceMetabolism if self.spiceMetabolism != 0 else 1
-            sugarMetabolism = self.sugarMetabolism if self.sugarMetabolism != 0 else 1
-            tagPreferences = (self.sugarMetabolism * fractionZeroesInTags) + (self.spiceMetabolism * fractionOnesInTags)
-            if tagPreferences == 0:
-                tagPreferences = 1
-            tagPreferencesSugar = (self.sugarMetabolism / tagPreferences) * fractionZeroesInTags
-            tagPreferencesSpice = (self.spiceMetabolism / tagPreferences) * fractionOnesInTags
-            welfare = (totalSugar ** tagPreferencesSugar) * (totalSpice ** tagPreferencesSpice)
-        return welfare
-
     def canReachCell(self, cell):
         if len(self.cellsInVision) == 0:
             self.cellsInVision
@@ -487,14 +444,14 @@ class Agent:
                 if spiceSeller.spice - spicePrice < spiceSeller.spiceMetabolism or sugarSeller.sugar - sugarPrice < sugarSeller.sugarMetabolism:
                     tradeFlag = False
                     continue
-                spiceSellerNewMRS = spiceSeller.calculateMarginalRateOfSubstitution(spiceSeller.sugar + sugarPrice, spiceSeller.spice - spicePrice)
-                sugarSellerNewMRS = sugarSeller.calculateMarginalRateOfSubstitution(sugarSeller.sugar - sugarPrice, sugarSeller.spice + spicePrice)
+                spiceSellerNewMRS = spiceSeller.findNewMarginalRateOfSubstitution(spiceSeller.sugar + sugarPrice, spiceSeller.spice - spicePrice)
+                sugarSellerNewMRS = sugarSeller.findNewMarginalRateOfSubstitution(sugarSeller.sugar - sugarPrice, sugarSeller.spice + spicePrice)
 
                 # Calculate absolute difference from perfect spice/sugar parity in MRS and change in agent welfare
                 betterSpiceSellerMRS = abs(1 - spiceSellerMRS) > abs(1 - spiceSellerNewMRS)
                 betterSugarSellerMRS = abs(1 - sugarSellerMRS) > abs(1 - sugarSellerNewMRS)
-                betterSpiceSellerWelfare = spiceSeller.calculateWelfare(sugarPrice, (-1 * spicePrice)) >= spiceSeller.calculateWelfare(0, 0)
-                betterSugarSellerWelfare = sugarSeller.calculateWelfare((-1 * sugarPrice), spicePrice) >= sugarSeller.calculateWelfare(0, 0)
+                betterSpiceSellerWelfare = spiceSeller.findWelfare(sugarPrice, (-1 * spicePrice)) >= spiceSeller.findWelfare(0, 0)
+                betterSugarSellerWelfare = sugarSeller.findWelfare((-1 * sugarPrice), spicePrice) >= sugarSeller.findWelfare(0, 0)
                 # If either MRS or welfare is improved, mark the trade as better for agent
                 betterForSpiceSeller = betterSpiceSellerMRS or betterSpiceSellerWelfare
                 betterForSugarSeller = betterSugarSellerMRS or betterSugarSellerWelfare
@@ -670,7 +627,7 @@ class Agent:
 
             cellWealth = 0
             # Modify value of cell relative to the metabolism needs of the agent
-            welfare = self.calculateWelfare((cell.sugar + welfarePreySugar), (cell.spice + welfarePreySpice))
+            welfare = self.findWelfare((cell.sugar + welfarePreySugar), (cell.spice + welfarePreySpice))
             cellWealth = welfare / (1 + cell.pollution)
 
             # Avoid attacking agents protected via retaliation
@@ -880,6 +837,50 @@ class Agent:
                 emptyCells.append(neighborCell)
         return emptyCells
 
+    def findHammingDistanceInTags(self, neighbor):
+        if self.tags == None:
+            return 0
+        neighborTags = neighbor.tags
+        hammingDistance = 0
+        for i in range(len(self.tags)):
+            if self.tags[i] != neighborTags[i]:
+                hammingDistance += 1
+        return hammingDistance
+
+    def findMarginalRateOfSubstitution(self):
+        spiceNeed = self.spice / self.spiceMetabolism if self.spiceMetabolism > 0 else 1
+        sugarNeed = self.sugar / self.sugarMetabolism if self.sugarMetabolism > 0 else 1
+        # Trade factor may increase amount of spice traded for sugar in a transaction
+        self.marginalRateOfSubstitution = self.tradeFactor * (spiceNeed / sugarNeed)
+
+    def findNearestHammingDistanceInDisease(self, disease):
+        if self.immuneSystem == None:
+            return 0
+        diseaseTags = disease.tags
+        diseaseLength = len(diseaseTags)
+        bestHammingDistance = diseaseLength
+        bestRange = [0, diseaseLength - 1]
+        for i in range(len(self.immuneSystem) - diseaseLength):
+            hammingDistance = 0
+            for j in range(diseaseLength):
+                if self.immuneSystem[i + j] != diseaseTags[j]:
+                    hammingDistance += 1
+            if hammingDistance < bestHammingDistance:
+                bestHammingDistance = hammingDistance
+                bestRange = [i, i + (diseaseLength - 1)]
+        diseaseStats = {"distance": bestHammingDistance, "start": bestRange[0], "end": bestRange[1]}
+        return diseaseStats
+
+    def findNewMarginalRateOfSubstitution(self, sugar, spice):
+        spiceNeed = spice / self.spiceMetabolism if self.spiceMetabolism > 0 else 1
+        sugarNeed = sugar / self.sugarMetabolism if self.sugarMetabolism > 0 else 1
+        # If no sugar or no spice, make missing resource the maximum need in MRS
+        if spiceNeed == 0:
+            return self.spiceMetabolism
+        elif sugarNeed == 0:
+            return 1 / self.sugarMetabolism
+        return spiceNeed / sugarNeed
+
     # TODO: Tally factors of hedons/dolors for given cell
     def findPotentialNiceOfCell(self, cell):
         # TODO: Reproduction nice capped at max number of times agent can reproduce
@@ -908,40 +909,6 @@ class Agent:
         # TODO: Make nice calculation more fine-grained than just potentialities
         potentialNice = len(potentialMates + potentialTraders + potentialBorrowers + potentialPrey)
         return potentialNice
-
-    def findNearestHammingDistanceInDisease(self, disease):
-        if self.immuneSystem == None:
-            return 0
-        diseaseTags = disease.tags
-        diseaseLength = len(diseaseTags)
-        bestHammingDistance = diseaseLength
-        bestRange = [0, diseaseLength - 1]
-        for i in range(len(self.immuneSystem) - diseaseLength):
-            hammingDistance = 0
-            for j in range(diseaseLength):
-                if self.immuneSystem[i + j] != diseaseTags[j]:
-                    hammingDistance += 1
-            if hammingDistance < bestHammingDistance:
-                bestHammingDistance = hammingDistance
-                bestRange = [i, i + (diseaseLength - 1)]
-        diseaseStats = {"distance": bestHammingDistance, "start": bestRange[0], "end": bestRange[1]}
-        return diseaseStats
-
-    def findHammingDistanceInTags(self, neighbor):
-        if self.tags == None:
-            return 0
-        neighborTags = neighbor.tags
-        hammingDistance = 0
-        for i in range(len(self.tags)):
-            if self.tags[i] != neighborTags[i]:
-                hammingDistance += 1
-        return hammingDistance
-
-    def findMarginalRateOfSubstitution(self):
-        spiceNeed = self.spice / self.spiceMetabolism if self.spiceMetabolism > 0 else 1
-        sugarNeed = self.sugar / self.sugarMetabolism if self.sugarMetabolism > 0 else 1
-        # Trade factor may increase amount of spice traded for sugar in a transaction
-        self.marginalRateOfSubstitution = self.tradeFactor * (spiceNeed / sugarNeed)
 
     def findRetaliatorsInVision(self):
         retaliators = {}
@@ -974,6 +941,39 @@ class Agent:
                 return colors[i - 1]
         # Default agent coloring
         return "red"
+
+    def findWelfare(self, sugarReward, spiceReward):
+        totalMetabolism = self.sugarMetabolism + self.spiceMetabolism
+        sugarMetabolismProportion = 0
+        spiceMetabolismProportion = 0
+        if totalMetabolism != 0:
+            sugarMetabolismProportion = self.sugarMetabolism / totalMetabolism
+            spiceMetabolismProportion = self.spiceMetabolism / totalMetabolism
+
+        sugarLookahead = self.sugarMetabolism * self.lookaheadFactor
+        spiceLookahead = self.spiceMetabolism * self.lookaheadFactor
+        totalSugar = (self.sugar + sugarReward) - sugarLookahead
+        totalSpice = (self.spice + spiceReward) - spiceLookahead
+        if totalSugar < 0:
+            totalSugar = 0
+        if totalSpice < 0:
+            totalSpice = 0
+
+        welfare = (totalSugar ** sugarMetabolismProportion) * (totalSpice ** spiceMetabolismProportion)
+        if self.tags != None and len(self.tags) > 0:
+            # Tribe could have changed since last timestep, so recheck
+            self.tribe = self.findTribe()
+            fractionZeroesInTags = self.tagZeroes / len(self.tags)
+            fractionOnesInTags = 1 - fractionZeroesInTags
+            spiceMetabolism = self.spiceMetabolism if self.spiceMetabolism != 0 else 1
+            sugarMetabolism = self.sugarMetabolism if self.sugarMetabolism != 0 else 1
+            tagPreferences = (self.sugarMetabolism * fractionZeroesInTags) + (self.spiceMetabolism * fractionOnesInTags)
+            if tagPreferences == 0:
+                tagPreferences = 1
+            tagPreferencesSugar = (self.sugarMetabolism / tagPreferences) * fractionZeroesInTags
+            tagPreferencesSpice = (self.spiceMetabolism / tagPreferences) * fractionOnesInTags
+            welfare = (totalSugar ** tagPreferencesSugar) * (totalSpice ** tagPreferencesSpice)
+        return welfare
 
     def flipTag(self, position, value):
         self.tags[position] = value
