@@ -224,6 +224,6 @@ class GUI:
     def updateLabel(self):
         stats = self.sugarscape.runtimeStats
         statsString = "Timestep: {0} | Agents: {1} | Metabolism: {2:.2f} | Vision: {3:.2f} | Gini: {4:.2f} | Trade Price: {5:.2f} | Trade Volume: {6:.2f}".format(
-                self.sugarscape.timestep, stats["agents"], stats["meanMetabolism"], stats["meanVision"], stats["giniCoefficient"], stats["meanTradePrice"], stats["tradeVolume"])
+                self.sugarscape.timestep, stats["population"], stats["meanMetabolism"], stats["meanVision"], stats["giniCoefficient"], stats["meanTradePrice"], stats["tradeVolume"])
         label = self.widgets["statsLabel"]
         label.config(text=statsString)

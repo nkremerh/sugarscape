@@ -34,14 +34,16 @@ class Sugarscape:
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"])
         self.debugMode = configuration["debugMode"]
         self.agents = []
+        self.deadAgents = []
         self.diseases = []
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
         self.gui = gui.GUI(self) if configuration["headlessMode"] == False else None
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
-        self.runtimeStats = {"timestep": 0, "agents": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
-                               "meanTradePrice": 0, "tradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0}
+        self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
+                             "meanTradePrice": 0, "tradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0,
+                             "meanAgeAtDeath": 0, "deaths": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logAgent = None
 
@@ -206,12 +208,7 @@ class Sugarscape:
         self.log.close()
 
     def endSimulation(self):
-        deadAgents = []
-        for agent in self.agents:
-            if agent.isAlive() == False:
-                deadAgents.append(agent)
-        for agent in deadAgents:
-            self.agents.remove(agent)
+        self.removeDeadAgents()
         self.endLog()
         print(str(self))
         exit(0)
@@ -499,6 +496,7 @@ class Sugarscape:
                 deadAgents.append(agent)
             elif agent.cell == None:
                 deadAgents.append(agent)
+        self.deadAgents += deadAgents
         for agent in deadAgents:
             self.agents.remove(agent)
 
@@ -589,8 +587,15 @@ class Sugarscape:
             meanAge = 0
             meanWealth = 0
             tradeVolume = 0
+        numDeadAgents = len(self.deadAgents)
+        meanAgeAtDeath = 0
+        for agent in self.deadAgents:
+            meanAgeAtDeath += agent.age
+        meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
+        self.deadAgents = []
+
         self.runtimeStats["timestep"] = self.timestep
-        self.runtimeStats["agents"] = numAgents
+        self.runtimeStats["population"] = numAgents
         self.runtimeStats["meanMetabolism"] = meanMetabolism
         self.runtimeStats["meanVision"] = meanVision
         self.runtimeStats["meanAge"] = meanAge
@@ -600,6 +605,8 @@ class Sugarscape:
         self.runtimeStats["meanTradePrice"] = meanTradePrice
         self.runtimeStats["tradeVolume"] = tradeVolume
         self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.agents) > 1 else 0
+        self.runtimeStats["meanAgeAtDeath"] = meanAgeAtDeath
+        self.runtimeStats["deaths"] = numDeadAgents
 
     def writeToLog(self):
         self.lastLoggedTimestep = self.timestep
