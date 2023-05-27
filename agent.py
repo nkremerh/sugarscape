@@ -474,7 +474,7 @@ class Agent:
                     continue
             # If a trade occurred, log it
             if spiceSeller != None and sugarSeller != None:
-                self.tradeVolume += sugarPrice + spicePrice
+                self.tradeVolume += 1
                 self.sugarPrice += sugarPrice
                 self.spicePrice += spicePrice
                 trader.updateTimesTradedWithAgent(self, self.lastMoved, transactions)

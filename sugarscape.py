@@ -42,8 +42,7 @@ class Sugarscape:
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
-                             "meanTradePrice": 0, "tradeVolume": 0, "totalTradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0,
-                             "meanAgeAtDeath": 0, "deaths": 0}
+                             "meanTradePrice": 0, "tradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0, "meanAgeAtDeath": 0, "deaths": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logAgent = None
 
@@ -554,19 +553,21 @@ class Sugarscape:
         meanAge = 0
         meanTradePrice = 0
         tradeVolume = 0
-        totalTradeVolume = 0
         totalWealth = 0
         maxWealth = 0
         minWealth = sys.maxsize
+        numTraders = 0
         for agent in self.agents:
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
             meanVision += agent.vision
             meanAge += agent.age
             meanWealth += agent.wealth
-            meanTradePrice += (agent.spicePrice / agent.sugarPrice) if agent.sugarPrice > 0 else 0
+            if agent.tradeVolume > 0:
+                meanTradePrice += max(agent.spicePrice, agent.sugarPrice)
+                tradeVolume += agent.tradeVolume
+                numTraders += 1
             totalWealth += agent.wealth
-            tradeVolume += agent.tradeVolume
             if agent.wealth < minWealth:
                 minWealth = agent.wealth
             if agent.wealth > maxWealth:
@@ -579,8 +580,11 @@ class Sugarscape:
             meanVision = round(meanVision / numAgents, 2)
             meanAge = round(meanAge / numAgents, 2)
             meanWealth = round(meanWealth / numAgents, 2)
-            meanTradePrice = round(meanTradePrice / numAgents, 2)
+            meanTradePrice = round(meanTradePrice / numTraders, 2) if numTraders > 0 else 0
             tradeVolume = round(tradeVolume, 2)
+            totalWealth = round(totalWealth, 2)
+            minWealth = round(minWealth, 2)
+            maxWealth = round(maxWealth, 2)
         else:
             meanMetabolism = 0
             meanVision = 0
@@ -602,6 +606,7 @@ class Sugarscape:
         self.runtimeStats["meanWealth"] = meanWealth
         self.runtimeStats["minWealth"] = minWealth
         self.runtimeStats["maxWealth"] = maxWealth
+        self.runtimeStats["totalWealth"] = totalWealth
         self.runtimeStats["meanTradePrice"] = meanTradePrice
         self.runtimeStats["tradeVolume"] = tradeVolume
         self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.agents) > 1 else 0
