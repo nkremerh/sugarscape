@@ -42,7 +42,8 @@ class Sugarscape:
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
-                             "meanTradePrice": 0, "tradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0, "meanAgeAtDeath": 0, "deaths": 0}
+                             "meanTradePrice": 0, "tradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0, "meanAgeAtDeath": 0, "deaths": 0,
+                             "seed": self.seed}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logAgent = None
 

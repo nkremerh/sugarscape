@@ -698,20 +698,6 @@ class Agent:
         if bestCell == None:
             bestCell = cells.pop()["cell"]
             print("Agent {0} could not find an ethical cell".format(str(self)))
-        if self.debug == True:
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            i = 0
-            while i < len(cells):
-                cell = cells[i]
-                cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
-                if i == 0:
-                    print("Best cell: " + cellString)
-                elif i == len(cells) - 1:
-                    print("Worst cell: " + cellString)
-                else:
-                    print("Cell: " + cellString)
-                i += 1
         return bestCell
 
     def findBestFriend(self):
