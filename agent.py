@@ -105,8 +105,6 @@ class Agent:
         self.socialNetwork["creditors"].append(loan)
 
     def canReachCell(self, cell):
-        if len(self.cellsInVision) == 0:
-            self.cellsInVision
         for seenCell in self.cellsInVision:
             if seenCell["cell"] == cell:
                 return True
