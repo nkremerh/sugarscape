@@ -695,7 +695,8 @@ class Agent:
                     break
         if bestCell == None:
             bestCell = cells.pop()["cell"]
-            print("Agent {0} could not find an ethical cell".format(str(self)))
+            if self.debug == True:
+                print("Agent {0} could not find an ethical cell".format(str(self)))
         return bestCell
 
     def findBestFriend(self):
