@@ -591,6 +591,8 @@ class Sugarscape:
             meanVision = 0
             meanAge = 0
             meanWealth = 0
+            minWealth = 0
+            maxWealth = 0
             tradeVolume = 0
         numDeadAgents = len(self.deadAgents)
         meanAgeAtDeath = 0
