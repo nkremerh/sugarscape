@@ -303,6 +303,10 @@ logfile: path
     Set the path of the log file.
     Default: ""
 
+profileMode: bool
+    Set whether performance profiling mode is enabled.
+    Default: false
+
 seed: int
     Set the seed value for the random number generator.
     Note: Value of -1 causes simulation to generate a random seed.

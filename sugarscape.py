@@ -6,6 +6,7 @@ import disease
 import environment
 import gui
 
+import cProfile
 import getopt
 import json
 import math
@@ -637,8 +638,8 @@ def parseConfiguration(configFile, configuration):
 
 def parseOptions(configuration):
     commandLineArgs = sys.argv[1:]
-    shortOptions = "ch:"
-    longOptions = ["conf=", "help"]
+    shortOptions = "chp:"
+    longOptions = ["conf=", "help", "profile"]
     try:
         args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
     except getopt.GetoptError as err:
@@ -656,6 +657,8 @@ def parseOptions(configuration):
             parseConfiguration(currVal, configuration)
         elif currArg in ("-h", "--help"):
             printHelp()
+        elif currArg in ("-p", "--profile"):
+            configuration["profileMode"] = True
     return configuration
 
 def printHelp():
@@ -748,6 +751,7 @@ if __name__ == "__main__":
                      "environmentWidth": 50,
                      "headlessMode": False,
                      "logfile": None,
+                     "profileMode": False,
                      "seed": -1,
                      "startingAgents": 250,
                      "startingDiseases": 0,
@@ -756,5 +760,8 @@ if __name__ == "__main__":
     configuration = verifyConfiguration(configuration)
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
-    S.runSimulation(configuration["timesteps"])
+    if configuration["profileMode"] == True:
+        cProfile.run("S.runSimulation(configuration[\"timesteps\"])")
+    else:
+        S.runSimulation(configuration["timesteps"])
     exit(0)
