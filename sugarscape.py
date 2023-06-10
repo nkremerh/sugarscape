@@ -33,7 +33,7 @@ class Sugarscape:
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"])
-        self.debugMode = configuration["debugMode"]
+        self.debug = configuration["debugMode"]
         self.agents = []
         self.deadAgents = []
         self.diseases = []
@@ -113,7 +113,8 @@ class Sugarscape:
 
         totalCells = len(activeCells)
         if len(self.agents) + numAgents > totalCells:
-            print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
+            if self.debug == True:
+                print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
             numAgents = totalCells
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
@@ -157,7 +158,7 @@ class Sugarscape:
                     self.diseases.append(newDisease)
                     diseases.remove(newDisease)
                     break
-        if len(diseases) > 0:
+        if len(diseases) > 0 and self.debug == True:
             print("Could not place {0} diseases.".format(len(diseases)))
 
     def configureEnvironment(self, maxSugar, maxSpice):
@@ -187,7 +188,8 @@ class Sugarscape:
         self.replaceDeadAgents()
         self.updateRuntimeStats()
         self.writeToLog()
-        print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
+        if self.debug == True:
+            print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
         self.timestep += 1
         if self.end == True or len(self.agents) == 0:
             self.toggleEnd()
@@ -211,7 +213,8 @@ class Sugarscape:
     def endSimulation(self):
         self.removeDeadAgents()
         self.endLog()
-        print(str(self))
+        if self.debug == True:
+            print(str(self))
         exit(0)
 
     def findActiveQuadrants(self):
@@ -669,7 +672,8 @@ def verifyConfiguration(configuration):
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
     if configuration["startingAgents"] > totalCells:
-        print("Could not allocate {0} agents. Allocating maximum of {1}.".format(configuration["startingAgents"], totalCells))
+        if configuration["debugMode"] == True:
+            print("Could not allocate {0} agents. Allocating maximum of {1}.".format(configuration["startingAgents"], totalCells))
         configuration["startingAgents"] = totalCells
 
     # Ensure infinitely-lived agents are properly initialized
