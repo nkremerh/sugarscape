@@ -589,8 +589,8 @@ class Agent:
             if cell.isOccupied() == True and self.aggressionFactor == 0:
                 continue
             prey = cell.agent
-            # Avoid attacking agents from the same tribe
-            if prey != None and prey.tribe == self.tribe:
+            # Avoid attacking agents ineligible to attack
+            if prey != None and self.isNeighborValidPrey(prey) == False:
                 continue
             preyTribe = prey.tribe if prey != None else "empty"
             preyWealth = prey.wealth if prey != None else 0
@@ -599,10 +599,6 @@ class Agent:
             # Aggression factor may lead agent to see more reward than possible meaning combat itself is a reward
             welfarePreySugar = self.aggressionFactor * min(combatMaxLoot, preySugar)
             welfarePreySpice = self.aggressionFactor * min(combatMaxLoot, preySpice)
-
-            # Avoid attacking stronger agents
-            if prey != None and preyWealth > self.wealth:
-                continue
 
             cellWealth = 0
             # Modify value of cell relative to the metabolism needs of the agent
@@ -620,8 +616,6 @@ class Agent:
 
             # Select closest cell with the most resources
             if cellWealth > bestWealth or (cellWealth == bestWealth and travelDistance < bestRange):
-                if prey != None and prey.wealth > self.wealth:
-                    continue
                 bestRange = travelDistance
                 bestCell = cell
                 bestWealth = cellWealth
@@ -849,7 +843,6 @@ class Agent:
 
     # TODO: Tally factors of hedons/dolors for given cell
     def findPotentialNiceOfCell(self, cell):
-        # TODO: Reproduction nice capped at max number of times agent can reproduce
         potentialMates = []
         # TODO: Trading nice capped at max number of resources traded to achieve MRS of 1
         potentialTraders = []
@@ -873,7 +866,11 @@ class Agent:
             if self.aggressionFactor > 0 and self.tribe != agent.tribe and self.wealth >= agent.wealth:
                 potentialPrey.append(agent)
         # TODO: Make nice calculation more fine-grained than just potentialities
-        potentialNice = len(potentialMates + potentialTraders + potentialBorrowers + potentialPrey)
+        reproductionSugarCost = self.startingSugar / (self.fertilityFactor * 2)
+        reproductionSpiceCost = self.startingSpice / (self.fertilityFactor * 2)
+        maxReproductionAttemptsByResources = min(reproductionSugarCost, reproductionSpiceCost)
+        potentialMates = min(len(potentialMates), maxReproductionAttemptsByResources)
+        potentialNice = potentialMates + len(potentialTraders + potentialBorrowers + potentialPrey)
         return potentialNice
 
     def findRetaliatorsInVision(self):
@@ -997,6 +994,13 @@ class Agent:
             return True
         else:
             return False
+
+    def isNeighborValidPrey(self, neighbor):
+        if neighbor == None or self.aggressionFactor == 0:
+            return False
+        elif self.tribe != neighbor.tribe and self.wealth >= neighbor.wealth:
+            return True
+        return False
 
     def moveToBestCell(self):
         bestCell = self.findBestCell()

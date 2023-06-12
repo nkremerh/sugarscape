@@ -19,7 +19,6 @@ class Sugarscape:
         self.timestep = 0
         self.nextAgentID = 0
         self.nextDiseaseID = 0
-        self.lastLoggedTimestep = 0
         environmentConfiguration = {"globalMaxSugar": configuration["environmentMaxSugar"], "sugarRegrowRate": configuration["environmentSugarRegrowRate"],
                                     "seasonInterval": configuration["environmentSeasonInterval"], "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
                                     "spiceConsumptionPollutionFactor": configuration["environmentSpiceConsumptionPollutionFactor"],
@@ -186,8 +185,6 @@ class Sugarscape:
     def doTimestep(self):
         self.removeDeadAgents()
         self.replaceDeadAgents()
-        self.updateRuntimeStats()
-        self.writeToLog()
         if self.debug == True:
             print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
         self.timestep += 1
@@ -200,13 +197,13 @@ class Sugarscape:
                 agent.doTimestep(self.timestep)
             if self.gui != None:
                 self.gui.doTimestep()
+        self.removeDeadAgents()
         self.updateRuntimeStats()
+        self.writeToLog()
 
     def endLog(self):
         if self.log == None:
             return
-        logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
-        self.log.write(logString)
         self.log.flush()
         self.log.close()
 
@@ -506,7 +503,7 @@ class Sugarscape:
         self.startLog()
         if self.gui != None:
             self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
-        t = 0
+        t = 1
         timesteps = timesteps - self.timestep
         while t <= timesteps and len(self.agents) > 0:
             self.doTimestep()
@@ -611,14 +608,13 @@ class Sugarscape:
         self.runtimeStats["deaths"] = numDeadAgents
 
     def writeToLog(self):
-        self.lastLoggedTimestep = self.timestep
         if self.log == None:
             return
         logString = '\t' + json.dumps(self.runtimeStats) + ",\n"
         self.log.write(logString)
 
     def __str__(self):
-        string = "{0}Seed: {1}\nTimestep: {2}\nLiving Agents: {3}".format(str(self.environment), self.seed, self.lastLoggedTimestep, len(self.agents))
+        string = "{0}Seed: {1}\nTimestep: {2}\nLiving Agents: {3}".format(str(self.environment), self.seed, self.timestep, len(self.agents))
         return string
 
 def parseConfiguration(configFile, configuration):
