@@ -262,16 +262,6 @@ class Sugarscape:
             if self.end == True:
                 self.endSimulation()
 
-    def printCell(self, cellX, cellY):
-        cell = self.environment.findCell(cellX, cellY)
-        cellStats = "Cell ({0},{1}): {2}/{3} sugar, {4}/{5} spice, {6} pollution".format(cellX, cellY, cell.sugar, cell.maxSugar, cell.spice, cell.maxSpice, cell.pollution)
-        agent = cell.agent
-        if agent != None:
-            agentStats = "Agent {0}: {1} timesteps old, {2} vision, {3} movement, {4} sugar, {5} spice, {6} mean metabolism".format(str(agent), agent.age, agent.vision, agent.movement, agent.sugar,
-                                                                                                                                    agent.spice, (agent.sugarMetabolism + agent.spiceMetabolism) / 2)
-            cellStats += "\n  {0}".format(agentStats)
-        print(cellStats)
-
     def randomizeDiseaseEndowments(self, numDiseases):
         configs = self.configuration
         sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]

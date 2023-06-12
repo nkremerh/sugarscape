@@ -2,7 +2,7 @@ import math
 import tkinter
 
 class GUI:
-    def __init__(self, sugarscape, screenHeight=800, screenWidth=800):
+    def __init__(self, sugarscape, screenHeight=1000, screenWidth=900):
         self.sugarscape = sugarscape
         self.screenHeight = screenHeight
         self.screenWidth = screenWidth
@@ -15,7 +15,13 @@ class GUI:
         self.widgets = {}
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
+        self.lastSelectedCell = None
         self.activeColorOptions = {"agent": None, "environment": None}
+        self.menuTrayColumns = 4
+        self.menuTrayOffset = 70
+        self.windowBorderOffset = 10
+        self.siteHeight = (self.screenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
+        self.siteWidth = (self.screenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
         self.configureWindow()
 
     def configureAgentColorNames(self):
@@ -51,8 +57,10 @@ class GUI:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
         environmentColorButton.grid(row=0, column=3, sticky="nsew")
 
-        statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.LEFT)
-        statsLabel.grid(row=1, column=0, columnspan=4, sticky="nsew")
+        statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
+        statsLabel.grid(row=1, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
+        cellLabel = tkinter.Label(window, text="Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sex: - | Sugar: - | Spice: - ", font="Roboto 10", justify=tkinter.CENTER)
+        cellLabel.grid(row=2, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
 
         self.widgets["playButton"] = playButton
         self.widgets["stepButton"] = stepButton
@@ -61,25 +69,23 @@ class GUI:
         self.widgets["agentColorMenu"] = agentColorMenu
         self.widgets["environmentColorMenu"] = environmentColorMenu
         self.widgets["statsLabel"] = statsLabel
+        self.widgets["cellLabel"] = cellLabel
 
     def configureEnvironment(self):
-        borderOffset = 30
-        siteSize = (self.screenHeight - borderOffset) / self.sugarscape.environmentWidth
         for i in range(self.sugarscape.environmentHeight):
             for j in range(self.sugarscape.environmentWidth):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
-                x1 = 5 + (0.50 * siteSize) + i * siteSize - (0.50 * siteSize) # Upper right x coordinate
-                y1 = 5 + (0.50 * siteSize) + j * siteSize - (0.50 * siteSize) # Upper right y coordinate
-                x2 = 5 + (0.50 * siteSize) + i * siteSize + (0.50 * siteSize) # Lower left x coordinate
-                y2 = 5 + (0.50 * siteSize) + j * siteSize + (0.50 * siteSize) # Lower left y coordinate
+                x1 = 5 + (0.50 * self.siteWidth) + i * self.siteWidth - (0.50 * self.siteWidth) # Upper right x coordinate
+                y1 = 5 + (0.50 * self.siteHeight) + j * self.siteHeight - (0.50 * self.siteHeight) # Upper right y coordinate
+                x2 = 5 + (0.50 * self.siteWidth) + i * self.siteWidth + (0.50 * self.siteWidth) # Lower left x coordinate
+                y2 = 5 + (0.50 * self.siteHeight) + j * self.siteHeight + (0.50 * self.siteHeight) # Lower left y coordinate
                 self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
 
     def configureWindow(self):
-        numMenuColumns = 4
         borderEdge = 5
         window = tkinter.Tk()
         self.window = window
@@ -92,7 +98,7 @@ class GUI:
         canvas = tkinter.Canvas(window, width=self.screenWidth, height=self.screenHeight, bg="white")
         self.canvas = canvas
         self.configureButtons(window)
-        canvas.grid(row=2, column=0, columnspan=numMenuColumns, sticky="nsew")
+        canvas.grid(row=3, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
         window.update()
 
         self.configureEnvironment()
@@ -117,11 +123,11 @@ class GUI:
         # Account for padding in GUI cells
         eventX = event.x - 5
         eventY = event.y - 5
-        borderOffset = 30
-        cellSize = (self.screenHeight - borderOffset) / self.sugarscape.environmentWidth
-        gridX = math.floor(eventX / cellSize)
-        gridY = math.floor(eventY / cellSize)
-        self.sugarscape.printCell(gridX, gridY)
+        gridX = math.floor(eventX / self.siteWidth)
+        gridY = math.floor(eventY / self.siteHeight)
+        cellString = self.findCellStats(gridX, gridY)
+        label = self.widgets["cellLabel"]
+        label.config(text=cellString)
         self.doTimestep()
 
     def doEnvironmentColorMenu(self):
@@ -150,12 +156,26 @@ class GUI:
                 if self.grid[i][j]["color"] != fillColor:
                     self.canvas.itemconfig(self.grid[i][j]["rectangle"], fill=fillColor, outline="#C0C0C0")
                     self.grid[i][j] = {"rectangle": self.grid[i][j]["rectangle"], "color": fillColor}
-        self.updateLabel()
+        self.updateLabels()
         self.window.update()
 
     def doWindowClose(self, event=None):
         self.window.destroy()
         self.sugarscape.toggleEnd()
+
+    def findCellStats(self, cellX, cellY):
+        cell = self.sugarscape.environment.findCell(cellX, cellY)
+        if cell.season == None:
+            cellSeason = '-'
+        cellStats = "Cell: ({0},{1}) | Sugar: {2}/{3} | Spice: {4}/{5} | Pollution: {6} | Season: {7}".format(cellX, cellY, cell.sugar, cell.maxSugar, cell.spice, cell.maxSpice, round(cell.pollution, 2), cellSeason)
+        agentStats = "Agent: - | Age: - | Sex: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: -"
+        agent = cell.agent
+        if agent != None:
+            agentStats = "Agent: {0} | Age: {1} | Sex: {2} | Vision: {3} | Movement: {4} | Sugar: {5} | Spice: {6} | Metabolism: {7}".format(str(agent), agent.age, agent.sex, round(agent.vision, 2), round(agent.movement, 2),
+                                                                                                                                    round(agent.sugar, 2), round(agent.spice, 2), round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2))
+        cellStats += "\n  {0}".format(agentStats)
+        self.lastSelectedCell = {'x': cellX, 'y': cellY}
+        return cellStats
 
     def hexToInt(self, hexval):
         intvals = []
@@ -221,9 +241,13 @@ class GUI:
         fillColor = self.intToHex(subcolors)
         return fillColor
 
-    def updateLabel(self):
+    def updateLabels(self):
         stats = self.sugarscape.runtimeStats
         statsString = "Timestep: {0} | Agents: {1} | Metabolism: {2:.2f} | Vision: {3:.2f} | Gini: {4:.2f} | Trade Price: {5:.2f} | Trade Volume: {6:.2f}".format(
                 self.sugarscape.timestep, stats["population"], stats["meanMetabolism"], stats["meanVision"], stats["giniCoefficient"], stats["meanTradePrice"], stats["tradeVolume"])
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
+        if self.lastSelectedCell != None:
+            cellString = self.findCellStats(self.lastSelectedCell['x'], self.lastSelectedCell['y'])
+            label = self.widgets["cellLabel"]
+            label.config(text=cellString)
