@@ -197,13 +197,12 @@ class Sugarscape:
                 agent.doTimestep(self.timestep)
             if self.gui != None:
                 self.gui.doTimestep()
-        self.removeDeadAgents()
-        self.updateRuntimeStats()
-        self.writeToLog()
 
     def endLog(self):
         if self.log == None:
             return
+        logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
+        self.log.write(logString)
         self.log.flush()
         self.log.close()
 
@@ -507,6 +506,11 @@ class Sugarscape:
         timesteps = timesteps - self.timestep
         while t <= timesteps and len(self.agents) > 0:
             self.doTimestep()
+            self.removeDeadAgents()
+            self.updateRuntimeStats()
+            # If final timestep, do not write to log to cleanly close JSON array log structure
+            if t != timesteps and len(self.agents) > 0:
+                self.writeToLog()
             t += 1
             if self.gui != None and self.run == False:
                 self.pauseSimulation()
