@@ -41,9 +41,6 @@ class Cell:
         productionPollutionFactor = self.environment.sugarProductionPollutionFactor
         self.pollution += productionPollutionFactor * sugarProduced
 
-    def doTimestep(self, timestep):
-        return
-
     def findNeighborAgents(self):
         agents = []
         for neighbor in self.neighbors:

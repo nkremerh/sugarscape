@@ -165,6 +165,7 @@ class GUI:
 
     def findCellStats(self, cellX, cellY):
         cell = self.sugarscape.environment.findCell(cellX, cellY)
+        cellSeason = cell.season
         if cell.season == None:
             cellSeason = '-'
         cellStats = "Cell: ({0},{1}) | Sugar: {2}/{3} | Spice: {4}/{5} | Pollution: {6} | Season: {7}".format(cellX, cellY, cell.sugar, cell.maxSugar, cell.spice, cell.maxSpice, round(cell.pollution, 2), cellSeason)
