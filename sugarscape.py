@@ -16,6 +16,7 @@ import sys
 class Sugarscape:
     def __init__(self, configuration):
         self.configuration = configuration
+        self.maxTimestep = configuration["timesteps"]
         self.timestep = 0
         self.nextAgentID = 0
         self.nextDiseaseID = 0
@@ -185,6 +186,9 @@ class Sugarscape:
     def doTimestep(self):
         self.removeDeadAgents()
         self.replaceDeadAgents()
+        if self.timestep >= self.maxTimestep:
+            self.toggleEnd()
+            return
         if self.debug == True:
             print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
         self.timestep += 1
@@ -197,6 +201,11 @@ class Sugarscape:
                 agent.doTimestep(self.timestep)
             if self.gui != None:
                 self.gui.doTimestep()
+            self.removeDeadAgents()
+            self.updateRuntimeStats()
+            # If final timestep, do not write to log to cleanly close JSON array log structure
+            if self.timestep != self.maxTimestep and len(self.agents) > 0:
+                self.writeToLog()
 
     def endLog(self):
         if self.log == None:
@@ -506,11 +515,6 @@ class Sugarscape:
         timesteps = timesteps - self.timestep
         while t <= timesteps and len(self.agents) > 0:
             self.doTimestep()
-            self.removeDeadAgents()
-            self.updateRuntimeStats()
-            # If final timestep, do not write to log to cleanly close JSON array log structure
-            if t != timesteps and len(self.agents) > 0:
-                self.writeToLog()
             t += 1
             if self.gui != None and self.run == False:
                 self.pauseSimulation()
