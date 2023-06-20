@@ -504,20 +504,20 @@ class Agent:
             proximity = 1 / timestepDistance
             intensity = (1 / (1 + agent.findDaysToDeath()) / (1 + cell.pollution))
             duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            # Agent discount, futureBliss, and futureReward implement Bentham's purity and fecundity
+            # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
             discount = 0.5
-            futureBliss = (cellSiteWealth - agentMetabolism) / agentMetabolism if agentMetabolism > 0 else cellSiteWealth
-            futureBliss = futureBliss / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            futureReward = cellNeighborWealth / (globalMaxWealth * 4)
+            futureDuration = (cellSiteWealth - agentMetabolism) / agentMetabolism if agentMetabolism > 0 else cellSiteWealth
+            futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
+            futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
             # Assuming agent can only see in four cardinal directions
             extent = len(self.neighborhood) / (agentVision * 4) if agentVision > 0 else 1
             # If not the agent moving, consider these as opportunity costs
             if agent != self:
                 intensity = -1 * intensity
                 duration = -1 * duration
-                futureBliss = -1 * futureBliss
-                futureReward = -1 * futureReward
-            agentValueOfCell = agent.ethicalFactor * (certainty * ((10 * potentialNice) + (5 * intensity) + (4 * duration) + (3 * proximity) + (2 * (discount * futureBliss * futureReward)) + extent))
+                futureDuration = -1 * futureDuration
+                futureIntensity = -1 * futureIntensity
+            agentValueOfCell = agent.ethicalFactor * (certainty * ((10 * potentialNice) + (5 * intensity) + (4 * duration) + (3 * proximity) + (2 * (discount * futureDuration * futureIntensity)) + extent))
             cellValue += agentValueOfCell
         return cellValue
 
@@ -538,32 +538,26 @@ class Agent:
             proximity = 1 / timestepDistance
             intensity = (1 / (1 + agent.findDaysToDeath()) / (1 + cell.pollution))
             duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            # Agent discount, futureBliss, and futureReward implement Bentham's purity and fecundity
+            # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
             discount = 0.5
-            futureBliss = (cellSiteWealth - agentMetabolism) / agentMetabolism if agentMetabolism > 0 else cellSiteWealth
-            futureBliss = futureBliss / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            futureReward = cellNeighborWealth / (globalMaxWealth * 4)
+            futureDuration = (cellSiteWealth - agentMetabolism) / agentMetabolism if agentMetabolism > 0 else cellSiteWealth
+            futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
+            futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
             # Assuming agent can only see in four cardinal directions
             extent = len(self.neighborhood) / (agentVision * 4) if agentVision > 0 else 1
             # If not the agent moving, consider these as opportunity costs
             if agent != self:
                 intensity = -1 * intensity
                 duration = -1 * duration
-                futureBliss = -1 * futureBliss
-                futureReward = -1 * futureReward
-            agentValueOfCell = agent.ethicalFactor * (certainty * (intensity + duration + proximity + (discount * futureBliss * futureReward) + extent))
+                futureDuration = -1 * futureDuration
+                futureIntensity = -1 * futureIntensity
+            # TODO: intensity + duration + extent + discount * (futureIntensity + futureDuration + futureExtent)
+            agentValueOfCell = agent.ethicalFactor * (certainty * proximity * (intensity + duration + (discount * futureDuration * futureIntensity) + extent))
             cellValue += agentValueOfCell
         return cellValue
 
     def findBestCell(self):
-        self.findCellsInVision()
-        neighborhood = []
-        for neighborCell in self.cellsInVision:
-            neighbor = neighborCell["cell"].agent
-            if neighbor != None and neighbor.isAlive() == True:
-                neighborhood.append(neighbor)
-        neighborhood.append(self)
-        self.neighborhood = neighborhood
+        self.neighborhood = self.findNeighborhood()
         retaliators = self.findRetaliatorsInVision()
         totalMetabolism = self.sugarMetabolism + self.spiceMetabolism
         sugarMetabolismProportion = 0
@@ -668,6 +662,12 @@ class Agent:
                 if ethicalScore > 0:
                     bestCell = cell["cell"]
                     break
+        elif self.ethicalTheory == "draftPick":
+            ranking = self.findDraftPickRanking()
+            if ranking > len(cells):
+                bestCell == self.cell
+            else:
+                bestCell = cells[ranking]["cell"]
         if bestCell == None:
             bestCell = cells.pop()["cell"]
             if self.debug == True:
@@ -789,6 +789,12 @@ class Agent:
         daysToDeath = min(sugarDaysToDeath, spiceDaysToDeath)
         return daysToDeath
 
+    def findDraftPickRanking(self):
+        neighborhood = self.neighborhood
+        # TODO: order neighborhood based on wealth
+        # TODO: return index of self
+        return 0
+
     def findEmptyNeighborCells(self):
         emptyCells = []
         neighborCells = self.cell.neighbors
@@ -830,6 +836,16 @@ class Agent:
                 bestRange = [i, i + (diseaseLength - 1)]
         diseaseStats = {"distance": bestHammingDistance, "start": bestRange[0], "end": bestRange[1]}
         return diseaseStats
+
+    def findNeighborhood(self):
+        self.findCellsInVision()
+        neighborhood = []
+        for neighborCell in self.cellsInVision:
+            neighbor = neighborCell["cell"].agent
+            if neighbor != None and neighbor.isAlive() == True:
+                neighborhood.append(neighbor)
+        neighborhood.append(self)
+        return neighborhood
 
     def findNewMarginalRateOfSubstitution(self, sugar, spice):
         spiceNeed = spice / self.spiceMetabolism if self.spiceMetabolism > 0 else 1
@@ -878,12 +894,10 @@ class Agent:
         for cell in self.cellsInVision:
             agent = cell["cell"].agent
             if agent != None:
-                agentTribe = agent.tribe
-                agentStrength = agent.wealth
-                if agentTribe not in retaliators:
-                    retaliators[agentTribe] = agentStrength
-                elif retaliators[agentTribe] < agentStrength:
-                    retaliators[agentTribe] = agentStrength
+                if agent.tribe not in retaliators:
+                    retaliators[agent.tribe] = agent.wealth
+                elif retaliators[agent.tribe] < agent.wealth:
+                    retaliators[agent.tribe] = agent.wealth
         return retaliators
 
     def findTribe(self):
