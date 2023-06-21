@@ -2,6 +2,8 @@ import math
 import random
 import sys
 
+import ethics
+
 class Agent:
     def __init__(self, agentID, birthday, cell, configuration):
         self.ID = agentID
@@ -485,77 +487,6 @@ class Agent:
         else:
             return agent.wealth
 
-    def findBenthamAdvancedActUtilitarianValueOfCell(self, cell):
-        cellSiteWealth = cell.sugar + cell.spice
-        cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
-        cellNeighborWealth = cell.findNeighborWealth()
-        globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
-        cellValue = 0
-        for agent in self.neighborhood:
-            # TODO: Factor potentialNice into intensity, duration, and purity/fecundity
-            potentialNice = agent.findPotentialNiceOfCell(cell)
-            # Timesteps to reach cell, currently 1 since agent vision and movement are equal
-            timestepDistance = 1
-            agentVision = agent.vision
-            agentMetabolism = agent.sugarMetabolism + agent.spiceMetabolism
-            # If agent does not have metabolism, set duration to seemingly infinite
-            cellDuration = cellSiteWealth / agentMetabolism if agentMetabolism > 0 else 0
-            certainty = 1 if agent.canReachCell(cell) == True else 0
-            proximity = 1 / timestepDistance
-            intensity = (1 / (1 + agent.findDaysToDeath()) / (1 + cell.pollution))
-            duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
-            discount = 0.5
-            futureDuration = (cellSiteWealth - agentMetabolism) / agentMetabolism if agentMetabolism > 0 else cellSiteWealth
-            futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
-            # Assuming agent can only see in four cardinal directions
-            extent = len(self.neighborhood) / (agentVision * 4) if agentVision > 0 else 1
-            # If not the agent moving, consider these as opportunity costs
-            if agent != self:
-                intensity = -1 * intensity
-                duration = -1 * duration
-                futureDuration = -1 * futureDuration
-                futureIntensity = -1 * futureIntensity
-            agentValueOfCell = agent.ethicalFactor * (certainty * ((10 * potentialNice) + (5 * intensity) + (4 * duration) + (3 * proximity) + (2 * (discount * futureDuration * futureIntensity)) + extent))
-            cellValue += agentValueOfCell
-        return cellValue
-
-    def findBenthamSimpleActUtilitarianValueOfCell(self, cell):
-        cellSiteWealth = cell.sugar + cell.spice
-        cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
-        cellNeighborWealth = cell.findNeighborWealth()
-        globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
-        cellValue = 0
-        for agent in self.neighborhood:
-            # Timesteps to reach cell, currently 1 since agent vision and movement are equal
-            timestepDistance = 1
-            agentVision = agent.vision
-            agentMetabolism = agent.sugarMetabolism + agent.spiceMetabolism
-            # If agent does not have metabolism, set duration to seemingly infinite
-            cellDuration = cellSiteWealth / agentMetabolism if agentMetabolism > 0 else 0
-            certainty = 1 if agent.canReachCell(cell) == True else 0
-            proximity = 1 / timestepDistance
-            intensity = (1 / (1 + agent.findDaysToDeath()) / (1 + cell.pollution))
-            duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
-            discount = 0.5
-            futureDuration = (cellSiteWealth - agentMetabolism) / agentMetabolism if agentMetabolism > 0 else cellSiteWealth
-            futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
-            # Assuming agent can only see in four cardinal directions
-            extent = len(self.neighborhood) / (agentVision * 4) if agentVision > 0 else 1
-            # If not the agent moving, consider these as opportunity costs
-            if agent != self:
-                intensity = -1 * intensity
-                duration = -1 * duration
-                futureDuration = -1 * futureDuration
-                futureIntensity = -1 * futureIntensity
-            # TODO: intensity + duration + extent + discount * (futureIntensity + futureDuration + futureExtent)
-            agentValueOfCell = agent.ethicalFactor * (certainty * proximity * (intensity + duration + (discount * futureDuration * futureIntensity) + extent))
-            cellValue += agentValueOfCell
-        return cellValue
-
     def findBestCell(self):
         self.neighborhood = self.findNeighborhood()
         retaliators = self.findRetaliatorsInVision()
@@ -650,20 +581,20 @@ class Agent:
             return bestCell
         if self.ethicalTheory == "benthamAdvanced":
             for cell in cells:
-                ethicalScore = self.findBenthamAdvancedActUtilitarianValueOfCell(cell["cell"])
+                ethicalScore = ethics.findBenthamAdvancedActUtilitarianValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
                 if ethicalScore > 0:
                     bestCell = cell["cell"]
                     break
         elif self.ethicalTheory == "benthamSimple":
             for cell in cells:
-                ethicalScore = self.findBenthamSimpleActUtilitarianValueOfCell(cell["cell"])
+                ethicalScore = ethics.findBenthamSimpleActUtilitarianValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
                 if ethicalScore > 0:
                     bestCell = cell["cell"]
                     break
         elif self.ethicalTheory == "draftPick":
-            ranking = self.findDraftPickRanking()
+            ranking = ethics.findDraftPickRanking(self)
             if ranking > len(cells):
                 bestCell == self.cell
             else:
@@ -788,12 +719,6 @@ class Agent:
         spiceDaysToDeath = self.spice / self.spiceMetabolism if self.spiceMetabolism > 0 else sys.maxsize
         daysToDeath = min(sugarDaysToDeath, spiceDaysToDeath)
         return daysToDeath
-
-    def findDraftPickRanking(self):
-        neighborhood = self.neighborhood
-        # TODO: order neighborhood based on wealth
-        # TODO: return index of self
-        return 0
 
     def findEmptyNeighborCells(self):
         emptyCells = []
