@@ -44,7 +44,7 @@ class Sugarscape:
         self.end = False # Simulation end flag
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                              "meanTradePrice": 0, "tradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0, "meanAgeAtDeath": 0, "deaths": 0,
-                             "seed": self.seed}
+                             "totalAccumulation": 0, "seed": self.seed}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logAgent = None
 
@@ -210,6 +210,9 @@ class Sugarscape:
     def endLog(self):
         if self.log == None:
             return
+        # Update total wealth accumulation to include still living agents at simulation end
+        for agent in self.agents:
+            self.runtimeStats["totalAccumulation"] += agent.wealth
         logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
         self.log.write(logString)
         self.log.flush()
@@ -557,6 +560,7 @@ class Sugarscape:
         maxWealth = 0
         minWealth = sys.maxsize
         numTraders = 0
+        totalAccumulation = 0
         for agent in self.agents:
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
@@ -597,6 +601,7 @@ class Sugarscape:
         meanAgeAtDeath = 0
         for agent in self.deadAgents:
             meanAgeAtDeath += agent.age
+            totalAccumulation += agent.wealth
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
         self.deadAgents = []
 
@@ -609,6 +614,7 @@ class Sugarscape:
         self.runtimeStats["minWealth"] = minWealth
         self.runtimeStats["maxWealth"] = maxWealth
         self.runtimeStats["totalWealth"] = totalWealth
+        self.runtimeStats["totalAccumulation"] += totalAccumulation
         self.runtimeStats["meanTradePrice"] = meanTradePrice
         self.runtimeStats["tradeVolume"] = tradeVolume
         self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.agents) > 1 else 0

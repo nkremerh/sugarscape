@@ -69,6 +69,19 @@ def findBenthamSimpleActUtilitarianValueOfCell(agent, cell):
 
 def findDraftPickRanking(agent):
         neighborhood = agent.neighborhood
-        # TODO: order neighborhood based on wealth
-        # TODO: return index of agent
-        return 0
+        # Insertion sort of agents according to wealth where lower index yields higher priority
+        i = 1
+        while i < len(neighborhood):
+            j = i
+            while j > 0 and neighborhood[j-1].wealth > neighborhood[j].wealth:
+                swap = neighborhood[j-1]
+                neighborhood[j-1] = neighborhood[j]
+                neighborhood[j] = swap
+                j -= 1
+            i += 1
+        ranking = 0
+        while ranking < len(neighborhood):
+            if neighborhood[ranking] == agent:
+                break
+            ranking += 1
+        return ranking
