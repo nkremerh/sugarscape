@@ -595,7 +595,7 @@ class Agent:
                     break
         elif self.ethicalTheory == "draftPick":
             ranking = ethics.findDraftPickRanking(self)
-            if ranking > len(cells):
+            if ranking >= len(cells):
                 bestCell == self.cell
             else:
                 bestCell = cells[ranking]["cell"]
