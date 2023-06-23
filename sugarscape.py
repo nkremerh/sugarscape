@@ -426,6 +426,7 @@ class Sugarscape:
             decimals = max(decimalRange) if len(decimalRange) > 0 else 0
             increment = 10 ** (-1 * decimals)
             configurations[config]["inc"] = increment
+            configurations[config]["decimals"] = decimals
 
         endowments = []
         sexes = []
@@ -440,7 +441,8 @@ class Sugarscape:
         for i in range(numAgents):
             for config in configurations:
                 configurations[config]["endowments"].append(configurations[config]["curr"])
-                configurations[config]["curr"] += 1
+                configurations[config]["curr"] += configurations[config]["inc"]
+                configurations[config]["curr"] = round(configurations[config]["curr"], configurations[config]["decimals"])
                 if configurations[config]["curr"] > configurations[config]["max"]:
                     configurations[config]["curr"] = configurations[config]["min"]
 
