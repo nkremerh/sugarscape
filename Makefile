@@ -12,9 +12,12 @@ test:
 data:
 	cd data && sh collect.sh
 
+generate:
+	cd data && sh generate.sh
+
 clean:
 	rm -rf $(CLEAN) || true
 
-.PHONY: all clean data install
+.PHONY: all clean data generate install
 
 # vim: set noexpandtab tabstop=4:
