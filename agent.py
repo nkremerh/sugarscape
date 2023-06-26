@@ -833,7 +833,7 @@ class Agent:
         zeroes = 0
         tribeCutoff = math.floor(len(self.tags) / numTribes)
         # Up to 11 tribes possible without significant color conflicts
-        colors = ["green", "blue", "red", "orange", "purple", "teal", "pink", "mint", "blue2", "yellow", "salmon"]
+        colors = ["red", "blue", "green", "orange", "purple", "teal", "pink", "mint", "blue2", "yellow", "salmon"]
         for tag in self.tags:
             if tag == 0:
                 zeroes += 1
