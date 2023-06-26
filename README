@@ -2,13 +2,26 @@ SUGARSCAPE
 
 Python implementation of the Sugarscape agent-based computational model introduced in Growing Artificial Societies (1996) by Epstein and Axtell.
 
-Based on previous work by Herve Lange (https://github.com/langerv/sugarscape) and Joshua Palicka (https://github.com/joshuapalicka/sugarscape).
+Inspired by previous work from Herve Lange (https://github.com/langerv/sugarscape) and Joshua Palicka (https://github.com/joshuapalicka/sugarscape).
 
 Requirements:
 Python 3
 
 Usage:
 python sugarscape.py
+
+Makefile Options:
+make clean
+    Clean up working files and logs created by the software.
+    Note: will remove any JSON files created by the other make options.
+make data
+    Generate and run 20 random seeds comparing Bentham's utility calculus as the decision layer versus the baseline greedy decisionmaking.
+    Note: results will be saved in the data subdirectory.
+make generate
+    Generate 20 random seeds and save 20 template configuration files.
+    Note: results will be saved in the data subdirectory.
+make test
+    Run the simulation using the default config.json file and storing a local log in the log.json file.
 
 Preconfigured Examples from Growing Artificial Societies:
 A selection of examples can be found in the examples directory.

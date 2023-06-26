@@ -18,6 +18,6 @@ generate:
 clean:
 	rm -rf $(CLEAN) || true
 
-.PHONY: all clean data generate install
+.PHONY: all clean data generate
 
 # vim: set noexpandtab tabstop=4:
