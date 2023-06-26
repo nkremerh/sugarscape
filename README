@@ -15,7 +15,7 @@ make clean
     Clean up working files and logs created by the software.
     Note: will remove any JSON files created by the other make options.
 make data
-    Generate and run 20 random seeds comparing Bentham's utility calculus as the decision layer versus the baseline greedy decisionmaking.
+    Run 20 random seeds comparing Bentham's utility calculus to the baseline greedy decisionmaking.
     Note: results will be saved in the data subdirectory.
 make generate
     Generate 20 random seeds and save 20 template configuration files.

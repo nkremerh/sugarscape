@@ -10,7 +10,7 @@ do
     sedstr="s/\(\"seed\"\:\s\).*,/\1$seed,/g"
     echo "Generating template with random seed $seed"
     sed -i $sedstr ./template.json
-    cp ./template.json ./template$i.json
+    cp ./template.json ./$seed.json
 done
 
 # Clean up working config
