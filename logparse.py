@@ -18,12 +18,13 @@ def parseLog(logFile):
     meanTotalWealth = 0
     meanMaxWealth = 0
     meanMinWealth = 0
+    meanHappiness = 0
     meanAgeAtDeath = 0
     meanDeaths = 0
 
     data = {"meanPopulation": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0,
             "meanAge": 0, "meanTradePrice": 0, "meanTradeVolume": 0, "meanTotalWealth": 0,
-            "meanMaxWealth": 0, "meanMinWealth": 0, "meanAgeAtDeath": 0, "meanDeaths": 0}
+            "meanMaxWealth": 0, "meanMinWealth": 0, "meanHappiness": 0, "meanAgeAtDeath": 0, "meanDeaths": 0}
 
     for entry in entries:
         if entry["timestep"] > timesteps:
@@ -38,6 +39,7 @@ def parseLog(logFile):
         data["meanTotalWealth"] += entry["totalWealth"]
         data["meanMaxWealth"] += entry["maxWealth"]
         data["meanMinWealth"] += entry["minWealth"]
+        data["meanHappiness"] += entry["meanHappiness"]
         data["meanAgeAtDeath"] += entry["meanAgeAtDeath"]
         data["meanDeaths"] += entry["deaths"]
 
