@@ -464,8 +464,11 @@ class Sugarscape:
             else:
                 sexes.append(None)
 
+        # Keep state of random numbers to allow extending agent endowments without altering determinism
+        randomNumberReset = random.getstate()
         for config in configurations:
             random.shuffle(configurations[config]["endowments"])
+        random.setstate(randomNumberReset)
         random.shuffle(sexes)
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
@@ -761,7 +764,8 @@ if __name__ == "__main__":
                      "seed": -1,
                      "startingAgents": 250,
                      "startingDiseases": 0,
-                     "timesteps": 200}
+                     "timesteps": 200
+                     }
     configuration = parseOptions(configuration)
     configuration = verifyConfiguration(configuration)
     random.seed(configuration["seed"])
