@@ -596,7 +596,7 @@ class Agent:
                 bestCell = cells[rank]["cell"]
         elif self.ethicalTheory == "rankedBentham":
             for cell in cells:
-                ethicalScore = ethics.findBenthamSimpleActUtilitarianValueOfCell(self, cell["cell"])
+                ethicalScore = ethics.findBenthamActUtilitarianValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
             cells = self.sortCellsByWealth(cells)
             cells.reverse()
