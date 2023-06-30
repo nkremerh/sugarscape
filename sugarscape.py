@@ -410,6 +410,8 @@ class Sugarscape:
                           "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]}
                           }
 
+        # Keep state of random numbers to allow extending agent endowments without altering determinism
+        randomNumberReset = random.getstate()
         for config in configurations:
             configMin = configurations[config]["min"]
             configMax = configurations[config]["max"]
@@ -464,11 +466,8 @@ class Sugarscape:
             else:
                 sexes.append(None)
 
-        # Keep state of random numbers to allow extending agent endowments without altering determinism
-        randomNumberReset = random.getstate()
         for config in configurations:
             random.shuffle(configurations[config]["endowments"])
-        random.setstate(randomNumberReset)
         random.shuffle(sexes)
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
@@ -494,6 +493,7 @@ class Sugarscape:
                 agentEndowment["fertilityAge"] = 0
                 agentEndowment["infertilityAge"] = 0
             endowments.append(agentEndowment)
+        random.setstate(randomNumberReset)
         return endowments
 
     def removeDeadAgents(self):

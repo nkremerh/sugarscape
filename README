@@ -101,6 +101,7 @@ agentEthicalFactor: [float, float]
 
 agentEthicalTheory: string
     Set the agent ethical theory for algorithmic decisionmaking.
+    Options: "bentham", "none", "ranked", "rankedBentham"
     Default: "none"
 
 agentFemaleInfertilityAge: [int, int]
