@@ -15,6 +15,8 @@ class Cell:
         self.season = None
         self.timestep = 0
         self.neighbors = []
+        self.sugarLastProduced = 0
+        self.spiceLastProduced = 0
 
     def doSpiceConsumptionPollution(self, spiceConsumed):
         consumptionPollutionFactor = self.environment.spiceConsumptionPollutionFactor

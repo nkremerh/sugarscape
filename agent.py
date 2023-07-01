@@ -177,8 +177,8 @@ class Agent:
             self.sugar += sugarLoot
             self.spice += spiceLoot
             self.wealth = self.sugar + self.spice
-            prey.sugar = preySugar - sugarLoot
-            prey.spice = preySpice - spiceLoot
+            prey.sugar -= sugarLoot
+            prey.spice -= spiceLoot
             prey.doDeath()
         self.gotoCell(cell)
 
@@ -244,26 +244,32 @@ class Agent:
             for child in livingChildren:
                 child.sugar = child.sugar + sugarInheritance
                 child.spice = child.spice + spiceInheritance
+                self.sugar -= sugarInheritance
+                self.spice -= spiceInheritance
         elif self.inheritancePolicy == "sons" and len(livingSons) > 0:
             sugarInheritance = self.sugar / len(livingSons)
             spiceInheritance = self.spice / len(livingSons)
             for son in livingSons:
                 son.sugar = son.sugar + sugarInheritance
                 son.spice = son.spice + spiceInheritance
+                self.sugar -= sugarInheritance
+                self.spice -= spiceInheritance
         elif self.inheritancePolicy == "daughters" and len(livingDaughters) > 0:
             sugarInheritance = self.sugar / len(livingDaughters)
             spiceInheritance = self.spice / len(livingDaughters)
             for daughter in livingDaughters:
                 daughter.sugar = daughter.sugar + sugarInheritance
                 daughter.spice = daughter.spice + spiceInheritance
+                self.sugar -= sugarInheritance
+                self.spice -= spiceInheritance
         elif self.inheritancePolicy == "friends" and len(livingFriends) > 0:
             sugarInheritance = self.sugar / len(livingFriends)
             spiceInheritance = self.spice / len(livingFriends)
             for friend in livingFriends:
                 friend.sugar = friend.sugar + sugarInheritance
                 friend.spice = friend.spice + spiceInheritance
-        self.sugar = 0
-        self.spice = 0
+                self.sugar -= sugarInheritance
+                self.spice -= spiceInheritance
 
     def doLending(self):
         self.updateLoans()
