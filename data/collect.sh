@@ -6,7 +6,7 @@ cp default.config default.json
 cp rankedBentham.config rankedBentham.json
 cp rankedDefault.config rankedDefault.json
 
-n=1000
+n=10
 for i in $( seq 1 $n )
 do
     # Generate a random seed and apply it to config files
