@@ -600,6 +600,13 @@ class Agent:
                 bestCell == self.cell
             else:
                 bestCell = cells[rank]["cell"]
+        elif self.ethicalTheory == "greedyBentham":
+            for cell in cells:
+                ethicalScore = ethics.findBenthamActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+            cells = self.sortCellsByWealth(cells)
+            cells.reverse()
+            bestCell = cells[0]["cell"]
         elif self.ethicalTheory == "rankedBentham":
             for cell in cells:
                 ethicalScore = ethics.findBenthamActUtilitarianValueOfCell(self, cell["cell"])
@@ -614,7 +621,7 @@ class Agent:
 
         if bestCell == None:
             if greedyBestCell == None:
-                bestCell = cells.pop()["cell"]
+                bestCell = cells[0]["cell"]
             else:
                 bestCell = greedyBestCell
             if self.debug == True:
