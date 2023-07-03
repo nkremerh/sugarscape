@@ -572,17 +572,7 @@ class Agent:
         cells = self.sortCellsByWealth(cells)
         cells.reverse()
         if self.debug == True:
-            i = 0
-            while i < len(cells):
-                cell = cells[i]
-                cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
-                if i == 0:
-                    print("Best cell: " + cellString)
-                elif i == len(cells) - 1:
-                    print("Worst cell: " + cellString)
-                else:
-                    print("Cell: " + cellString)
-                i += 1
+            self.printCellScores(cells)
 
         # If not an ethical agent, return top selfish choice
         if self.ethicalTheory == "none":
@@ -606,6 +596,8 @@ class Agent:
                 cell["wealth"] = ethicalScore
             cells = self.sortCellsByWealth(cells)
             cells.reverse()
+            if self.debug == True:
+                self.printEthicalCellScores(cells)
             bestCell = cells[0]["cell"]
         elif self.ethicalTheory == "rankedBentham":
             for cell in cells:
@@ -613,6 +605,8 @@ class Agent:
                 cell["wealth"] = ethicalScore
             cells = self.sortCellsByWealth(cells)
             cells.reverse()
+            if self.debug == True:
+                self.printEthicalCellScores(cells)
             rank = self.findNeighborhoodRank()
             if rank >= len(cells):
                 bestCell == self.cell
@@ -1061,6 +1055,22 @@ class Agent:
                 child.addLoanToAgent(self, self.lastMoved, 0, sugarRepayment, 0, spiceRepayment, 1)
         self.socialNetwork["creditors"].remove(loan)
         creditor.removeDebt(loan)
+
+    def printCellScores(self, cells):
+        i = 0
+        while i < len(cells):
+            cell = cells[i]
+            cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
+            print("Cell {0}/{1}: ".format(i + 1, len(cells)) + cellString)
+            i += 1
+
+    def printEthicalCellScores(self, cells):
+        i = 0
+        while i < len(cells):
+            cell = cells[i]
+            cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
+            print("Ethical cell {0}/{1}: ".format(i + 1, len(cells)) + cellString)
+            i += 1
 
     def removeDebt(self, loan):
         for debtor in self.socialNetwork["debtors"]:

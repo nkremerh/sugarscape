@@ -3,6 +3,7 @@
 # Create working configs to avoid clobbering permanent configs
 cp bentham.config bentham.json
 cp default.config default.json
+cp greedyBentham.config greedyBentham.json
 cp rankedBentham.config rankedBentham.json
 cp rankedDefault.config rankedDefault.json
 
@@ -15,8 +16,9 @@ do
     echo "Running simulation for random seed $seed ($i/$n)"
     sed -i $sedstr ./bentham.json
     sed -i $sedstr ./default.json
-    sed -i $sedstr ./rankedDefault.json
+    sed -i $sedstr ./greedyBentham.json
     sed -i $sedstr ./rankedBentham.json
+    sed -i $sedstr ./rankedDefault.json
 
     # Run simulation for configs and rename resulting log
     python ../sugarscape.py --conf bentham.json > bentham$i.log
@@ -31,16 +33,17 @@ do
     python ../logparse.py --log log.json >> rankedDefault$i.log
     mv log.json rankedDefault$i.json
 
+    python ../sugarscape.py --conf greedyBentham.json > greedyBentham$i.log
+    python ../logparse.py --log log.json >> greedyBentham$i.log
+    mv log.json greedyBentham$i.json
+
     python ../sugarscape.py --conf rankedBentham.json > rankedBentham$i.log
     python ../logparse.py --log log.json >> rankedBentham$i.log
     mv log.json rankedBentham$i.json
 
-    # Generate side-by-side comparison between runs
-    diff -y default$i.log bentham$i.log > compare$i.log
-    diff -y rankedDefault$i.log rankedBentham$i.log > compareRanked$i.log
 done
 
 # Clean up working configs
-rm bentham.json default.json rankedBentham.json rankedDefault.json
+rm bentham.json default.json greedyBentham.json rankedBentham.json rankedDefault.json
 
 exit 0

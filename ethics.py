@@ -25,12 +25,15 @@ def findBenthamActUtilitarianValueOfCell(agent, cell):
         extent = len(agent.neighborhood) / (neighbor.vision * 4) if neighbor.vision > 0 else 1
         # If not the agent moving, consider these as opportunity costs
         if neighbor != agent:
-            intensity = -1 * intensity
             duration = -1 * duration
+            intensity = -1 * intensity
             futureDuration = -1 * futureDuration
             futureIntensity = -1 * futureIntensity
         # TODO: intensity + duration + extent + discount * (futureIntensity + futureDuration + futureExtent)
         #neighborValueOfCell = neighbor.ethicalFactor * (certainty * ((10 * potentialNice) + (5 * intensity) + (4 * duration) + (3 * proximity) + (2 * (discount * futureDuration * futureIntensity)) + extent))
         neighborValueOfCell = neighbor.ethicalFactor * (certainty * proximity * (intensity + duration + (discount * futureDuration * futureIntensity) + extent))
+        # If move will kill this neighbor, consider this a penalty
+        if cell == neighbor.cell and neighbor != agent:
+            neighborValueOfCell = -1
         cellValue += neighborValueOfCell
     return cellValue
