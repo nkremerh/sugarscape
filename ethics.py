@@ -23,17 +23,23 @@ def findBenthamActUtilitarianValueOfCell(agent, cell):
         futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
         # Assuming agent can only see in four cardinal directions
         extent = len(agent.neighborhood) / (neighbor.vision * 4) if neighbor.vision > 0 else 1
+        neighborValueOfCell = 0
         # If not the agent moving, consider these as opportunity costs
-        if neighbor != agent:
+        if neighbor != agent and cell != neighbor.cell:
             duration = -1 * duration
             intensity = -1 * intensity
             futureDuration = -1 * futureDuration
             futureIntensity = -1 * futureIntensity
-        # TODO: intensity + duration + extent + discount * (futureIntensity + futureDuration + futureExtent)
-        #neighborValueOfCell = neighbor.ethicalFactor * (certainty * ((10 * potentialNice) + (5 * intensity) + (4 * duration) + (3 * proximity) + (2 * (discount * futureDuration * futureIntensity)) + extent))
-        neighborValueOfCell = neighbor.ethicalFactor * (certainty * proximity * (intensity + duration + (discount * futureDuration * futureIntensity) + extent))
+            neighborValueOfCell = neighbor.ethicalFactor * (certainty * proximity * (intensity + duration + (discount * futureDuration * futureIntensity) + extent))
         # If move will kill this neighbor, consider this a penalty
-        if cell == neighbor.cell and neighbor != agent:
-            neighborValueOfCell = -1
+        elif neighbor != agent and cell == neighbor.cell:
+            neighborValueOfCell = -1 * (certainty * proximity * (intensity + duration + (discount * futureDuration * futureIntensity) + extent))
+            # If penalty is too slight, make it more severe
+            if neighborValueOfCell > -1:
+                neighborValueOfCell = -1
+        else:
+            # TODO: intensity + duration + extent + discount * (futureIntensity + futureDuration + futureExtent)
+            #neighborValueOfCell = neighbor.ethicalFactor * (certainty * ((10 * potentialNice) + (5 * intensity) + (4 * duration) + (3 * proximity) + (2 * (discount * futureDuration * futureIntensity)) + extent))
+            neighborValueOfCell = neighbor.ethicalFactor * (certainty * proximity * (intensity + duration + (discount * futureDuration * futureIntensity) + extent))
         cellValue += neighborValueOfCell
     return cellValue
