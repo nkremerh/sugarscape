@@ -999,6 +999,11 @@ class Agent:
             return True
         return False
 
+    def isSick(self):
+        if len(self.diseases) > 0:
+            return True
+        return False
+
     def moveToBestCell(self):
         bestCell = self.findBestCell()
         if self.aggressionFactor > 0:
