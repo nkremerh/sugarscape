@@ -590,7 +590,7 @@ class Agent:
                 bestCell == self.cell
             else:
                 bestCell = cells[rank]["cell"]
-        elif self.ethicalTheory == "greedyBentham":
+        elif self.ethicalTheory == "topBentham":
             for cell in cells:
                 ethicalScore = ethics.findBenthamActUtilitarianValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
@@ -602,6 +602,96 @@ class Agent:
         elif self.ethicalTheory == "rankedBentham":
             for cell in cells:
                 ethicalScore = ethics.findBenthamActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+            cells = self.sortCellsByWealth(cells)
+            cells.reverse()
+            if self.debug == True:
+                self.printEthicalCellScores(cells)
+            rank = self.findNeighborhoodRank()
+            if rank >= len(cells):
+                bestCell == self.cell
+            else:
+                bestCell = cells[rank]["cell"]
+
+        elif self.ethicalTheory == "altruist":
+            for cell in cells:
+                ethicalScore = ethics.findAltruisticActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+                if ethicalScore > 0:
+                    bestCell = cell["cell"]
+                    break
+        elif self.ethicalTheory == "topAltruist":
+            for cell in cells:
+                ethicalScore = ethics.findAltruisticActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+            cells = self.sortCellsByWealth(cells)
+            cells.reverse()
+            if self.debug == True:
+                self.printEthicalCellScores(cells)
+            bestCell = cells[0]["cell"]
+        elif self.ethicalTheory == "rankedAltruist":
+            for cell in cells:
+                ethicalScore = ethics.findAltruisticActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+            cells = self.sortCellsByWealth(cells)
+            cells.reverse()
+            if self.debug == True:
+                self.printEthicalCellScores(cells)
+            rank = self.findNeighborhoodRank()
+            if rank >= len(cells):
+                bestCell == self.cell
+            else:
+                bestCell = cells[rank]["cell"]
+
+        elif self.ethicalTheory == "egoist":
+            for cell in cells:
+                ethicalScore = ethics.findEgoisticActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+                if ethicalScore > 0:
+                    bestCell = cell["cell"]
+                    break
+        elif self.ethicalTheory == "topEogist":
+            for cell in cells:
+                ethicalScore = ethics.findEogisticActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+            cells = self.sortCellsByWealth(cells)
+            cells.reverse()
+            if self.debug == True:
+                self.printEthicalCellScores(cells)
+            bestCell = cells[0]["cell"]
+        elif self.ethicalTheory == "rankedEogist":
+            for cell in cells:
+                ethicalScore = ethics.findEgoisticActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+            cells = self.sortCellsByWealth(cells)
+            cells.reverse()
+            if self.debug == True:
+                self.printEthicalCellScores(cells)
+            rank = self.findNeighborhoodRank()
+            if rank >= len(cells):
+                bestCell == self.cell
+            else:
+                bestCell = cells[rank]["cell"]
+
+        elif self.ethicalTheory == "modified":
+            for cell in cells:
+                ethicalScore = ethics.findModifiedActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+                if ethicalScore > 0:
+                    bestCell = cell["cell"]
+                    break
+        elif self.ethicalTheory == "topModified":
+            for cell in cells:
+                ethicalScore = ethics.findModifiedActUtilitarianValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+            cells = self.sortCellsByWealth(cells)
+            cells.reverse()
+            if self.debug == True:
+                self.printEthicalCellScores(cells)
+            bestCell = cells[0]["cell"]
+        elif self.ethicalTheory == "rankedModified":
+            for cell in cells:
+                ethicalScore = ethics.findModifiedActUtilitarianValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
             cells = self.sortCellsByWealth(cells)
             cells.reverse()
