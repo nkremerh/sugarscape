@@ -1,6 +1,6 @@
 #! /bin/bash
 
-files=( altruist bentham default egoist modified topAltruist topBentham topEgoist topModified rankedAltruist rankedBentham rankedDefault rankedEgoist rankedModified )
+files=( altruist altruistModified bentham default egoist egoistModified modified topAltruist topAltruistModified topBentham topEgoist topEgoistModified topModified rankedAltruist rankedAltruistModified rankedBentham rankedDefault rankedEgoist rankedEgoistModified rankedModified )
 
 # Create working configs to avoid clobbering permanent configs
 for f in "${files[@]}"
