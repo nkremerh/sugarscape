@@ -16,6 +16,7 @@ import sys
 class Sugarscape:
     def __init__(self, configuration):
         self.configuration = configuration
+        self.maxTimestep = configuration["timesteps"]
         self.timestep = 0
         self.nextAgentID = 0
         self.nextDiseaseID = 0
@@ -43,7 +44,7 @@ class Sugarscape:
         self.end = False # Simulation end flag
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                              "meanTradePrice": 0, "tradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0, "meanAgeAtDeath": 0, "deaths": 0,
-                             "seed": self.seed}
+                             "totalAccumulation": 0, "seed": self.seed, "totalWealthLost": 0, "totalWealthProduced": 0, "totalMetabolismCost": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logAgent = None
 
@@ -112,7 +113,7 @@ class Sugarscape:
 
         totalCells = len(activeCells)
         if len(self.agents) + numAgents > totalCells:
-            if self.debug == True:
+            if "all" in self.debug or "sugarscape" in self.debug:
                 print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
             numAgents = totalCells
 
@@ -157,7 +158,7 @@ class Sugarscape:
                     self.diseases.append(newDisease)
                     diseases.remove(newDisease)
                     break
-        if len(diseases) > 0 and self.debug == True:
+        if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
             print("Could not place {0} diseases.".format(len(diseases)))
 
     def configureEnvironment(self, maxSugar, maxSpice):
@@ -185,7 +186,10 @@ class Sugarscape:
     def doTimestep(self):
         self.removeDeadAgents()
         self.replaceDeadAgents()
-        if self.debug == True:
+        if self.timestep >= self.maxTimestep:
+            self.toggleEnd()
+            return
+        if "all" in self.debug or "sugarscape" in self.debug:
             print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
         self.timestep += 1
         if self.end == True or len(self.agents) == 0:
@@ -197,10 +201,22 @@ class Sugarscape:
                 agent.doTimestep(self.timestep)
             if self.gui != None:
                 self.gui.doTimestep()
+            self.removeDeadAgents()
+            self.updateRuntimeStats()
+            # If final timestep, do not write to log to cleanly close JSON array log structure
+            if self.timestep != self.maxTimestep and len(self.agents) > 0:
+                self.writeToLog()
 
     def endLog(self):
         if self.log == None:
             return
+        # Update total wealth accumulation to include still living agents at simulation end
+        for agent in self.agents:
+            self.runtimeStats["totalAccumulation"] += agent.wealth
+            self.runtimeStats["totalMetabolismCost"] += agent.sugarMetabolism + agent.spiceMetabolism
+        for i in range(self.environment.height):
+            for j in range(self.environment.width):
+                self.runtimeStats["totalWealthProduced"] += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
         logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
         self.log.write(logString)
         self.log.flush()
@@ -209,7 +225,7 @@ class Sugarscape:
     def endSimulation(self):
         self.removeDeadAgents()
         self.endLog()
-        if self.debug == True:
+        if "all" in self.debug or "sugarscape" in self.debug:
             print(str(self))
         exit(0)
 
@@ -398,6 +414,8 @@ class Sugarscape:
                           "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]}
                           }
 
+        # Keep state of random numbers to allow extending agent endowments without altering determinism
+        randomNumberReset = random.getstate()
         for config in configurations:
             configMin = configurations[config]["min"]
             configMax = configurations[config]["max"]
@@ -414,6 +432,7 @@ class Sugarscape:
             decimals = max(decimalRange) if len(decimalRange) > 0 else 0
             increment = 10 ** (-1 * decimals)
             configurations[config]["inc"] = increment
+            configurations[config]["decimals"] = decimals
 
         endowments = []
         sexes = []
@@ -428,7 +447,8 @@ class Sugarscape:
         for i in range(numAgents):
             for config in configurations:
                 configurations[config]["endowments"].append(configurations[config]["curr"])
-                configurations[config]["curr"] += 1
+                configurations[config]["curr"] += configurations[config]["inc"]
+                configurations[config]["curr"] = round(configurations[config]["curr"], configurations[config]["decimals"])
                 if configurations[config]["curr"] > configurations[config]["max"]:
                     configurations[config]["curr"] = configurations[config]["min"]
 
@@ -477,6 +497,7 @@ class Sugarscape:
                 agentEndowment["fertilityAge"] = 0
                 agentEndowment["infertilityAge"] = 0
             endowments.append(agentEndowment)
+        random.setstate(randomNumberReset)
         return endowments
 
     def removeDeadAgents(self):
@@ -506,11 +527,6 @@ class Sugarscape:
         timesteps = timesteps - self.timestep
         while t <= timesteps and len(self.agents) > 0:
             self.doTimestep()
-            self.removeDeadAgents()
-            self.updateRuntimeStats()
-            # If final timestep, do not write to log to cleanly close JSON array log structure
-            if t != timesteps and len(self.agents) > 0:
-                self.writeToLog()
             t += 1
             if self.gui != None and self.run == False:
                 self.pauseSimulation()
@@ -553,6 +569,15 @@ class Sugarscape:
         maxWealth = 0
         minWealth = sys.maxsize
         numTraders = 0
+        totalAccumulation = 0
+        totalWealthLost = 0
+        totalMetabolismCost = 0
+        totalWealthProduced = 0
+        for i in range(self.environment.height):
+            for j in range(self.environment.width):
+                totalWealthProduced += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
+                if self.timestep == 1:
+                    totalWealthProduced += self.environment.grid[i][j].maxSugar + self.environment.grid[i][j].maxSpice
         for agent in self.agents:
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
@@ -568,6 +593,7 @@ class Sugarscape:
                 minWealth = agent.wealth
             if agent.wealth > maxWealth:
                 maxWealth = agent.wealth
+            totalMetabolismCost += agent.sugarMetabolism + agent.spiceMetabolism
         if numAgents > 0:
             combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism
             if meanSugarMetabolism > 0 and meanSpiceMetabolism > 0:
@@ -593,6 +619,8 @@ class Sugarscape:
         meanAgeAtDeath = 0
         for agent in self.deadAgents:
             meanAgeAtDeath += agent.age
+            totalAccumulation += agent.wealth
+            totalWealthLost += agent.sugar + agent.spice
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
         self.deadAgents = []
 
@@ -605,11 +633,15 @@ class Sugarscape:
         self.runtimeStats["minWealth"] = minWealth
         self.runtimeStats["maxWealth"] = maxWealth
         self.runtimeStats["totalWealth"] = totalWealth
+        self.runtimeStats["totalAccumulation"] += totalAccumulation
         self.runtimeStats["meanTradePrice"] = meanTradePrice
         self.runtimeStats["tradeVolume"] = tradeVolume
         self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.agents) > 1 else 0
         self.runtimeStats["meanAgeAtDeath"] = meanAgeAtDeath
         self.runtimeStats["deaths"] = numDeadAgents
+        self.runtimeStats["totalWealthLost"] += totalWealthLost
+        self.runtimeStats["totalMetabolismCost"] += totalMetabolismCost
+        self.runtimeStats["totalWealthProduced"] += totalWealthProduced
 
     def writeToLog(self):
         if self.log == None:
@@ -662,7 +694,7 @@ def verifyConfiguration(configuration):
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
     if configuration["startingAgents"] > totalCells:
-        if configuration["debugMode"] == True:
+        if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
             print("Could not allocate {0} agents. Allocating maximum of {1}.".format(configuration["startingAgents"], totalCells))
         configuration["startingAgents"] = totalCells
 
@@ -689,6 +721,24 @@ def verifyConfiguration(configuration):
 
     if configuration["logfile"] == "":
         configuration["logfile"] = None
+
+    recognizedDebugModes = ["agent", "all", "cell", "disease", "environment", "ethics", "none", "sugarscape"]
+    validModes = True
+    for mode in configuration["debugMode"]:
+        if mode not in recognizedDebugModes:
+            print("Debug mode {0} not recognized".format(mode))
+            validModes = False
+    if validModes == False:
+        printHelp()
+
+    if "all" in configuration["debugMode"] and "none" in configuration["debugMode"]:
+        print("Cannot have \"all\" and \"none\" debug modes enabled at the same time")
+        printHelp()
+    elif "all" in configuration["debugMode"] and len(configuration["debugMode"]) > 1:
+        configuration["debugMode"] = "all"
+    elif "none" in configuration["debugMode"] and len(configuration["debugMode"]) > 1:
+        configuration["debugMode"] = "none"
+        
     return configuration
 
 if __name__ == "__main__":
@@ -720,7 +770,7 @@ if __name__ == "__main__":
                      "agentTagStringLength": 0,
                      "agentTradeFactor": [0, 0],
                      "agentVision": [1, 6],
-                     "debugMode": False,
+                     "debugMode": ["none"],
                      "diseaseAggressionPenalty": [0, 0],
                      "diseaseFertilityPenalty": [0, 0],
                      "diseaseMovementPenalty": [0, 0],
@@ -749,7 +799,8 @@ if __name__ == "__main__":
                      "seed": -1,
                      "startingAgents": 250,
                      "startingDiseases": 0,
-                     "timesteps": 200}
+                     "timesteps": 200
+                     }
     configuration = parseOptions(configuration)
     configuration = verifyConfiguration(configuration)
     random.seed(configuration["seed"])

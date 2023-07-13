@@ -37,15 +37,33 @@ class Environment:
                 cellMaxSugar = self.grid[i][j].maxSugar
                 cellMaxSpice = self.grid[i][j].maxSpice
                 cellSeason = self.grid[i][j].season
+                sugarRegrowth = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
+                spiceRegrowth = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
                 if self.seasonInterval > 0:
                     if self.timestep % self.seasonInterval == 0:
                         self.grid[i][j].updateSeason()
                     if (cellSeason == "summer") or (cellSeason == "winter" and self.seasonalGrowbackCountdown == self.seasonalGrowbackDelay):
-                        self.grid[i][j].sugar = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
-                        self.grid[i][j].spice = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
+                        if self.grid[i][j].sugar + self.sugarRegrowRate != self.grid[i][j].sugar:
+                            self.grid[i][j].sugarLastProduced = self.sugarRegrowRate
+                        else:
+                            self.grid[i][j].sugarLastProduced = 0
+                        if self.grid[i][j].spice + self.spiceRegrowRate != self.grid[i][j].spice:
+                            self.grid[i][j].spiceLastProduced = self.spiceRegrowRate
+                        else:
+                            self.grid[i][j].spiceLastProduced = 0
+                        self.grid[i][j].sugar = sugarRegrowth
+                        self.grid[i][j].spice = spiceRegrowth
                 else:
-                    self.grid[i][j].sugar = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
-                    self.grid[i][j].spice = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
+                    if self.grid[i][j].sugar + self.sugarRegrowRate != self.grid[i][j].sugar:
+                        self.grid[i][j].sugarLastProduced = self.sugarRegrowRate
+                    else:
+                        self.grid[i][j].sugarLastProduced = 0
+                    if self.grid[i][j].spice + self.spiceRegrowRate != self.grid[i][j].spice:
+                        self.grid[i][j].spiceLastProduced = self.spiceRegrowRate
+                    else:
+                        self.grid[i][j].spiceLastProduced = 0
+                    self.grid[i][j].sugar = sugarRegrowth
+                    self.grid[i][j].spice = spiceRegrowth
                 if self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
                     self.grid[i][j].doPollutionDiffusion()
 
