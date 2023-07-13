@@ -309,7 +309,7 @@ class Agent:
             elif self.sugar - sugarLoanPrincipal <= self.sugarMetabolism or self.spice - spiceLoanPrincipal <= self.spiceMetabolism:
                 continue
             elif borrower.isCreditWorthy(sugarLoanAmount, spiceLoanAmount, self.loanDuration) == True:
-                if self.debug == True:
+                if "all" in self.debug or "agent" in self.debug:
                     print("Agent {0} lending [{1},{2}]".format(str(self), sugarLoanAmount, spiceLoanAmount))
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
 
@@ -468,7 +468,7 @@ class Agent:
                 # Evaluates to False for successful trades
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller == True and betterForSugarSeller == True and checkForMRSCrossing == False:
-                    if self.debug == True:
+                    if "all" in self.debug or "agent" in self.debug:
                         print("Agent {0} trading [{1}, {2}]".format(str(self), sugarPrice, spicePrice))
                     spiceSeller.sugar += sugarPrice
                     spiceSeller.spice -= spicePrice
@@ -560,8 +560,7 @@ class Agent:
             bestCell = self.findBestEthicalCell(potentialCells, bestCell)
         if bestCell == None:
             bestCell = self.cell
-
-        if self.debug == True:
+        if "all" in self.debug or "agent" in self.debug:
             print("Agent {0} moving to ({1},{2})".format(str(self), bestCell.x, bestCell.y))
         return bestCell
 
@@ -571,9 +570,8 @@ class Agent:
         bestCell = None
         cells = self.sortCellsByWealth(cells)
         cells.reverse()
-        if self.debug == True:
+        if "all" in self.debug or "agent" in self.debug:
             self.printCellScores(cells)
-
         # If not an ethical agent, return top selfish choice
         if self.ethicalTheory == "none":
             return greedyBestCell
@@ -768,7 +766,7 @@ class Agent:
                 bestCell = cells[0]["cell"]
             else:
                 bestCell = greedyBestCell
-            if self.debug == True:
+            if "all" in self.debug or "agent" in self.debug:
                 print("Agent {0} could not find an ethical cell".format(str(self)))
         return bestCell
 

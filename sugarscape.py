@@ -113,7 +113,7 @@ class Sugarscape:
 
         totalCells = len(activeCells)
         if len(self.agents) + numAgents > totalCells:
-            if self.debug == True:
+            if "all" in self.debug or "sugarscape" in self.debug:
                 print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
             numAgents = totalCells
 
@@ -158,7 +158,7 @@ class Sugarscape:
                     self.diseases.append(newDisease)
                     diseases.remove(newDisease)
                     break
-        if len(diseases) > 0 and self.debug == True:
+        if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
             print("Could not place {0} diseases.".format(len(diseases)))
 
     def configureEnvironment(self, maxSugar, maxSpice):
@@ -189,7 +189,7 @@ class Sugarscape:
         if self.timestep >= self.maxTimestep:
             self.toggleEnd()
             return
-        if self.debug == True:
+        if "all" in self.debug or "sugarscape" in self.debug:
             print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
         self.timestep += 1
         if self.end == True or len(self.agents) == 0:
@@ -225,7 +225,7 @@ class Sugarscape:
     def endSimulation(self):
         self.removeDeadAgents()
         self.endLog()
-        if self.debug == True:
+        if "all" in self.debug or "sugarscape" in self.debug:
             print(str(self))
         exit(0)
 
@@ -694,7 +694,7 @@ def verifyConfiguration(configuration):
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
     if configuration["startingAgents"] > totalCells:
-        if configuration["debugMode"] == True:
+        if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
             print("Could not allocate {0} agents. Allocating maximum of {1}.".format(configuration["startingAgents"], totalCells))
         configuration["startingAgents"] = totalCells
 
@@ -721,6 +721,16 @@ def verifyConfiguration(configuration):
 
     if configuration["logfile"] == "":
         configuration["logfile"] = None
+        
+    if not (set(configuration["debugMode"]).issubset({"agent", "all", "cell", "disease", "environment", "ethics", "none", "sugarscape"})):
+        raise Exception("Debug mode not recognized")
+    elif "all" in configuration["debugMode"] and "none" in configuration["debugMode"]:
+        raise Exception("Conflicting debug modes - \"all\" and \"none\"")
+    elif "all" in configuration["debugMode"] and len(configuration["debugMode"]) > 1:
+        configuration["debugMode"] = "all"
+    elif "none" in configuration["debugMode"] and len(configuration["debugMode"]) > 1:
+        configuration["debugMode"] = "none"
+        
     return configuration
 
 if __name__ == "__main__":
@@ -752,7 +762,7 @@ if __name__ == "__main__":
                      "agentTagStringLength": 0,
                      "agentTradeFactor": [0, 0],
                      "agentVision": [1, 6],
-                     "debugMode": False,
+                     "debugMode": ["none"],
                      "diseaseAggressionPenalty": [0, 0],
                      "diseaseFertilityPenalty": [0, 0],
                      "diseaseMovementPenalty": [0, 0],
