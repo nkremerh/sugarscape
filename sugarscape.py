@@ -8,13 +8,17 @@ import gui
 
 import cProfile
 import getopt
+import hashlib
 import json
 import math
 import random
 import sys
 
+
 class Sugarscape:
     def __init__(self, configuration):
+        self.diseaseConfigHashes = None
+        self.agentConfigHashes = None
         self.configuration = configuration
         self.maxTimestep = configuration["timesteps"]
         self.timestep = 0
@@ -349,18 +353,36 @@ class Sugarscape:
             if currTagLength > maxTagLength:
                 currTagLength = minTagLength
 
-        random.shuffle(sugarMetabolismPenalties)
-        random.shuffle(spiceMetabolismPenalties)
-        random.shuffle(movementPenalties)
-        random.shuffle(visionPenalties)
-        random.shuffle(fertilityPenalties)
-        random.shuffle(aggressionPenalties)
-        random.shuffle(diseaseTags)
 
-        for i in range(numDiseases):
-            diseaseEndowment = {"sugarMetabolismPenalty": sugarMetabolismPenalties.pop(), "spiceMetabolismPenalty": spiceMetabolismPenalties.pop(),
-                                "movementPenalty": movementPenalties.pop(), "visionPenalty": visionPenalties.pop(), "fertilityPenalty": fertilityPenalties.pop(),
-                                "aggressionPenalty": aggressionPenalties.pop(), "tags": diseaseTags.pop()}
+        randomDiseaseEndowment = {"sugarMetabolismPenalties" : sugarMetabolismPenalties,
+                     "spiceMetabolismPenalties" : spiceMetabolismPenalties,
+                     "movementPenalties" : movementPenalties,
+                     "visionPenalties" : visionPenalties,
+                     "fertilityPenalties" : fertilityPenalties,
+                     "aggressionPenalties" : aggressionPenalties,
+                     "diseaseTags" : diseaseTags}
+        
+        # Map configuration to a random number via hash to make random number generation independent of iteration order
+        if (self.diseaseConfigHashes == None):
+            self.diseaseConfigHashes = {}
+            for penalty in randomDiseaseEndowment:
+                hashed = hashlib.md5(penalty.encode())
+                self.diseaseConfigHashes[penalty] = int(hashed.hexdigest(), 16)
+                
+        randomNumberReset = random.getstate()
+        for endowment in randomDiseaseEndowment.keys():
+            random.seed(self.diseaseConfigHashes[endowment] + self.timestep)
+            random.shuffle(randomDiseaseEndowment[endowment])
+        random.setstate(randomNumberReset)
+
+        for _ in range(numDiseases):
+            diseaseEndowment = {"aggressionPenalty": aggressionPenalties.pop(),
+                                "fertilityPenalty": fertilityPenalties.pop(),
+                                "movementPenalty": movementPenalties.pop(),
+                                "sugarMetabolismPenalty": sugarMetabolismPenalties.pop(),
+                                "spiceMetabolismPenalty": spiceMetabolismPenalties.pop(),
+                                "tags": diseaseTags.pop(),
+                                "visionPenalty": visionPenalties.pop()}
             endowments.append(diseaseEndowment)
         return endowments
 
@@ -413,9 +435,15 @@ class Sugarscape:
                           "tradeFactor": {"endowments": [], "curr": tradeFactor[0], "min": tradeFactor[0], "max": tradeFactor[1]},
                           "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]}
                           }
-
-        # Keep state of random numbers to allow extending agent endowments without altering determinism
-        randomNumberReset = random.getstate()
+        
+        if self.agentConfigHashes == None:
+            self.agentConfigHashes = {}
+            # Map configuration to a random number via hash to make random number generation independent of iteration order
+            for config in configurations.keys():
+                hashed = hashlib.md5(config.encode())
+                hashNum = int(hashed.hexdigest(), 16)
+                self.agentConfigHashes[config] = hashNum
+        
         for config in configurations:
             configMin = configurations[config]["min"]
             configMax = configurations[config]["max"]
@@ -470,8 +498,13 @@ class Sugarscape:
             else:
                 sexes.append(None)
 
+         # Keep state of random numbers to allow extending agent endowments without altering original random object state
+        randomNumberReset = random.getstate()
         for config in configurations:
+            random.seed(self.agentConfigHashes[config] + self.timestep)
             random.shuffle(configurations[config]["endowments"])
+        # Set random object state to prevent pulling random number stream from config's seed
+        random.setstate(randomNumberReset)
         random.shuffle(sexes)
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
@@ -497,7 +530,6 @@ class Sugarscape:
                 agentEndowment["fertilityAge"] = 0
                 agentEndowment["infertilityAge"] = 0
             endowments.append(agentEndowment)
-        random.setstate(randomNumberReset)
         return endowments
 
     def removeDeadAgents(self):

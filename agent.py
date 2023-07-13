@@ -1,3 +1,4 @@
+import hashlib
 import math
 import random
 import sys
@@ -60,6 +61,7 @@ class Agent:
         self.spicePrice = 0
         self.sugarPrice = 0
         self.nice = 0
+        self.childEndowmentHashes = None
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
@@ -797,42 +799,68 @@ class Agent:
             self.cellsInVision = northCells + southCells + eastCells + westCells
 
     def findChildEndowment(self, mate):
-        randomNumberReset = random.getstate()
-        parentSugarMetabolisms = [self.sugarMetabolism, mate.sugarMetabolism]
-        parentSpiceMetabolisms = [self.spiceMetabolism, mate.spiceMetabolism]
-        parentMovements = [self.movement, mate.movement]
-        parentVisions = [self.vision, mate.vision]
-        parentMaxAges = [self.maxAge, mate.maxAge]
-        parentInfertilityAges = [self.infertilityAge, mate.infertilityAge]
-        parentFertilityAges = [self.fertilityAge, mate.fertilityAge]
-        parentSexes = [self.sex, mate.sex]
-        parentAggressionFactors = [self.aggressionFactor, mate.aggressionFactor]
-        parentTradeFactors = [self.tradeFactor, mate.tradeFactor]
-        parentLookaheadFactors = [self.lookaheadFactor, mate.lookaheadFactor]
-        parentLendingFactors = [self.lendingFactor, mate.lendingFactor]
-        parentFertilityFactors = [self.fertilityFactor, mate.fertilityFactor]
-        parentBaseInterestRates = [self.baseInterestRate, mate.baseInterestRate]
-        parentLoanDuration = [self.loanDuration, mate.loanDuration]
-        parentMaxFriends = [self.maxFriends, mate.maxFriends]
-        parentEthicalFactors = [self.ethicalFactor, mate.ethicalFactor]
-        parentEthicalTheories = [self.ethicalTheory, mate.ethicalTheory]
+        parentEndowments = {
+        "aggressionFactor" : [self.aggressionFactor, mate.aggressionFactor],
+        "baseInterestRate" : [self.baseInterestRate, mate.baseInterestRate],
+        "ethicalFactor" : [self.ethicalFactor, mate.ethicalFactor],
+        "ethicalTheory" : [self.ethicalTheory, mate.ethicalTheory],
+        "fertilityAge" : [self.fertilityAge, mate.fertilityAge],
+        "fertilityFactor" : [self.fertilityFactor, mate.fertilityFactor],
+        "infertilityAge" : [self.infertilityAge, mate.infertilityAge],
+        "lendingFactor" : [self.lendingFactor, mate.lendingFactor],
+        "loanDuration" : [self.loanDuration, mate.loanDuration],
+        "lookaheadFactor" : [self.lookaheadFactor, mate.lookaheadFactor],
+        "maxAge" : [self.maxAge, mate.maxAge],
+        "maxFriends" : [self.maxFriends, mate.maxFriends],
+        "movement" : [self.movement, mate.movement],
+        "spiceMetabolism" : [self.spiceMetabolism, mate.spiceMetabolism],
+        "sugarMetabolism" : [self.sugarMetabolism, mate.sugarMetabolism],
+        "sex" : [self.sex, mate.sex],
+        "tradeFactor" : [self.tradeFactor, mate.tradeFactor],
+        "vision" : [self.vision, mate.vision],
+        }
+        randomNumberReset = random.getstate() 
+        # Map configuration to a random number via hash to make random number generation independent of iteration order
+        if self.childEndowmentHashes == None:
+            self.childEndowmentHashes = {}
+            for config in parentEndowments:
+                hashed = hashlib.md5(config.encode())
+                hashNum = int(hashed.hexdigest(), 16)
+                self.childEndowmentHashes[config] = hashNum
+        
+        for trait in parentEndowments:
+            random.seed(self.childEndowmentHashes[trait] + self.timestep)
+            childTrait = parentEndowments[trait][random.randrange(2)]
+            parentEndowments[trait].append(childTrait)
+        
         # Each parent gives 1/2 their starting endowment for child endowment
         childStartingSugar = (self.startingSugar / 2) + (mate.startingSugar / 2)
         childStartingSpice = (self.startingSpice / 2) + (mate.startingSpice / 2)
 
-        childSugarMetabolism = parentSugarMetabolisms[random.randrange(2)]
-        childSpiceMetabolism = parentSpiceMetabolisms[random.randrange(2)]
-        childMovement = parentMovements[random.randrange(2)]
-        childVision = parentVisions[random.randrange(2)]
-        childMaxAge = parentMaxAges[random.randrange(2)]
-        childInfertilityAge = parentInfertilityAges[random.randrange(2)]
-        childFertilityAge = parentFertilityAges[random.randrange(2)]
-        childFertilityFactor = parentFertilityFactors[random.randrange(2)]
-        childSex = parentSexes[random.randrange(2)]
-        childMaxFriends = parentMaxFriends[random.randrange(2)]
+        childSugarMetabolism = parentEndowments["sugarMetabolism"][2]
+        childSpiceMetabolism = parentEndowments["spiceMetabolism"][2]
+        childMovement = parentEndowments["movement"][2]
+        childVision = parentEndowments["vision"][2]
+        childMaxAge = parentEndowments["maxAge"][2]
+        childInfertilityAge = parentEndowments["infertilityAge"][2]
+        childFertilityAge = parentEndowments["fertilityAge"][2]
+        childFertilityFactor = parentEndowments["fertilityFactor"][2]
+        childSex = parentEndowments["sex"][2]
+        childMaxFriends = parentEndowments["maxFriends"][2]
+        childAggressionFactor = parentEndowments["aggressionFactor"][2]
+        childTradeFactor = parentEndowments["tradeFactor"][2]
+        childLookaheadFactor = parentEndowments["lookaheadFactor"][2]
+        childLendingFactor = parentEndowments["lendingFactor"][2]
+        childBaseInterestRate = parentEndowments["baseInterestRate"][2]
+        childLoanDuration = parentEndowments["loanDuration"][2]
+        childEthicalFactor = parentEndowments["ethicalFactor"][2]
+        childEthicalTheory = parentEndowments["ethicalTheory"][2]
+        
+        hashed = hashlib.md5("tags".encode())
+        hashNum = int(hashed.hexdigest(), 16)
+        random.seed(hashNum + self.timestep)
         childTags = []
         childImmuneSystem = []
-        childEthicalTheory = parentEthicalTheories[random.randrange(2)]
         mateTags = mate.tags
         mismatchBits = [0, 1]
         if self.tags == None:
@@ -844,6 +872,10 @@ class Agent:
                 else:
                     childTags.append(mismatchBits[random.randrange(2)])
         mateStartingImmuneSystem = mate.startingImmuneSystem
+        
+        hashed = hashlib.md5("immuneSystem".encode())
+        hashNum = int(hashed.hexdigest(), 16)
+        random.seed(hashNum + self.timestep)
         if self.startingImmuneSystem == None:
             childImmuneSystem = None
         else:
@@ -852,13 +884,7 @@ class Agent:
                     childImmuneSystem.append(self.startingImmuneSystem[i])
                 else:
                     childImmuneSystem.append(mismatchBits[random.randrange(2)])
-        childAggressionFactor = parentAggressionFactors[random.randrange(2)]
-        childTradeFactor = parentTradeFactors[random.randrange(2)]
-        childLookaheadFactor = parentLookaheadFactors[random.randrange(2)]
-        childLendingFactor = parentLendingFactors[random.randrange(2)]
-        childBaseInterestRate = parentBaseInterestRates[random.randrange(2)]
-        childLoanDuration = parentLoanDuration[random.randrange(2)]
-        childEthicalFactor = parentEthicalFactors[random.randrange(2)]
+        random.setstate(randomNumberReset)
 
         endowment = {"aggressionFactor": childAggressionFactor,
                      "baseInterestRate": childBaseInterestRate,
@@ -885,8 +911,6 @@ class Agent:
                      "tradeFactor": childTradeFactor,
                      "vision": childVision
                      }
-
-        random.setstate(randomNumberReset)
         return endowment
 
     def findCurrentSpiceDebt(self):
