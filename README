@@ -209,8 +209,8 @@ debugMode: [string, ...]
     Set the debug printing mode.
     Options: "agent", "all", "cell", "disease", "environment", "ethics", "none",  "sugarscape"
     Default: "none"
-    Note: Some options may cause no output in current impementation
-          Can select multiple debug modes simultaneously
+    Note: Some options may cause no output in current impementation.
+          Can select multiple debug modes simultaneously.
 
 diseaseAggressionPenalty: [float, float]
     Set the impact a disease will have on an agent's aggressiveness.

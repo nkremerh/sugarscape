@@ -721,11 +721,19 @@ def verifyConfiguration(configuration):
 
     if configuration["logfile"] == "":
         configuration["logfile"] = None
-        
-    if not (set(configuration["debugMode"]).issubset({"agent", "all", "cell", "disease", "environment", "ethics", "none", "sugarscape"})):
-        raise Exception("Debug mode not recognized")
-    elif "all" in configuration["debugMode"] and "none" in configuration["debugMode"]:
-        raise Exception("Conflicting debug modes - \"all\" and \"none\"")
+
+    recognizedDebugModes = ["agent", "all", "cell", "disease", "environment", "ethics", "none", "sugarscape"]
+    validModes = True
+    for mode in configuration["debugMode"]:
+        if mode not in recognizedDebugModes:
+            print("Debug mode {0} not recognized".format(mode))
+            validModes = False
+    if validModes == False:
+        printHelp()
+
+    if "all" in configuration["debugMode"] and "none" in configuration["debugMode"]:
+        print("Cannot have \"all\" and \"none\" debug modes enabled at the same time")
+        printHelp()
     elif "all" in configuration["debugMode"] and len(configuration["debugMode"]) > 1:
         configuration["debugMode"] = "all"
     elif "none" in configuration["debugMode"] and len(configuration["debugMode"]) > 1:
