@@ -800,25 +800,27 @@ class Agent:
 
     def findChildEndowment(self, mate):
         parentEndowments = {
-        "aggressionFactor" : [self.aggressionFactor, mate.aggressionFactor],
-        "baseInterestRate" : [self.baseInterestRate, mate.baseInterestRate],
-        "ethicalFactor" : [self.ethicalFactor, mate.ethicalFactor],
-        "ethicalTheory" : [self.ethicalTheory, mate.ethicalTheory],
-        "fertilityAge" : [self.fertilityAge, mate.fertilityAge],
-        "fertilityFactor" : [self.fertilityFactor, mate.fertilityFactor],
-        "infertilityAge" : [self.infertilityAge, mate.infertilityAge],
-        "lendingFactor" : [self.lendingFactor, mate.lendingFactor],
-        "loanDuration" : [self.loanDuration, mate.loanDuration],
-        "lookaheadFactor" : [self.lookaheadFactor, mate.lookaheadFactor],
-        "maxAge" : [self.maxAge, mate.maxAge],
-        "maxFriends" : [self.maxFriends, mate.maxFriends],
-        "movement" : [self.movement, mate.movement],
-        "spiceMetabolism" : [self.spiceMetabolism, mate.spiceMetabolism],
-        "sugarMetabolism" : [self.sugarMetabolism, mate.sugarMetabolism],
-        "sex" : [self.sex, mate.sex],
-        "tradeFactor" : [self.tradeFactor, mate.tradeFactor],
-        "vision" : [self.vision, mate.vision],
+        "aggressionFactor": [self.aggressionFactor, mate.aggressionFactor],
+        "baseInterestRate": [self.baseInterestRate, mate.baseInterestRate],
+        "ethicalFactor": [self.ethicalFactor, mate.ethicalFactor],
+        "ethicalTheory": [self.ethicalTheory, mate.ethicalTheory],
+        "fertilityAge": [self.fertilityAge, mate.fertilityAge],
+        "fertilityFactor": [self.fertilityFactor, mate.fertilityFactor],
+        "infertilityAge": [self.infertilityAge, mate.infertilityAge],
+        "inheritancePolicy": [self.inheritancePolicy, mate.inheritancePolicy],
+        "lendingFactor": [self.lendingFactor, mate.lendingFactor],
+        "loanDuration": [self.loanDuration, mate.loanDuration],
+        "lookaheadFactor": [self.lookaheadFactor, mate.lookaheadFactor],
+        "maxAge": [self.maxAge, mate.maxAge],
+        "maxFriends": [self.maxFriends, mate.maxFriends],
+        "movement": [self.movement, mate.movement],
+        "spiceMetabolism": [self.spiceMetabolism, mate.spiceMetabolism],
+        "sugarMetabolism": [self.sugarMetabolism, mate.sugarMetabolism],
+        "sex": [self.sex, mate.sex],
+        "tradeFactor": [self.tradeFactor, mate.tradeFactor],
+        "vision": [self.vision, mate.vision]
         }
+        childEndowment = {"seed": self.seed}
         randomNumberReset = random.getstate() 
         # Map configuration to a random number via hash to make random number generation independent of iteration order
         if self.childEndowmentHashes == None:
@@ -827,35 +829,18 @@ class Agent:
                 hashed = hashlib.md5(config.encode())
                 hashNum = int(hashed.hexdigest(), 16)
                 self.childEndowmentHashes[config] = hashNum
-        
-        for trait in parentEndowments:
-            random.seed(self.childEndowmentHashes[trait] + self.timestep)
-            childTrait = parentEndowments[trait][random.randrange(2)]
-            parentEndowments[trait].append(childTrait)
-        
-        # Each parent gives 1/2 their starting endowment for child endowment
-        childStartingSugar = (self.startingSugar / 2) + (mate.startingSugar / 2)
-        childStartingSpice = (self.startingSpice / 2) + (mate.startingSpice / 2)
 
-        childSugarMetabolism = parentEndowments["sugarMetabolism"][2]
-        childSpiceMetabolism = parentEndowments["spiceMetabolism"][2]
-        childMovement = parentEndowments["movement"][2]
-        childVision = parentEndowments["vision"][2]
-        childMaxAge = parentEndowments["maxAge"][2]
-        childInfertilityAge = parentEndowments["infertilityAge"][2]
-        childFertilityAge = parentEndowments["fertilityAge"][2]
-        childFertilityFactor = parentEndowments["fertilityFactor"][2]
-        childSex = parentEndowments["sex"][2]
-        childMaxFriends = parentEndowments["maxFriends"][2]
-        childAggressionFactor = parentEndowments["aggressionFactor"][2]
-        childTradeFactor = parentEndowments["tradeFactor"][2]
-        childLookaheadFactor = parentEndowments["lookaheadFactor"][2]
-        childLendingFactor = parentEndowments["lendingFactor"][2]
-        childBaseInterestRate = parentEndowments["baseInterestRate"][2]
-        childLoanDuration = parentEndowments["loanDuration"][2]
-        childEthicalFactor = parentEndowments["ethicalFactor"][2]
-        childEthicalTheory = parentEndowments["ethicalTheory"][2]
+        for endowment in parentEndowments:
+            random.seed(self.childEndowmentHashes[endowment] + self.timestep)
+            endowmentValue = parentEndowments[endowment][random.randrange(2)]
+            childEndowment[endowment] = endowmentValue
         
+        # Each parent gives a portion of their starting endowment for child endowment
+        childStartingSugar = (self.startingSugar / (self.fertilityFactor * 2)) + (mate.startingSugar / (mate.fertilityFactor * 2))
+        childStartingSpice = (self.startingSpice / (self.fertilityFactor * 2)) + (mate.startingSpice / (mate.fertilityFactor * 2))
+        childEndowment["sugar"] = childStartingSugar
+        childEndowment["spice"] = childStartingSpice
+
         hashed = hashlib.md5("tags".encode())
         hashNum = int(hashed.hexdigest(), 16)
         random.seed(hashNum + self.timestep)
@@ -871,8 +856,8 @@ class Agent:
                     childTags.append(self.tags[i])
                 else:
                     childTags.append(mismatchBits[random.randrange(2)])
-        mateStartingImmuneSystem = mate.startingImmuneSystem
-        
+        childEndowment["tags"] = childTags
+
         hashed = hashlib.md5("immuneSystem".encode())
         hashNum = int(hashed.hexdigest(), 16)
         random.seed(hashNum + self.timestep)
@@ -880,38 +865,13 @@ class Agent:
             childImmuneSystem = None
         else:
             for i in range(len(self.immuneSystem)):
-                if self.startingImmuneSystem[i] == mateStartingImmuneSystem[i]:
+                if self.startingImmuneSystem[i] == mate.startingImmuneSystem[i]:
                     childImmuneSystem.append(self.startingImmuneSystem[i])
                 else:
                     childImmuneSystem.append(mismatchBits[random.randrange(2)])
+        childEndowment["immuneSystem"] = childImmuneSystem
         random.setstate(randomNumberReset)
-
-        endowment = {"aggressionFactor": childAggressionFactor,
-                     "baseInterestRate": childBaseInterestRate,
-                     "ethicalFactor": childEthicalFactor,
-                     "ethicalTheory": childEthicalTheory,
-                     "fertilityAge": childFertilityAge,
-                     "fertilityFactor": childFertilityFactor,
-                     "immuneSystem": childImmuneSystem,
-                     "infertilityAge": childInfertilityAge,
-                     "inheritancePolicy": self.inheritancePolicy,
-                     "lendingFactor": childLendingFactor,
-                     "loanDuration": childLoanDuration,
-                     "lookaheadFactor": childLookaheadFactor,
-                     "movement": childMovement,
-                     "maxAge": childMaxAge,
-                     "maxFriends": childMaxFriends,
-                     "seed": self.seed,
-                     "sex": childSex,
-                     "spice": childStartingSpice,
-                     "spiceMetabolism": childSpiceMetabolism,
-                     "sugar": childStartingSugar,
-                     "sugarMetabolism": childSugarMetabolism,
-                     "tags": childTags,
-                     "tradeFactor": childTradeFactor,
-                     "vision": childVision
-                     }
-        return endowment
+        return childEndowment
 
     def findCurrentSpiceDebt(self):
         spiceDebt = 0

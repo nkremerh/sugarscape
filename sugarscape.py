@@ -14,7 +14,6 @@ import math
 import random
 import sys
 
-
 class Sugarscape:
     def __init__(self, configuration):
         self.diseaseConfigHashes = None
@@ -31,7 +30,8 @@ class Sugarscape:
                                     "spiceProductionPollutionFactor": configuration["environmentSpiceProductionPollutionFactor"],
                                     "sugarProductionPollutionFactor": configuration["environmentSugarProductionPollutionFactor"],
                                     "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"], "maxCombatLoot": configuration["environmentMaxCombatLoot"],
-                                    "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"], "sugarscapeSeed": configuration["seed"]}
+                                    "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"],
+                                    "sugarscapeSeed": configuration["seed"]}
         self.seed = configuration["seed"]
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
@@ -354,13 +354,13 @@ class Sugarscape:
                 currTagLength = minTagLength
 
 
-        randomDiseaseEndowment = {"sugarMetabolismPenalties" : sugarMetabolismPenalties,
-                     "spiceMetabolismPenalties" : spiceMetabolismPenalties,
-                     "movementPenalties" : movementPenalties,
-                     "visionPenalties" : visionPenalties,
-                     "fertilityPenalties" : fertilityPenalties,
-                     "aggressionPenalties" : aggressionPenalties,
-                     "diseaseTags" : diseaseTags}
+        randomDiseaseEndowment = {"sugarMetabolismPenalties": sugarMetabolismPenalties,
+                     "spiceMetabolismPenalties": spiceMetabolismPenalties,
+                     "movementPenalties": movementPenalties,
+                     "visionPenalties": visionPenalties,
+                     "fertilityPenalties": fertilityPenalties,
+                     "aggressionPenalties": aggressionPenalties,
+                     "diseaseTags": diseaseTags}
         
         # Map configuration to a random number via hash to make random number generation independent of iteration order
         if (self.diseaseConfigHashes == None):
@@ -368,14 +368,15 @@ class Sugarscape:
             for penalty in randomDiseaseEndowment:
                 hashed = hashlib.md5(penalty.encode())
                 self.diseaseConfigHashes[penalty] = int(hashed.hexdigest(), 16)
-                
+
+        # Keep state of random numbers to allow extending agent endowments without altering original random object state
         randomNumberReset = random.getstate()
         for endowment in randomDiseaseEndowment.keys():
             random.seed(self.diseaseConfigHashes[endowment] + self.timestep)
             random.shuffle(randomDiseaseEndowment[endowment])
         random.setstate(randomNumberReset)
 
-        for _ in range(numDiseases):
+        for i in range(numDiseases):
             diseaseEndowment = {"aggressionPenalty": aggressionPenalties.pop(),
                                 "fertilityPenalty": fertilityPenalties.pop(),
                                 "movementPenalty": movementPenalties.pop(),
@@ -498,12 +499,11 @@ class Sugarscape:
             else:
                 sexes.append(None)
 
-         # Keep state of random numbers to allow extending agent endowments without altering original random object state
+        # Keep state of random numbers to allow extending agent endowments without altering original random object state
         randomNumberReset = random.getstate()
         for config in configurations:
             random.seed(self.agentConfigHashes[config] + self.timestep)
             random.shuffle(configurations[config]["endowments"])
-        # Set random object state to prevent pulling random number stream from config's seed
         random.setstate(randomNumberReset)
         random.shuffle(sexes)
         for i in range(numAgents):
@@ -554,7 +554,8 @@ class Sugarscape:
     def runSimulation(self, timesteps=5):
         self.startLog()
         if self.gui != None:
-            self.pauseSimulation() # Simulation begins paused until start button in GUI pressed
+            # Simulation begins paused until start button in GUI pressed
+            self.pauseSimulation()
         t = 1
         timesteps = timesteps - self.timestep
         while t <= timesteps and len(self.agents) > 0:
