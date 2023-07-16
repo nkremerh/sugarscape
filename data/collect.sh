@@ -8,7 +8,7 @@ do
     cp $f.config $f.json
 done
 
-n=10
+n=20
 for i in $( seq 1 $n )
 do
     # Generate a random seed

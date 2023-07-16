@@ -7,12 +7,14 @@ do
     tail $f*.log > $f.logs
 done
 
-
 for f in "${files[@]}"
 do
     for g in "${files[@]}"
     do
-        diff -y $f.logs $g.logs > $f.$g.diff
+        if [ $f != $g ]
+        then
+            diff -y $f.logs $g.logs > $f.$g.diff
+        fi
     done
 done
 
