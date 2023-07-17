@@ -71,6 +71,11 @@ class GUI:
         self.widgets["statsLabel"] = statsLabel
         self.widgets["cellLabel"] = cellLabel
 
+        window.bind("<Escape>", self.doWindowClose)
+        window.bind("<space>", self.doPlayButton)
+        window.bind("<Right>", self.doStepForwardButton)
+     
+
     def configureEnvironment(self):
         for i in range(self.sugarscape.environmentHeight):
             for j in range(self.sugarscape.environmentWidth):
@@ -107,10 +112,8 @@ class GUI:
         window.update()
 
         window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
-        window.bind("<Escape>", self.doWindowClose)
-        window.bind("<space>", self.doPlayButton)
-        window.bind("<Right>", self.doStepForwardButton)
         canvas.bind("<Button-1>", self.doClick)
+
 
     def destroyGUI(self):
         self.window.destroy()
@@ -159,7 +162,7 @@ class GUI:
         self.updateLabels()
         self.window.update()
 
-    def doWindowClose(self, event=None):
+    def doWindowClose(self, *args):
         self.window.destroy()
         self.sugarscape.toggleEnd()
 
