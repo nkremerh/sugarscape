@@ -500,12 +500,6 @@ class Agent:
     def findBestCell(self):
         self.neighborhood = self.findNeighborhood()
         retaliators = self.findRetaliatorsInVision()
-        totalMetabolism = self.sugarMetabolism + self.spiceMetabolism
-        sugarMetabolismProportion = 0
-        spiceMetabolismProportion = 0
-        if totalMetabolism != 0:
-            sugarMetabolismProportion = self.sugarMetabolism / totalMetabolism
-            spiceMetabolismProportion = self.spiceMetabolism / totalMetabolism
         random.shuffle(self.cellsInVision)
 
         bestCell = None
