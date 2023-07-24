@@ -159,7 +159,7 @@ class GUI:
         self.updateLabels()
         self.window.update()
 
-    def doWindowClose(self, event=None):
+    def doWindowClose(self, *args):
         self.window.destroy()
         self.sugarscape.toggleEnd()
 
