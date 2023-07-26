@@ -1,0 +1,15 @@
+set terminal pdfcairo size 3.75,2.25 font 'Times New Roman,12'
+set mono
+set output "reproduction.pdf"
+
+set title "Population Oscillations with Constrained Reproduction"
+
+set ylabel "Population"
+set xlabel "Timestep"
+set key bottom right
+
+set xtics rotate by -90
+set yrange [250:1250]
+set xrange [0:2500]
+
+plot 'reproduction.dat' using 1:2 notitle with lines
