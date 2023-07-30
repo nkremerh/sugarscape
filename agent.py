@@ -669,12 +669,6 @@ class Agent:
                 eastCells.append({"cell": eastCells[-1]["cell"].findEastNeighbor(), "distance": i + 1})
                 westCells.append({"cell": westCells[-1]["cell"].findWestNeighbor(), "distance": i + 1})
             allCells = northCells + southCells + eastCells + westCells
-            cellStr = "allCells: "
-            for i in range(len(allCells)):
-                cellStr += "({0},{1}) ".format(allCells[i]["cell"].x, allCells[i]["cell"].y)
-            cellStr += "\notherCells: "
-            for i in range(len(otherCells)):
-                cellStr += "({0},{1}) ".format(otherCells[i]["cell"].x, otherCells[i]["cell"].y)
 
             if newCell == None:
                 self.cellsInVision = allCells
