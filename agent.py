@@ -10,7 +10,7 @@ class Agent:
         self.ID = agentID
         self.born = birthday
         self.cell = cell
-        self.debug = cell.environment.sugarscape.debug if cell != None else False
+        self.debug = cell.environment.sugarscape.debug
 
         self.sugarMetabolism = configuration["sugarMetabolism"]
         self.spiceMetabolism = configuration["spiceMetabolism"]
@@ -62,6 +62,11 @@ class Agent:
         self.sugarPrice = 0
         self.nice = 0
         self.childEndowmentHashes = None
+
+        self.lastSugar = 0
+        self.lastSpice = 0
+        self.lastReproduced = 0
+        self.causeOfDeath = None
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
@@ -166,7 +171,7 @@ class Agent:
         self.age += 1
         # Die if reached max age and if not infinitely-lived
         if self.age >= self.maxAge and self.maxAge != -1:
-            self.doDeath()
+            self.doDeath("aging")
 
     def doCombat(self, cell):
         prey = cell.agent
@@ -181,11 +186,12 @@ class Agent:
             self.wealth = self.sugar + self.spice
             prey.sugar -= sugarLoot
             prey.spice -= spiceLoot
-            prey.doDeath()
+            prey.doDeath("combat")
         self.gotoCell(cell)
 
-    def doDeath(self):
+    def doDeath(self, causeOfDeath):
         self.alive = False
+        self.causeOfDeath = causeOfDeath
         self.resetCell()
         self.doInheritance()
 
@@ -323,7 +329,7 @@ class Agent:
         self.cell.doSugarConsumptionPollution(self.sugarMetabolism)
         self.cell.doSpiceConsumptionPollution(self.spiceMetabolism)
         if (self.sugar < 1 and self.sugarMetabolism > 0) or (self.spice < 1 and self.spiceMetabolism > 0):
-            self.doDeath()
+            self.doDeath("starvation")
 
     def doReproduction(self):
         # Agent marked for removal or not interested in reproduction should not reproduce
@@ -355,6 +361,7 @@ class Agent:
                     neighbor.updateTimesVisitedWithAgent(self, self.lastMoved)
                     neighbor.updateTimesReproducedWithAgent(self, self.lastMoved)
                     self.updateTimesReproducedWithAgent(neighbor, self.lastMoved)
+                    self.lastReproduced += 1
 
                     sugarCost = self.startingSugar / (self.fertilityFactor * 2)
                     spiceCost = self.startingSpice / (self.fertilityFactor * 2)
@@ -364,7 +371,7 @@ class Agent:
                     self.spice -= spiceCost
                     neighbor.sugar = neighbor.sugar - mateSugarCost
                     neighbor.spice = neighbor.spice - mateSpiceCost
-                    if self.debug == True:
+                    if "all" in self.debug or "agent" in self.debug:
                         print("Agent {0} reproduced with agent {1} at cell ({2},{3})".format(str(self), str(neighbor), emptyCell.x, emptyCell.y))
 
     def doTagging(self):
@@ -383,6 +390,9 @@ class Agent:
         self.timestep = timestep
         # Prevent dead or already moved agent from moving
         if self.alive == True and self.cell != None and self.lastMoved != self.timestep:
+            self.lastReproduced = 0
+            self.lastSugar = self.sugar
+            self.lastSpice = self.spice
             self.lastMoved = self.timestep
             self.moveToBestCell()
             self.updateNeighbors()
@@ -498,7 +508,7 @@ class Agent:
             return agent.wealth
 
     def findBestCell(self):
-        self.neighborhood = self.findNeighborhood()
+        self.findNeighborhood()
         retaliators = self.findRetaliatorsInVision()
         random.shuffle(self.cellsInVision)
 
@@ -571,191 +581,57 @@ class Agent:
         # If not an ethical agent, return top selfish choice
         if self.ethicalTheory == "none":
             return greedyBestCell
-        elif self.ethicalTheory == "bentham":
-            for cell in cells:
-                ethicalScore = ethics.findBenthamActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-                if ethicalScore > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif self.ethicalTheory == "ranked":
-            rank = self.findNeighborhoodRank()
-            if rank >= len(cells):
-                bestCell == self.cell
-            else:
-                bestCell = cells[rank]["cell"]
-        elif self.ethicalTheory == "topBentham":
-            for cell in cells:
-                ethicalScore = ethics.findBenthamActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            bestCell = cells[0]["cell"]
-        elif self.ethicalTheory == "rankedBentham":
-            for cell in cells:
-                ethicalScore = ethics.findBenthamActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            rank = self.findNeighborhoodRank()
-            if rank >= len(cells):
-                bestCell == self.cell
-            else:
-                bestCell = cells[rank]["cell"]
 
-        elif self.ethicalTheory == "altruist":
+        # Calculate initial utility value calculation and naively select based on binary decision first
+        if "benthamNoLookahead" in self.ethicalTheory:
             for cell in cells:
-                ethicalScore = ethics.findAltruisticActUtilitarianValueOfCell(self, cell["cell"])
+                ethicalScore = ethics.findBenthamNoLookaheadValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
-                if ethicalScore > 0:
+            for cell in cells:
+                if cell["wealth"] > 0:
                     bestCell = cell["cell"]
                     break
-        elif self.ethicalTheory == "topAltruist":
+        elif "benthamHalfLookahead" in self.ethicalTheory:
             for cell in cells:
-                ethicalScore = ethics.findAltruisticActUtilitarianValueOfCell(self, cell["cell"])
+                ethicalScore = ethics.findBenthamHalfLookaheadValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            bestCell = cells[0]["cell"]
-        elif self.ethicalTheory == "rankedAltruist":
             for cell in cells:
-                ethicalScore = ethics.findAltruisticActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            rank = self.findNeighborhoodRank()
-            if rank >= len(cells):
-                bestCell == self.cell
-            else:
-                bestCell = cells[rank]["cell"]
+                if cell["wealth"] > 0:
+                    bestCell = cell["cell"]
+                    break
 
-        elif self.ethicalTheory == "egoist":
+        elif "altruisticHalfLookahead" in self.ethicalTheory:
             for cell in cells:
-                ethicalScore = ethics.findEgoisticActUtilitarianValueOfCell(self, cell["cell"])
+                ethicalScore = ethics.findAltruisticHalfLookaheadValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
-                if ethicalScore > 0:
+            for cell in cells:
+                if cell["wealth"] > 0:
                     bestCell = cell["cell"]
                     break
-        elif self.ethicalTheory == "topEogist":
+        elif "egoisticHalfLookahead" in self.ethicalTheory:
             for cell in cells:
-                ethicalScore = ethics.findEogisticActUtilitarianValueOfCell(self, cell["cell"])
+                ethicalScore = ethics.findEgoisticHalfLookaheadValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            bestCell = cells[0]["cell"]
-        elif self.ethicalTheory == "rankedEogist":
             for cell in cells:
-                ethicalScore = ethics.findEgoisticActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            rank = self.findNeighborhoodRank()
-            if rank >= len(cells):
-                bestCell == self.cell
-            else:
-                bestCell = cells[rank]["cell"]
+                if cell["wealth"] > 0:
+                    bestCell = cell["cell"]
+                    break
 
-        elif self.ethicalTheory == "modified":
-            for cell in cells:
-                ethicalScore = ethics.findModifiedActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-                if ethicalScore > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif self.ethicalTheory == "topModified":
-            for cell in cells:
-                ethicalScore = ethics.findModifiedActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
+        # If additional ordering consideration, select new best cell
+        if "Ranked" in self.ethicalTheory:
             cells = self.sortCellsByWealth(cells)
             cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            bestCell = cells[0]["cell"]
-        elif self.ethicalTheory == "rankedModified":
-            for cell in cells:
-                ethicalScore = ethics.findModifiedActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
             rank = self.findNeighborhoodRank()
             if rank >= len(cells):
                 bestCell == self.cell
             else:
                 bestCell = cells[rank]["cell"]
-
-        elif self.ethicalTheory == "egoistModified":
-            for cell in cells:
-                ethicalScore = ethics.findEgoistModifiedActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-                if ethicalScore > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif self.ethicalTheory == "topEgoistModified":
-            for cell in cells:
-                ethicalScore = ethics.findEgoistModifiedActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
+        elif "Top" in self.ethicalTheory:
             cells = self.sortCellsByWealth(cells)
             cells.reverse()
-            if self.debug == True:
+            if "all" in self.debug or "agent" in self.debug:
                 self.printEthicalCellScores(cells)
             bestCell = cells[0]["cell"]
-        elif self.ethicalTheory == "rankedEgoistModified":
-            for cell in cells:
-                ethicalScore = ethics.findEgoistModifiedActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            rank = self.findNeighborhoodRank()
-            if rank >= len(cells):
-                bestCell == self.cell
-            else:
-                bestCell = cells[rank]["cell"]
-
-        elif self.ethicalTheory == "altruistModified":
-            for cell in cells:
-                ethicalScore = ethics.findAltruistModifiedActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-                if ethicalScore > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif self.ethicalTheory == "topAltruistModified":
-            for cell in cells:
-                ethicalScore = ethics.findAltruistModifiedActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            bestCell = cells[0]["cell"]
-        elif self.ethicalTheory == "rankedAltruistModified":
-            for cell in cells:
-                ethicalScore = ethics.findAltruistModifiedActUtilitarianValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            if self.debug == True:
-                self.printEthicalCellScores(cells)
-            rank = self.findNeighborhoodRank()
-            if rank >= len(cells):
-                bestCell == self.cell
-            else:
-                bestCell = cells[rank]["cell"]
 
         if bestCell == None:
             if greedyBestCell == None:
@@ -778,19 +654,32 @@ class Agent:
                 minHammingDistance = friend["hammingDistance"]
         return bestFriend
 
-    def findCellsInVision(self):
+    # TODO: Make this an environment-level call
+    def findCellsInVision(self, newCell=None):
+        cell = self.cell if newCell == None else newCell
         if self.vision > 0 and self.cell != None:
-            northCells = [{"cell": self.cell.findNorthNeighbor(), "distance": 1}]
-            southCells = [{"cell": self.cell.findSouthNeighbor(), "distance": 1}]
-            eastCells = [{"cell": self.cell.findEastNeighbor(), "distance": 1}]
-            westCells = [{"cell": self.cell.findWestNeighbor(), "distance": 1}]
+            northCells = [{"cell": cell.findNorthNeighbor(), "distance": 1}]
+            southCells = [{"cell": cell.findSouthNeighbor(), "distance": 1}]
+            eastCells = [{"cell": cell.findEastNeighbor(), "distance": 1}]
+            westCells = [{"cell": cell.findWestNeighbor(), "distance": 1}]
             # Vision 1 accounted for in list setup
             for i in range(1, self.vision):
                 northCells.append({"cell": northCells[-1]["cell"].findNorthNeighbor(), "distance": i + 1})
                 southCells.append({"cell": southCells[-1]["cell"].findSouthNeighbor(), "distance": i + 1})
                 eastCells.append({"cell": eastCells[-1]["cell"].findEastNeighbor(), "distance": i + 1})
                 westCells.append({"cell": westCells[-1]["cell"].findWestNeighbor(), "distance": i + 1})
-            self.cellsInVision = northCells + southCells + eastCells + westCells
+            allCells = northCells + southCells + eastCells + westCells
+            cellStr = "allCells: "
+            for i in range(len(allCells)):
+                cellStr += "({0},{1}) ".format(allCells[i]["cell"].x, allCells[i]["cell"].y)
+            cellStr += "\notherCells: "
+            for i in range(len(otherCells)):
+                cellStr += "({0},{1}) ".format(otherCells[i]["cell"].x, otherCells[i]["cell"].y)
+
+            if newCell == None:
+                self.cellsInVision = allCells
+            return allCells
+        return []
 
     def findChildEndowment(self, mate):
         parentEndowments = {
@@ -879,12 +768,14 @@ class Agent:
             sugarDebt += creditor["sugarLoan"] / creditor["loanDuration"]
         return sugarDebt
 
-    def findDaysToDeath(self):
+    def findTimeToLive(self, ageLimited=False):
         # If no sugar or spice metabolism, set days to death for that resource to seemingly infinite
-        sugarDaysToDeath = self.sugar / self.sugarMetabolism if self.sugarMetabolism > 0 else sys.maxsize
-        spiceDaysToDeath = self.spice / self.spiceMetabolism if self.spiceMetabolism > 0 else sys.maxsize
-        daysToDeath = min(sugarDaysToDeath, spiceDaysToDeath)
-        return daysToDeath
+        sugarTimeToLive = self.sugar / self.sugarMetabolism if self.sugarMetabolism > 0 else sys.maxsize
+        spiceTimeToLive = self.spice / self.spiceMetabolism if self.spiceMetabolism > 0 else sys.maxsize
+        timeToLive = min(sugarTimeToLive, spiceTimeToLive)
+        if ageLimited == True:
+            timeToLive = min(timeToLive, self.maxAge - self.age)
+        return timeToLive
 
     def findEmptyNeighborCells(self):
         emptyCells = []
@@ -928,14 +819,18 @@ class Agent:
         diseaseStats = {"distance": bestHammingDistance, "start": bestRange[0], "end": bestRange[1]}
         return diseaseStats
 
-    def findNeighborhood(self):
-        self.findCellsInVision()
+    def findNeighborhood(self, newCell=None):
+        newNeighborhood = self.findCellsInVision(newCell)
+
         neighborhood = []
-        for neighborCell in self.cellsInVision:
+        for neighborCell in newNeighborhood:
             neighbor = neighborCell["cell"].agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighborhood.append(neighbor)
         neighborhood.append(self)
+
+        if newCell == None:
+            self.neighborhood = neighborhood
         return neighborhood
 
     def findNeighborhoodRank(self):

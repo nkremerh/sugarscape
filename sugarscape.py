@@ -46,9 +46,12 @@ class Sugarscape:
         self.gui = gui.GUI(self) if configuration["headlessMode"] == False else None
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
+        # TODO: Remove redundant metrics
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
-                             "meanTradePrice": 0, "tradeVolume": 0, "totalWealth": 0, "maxWealth": 0, "minWealth": 0, "meanAgeAtDeath": 0, "deaths": 0,
-                             "totalAccumulation": 0, "seed": self.seed, "totalWealthLost": 0, "totalWealthProduced": 0, "totalMetabolismCost": 0}
+                             "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanAgeAtDeath": 0,
+                             "seed": self.seed, "totalWealthLost": 0, "totalMetabolismCost": 0, "agentReproduced": 0,
+                             "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0, "environmentWealthTotal": 0,
+                             "agentWealthCollected": 0, "agentMeanTimeToLive": 0, "agentMeanTimeToLiveAgeLimited": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logAgent = None
 
@@ -216,11 +219,15 @@ class Sugarscape:
             return
         # Update total wealth accumulation to include still living agents at simulation end
         for agent in self.agents:
-            self.runtimeStats["totalAccumulation"] += agent.wealth
             self.runtimeStats["totalMetabolismCost"] += agent.sugarMetabolism + agent.spiceMetabolism
+        environmentWealthCreated = 0
+        environmentWealthTotal = 0
         for i in range(self.environment.height):
             for j in range(self.environment.width):
-                self.runtimeStats["totalWealthProduced"] += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
+                environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
+                environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
+        self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
+        self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
         logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
         self.log.write(logString)
         self.log.flush()
@@ -569,6 +576,8 @@ class Sugarscape:
         if self.log == None:
             return
         self.log.write("[\n")
+        self.updateRuntimeStats()
+        self.writeToLog()
 
     def toggleEnd(self):
         self.end = not self.end
@@ -598,19 +607,31 @@ class Sugarscape:
         meanAge = 0
         meanTradePrice = 0
         tradeVolume = 0
-        totalWealth = 0
         maxWealth = 0
         minWealth = sys.maxsize
         numTraders = 0
-        totalAccumulation = 0
         totalWealthLost = 0
         totalMetabolismCost = 0
-        totalWealthProduced = 0
+
+        environmentWealthCreated = 0
+        environmentWealthTotal = 0
         for i in range(self.environment.height):
             for j in range(self.environment.width):
-                totalWealthProduced += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
+                environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
+                environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
                 if self.timestep == 1:
-                    totalWealthProduced += self.environment.grid[i][j].maxSugar + self.environment.grid[i][j].maxSpice
+                    environmentWealthCreated += self.environment.grid[i][j].maxSugar + self.environment.grid[i][j].maxSpice
+
+        agentWealthCollected = 0
+        agentWealthTotal = 0
+        agentStarvationDeaths = 0
+        agentDiseaseDeaths = 0
+        agentCombatDeaths = 0
+        agentAgingDeaths = 0
+        agentMeanTimeToLive = 0
+        agentMeanTimeToLiveAgeLimited = 0
+        agentReproduced = 0
+
         for agent in self.agents:
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
@@ -621,7 +642,12 @@ class Sugarscape:
                 meanTradePrice += max(agent.spicePrice, agent.sugarPrice)
                 tradeVolume += agent.tradeVolume
                 numTraders += 1
-            totalWealth += agent.wealth
+            agentWealthTotal += agent.wealth
+            agentWealthCollected += agent.wealth - (agent.lastSugar + agent.lastSpice)
+            agentMeanTimeToLive += agent.findTimeToLive()
+            agentMeanTimeToLiveAgeLimited += agent.findTimeToLive(True)
+            agentReproduced += agent.lastReproduced
+
             if agent.wealth < minWealth:
                 minWealth = agent.wealth
             if agent.wealth > maxWealth:
@@ -637,9 +663,11 @@ class Sugarscape:
             meanWealth = round(meanWealth / numAgents, 2)
             meanTradePrice = round(meanTradePrice / numTraders, 2) if numTraders > 0 else 0
             tradeVolume = round(tradeVolume, 2)
-            totalWealth = round(totalWealth, 2)
+            agentWealthTotal = round(agentWealthTotal, 2)
             minWealth = round(minWealth, 2)
             maxWealth = round(maxWealth, 2)
+            agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
+            agentMeanTimeToLiveAgeLimited = round(agentMeanTimeToLiveAgeLimited / numAgents, 2)
         else:
             meanMetabolism = 0
             meanVision = 0
@@ -648,12 +676,20 @@ class Sugarscape:
             minWealth = 0
             maxWealth = 0
             tradeVolume = 0
+            agentMeanTimeToLive = 0
+            agentMeanTimeToLiveAgeLimited = 0
+
         numDeadAgents = len(self.deadAgents)
         meanAgeAtDeath = 0
         for agent in self.deadAgents:
             meanAgeAtDeath += agent.age
-            totalAccumulation += agent.wealth
+            agentWealthCollected += agent.wealth - (agent.lastSugar + agent.lastSpice)
             totalWealthLost += agent.sugar + agent.spice
+            agentReproduced += agent.lastReproduced
+            agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
+            agentDiseaseDeaths += 1 if agent.causeOfDeath == "disease" else 0
+            agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
+            agentAgingDeaths += 1 if agent.causeOfDeath == "aging" else 0
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
         self.deadAgents = []
 
@@ -662,19 +698,29 @@ class Sugarscape:
         self.runtimeStats["meanMetabolism"] = meanMetabolism
         self.runtimeStats["meanVision"] = meanVision
         self.runtimeStats["meanAge"] = meanAge
+
+        # TODO: make clear whether agent or environment calculation
         self.runtimeStats["meanWealth"] = meanWealth
         self.runtimeStats["minWealth"] = minWealth
         self.runtimeStats["maxWealth"] = maxWealth
-        self.runtimeStats["totalWealth"] = totalWealth
-        self.runtimeStats["totalAccumulation"] += totalAccumulation
         self.runtimeStats["meanTradePrice"] = meanTradePrice
         self.runtimeStats["tradeVolume"] = tradeVolume
         self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.agents) > 1 else 0
         self.runtimeStats["meanAgeAtDeath"] = meanAgeAtDeath
-        self.runtimeStats["deaths"] = numDeadAgents
         self.runtimeStats["totalWealthLost"] += totalWealthLost
         self.runtimeStats["totalMetabolismCost"] += totalMetabolismCost
-        self.runtimeStats["totalWealthProduced"] += totalWealthProduced
+
+        self.runtimeStats["agentStarvationDeaths"] = agentStarvationDeaths
+        self.runtimeStats["agentDiseaseDeaths"] = agentDiseaseDeaths
+        self.runtimeStats["agentCombatDeaths"] = agentCombatDeaths
+        self.runtimeStats["agentAgingDeaths"] = agentAgingDeaths
+        self.runtimeStats["agentReproduced"] = agentReproduced
+        self.runtimeStats["agentWealthCollected"] = agentWealthCollected
+        self.runtimeStats["agentWealthTotal"] = agentWealthTotal
+        self.runtimeStats["agentMeanTimeToLive"] = agentMeanTimeToLive
+        self.runtimeStats["agentMeanTimeToLiveAgeLimited"] = agentMeanTimeToLiveAgeLimited
+        self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
+        self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
 
     def writeToLog(self):
         if self.log == None:

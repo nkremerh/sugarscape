@@ -12,7 +12,7 @@ test:
 	python $(SUGARSCAPE) --conf $(CONFIG)
 
 data:
-	cd data && sh collect.sh && sh summary.sh
+	cd data && sh collect.sh
 
 generate:
 	cd data && sh generate.sh

@@ -73,11 +73,7 @@ class Cell:
         return eastNeighbor
 
     def findNorthNeighbor(self):
-        northWrapAround = self.environment.height
-        northIndex = self.y + 1
-        if northIndex >= northWrapAround:
-            northIndex = 0
-        northNeighbor = self.environment.findCell(self.x, northIndex)
+        northNeighbor = self.environment.findCell(self.x, (self.y + 1 + self.environment.height) % self.environment.height)
         return northNeighbor
 
     def findSouthNeighbor(self):

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-files=( altruist altruistModified bentham default egoist egoistModified modified topAltruist topAltruistModified topBentham topEgoist topEgoistModified topModified rankedAltruist rankedAltruistModified rankedBentham rankedDefault rankedEgoist rankedEgoistModified rankedModified )
+files=( default benthamNoLookaheadBinary benthamHalfLookaheadBinary benthamNoLookaheadTop benthamHalfLookaheadTop benthamNoLookaheadRanked benthamHalfLookaheadRanked egoisticHalfLookaheadTop )
 
 for f in "${files[@]}"
 do
