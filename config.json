@@ -52,8 +52,8 @@
     "environmentWidth": 50,
     "headlessMode": false,
     "logfile": "log.json",
-    "profileMode": true,
-    "seed": 12345,
+    "profileMode": false,
+    "seed": -1,
     "startingAgents": 500,
     "startingDiseases": 50,
     "timesteps": 200
