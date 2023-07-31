@@ -81,6 +81,19 @@ class Environment:
             for j in range(self.width):
                 self.grid[i][j].findNeighbors()
 
+    def findCellsInRange(self, startX, startY, gridRange):
+        cellsInRange = []
+        for i in range(1, gridRange + 1):
+            deltaNorth = (startY + i + self.height) % self.height
+            deltaSouth = (startY - i + self.height) % self.height
+            deltaEast = (startX + i + self.width) % self.width
+            deltaWest = (startX - i + self.width) % self.width
+            cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
+            cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
+            cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
+            cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
+        return cellsInRange
+
     def placeCell(self, cell, x, y):
         self.grid[x][y] = cell
 

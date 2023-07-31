@@ -654,24 +654,14 @@ class Agent:
                 minHammingDistance = friend["hammingDistance"]
         return bestFriend
 
-    # TODO: Make this an environment-level call
     def findCellsInVision(self, newCell=None):
         cell = self.cell if newCell == None else newCell
         if self.vision > 0 and self.cell != None:
-            northCells = [{"cell": cell.findNorthNeighbor(), "distance": 1}]
-            southCells = [{"cell": cell.findSouthNeighbor(), "distance": 1}]
-            eastCells = [{"cell": cell.findEastNeighbor(), "distance": 1}]
-            westCells = [{"cell": cell.findWestNeighbor(), "distance": 1}]
-            # Vision 1 accounted for in list setup
-            for i in range(1, self.vision):
-                northCells.append({"cell": northCells[-1]["cell"].findNorthNeighbor(), "distance": i + 1})
-                southCells.append({"cell": southCells[-1]["cell"].findSouthNeighbor(), "distance": i + 1})
-                eastCells.append({"cell": eastCells[-1]["cell"].findEastNeighbor(), "distance": i + 1})
-                westCells.append({"cell": westCells[-1]["cell"].findWestNeighbor(), "distance": i + 1})
-            allCells = northCells + southCells + eastCells + westCells
-
+            allCells = self.cell.environment.findCellsInRange(cell.x, cell.y, self.vision)
             if newCell == None:
                 self.cellsInVision = allCells
+            # Shuffle cells for movement considerations
+            random.shuffle(allCells)
             return allCells
         return []
 
@@ -815,14 +805,12 @@ class Agent:
 
     def findNeighborhood(self, newCell=None):
         newNeighborhood = self.findCellsInVision(newCell)
-
         neighborhood = []
         for neighborCell in newNeighborhood:
             neighbor = neighborCell["cell"].agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighborhood.append(neighbor)
         neighborhood.append(self)
-
         if newCell == None:
             self.neighborhood = neighborhood
         return neighborhood
