@@ -101,7 +101,7 @@ agentEthicalFactor: [float, float]
 
 agentEthicalTheory: string
     Set the agent ethical theory for algorithmic decisionmaking.
-    Options: "bentham", "greedyBentham", "none", "ranked", "rankedBentham"
+    Options: "altruisticHalfLookaheadBinary", "altruisticHalfLookaheadTop", "benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "benthamNoLookaheadBinary", "benthamNoLookaheadTop", "egoisticHalfLookaheadBinary", "egoisticHalfLookaheadTop", "none"
     Default: "none"
 
 agentFemaleInfertilityAge: [int, int]

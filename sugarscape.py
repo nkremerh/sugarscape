@@ -360,7 +360,6 @@ class Sugarscape:
             if currTagLength > maxTagLength:
                 currTagLength = minTagLength
 
-
         randomDiseaseEndowment = {"sugarMetabolismPenalties": sugarMetabolismPenalties,
                      "spiceMetabolismPenalties": spiceMetabolismPenalties,
                      "movementPenalties": movementPenalties,
