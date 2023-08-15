@@ -1,6 +1,6 @@
 #! /bin/bash
 
-files=( benthamNoLookaheadBinary benthamHalfLookaheadBinary benthamNoLookaheadTop benthamHalfLookaheadTop egoisticHalfLookaheadTop rawSugarscape )
+files=( benthamNoLookaheadBinary benthamHalfLookaheadBinary benthamHalfLookaheadTop egoisticHalfLookaheadTop rawSugarscape )
 
 # Create working configs to avoid clobbering permanent configs
 for f in "${files[@]}"
@@ -25,10 +25,12 @@ do
         echo "Running decision model $f ($j/$m)"
         # Apply seed to config file
         sed -i $sedstr ./$f.json
+        logstr="s/\(\"logfile\"\:\s\).*,/\1\"$f$i.json\",/g"
+        # Apply logfile name to config file
+        sed -i $logstr ./$f.json
         # Run simulation for configs and rename resulting log
-        python ../sugarscape.py --conf $f.json > $f$i.log
-        #python ../logparse.py --log log.json >> $f$i.log
-        mv log.json $f$i.json
+        python ../sugarscape.py --conf $f.json > $f$i.log &
+        (( j % 5 )) || wait
         j=$((j+1))
     done
 done
