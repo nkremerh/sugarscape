@@ -39,6 +39,7 @@ class Agent:
         self.startingImmuneSystem = configuration["immuneSystem"]
         self.immuneSystem = configuration["immuneSystem"]
         self.ethicalFactor = configuration["ethicalFactor"]
+        self.selfishnessFactor = configuration["selfishnessFactor"]
         self.ethicalTheory = configuration["ethicalTheory"]
 
         self.alive = True
@@ -681,6 +682,7 @@ class Agent:
         "maxAge": [self.maxAge, mate.maxAge],
         "maxFriends": [self.maxFriends, mate.maxFriends],
         "movement": [self.movement, mate.movement],
+        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
         "spiceMetabolism": [self.spiceMetabolism, mate.spiceMetabolism],
         "sugarMetabolism": [self.sugarMetabolism, mate.sugarMetabolism],
         "sex": [self.sex, mate.sex],
