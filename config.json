@@ -54,7 +54,7 @@
     "logfile": "log.json",
     "profileMode": false,
     "seed": -1,
-    "startingAgents": 500,
+    "startingAgents": 250,
     "startingDiseases": 50,
     "timesteps": 200
 }

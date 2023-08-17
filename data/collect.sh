@@ -29,7 +29,7 @@ do
         # Apply logfile name to config file
         sed -i $logstr ./$f.json
         # Run simulation for configs and rename resulting log
-        python ../sugarscape.py --conf $f.json > $f$i.log &
+        python ../sugarscape.py --conf $f.json &
         (( j % 5 )) || wait
         j=$((j+1))
     done

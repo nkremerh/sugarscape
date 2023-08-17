@@ -3,6 +3,9 @@ def findAltruisticHalfLookaheadValueOfCell(agent, cell):
     # Max combat loot for sugar and spice
     globalMaxCombatLoot = cell.environment.maxCombatLoot * 2
     cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
+    if cell.agent != None:
+        cellSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
+        cellMaxSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
     cellNeighborWealth = cell.findNeighborWealth()
     globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
     cellValue = 0
@@ -45,11 +48,13 @@ def findAltruisticHalfLookaheadValueOfCell(agent, cell):
         cellValue += neighborValueOfCell
     return cellValue
 
-
 def findBenthamHalfLookaheadValueOfCell(agent, cell):
     cellSiteWealth = cell.sugar + cell.spice
     globalMaxCombatLoot = cell.environment.maxCombatLoot * 2
     cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
+    if cell.agent != None:
+        cellSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
+        cellMaxSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
     cellNeighborWealth = cell.findNeighborWealth()
     globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
     cellValue = 0
@@ -88,6 +93,9 @@ def findBenthamNoLookaheadValueOfCell(agent, cell):
     # Max combat loot for sugar and spice
     globalMaxCombatLoot = cell.environment.maxCombatLoot * 2
     cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
+    if cell.agent != None:
+        cellSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
+        cellMaxSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
     cellNeighborWealth = cell.findNeighborWealth()
     globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
     cellValue = 0
