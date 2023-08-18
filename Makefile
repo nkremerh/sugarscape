@@ -10,11 +10,13 @@ DATACHECK = data/data.complete
 
 SUGARSCAPE = sugarscape.py
 
-all: 
-
-data:
+$(DATACHECK):
 	cd data && sh collect.sh
 	touch $(DATACHECK)
+
+all:
+
+data: $(DATACHECK)
 
 plots: $(DATACHECK)
 	cd plots && sh generate_line_graphs.sh
