@@ -6,7 +6,7 @@ set yrange [0:130]
 set xtics nomirror
 set ytics nomirror
 set term pdf
-set output "starvationDeaths.pdf"
+set output "starvation_deaths.pdf"
 plot ARGV[1] using 'timestep':'starvationDeaths-benthamHalfLookaheadBinary' with linespoints pointinterval 100 pointsize 1 lt 1 dt 1 pt 0 title 'benthamHalfLookaheadBinary', \
     ARGV[1] using 'timestep':'starvationDeaths-benthamHalfLookaheadTop' with linespoints pointinterval 100 pointsize 1.5 lt 1 dt 1 pt 1 title 'benthamHalfLookaheadTop', \
     ARGV[1] using 'timestep':'starvationDeaths-benthamNoLookaheadBinary' with linespoints pointinterval 100 pointsize 1 lt 1 dt 1 pt 2 title 'benthamNoLookaheadBinary', \

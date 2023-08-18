@@ -7,7 +7,7 @@ set ytics nomirror
 set term pdf
 set key fixed right bottom
 set yrange [-0.12:0.04]
-set output "percentPopGrowth.pdf"
+set output "percent_pop_growth.pdf"
 plot ARGV[1] using 'timestep':'percentPopulationGrowth-benthamHalfLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'benthamHalfLookaheadBinary', \
     ARGV[1] using 'timestep':'percentPopulationGrowth-benthamHalfLookaheadTop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'benthamHalfLookaheadTop', \
     ARGV[1] using 'timestep':'percentPopulationGrowth-benthamNoLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'benthamNoLookaheadBinary', \

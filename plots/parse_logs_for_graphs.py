@@ -11,7 +11,8 @@ popDescriptors = ("population", "agentWealthCollected", "agentWealthTotal",
 
 graphs = ("meanTimeToLive", "percentPopulationGrowth", "starvationDeaths", "totalWealth",
           "wealthCollected", "populationPerTimestep", "agentWealthCollected", "agentWealthTotal",
-          "agentMeanTimeToLiveAgeLimited", "agentWealthTotalDivByPop", "agentWealthCollectedDivByPop")
+          "agentMeanTimeToLiveAgeLimited", "agentWealthTotalDivByPop", "agentWealthCollectedDivByPop",
+          "agentTotMetDivByEnvWealthCreated")
 
 models = ("benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "benthamNoLookaheadBinary",
           "egoisticHalfLookaheadTop", "rawSugarscape")
@@ -166,6 +167,31 @@ def calcAgentWealthCollectedDivByPop(data):
             normalizedWealth = sum(normalizedList)/len(normalizedList)
             data[timestep]["wealth"] = normalizedWealth
             
+def populateAgentMetDivByWealthCollected(data, path):
+    with open(path, 'r') as file:
+        entries = json.loads(file.read())
+        for entry in entries:
+            if entry["timestep"] not in data.keys():
+                data[entry["timestep"]] = {}
+                data[entry["timestep"]]["totalMetabolismCost"] = []
+                data[entry["timestep"]]["environmentWealthCreated"] = []
+            data[entry["timestep"]]["totalMetabolismCost"].append(entry["totalMetabolismCost"])
+            data[entry["timestep"]]["environmentWealthCreated"].append(entry["environmentWealthCreated"])
+
+def calcAgentMetDivByWealthCollected(data):
+    for timestep in data:
+        if timestep == 0:
+            data[timestep]["wealth"] = 0
+        else:
+            metabolismList = list(data[timestep]["totalMetabolismCost"])
+            wealthList = list(data[timestep]["environmentWealthCreated"])
+            normalizedList = []
+            for i in range(len(metabolismList)):
+                normalizedMetabolism = metabolismList[i]/wealthList[i] if wealthList[i] > 0 else 0
+                normalizedList.append(normalizedMetabolism)
+            normalizedMetabolism = sum(normalizedList)/len(normalizedList)
+            data[timestep]["metabolism"] = normalizedMetabolism
+            
 def populateLinearData(data, path, desc):
     with open(path, 'r') as file:
         entries = json.loads(file.read())
@@ -216,6 +242,8 @@ def logData(data, path):
                         outputData = data[graph][model][timestep]["wealth"]
                     elif graph == "agentWealthCollectedDivByPop":
                         outputData = data[graph][model][timestep]["wealth"]
+                    elif graph == "agentTotMetDivByEnvWealthCreated":
+                        outputData = data[graph][model][timestep]["metabolism"]
                     else:
                         raise Exception("Graph not recognized: {}".format(graph))
                     file.write("{} ".format(outputData).ljust(95))
@@ -240,6 +268,7 @@ if __name__ == "__main__":
         fileDecisionModel = re.compile(r"([A-z]*)\d*\.json")
         model = re.search(fileDecisionModel, filename).group(1)
         if model in models:
+            populateAgentMetDivByWealthCollected(data["agentTotMetDivByEnvWealthCreated"][model], filePath)
             populateAgentWealthCollectedDivByPop(data["agentWealthCollectedDivByPop"][model], filePath)
             populateAgentWealthTotalDivByPop(data["agentWealthTotalDivByPop"][model], filePath)
             populateLinearData(data["meanTimeToLive"][model], filePath, "agentMeanTimeToLive")
@@ -256,6 +285,7 @@ if __name__ == "__main__":
                 continue
             print("Iterated over an unkown model: {}".format(model))
     for model in models:
+        calcAgentMetDivByWealthCollected(data["agentTotMetDivByEnvWealthCreated"][model])
         calcAgentWealthCollectedDivByPop(data["agentWealthCollectedDivByPop"][model])
         calcAgentWealthTotalDivByPop(data["agentWealthTotalDivByPop"][model])
         condenseLinearData(data["meanTimeToLive"][model])

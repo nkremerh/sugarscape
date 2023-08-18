@@ -6,7 +6,7 @@ set key fixed right top
 set xtics nomirror
 set ytics nomirror
 set term pdf
-set output "agentWealthTotalDivByPop.pdf"
+set output "agent_wealth_total_div_by_pop.pdf"
 plot ARGV[1] using 'timestep':'agentWealthTotalDivByPop-benthamHalfLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'benthamHalfLookaheadBinary', \
     ARGV[1] using 'timestep':'agentWealthTotalDivByPop-benthamHalfLookaheadTop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'benthamHalfLookaheadTop', \
     ARGV[1] using 'timestep':'agentWealthTotalDivByPop-benthamNoLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'benthamNoLookaheadBinary', \

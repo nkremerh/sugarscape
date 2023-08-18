@@ -6,7 +6,7 @@ set key fixed right bottom
 set xtics nomirror
 set ytics nomirror
 set term pdf
-set output "agentWealthCollected.pdf"
+set output "agent_wealth_collected.pdf"
 plot ARGV[1] using 'timestep':'agentWealthCollected-benthamHalfLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'benthamHalfLookaheadBinary', \
     ARGV[1] using 'timestep':'agentWealthCollected-benthamHalfLookaheadTop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'benthamHalfLookaheadTop', \
     ARGV[1] using 'timestep':'agentWealthCollected-benthamNoLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'benthamNoLookaheadBinary', \
