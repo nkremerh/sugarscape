@@ -168,6 +168,11 @@ agentReplacements: int
     Set maximum number of agents to replace in environment on agent death.
     Default: 0
 
+agentSelfishnessFactor: [float, float]
+    Set the agent weight of how egoistic ethical decisions are
+    Note: Valid range [0.0, 1.0], use -1 to disable
+    Default: [-1, -1]
+
 agentSpiceMetabolism: [float, float]
     Set agent metabolism for spice per timestep.
     Default: [0, 0]

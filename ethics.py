@@ -58,6 +58,7 @@ def findBenthamHalfLookaheadValueOfCell(agent, cell):
     cellNeighborWealth = cell.findNeighborWealth()
     globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
     cellValue = 0
+    selfishnessFactor = agent.selfishnessFactor
     for neighbor in agent.neighborhood:
         timestepDistance = 1
         neighborMetabolism = neighbor.sugarMetabolism + neighbor.spiceMetabolism
@@ -85,6 +86,11 @@ def findBenthamHalfLookaheadValueOfCell(agent, cell):
                 neighborValueOfCell = -1
         else:
             neighborValueOfCell = neighbor.ethicalFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+        if selfishnessFactor != -1:
+            if neighbor == agent:
+                neighborValueOfCell *= selfishnessFactor
+            else:
+                neighborValueOfCell *= 1-selfishnessFactor
         cellValue += neighborValueOfCell
     return cellValue
 
@@ -99,6 +105,7 @@ def findBenthamNoLookaheadValueOfCell(agent, cell):
     cellNeighborWealth = cell.findNeighborWealth()
     globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
     cellValue = 0
+    selfishnessFactor = agent.selfishnessFactor
     for neighbor in agent.neighborhood:
         # Timesteps to reach cell, currently 1 since agent vision and movement are equal
         timestepDistance = 1
@@ -132,6 +139,11 @@ def findBenthamNoLookaheadValueOfCell(agent, cell):
                 neighborValueOfCell = -1
         else:
             neighborValueOfCell = neighbor.ethicalFactor * (certainty * proximity * (intensity + duration + (discount * futureDuration * futureIntensity) + extent))
+        if selfishnessFactor != -1:
+            if neighbor == agent:
+                neighborValueOfCell *= selfishnessFactor
+            else:
+                neighborValueOfCell *= 1-selfishnessFactor
         cellValue += neighborValueOfCell
     return cellValue
 

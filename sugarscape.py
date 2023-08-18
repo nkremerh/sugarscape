@@ -420,11 +420,13 @@ class Sugarscape:
         maxFriends = configs["agentMaxFriends"]
         inheritancePolicy = configs["agentInheritancePolicy"]
         ethicalFactor = configs["agentEthicalFactor"]
+        selfishnessFactor = configs["agentSelfishnessFactor"]
         ethicalTheory = configs["agentEthicalTheory"]
 
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
                           "ethicalFactor": {"endowments": [], "curr": ethicalFactor[0], "min": ethicalFactor[0], "max": ethicalFactor[1]},
+                          "selfishnessFactor": {"endowments": [], "curr": selfishnessFactor[0], "min": selfishnessFactor[0], "max": selfishnessFactor[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
@@ -851,6 +853,7 @@ if __name__ == "__main__":
     configuration = {"agentAggressionFactor": [0, 0],
                      "agentBaseInterestRate": [0.0, 0.0],
                      "agentEthicalFactor": [0, 0],
+                     "agentSelfishnessFactor": [0.0, 1.0],
                      "agentEthicalTheory": "none",
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
