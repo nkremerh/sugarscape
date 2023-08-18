@@ -1,0 +1,14 @@
+set title "Population Per Timestep"
+set xlabel "Timestep"
+set ylabel "Population"
+set lt 1 lw 2 lc "black"
+set xtics nomirror
+set ytics nomirror
+set key fixed right bottom
+set term pdf
+set output "populationPerTimestep.pdf"
+plot ARGV[1] using 'timestep':'populationPerTimestep-benthamHalfLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'benthamHalfLookaheadBinary', \
+    ARGV[1] using 'timestep':'populationPerTimestep-benthamHalfLookaheadTop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'benthamHalfLookaheadTop', \
+    ARGV[1] using 'timestep':'populationPerTimestep-benthamNoLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'benthamNoLookaheadBinary', \
+    ARGV[1] using 'timestep':'populationPerTimestep-egoisticHalfLookaheadTop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 3 title 'egoisticHalfLookaheadTop', \
+    ARGV[1] using 'timestep':'populationPerTimestep-rawSugarscape' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 4 title 'rawSugarscape'
