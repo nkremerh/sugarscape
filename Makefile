@@ -1,8 +1,7 @@
 CLEAN = log.json \
-		data/*.diff \
 		data/*.json \
-		data/*.log \
-		data/*.logs
+		plots/*.pdf \
+		plots/*.dat
 CONFIG = config.json
 SUGARSCAPE = sugarscape.py
 
@@ -20,6 +19,9 @@ generate:
 clean:
 	rm -rf $(CLEAN) || true
 
-.PHONY: all clean data generate
+plots:
+	cd plots && sh generate_line_graphs.sh
+
+.PHONY: all clean data generate plots
 
 # vim: set noexpandtab tabstop=4:

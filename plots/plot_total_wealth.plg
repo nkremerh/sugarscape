@@ -1,0 +1,14 @@
+set title "Normalized Agent Wealth"
+set xlabel "Timestep"
+set ylabel "Agent Wealth / Enviroment Wealth"
+set lt 1 lw 2 lc "black"
+set yrange [0:140]
+set xtics nomirror
+set ytics nomirror
+set term pdf
+set output "totalWealth.pdf"
+plot ARGV[1] using 'timestep':'totalWealth-benthamHalfLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'benthamHalfLookaheadBinary', \
+    ARGV[1] using 'timestep':'totalWealth-benthamHalfLookaheadTop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'benthamHalfLookaheadTop', \
+    ARGV[1] using 'timestep':'totalWealth-benthamNoLookaheadBinary' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'benthamNoLookaheadBinary', \
+    ARGV[1] using 'timestep':'totalWealth-egoisticHalfLookaheadTop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 3 title 'egoisticHalfLookaheadTop', \
+    ARGV[1] using 'timestep':'totalWealth-rawSugarscape' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 4 title 'rawSugarscape'
