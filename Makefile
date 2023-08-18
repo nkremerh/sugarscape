@@ -1,27 +1,30 @@
 CLEAN = log.json \
+		data/*[[:digit:]]*.config \
 		data/*.json \
 		plots/*.pdf \
 		plots/*.dat
+
 CONFIG = config.json
+
+DATACHECK = data/data.complete
+
 SUGARSCAPE = sugarscape.py
 
 all: 
 
+data:
+	cd data && sh collect.sh
+	touch $(DATACHECK)
+
+plots: $(DATACHECK)
+	cd plots && sh generate_line_graphs.sh
+
 test:
 	python $(SUGARSCAPE) --conf $(CONFIG)
 
-data:
-	cd data && sh collect.sh
-
-generate:
-	cd data && sh generate.sh
-
 clean:
-	rm -rf $(CLEAN) || true
+	rm -rf $(CLEAN) $(DATACHECK) || true
 
-plots:
-	cd plots && sh generate_line_graphs.sh
-
-.PHONY: all clean data generate plots
+.PHONY: all clean data plots
 
 # vim: set noexpandtab tabstop=4:

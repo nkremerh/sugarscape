@@ -6,7 +6,7 @@ files=( )
 # Number of seeds to run
 n=100
 # Number of parallel processes to run
-N=10
+N=1
 
 echo "Generating configurations for random seeds"
 for i in $( seq 1 $n )
@@ -38,6 +38,12 @@ do
         wait -n
     fi
     j=$((j+1))
+done
+
+echo "Waiting for jobs to finish up."
+while [[ $(jobs -r -p | wc -l) -gt 0 ]];
+do
+    wait -n
 done
 
 # Clean up working configs
