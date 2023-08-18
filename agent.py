@@ -617,17 +617,17 @@ class Agent:
                 if cell["wealth"] > 0:
                     bestCell = cell["cell"]
                     break
+        elif "egoisticNoLookahead" in self.ethicalTheory:
+            for cell in cells:
+                ethicalScore = ethics.findEgoisticNoLookaheadValueOfCell(self, cell["cell"])
+                cell["wealth"] = ethicalScore
+            for cell in cells:
+                if cell["wealth"] > 0:
+                    bestCell = cell["cell"]
+                    break
 
         # If additional ordering consideration, select new best cell
-        if "Ranked" in self.ethicalTheory:
-            cells = self.sortCellsByWealth(cells)
-            cells.reverse()
-            rank = self.findNeighborhoodRank()
-            if rank >= len(cells):
-                bestCell == self.cell
-            else:
-                bestCell = cells[rank]["cell"]
-        elif "Top" in self.ethicalTheory:
+        if "Top" in self.ethicalTheory:
             cells = self.sortCellsByWealth(cells)
             cells.reverse()
             if "all" in self.debug or "agent" in self.debug:
@@ -816,24 +816,6 @@ class Agent:
         if newCell == None:
             self.neighborhood = neighborhood
         return neighborhood
-
-    def findNeighborhoodRank(self):
-        # Insertion sort of agents according to wealth where lower index yields higher priority
-        i = 1
-        while i < len(self.neighborhood):
-            j = i
-            while j > 0 and self.neighborhood[j-1].wealth > self.neighborhood[j].wealth:
-                swap = self.neighborhood[j-1]
-                self.neighborhood[j-1] = self.neighborhood[j]
-                self.neighborhood[j] = swap
-                j -= 1
-            i += 1
-        rank = 0
-        while rank < len(self.neighborhood):
-            if self.neighborhood[rank] == self:
-                break
-            rank += 1
-        return rank
 
     def findNewMarginalRateOfSubstitution(self, sugar, spice):
         spiceNeed = spice / self.spiceMetabolism if self.spiceMetabolism > 0 else 1

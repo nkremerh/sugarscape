@@ -1,7 +1,10 @@
 #! /bin/bash
 
-configs=( benthamNoLookaheadBinary benthamNoLookaheadTop benthamHalfLookaheadBinary benthamHalfLookaheadTop egoisticHalfLookaheadTop rawSugarscape )
+configs=( benthamNoLookaheadBinary benthamNoLookaheadTop benthamHalfLookaheadBinary benthamHalfLookaheadTop egoisticHalfLookaheadTop egoisticHalfLookaheadBinary egoisticNoLookaheadTop egoisticNoLookaheadBinary rawSugarscape )
 files=( )
+
+# Change to python3 (or other alias) if needed
+py=python
 
 # Number of seeds to run
 n=100
@@ -33,7 +36,7 @@ for f in "${files[@]}"
 do
     echo "Running decision model $f ($j/$m)"
     # Run simulation for config
-    python ../sugarscape.py --conf $f.config &
+    $py ../sugarscape.py --conf $f.config &
     if [[ $(jobs -r -p | wc -l) -ge $N ]]; then
         wait -n
     fi

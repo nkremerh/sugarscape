@@ -8,6 +8,9 @@ CONFIG = config.json
 
 DATACHECK = data/data.complete
 
+# Change to python3 (or other alias) if needed
+PYTHON = python
+
 SUGARSCAPE = sugarscape.py
 
 $(DATACHECK):
@@ -22,7 +25,7 @@ plots: $(DATACHECK)
 	cd plots && sh generate_line_graphs.sh
 
 test:
-	python $(SUGARSCAPE) --conf $(CONFIG)
+	$(PYTHON) $(SUGARSCAPE) --conf $(CONFIG)
 
 clean:
 	rm -rf $(CLEAN) $(DATACHECK) || true
