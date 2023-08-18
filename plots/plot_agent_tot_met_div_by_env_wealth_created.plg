@@ -2,7 +2,7 @@ set title "Agent Total Metabolism Divided By Wealth Created"
 set xlabel "Timestep"
 set ylabel "Total Metabolism / Wealth Created"
 set lt 1 lw 2 lc "black"
-set key fixed left top
+set key fixed right bottom
 set xtics nomirror
 set ytics nomirror
 set term pdf
