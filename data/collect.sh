@@ -1,44 +1,49 @@
 #! /bin/bash
 
-files=( benthamNoLookaheadBinary benthamHalfLookaheadBinary benthamHalfLookaheadTop egoisticHalfLookaheadTop rawSugarscape )
-
-# Create working configs to avoid clobbering permanent configs
-for f in "${files[@]}"
-do
-    cp $f.config $f.json
-done
+configs=( benthamNoLookaheadBinary benthamNoLookaheadTop benthamHalfLookaheadBinary benthamHalfLookaheadTop egoisticHalfLookaheadTop rawSugarscape )
+files=( )
 
 # Number of seeds to run
 n=100
-# Number of decision models to run per seed
-m=${#files[@]}
+# Number of parallel processes to run
+N=10
+
+echo "Generating configurations for random seeds"
 for i in $( seq 1 $n )
 do
     # Generate a random seed
     seed=$RANDOM
     sedstr="s/\(\"seed\"\:\s\).*,/\1$seed,/g"
-    echo "Running simulations for random seed $seed ($i/$n)"
 
-    j=1
-    for f in "${files[@]}"
+    for c in "${configs[@]}"
     do
-        echo "Running decision model $f ($j/$m)"
+        cp $c.config $c$seed.config
         # Apply seed to config file
-        sed -i $sedstr ./$f.json
-        logstr="s/\(\"logfile\"\:\s\).*,/\1\"$f$i.json\",/g"
+        sed -i $sedstr ./$c$seed.config
+        logstr="s/\(\"logfile\"\:\s\).*,/\1\"$c$seed.json\",/g"
         # Apply logfile name to config file
-        sed -i $logstr ./$f.json
-        # Run simulation for configs and rename resulting log
-        python ../sugarscape.py --conf $f.json &
-        (( j % 5 )) || wait
-        j=$((j+1))
+        sed -i $logstr ./$c$seed.config
+        files+=( $c$seed )
     done
+done
+
+j=1
+m=${#files[@]}
+for f in "${files[@]}"
+do
+    echo "Running decision model $f ($j/$m)"
+    # Run simulation for config
+    python ../sugarscape.py --conf $f.config &
+    if [[ $(jobs -r -p | wc -l) -ge $N ]]; then
+        wait -n
+    fi
+    j=$((j+1))
 done
 
 # Clean up working configs
 for f in "${files[@]}"
 do
-    rm $f.json
+    rm $f.config
 done
 
 exit 0

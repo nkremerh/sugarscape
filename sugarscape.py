@@ -853,7 +853,7 @@ if __name__ == "__main__":
     configuration = {"agentAggressionFactor": [0, 0],
                      "agentBaseInterestRate": [0.0, 0.0],
                      "agentEthicalFactor": [0, 0],
-                     "agentSelfishnessFactor": [0.0, 1.0],
+                     "agentSelfishnessFactor": [-1, -1],
                      "agentEthicalTheory": "none",
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
