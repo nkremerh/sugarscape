@@ -4,298 +4,210 @@ import getopt
 import re
 import json
 
-popDescriptors = ("population", "agentWealthCollected", "agentWealthTotal",
-                "environmentWealthCreated", "environmentWealthTotal",
-                "agentStarvationDeaths", "agentMeanTimeToLive",
-                "agentMeanTimeToLiveAgeLimited", "agentReproduced")
+# Decision models each represented by a dictionary containing the mean of all seeds in the dataset
+dataset = {"benthamHalfLookaheadBinary": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "benthamHalfLookaheadTop": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "benthamNoLookaheadBinary": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "benthamNoLookaheadTop": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "egoisticHalfLookaheadBinary": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "egoisticHalfLookaheadTop": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "egoisticNoLookaheadBinary": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "egoisticNoLookaheadTop": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "rawSugarscape": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}}
+           }
 
-graphs = ("meanTimeToLive", "percentPopulationGrowth", "starvationDeaths", "totalWealth",
-          "wealthCollected", "populationPerTimestep", "agentWealthCollected", "agentWealthTotal",
-          "agentMeanTimeToLiveAgeLimited", "agentWealthTotalDivByPop", "agentWealthCollectedDivByPop",
-          "agentTotMetDivByEnvWealthCreated")
+datacols = []
 
-models = ("benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "benthamNoLookaheadBinary",
-          "egoisticHalfLookaheadTop", "rawSugarscape")
-
-def parseOptions():
-    commandLineArgs = sys.argv[1:]
-    shortOptions = "l:p:h"
-    longOptions = ("log", "path", "help")
-    returnValues = {}
-    try:
-        args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
-    except getopt.GetoptError as err:
-        print(err)
-        exit(0)
-    for currArg, currVal in args:
-        if (currArg in ("-l", "--log")):
-            returnValues["logFile"] = currVal
-        elif (currArg in ("-p", "--path")):
-            returnValues["path"] = currVal
-            returnValues["model"] = currVal
-        elif (currArg in ("-h", "--help")):
-            exit(0)
-    return returnValues
-
-def populateMeanTimeToLive(data, path):
-    with open(path, 'r') as file:
-        entries = json.loads(file.read())
-        for entry in entries:
-            if entry["timestep"] not in data.keys():
-                data[entry["timestep"]] = []
-            data[entry["timestep"]].append(entry["agentMeanTimeToLive"])
-
-def condenseMeanTimeToLiveData(data):
-    for timestep in data.keys():
-        data[timestep] = sum(data[timestep])/len(data[timestep])
-        
-def populatepercentPopulationGrowth(data, path):
-    with open(path, 'r') as file:
-        entries = json.loads(file.read())
-        for entry in entries:
-            if entry["timestep"] not in data.keys():
-                data[entry["timestep"]] = {}
-                data[entry["timestep"]]["populations"] = []
-                data[entry["timestep"]]["growth"] = []
-            data[entry["timestep"]]["populations"].append(entry["population"])
-
-def calcPercentGrowth(data):
-    for timestep in data:
-        if timestep == 0:
-            data[timestep]["growth"] = 0
-        else:
-            currAvgPop = sum(data[timestep]["populations"])/len(data[timestep]["populations"])
-            prevAvgPop = sum(data[timestep-1]["populations"])/len(data[timestep-1]["populations"])
-            percentGrowth = currAvgPop/prevAvgPop - 1
-            data[timestep]["growth"] = percentGrowth
-                    
-def populateTotalWealthData(data, path):
-    with open(path, 'r') as file:
-        entries = json.loads(file.read())
-        for entry in entries:
-            if entry["timestep"] not in data.keys():
-                data[entry["timestep"]] = {}
-                data[entry["timestep"]]["agentWealth"] = []
-                data[entry["timestep"]]["environmentWealth"] = []
-            data[entry["timestep"]]["agentWealth"].append(entry["agentWealthTotal"])
-            data[entry["timestep"]]["environmentWealth"].append(entry["environmentWealthTotal"])
-            
-def calcTotalWealth(data):
-    for timestep in data:
-        if timestep == 0:
-            data[timestep]["wealth"] = 0
-        else:
-            agentWealthList = list(data[timestep]["agentWealth"])
-            envrionmentWealthList = list(data[timestep]["environmentWealth"])
-            normalizedList = []
-            for i in range(len(agentWealthList)):
-                normalizedList.append(agentWealthList[i]/envrionmentWealthList[i])
-            normalizedWealth = sum(normalizedList)/len(normalizedList)
-            data[timestep]["wealth"] = normalizedWealth
-            
-def populateWealthCollectedData(data, path):
-    with open(path, 'r') as file:
-        entries = json.loads(file.read())
-        for entry in entries:
-            if entry["timestep"] not in data.keys():
-                data[entry["timestep"]] = {}
-                data[entry["timestep"]]["agentWealth"] = []
-                data[entry["timestep"]]["environmentWealth"] = []
-            data[entry["timestep"]]["agentWealth"].append(entry["agentWealthCollected"])
-            data[entry["timestep"]]["environmentWealth"].append(entry["environmentWealthCreated"])
-            
-def calcWealthCollected(data):
-    for timestep in data:
-        if timestep == 0:
-            data[timestep]["wealth"] = 0
-        else:
-            agentWealthList = list(data[timestep]["agentWealth"])
-            envrionmentWealthList = list(data[timestep]["environmentWealth"])
-            normalizedList = []
-            for i in range(len(agentWealthList)):
-                normalizedList.append(agentWealthList[i]/envrionmentWealthList[i])
-            normalizedWealth = sum(normalizedList)/len(normalizedList)
-            data[timestep]["wealth"] = normalizedWealth
-            
-def populateAgentWealthTotalDivByPop(data, path):
-    with open(path, 'r') as file:
-        entries = json.loads(file.read())
-        for entry in entries:
-            if entry["timestep"] not in data.keys():
-                data[entry["timestep"]] = {}
-                data[entry["timestep"]]["agentWealthTotal"] = []
-                data[entry["timestep"]]["population"] = []
-            data[entry["timestep"]]["agentWealthTotal"].append(entry["agentWealthTotal"])
-            data[entry["timestep"]]["population"].append(entry["population"])
-            
-def calcAgentWealthTotalDivByPop(data):
-    for timestep in data:
-        if timestep == 0:
-            data[timestep]["wealth"] = 0
-        else:
-            agentWealthList = list(data[timestep]["agentWealthTotal"])
-            populationList = list(data[timestep]["population"])
-            normalizedList = []
-            for i in range(len(agentWealthList)):
-                normalizedWealth = agentWealthList[i]/populationList[i] if populationList[i] > 0 else 0
-                normalizedList.append(normalizedWealth)
-            normalizedWealth = sum(normalizedList)/len(normalizedList)
-            data[timestep]["wealth"] = normalizedWealth
-            
-def populateAgentWealthCollectedDivByPop(data, path):
-    with open(path, 'r') as file:
-        entries = json.loads(file.read())
-        for entry in entries:
-            if entry["timestep"] not in data.keys():
-                data[entry["timestep"]] = {}
-                data[entry["timestep"]]["agentWealthCollected"] = []
-                data[entry["timestep"]]["population"] = []
-            data[entry["timestep"]]["agentWealthCollected"].append(entry["agentWealthCollected"])
-            data[entry["timestep"]]["population"].append(entry["population"])
-
-def calcAgentWealthCollectedDivByPop(data):
-    for timestep in data:
-        if timestep == 0:
-            data[timestep]["wealth"] = 0
-        else:
-            agentWealthList = list(data[timestep]["agentWealthCollected"])
-            populationList = list(data[timestep]["population"])
-            normalizedList = []
-            for i in range(len(agentWealthList)):
-                normalizedWealth = agentWealthList[i]/populationList[i] if populationList[i] > 0 else 0
-                normalizedList.append(normalizedWealth)
-            normalizedWealth = sum(normalizedList)/len(normalizedList)
-            data[timestep]["wealth"] = normalizedWealth
-            
-def populateAgentMetDivByWealthCollected(data, path):
-    with open(path, 'r') as file:
-        entries = json.loads(file.read())
-        for entry in entries:
-            if entry["timestep"] not in data.keys():
-                data[entry["timestep"]] = {}
-                data[entry["timestep"]]["totalMetabolismCost"] = []
-                data[entry["timestep"]]["environmentWealthCreated"] = []
-            data[entry["timestep"]]["totalMetabolismCost"].append(entry["totalMetabolismCost"])
-            data[entry["timestep"]]["environmentWealthCreated"].append(entry["environmentWealthCreated"])
-
-def calcAgentMetDivByWealthCollected(data):
-    for timestep in data:
-        if timestep == 0:
-            data[timestep]["wealth"] = 0
-        else:
-            metabolismList = list(data[timestep]["totalMetabolismCost"])
-            wealthList = list(data[timestep]["environmentWealthCreated"])
-            normalizedList = []
-            for i in range(len(metabolismList)):
-                normalizedMetabolism = metabolismList[i]/wealthList[i] if wealthList[i] > 0 else 0
-                normalizedList.append(normalizedMetabolism)
-            normalizedMetabolism = sum(normalizedList)/len(normalizedList)
-            data[timestep]["metabolism"] = normalizedMetabolism
-            
-def populateLinearData(data, path, desc):
-    with open(path, 'r') as file:
-        entries = json.loads(file.read())
-        for entry in entries:
-            if entry["timestep"] not in data.keys():
-                data[entry["timestep"]] = []
-            data[entry["timestep"]].append(entry[desc])
-            
-def condenseLinearData(data):
-    for timestep in data.keys():
-        data[timestep] = sum(data[timestep])/len(data[timestep])
-    
-def logData(data, path):
-    maxTimestep = 0
-    for model in models:
-        timesteps = list(data[graphs[0]][model].keys())
-        timesteps.append(maxTimestep)
-        maxTimestep = max(timesteps)
-    with open(path, 'w') as file:
-        file.write("timestep".ljust(95))
-        for graph in graphs:
-            for model in models:
-                file.write("{}-{} ".format(graph, model).ljust(95))
-        file.write("\n")
-        for timestep in range(1, maxTimestep+1):
-            file.write("{} ".format(timestep).ljust(95))
-            for graph in graphs:
-                for model in models:
-                    if graph == "meanTimeToLive":
-                        outputData = data[graph][model][timestep]
-                    elif graph == "percentPopulationGrowth":
-                        outputData = data[graph][model][timestep]["growth"]
-                    elif graph == "starvationDeaths":
-                        outputData = data[graph][model][timestep]
-                    elif graph == "totalWealth":
-                        outputData = data[graph][model][timestep]["wealth"]
-                    elif graph == "wealthCollected":
-                        outputData = data[graph][model][timestep]["wealth"]
-                    elif graph == "agentMeanTimeToLiveAgeLimited":
-                        outputData = data[graph][model][timestep]
-                    elif graph == "agentWealthCollected":
-                        outputData = data[graph][model][timestep]
-                    elif graph == "agentWealthTotal":
-                        outputData = data[graph][model][timestep]
-                    elif graph == "populationPerTimestep":
-                        outputData = data[graph][model][timestep]
-                    elif graph == "agentWealthTotalDivByPop":
-                        outputData = data[graph][model][timestep]["wealth"]
-                    elif graph == "agentWealthCollectedDivByPop":
-                        outputData = data[graph][model][timestep]["wealth"]
-                    elif graph == "agentTotMetDivByEnvWealthCreated":
-                        outputData = data[graph][model][timestep]["metabolism"]
-                    else:
-                        raise Exception("Graph not recognized: {}".format(graph))
-                    file.write("{} ".format(outputData).ljust(95))
-            file.write("\n")
-            
-if __name__ == "__main__":
-    parsedOptions = parseOptions()
-    dirPath = parsedOptions["path"]
-    if (not os.path.exists(dirPath)):
-        raise Exception("Path not recognized")
-    encodedDir = os.fsencode(dirPath) 
-    data = {}
-    for graph in graphs:
-        data[graph] = {}
-        for model in models:
-            data[graph][model] = {}
+def parseDataset(path, totalTimesteps):
+    encodedDir = os.fsencode(path) 
     for file in os.listdir(encodedDir):
         filename = os.fsdecode(file)
         if not filename.endswith('.json'):
             continue
-        filePath = dirPath + '/' + filename
+        filePath = path + '/' + filename
         fileDecisionModel = re.compile(r"([A-z]*)\d*\.json")
         model = re.search(fileDecisionModel, filename).group(1)
-        if model in models:
-            populateAgentMetDivByWealthCollected(data["agentTotMetDivByEnvWealthCreated"][model], filePath)
-            populateAgentWealthCollectedDivByPop(data["agentWealthCollectedDivByPop"][model], filePath)
-            populateAgentWealthTotalDivByPop(data["agentWealthTotalDivByPop"][model], filePath)
-            populateLinearData(data["meanTimeToLive"][model], filePath, "agentMeanTimeToLive")
-            populatepercentPopulationGrowth(data["percentPopulationGrowth"][model], filePath)
-            populateLinearData(data["starvationDeaths"][model], filePath, "agentStarvationDeaths")
-            populateTotalWealthData(data["totalWealth"][model], filePath)
-            populateWealthCollectedData(data["wealthCollected"][model], filePath)
-            populateLinearData(data["populationPerTimestep"][model], filePath, "population")
-            populateLinearData(data["agentWealthCollected"][model], filePath, "agentWealthCollected")
-            populateLinearData(data["agentWealthTotal"][model], filePath, "agentWealthTotal")
-            populateLinearData(data["agentMeanTimeToLiveAgeLimited"][model], filePath, "agentMeanTimeToLiveAgeLimited")
-        else:
-            if model == "benthamNoLookaheadTop": #bugged/bad model
-                continue
-            print("Iterated over an unkown model: {}".format(model))
-    for model in models:
-        calcAgentMetDivByWealthCollected(data["agentTotMetDivByEnvWealthCreated"][model])
-        calcAgentWealthCollectedDivByPop(data["agentWealthCollectedDivByPop"][model])
-        calcAgentWealthTotalDivByPop(data["agentWealthTotalDivByPop"][model])
-        condenseLinearData(data["meanTimeToLive"][model])
-        calcPercentGrowth(data["percentPopulationGrowth"][model])
-        condenseLinearData(data["starvationDeaths"][model])
-        calcTotalWealth(data["totalWealth"][model])
-        calcWealthCollected(data["wealthCollected"][model])
-        condenseLinearData(data["populationPerTimestep"][model])
-        condenseLinearData(data["agentWealthCollected"][model])
-        condenseLinearData(data["agentWealthTotal"][model])
-        condenseLinearData(data["agentMeanTimeToLiveAgeLimited"][model])
-    logData(data, parsedOptions["logFile"])
-    exit(0) 
+        log = open(filePath)
+        rawJson = json.loads(log.read())
+        dataset[model]["runs"] += 1
+        i = 1
+        print("Reading log {0}".format(filePath), file=sys.stderr)
+        for item in rawJson:
+            if item["timestep"] > dataset[model]["timesteps"]:
+                dataset[model]["timesteps"] += 1
+
+            for entry in item:
+                if entry in ["agentWealths", "agentTimesToLive", "agentTimesToLiveAgeLimited", "agentTotalMetabolism"]:
+                    continue
+                if entry not in datacols:
+                    datacols.append(entry)
+                if entry not in dataset[model]["meanMetrics"]:
+                    dataset[model]["meanMetrics"][entry] = [0 for j in range(totalTimesteps + 1)]
+                dataset[model]["meanMetrics"][entry][i-1] += item[entry]
+            i += 1
+
+def findMeans():
+    print("Finding mean values across {0} timesteps".format(totalTimesteps), file=sys.stderr)
+    for model in dataset:
+        for column in datacols:
+            for i in range(len(dataset[model]["meanMetrics"][column])):
+                dataset[model]["meanMetrics"][column][i] = dataset[model]["meanMetrics"][column][i] / dataset[model]["runs"]
+
+def parseOptions():
+    commandLineArgs = sys.argv[1:]
+    shortOptions = "p:t:h"
+    longOptions = ("path", "help", "time")
+    options = {"path": None, "timesteps": 1000}
+    try:
+        args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
+    except getopt.GetoptError as err:
+        print(err, file=sys.stderr)
+        exit(0)
+    for currArg, currVal in args:
+        if currArg in ("-p", "--path"):
+            options["path"] = currVal
+        elif currArg in ("-t", "--time"):
+            options["timesteps"] = int(currVal)
+        elif currArg in ("-h", "--help"):
+            printHelp()
+    if options["path"] == None:
+        print("No path specified.")
+        printHelp()
+    return options
+
+def printHelp():
+    print("Usage:\n\tpython parselogs.py --path /path/to/data > results.dat\n\nOptions:\n\t-p,--path\tUse the specified path to find dataset JSON files.\n\t-h,--help\tDisplay this message.")
+    exit(0)
+
+def printRawData(totalTimesteps):
+    columnHeads = "timestep"
+    for model in ["bhlb", "bhlt", "bnlb", "bnlt", "ehlb", "ehlt", "enlb", "enlt", "rs"]:
+        for metric in ["pop", "mttl", "strv", "comd", "welt"]:
+            columnHeads += " {0}_{1}".format(model, metric)
+    print(columnHeads)
+    bhlb = dataset["benthamHalfLookaheadBinary"]["meanMetrics"]
+    bhlt = dataset["benthamHalfLookaheadTop"]["meanMetrics"]
+    bnlb = dataset["benthamNoLookaheadBinary"]["meanMetrics"]
+    bnlt = dataset["benthamNoLookaheadBinary"]["meanMetrics"]
+    ehlb = dataset["egoisticHalfLookaheadBinary"]["meanMetrics"]
+    ehlt = dataset["egoisticHalfLookaheadTop"]["meanMetrics"]
+    enlb = dataset["egoisticNoLookaheadBinary"]["meanMetrics"]
+    enlt = dataset["egoisticNoLookaheadBinary"]["meanMetrics"] 
+    rs = dataset["rawSugarscape"]["meanMetrics"]
+
+    models = [bhlb, bhlt, bnlb, bnlt, ehlb, ehlt, enlb, enlt, rs]
+    for i in range(totalTimesteps + 1):
+        line = str(i)
+        for model in models:
+            line += " {0} {1} {2} {3} {4}".format(model["population"][i], model["agentMeanTimeToLive"][i], model["agentStarvationDeaths"][i],
+                                                  model["agentCombatDeaths"][i], model["agentWealthTotal"][i])
+        print(line)
+
+def generatePlots():
+    generatePopulationPlot()
+    generateMeanTimeToLivePlot()
+    generateTotalWealthPlot()
+    generateTotalWealthNormalizedPlot()
+    generateStarvationAndCombatPlot()
+
+def generatePopulationPlot():
+    print("Generating population plot script", file=sys.stderr)
+    plot = open("population.plg", 'w')
+    config = "set title \"Population per Timestep\"\nset xlabel \"Timestep\"\nset ylabel \"Population\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"population.pdf\"\n\n"
+    plot.write(config)
+    lines = "plot ARGV[1] using 'timestep':'bhlb_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
+    lines += "\t'' u 'timestep':'bhlt_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
+    lines += "\t'' u 'timestep':'bnlb_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
+    lines += "\t'' u 'timestep':'bnlt_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
+    lines += "\t'' u 'timestep':'ehlb_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
+    lines += "\t'' u 'timestep':'ehlt_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
+    lines += "\t'' u 'timestep':'enlb_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
+    lines += "\t'' u 'timestep':'enlt_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
+    lines += "\t'' u 'timestep':'rs_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    plot.write(lines)
+    plot.close()
+
+def generateMeanTimeToLivePlot():
+    print("Generating mean time to live plot script", file=sys.stderr)
+    plot = open("meanttl.plg", 'w')
+    config = "set title \"Mean Time to Live per Timestep\"\nset xlabel \"Timestep\"\nset ylabel \"Mean Time to Live\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"meanttl.pdf\"\n\n"
+    plot.write(config)
+    lines = "plot ARGV[1] using 'timestep':'bhlb_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
+    lines += "\t'' u 'timestep':'bhlt_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
+    lines += "\t'' u 'timestep':'bnlb_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
+    lines += "\t'' u 'timestep':'bnlt_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
+    lines += "\t'' u 'timestep':'ehlb_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
+    lines += "\t'' u 'timestep':'ehlt_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
+    lines += "\t'' u 'timestep':'enlb_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
+    lines += "\t'' u 'timestep':'enlt_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
+    lines += "\t'' u 'timestep':'rs_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    plot.write(lines)
+    plot.close()
+
+def generateTotalWealthPlot():
+    print("Generating total wealth plot script", file=sys.stderr)
+    plot = open("wealth.plg", 'w')
+    config = "set title \"Agent Total Wealth per Timestep\"\nset xlabel \"Timestep\"\nset ylabel \"Total Wealth\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"wealth.pdf\"\n\n"
+    plot.write(config)
+    lines = "plot ARGV[1] using 'timestep':'bhlb_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
+    lines += "\t'' u 'timestep':'bhlt_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
+    lines += "\t'' u 'timestep':'bnlb_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
+    lines += "\t'' u 'timestep':'bnlt_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
+    lines += "\t'' u 'timestep':'ehlb_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
+    lines += "\t'' u 'timestep':'ehlt_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
+    lines += "\t'' u 'timestep':'enlb_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
+    lines += "\t'' u 'timestep':'enlt_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
+    lines += "\t'' u 'timestep':'rs_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    plot.write(lines)
+    plot.close()
+
+def generateTotalWealthNormalizedPlot():
+    print("Generating total wealth normalized plot script", file=sys.stderr)
+    plot = open("wealth_normalized.plg", 'w')
+    config = "set title \"Agent Total Wealth per Timestep Normalized by Population\"\nset xlabel \"Timestep\"\nset ylabel \"Total Wealth / Population\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"wealth_normalized.pdf\"\n\n"
+    plot.write(config)
+    lines = "plot ARGV[1] using 'timestep':(column('bhlb_welt')/column('bhlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
+    lines += "\t'' u 'timestep':(column('bhlt_welt')/column('bhlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
+    lines += "\t'' u 'timestep':(column('bnlb_welt')/column('bnlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
+    lines += "\t'' u 'timestep':(column('bnlt_welt')/column('bnlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
+    lines += "\t'' u 'timestep':(column('ehlb_welt')/column('ehlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
+    lines += "\t'' u 'timestep':(column('ehlt_welt')/column('ehlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
+    lines += "\t'' u 'timestep':(column('enlb_welt')/column('enlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
+    lines += "\t'' u 'timestep':(column('enlt_welt')/column('enlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
+    lines += "\t'' u 'timestep':(column('rs_welt')/column('rs_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    plot.write(lines)
+    plot.close()
+
+def generateStarvationAndCombatPlot():
+    print("Generating starvation and combat deaths plot script", file=sys.stderr)
+    plot = open("starvation_combat.plg", 'w')
+    config = "set title \"Starvation and Combat Deaths per Timestep Normalized by Population\"\nset xlabel \"Timestep\"\nset ylabel \"Deaths / Population\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"starvation_combat.pdf\"\n\n"
+    plot.write(config)
+    lines = "plot ARGV[1] using 'timestep':(column('bhlb_strv')/column('bhlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
+    lines += "\t'' u 'timestep':(column('bhlt_strv')/column('bhlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
+    lines += "\t'' u 'timestep':(column('bnlb_strv')/column('bnlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
+    lines += "\t'' u 'timestep':(column('bnlt_strv')/column('bnlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
+    lines += "\t'' u 'timestep':(column('ehlb_strv')/column('ehlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
+    lines += "\t'' u 'timestep':(column('ehlt_strv')/column('ehlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
+    lines += "\t'' u 'timestep':(column('enlb_strv')/column('enlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
+    lines += "\t'' u 'timestep':(column('enlt_strv')/column('enlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
+    lines += "\t'' u 'timestep':(column('rs_strv')/column('rs_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    plot.write(lines)
+    plot.close()
+
+if __name__ == "__main__":
+    options = parseOptions()
+    path = options["path"]
+    totalTimesteps = options["timesteps"]
+    if (not os.path.exists(path)):
+        raise Exception("Path {0} not recognized".format(path))
+    parseDataset(path, totalTimesteps)
+    findMeans()
+    printRawData(totalTimesteps)
+    generatePlots()
+    exit(0)

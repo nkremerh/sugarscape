@@ -1,8 +1,9 @@
 CLEAN = log.json \
 		data/*[[:digit:]]*.config \
 		data/*.json \
+		plots/*.dat \
 		plots/*.pdf \
-		plots/*.dat
+		plots/*.plg
 
 CONFIG = config.json
 
@@ -22,7 +23,7 @@ all:
 data: $(DATACHECK)
 
 plots: $(DATACHECK)
-	cd plots && sh generate_line_graphs.sh
+	cd plots && sh make_plots.sh
 
 test:
 	$(PYTHON) $(SUGARSCAPE) --conf $(CONFIG)
