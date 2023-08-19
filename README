@@ -17,9 +17,9 @@ make clean
 make data
     Run 20 random seeds comparing Bentham's utility calculus to the baseline greedy decisionmaking.
     Note: results will be saved in the data subdirectory.
-make generate
-    Generate 20 random seeds and save 20 template configuration files.
-    Note: results will be saved in the data subdirectory.
+make plots
+    Generate data plots from any JSON files in the data subdirectory.
+    Note: plots are dependent on a dataset existing and will create it if necessary.
 make test
     Run the simulation using the default config.json file and storing a local log in the log.json file.
 
@@ -347,3 +347,47 @@ timesteps: int
     Set the number of timesteps the simulation runs.
     Note: Value of -1 causes simulation to run forever or until there are no more living agents.
     Default: 200
+
+Other Configurable Parameters:
+data/collect.sh:
+configs (line 3): [string, ...]
+    Sets the list of decision models to run.
+    Default: ["benthamNoLookaheadBinary", "benthamNoLookaheadTop", "benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "egoisticHalfLookaheadTop", "egoisticHalfLookaheadBinary", "egoisticNoLookaheadTop", "egoisticNoLookaheadBinary", "rawSugarscape"]
+    Note: adding a new decision model requires a matching [model].config file to be present in the data subdirectory.
+
+n (line 10): int
+    Set the number of seeds to run.
+    Default: 100
+
+N (line 12): int
+    Set the number of parallel instances of the simulation to run.
+    Default: 1
+    Note: this number should not exceed available CPU cores.
+
+py (line 7): path
+    Sets an alias to the system Python 3 executable.
+    Default: python
+
+Makefile:
+PYTHON (line 13): path
+    Sets an alias to the system Python 3 executable.
+    Default: python
+
+SH (line 14): path
+    Sets an alias to the system Bash executable.
+    Default: bash
+    Note: use of Bash is a requirement for the shell scripts to function properly.
+
+plots/make_plots.sh:
+plots (line 1): [string, ...]
+    Sets the list of plots to render.
+    Default: ["population.plg", "meanttl.plg", "wealth.plg", "wealth_normalized.plg", "starvation_combat.plg"]
+    Note: adding a new plot requires modifying the source code of plots/parselogs.py.
+
+py (line 4): path
+    Sets an alias to the system Python 3 executable.
+    Default: python
+
+-t (line 6): int
+    Sets the number of timesteps to render for the plots.
+    Default: 1000

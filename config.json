@@ -37,7 +37,7 @@
     "diseaseTagStringLength": [11, 21],
     "diseaseVisionPenalty": [-1, 1],
     "environmentHeight": 50,
-    "environmentMaxCombatLoot": 1,
+    "environmentMaxCombatLoot": 2,
     "environmentMaxSpice": 4,
     "environmentMaxSugar": 4,
     "environmentMaxTribes": 3,

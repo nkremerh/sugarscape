@@ -11,11 +11,11 @@ DATACHECK = data/data.complete
 
 # Change to python3 (or other alias) if needed
 PYTHON = python
-
+SH = bash
 SUGARSCAPE = sugarscape.py
 
 $(DATACHECK):
-	cd data && sh collect.sh
+	cd data && $(SH) collect.sh
 	touch $(DATACHECK)
 
 all:
@@ -23,7 +23,7 @@ all:
 data: $(DATACHECK)
 
 plots: $(DATACHECK)
-	cd plots && sh make_plots.sh
+	cd plots && $(SH) make_plots.sh
 
 test:
 	$(PYTHON) $(SUGARSCAPE) --conf $(CONFIG)
