@@ -369,11 +369,11 @@ py (line 7): path
     Default: python
 
 Makefile:
-PYTHON (line 13): path
+PYTHON (line 19): path
     Sets an alias to the system Python 3 executable.
     Default: python
 
-SH (line 14): path
+SH (line 20): path
     Sets an alias to the system Bash executable.
     Default: bash
     Note: use of Bash is a requirement for the shell scripts to function properly.

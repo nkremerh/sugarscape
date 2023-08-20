@@ -5,15 +5,15 @@ import re
 import json
 
 # Decision models each represented by a dictionary containing the mean of all seeds in the dataset
-dataset = {"benthamHalfLookaheadBinary": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
-           "benthamHalfLookaheadTop": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
-           "benthamNoLookaheadBinary": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
-           "benthamNoLookaheadTop": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
-           "egoisticHalfLookaheadBinary": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
-           "egoisticHalfLookaheadTop": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
-           "egoisticNoLookaheadBinary": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
-           "egoisticNoLookaheadTop": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
-           "rawSugarscape": {"runs": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}}
+dataset = {"benthamHalfLookaheadBinary": {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "benthamHalfLookaheadTop": {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "benthamNoLookaheadBinary": {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "benthamNoLookaheadTop": {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "egoisticHalfLookaheadBinary": {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "egoisticHalfLookaheadTop": {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "egoisticNoLookaheadBinary": {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "egoisticNoLookaheadTop": {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}},
+           "rawSugarscape": {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}}
            }
 
 datacols = []
@@ -45,6 +45,10 @@ def parseDataset(path, totalTimesteps):
                     dataset[model]["meanMetrics"][entry] = [0 for j in range(totalTimesteps + 1)]
                 dataset[model]["meanMetrics"][entry][i-1] += item[entry]
             i += 1
+        if rawJson[-1]["population"] == 0:
+            dataset[model]["died"] += 1
+        elif rawJson[-1]["population"] < rawJson[0]["population"]:
+            dataset[model]["worse"] += 1
 
 def findMeans():
     print("Finding mean values across {0} timesteps".format(totalTimesteps), file=sys.stderr)
@@ -78,6 +82,12 @@ def parseOptions():
 def printHelp():
     print("Usage:\n\tpython parselogs.py --path /path/to/data > results.dat\n\nOptions:\n\t-p,--path\tUse the specified path to find dataset JSON files.\n\t-h,--help\tDisplay this message.")
     exit(0)
+
+def printSummaryStats():
+    print("Model population performance:\n{0:^30} {1:^5} {2:^5} {3:^5}".format("Decision Model", "Died", "Worse", "Better"), file=sys.stderr)
+    for model in dataset:
+        better = dataset[model]["runs"] - (dataset[model]["died"] + dataset[model]["worse"])
+        print("{0:^30}: {1:^5} {2:^5} {3:^5}".format(model, dataset[model]["died"], dataset[model]["worse"], better), file=sys.stderr)
 
 def printRawData(totalTimesteps):
     columnHeads = "timestep"
@@ -210,4 +220,5 @@ if __name__ == "__main__":
     findMeans()
     printRawData(totalTimesteps)
     generatePlots()
+    printSummaryStats()
     exit(0)
