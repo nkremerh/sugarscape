@@ -1,6 +1,6 @@
 #! /bin/bash
 
-configs=( benthamNoLookaheadBinary benthamNoLookaheadTop benthamHalfLookaheadBinary benthamHalfLookaheadTop egoisticHalfLookaheadTop egoisticHalfLookaheadBinary egoisticNoLookaheadTop egoisticNoLookaheadBinary rawSugarscape )
+configs=( benthamHalfLookaheadBinary egoisticHalfLookaheadBinary rawSugarscape )
 files=( )
 
 # Change to python3 (or other alias) if needed

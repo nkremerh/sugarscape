@@ -24,7 +24,7 @@ def parseDataset(path, totalTimesteps):
         filename = os.fsdecode(file)
         if not filename.endswith('.json'):
             continue
-        filePath = path + '/' + filename
+        filePath = path + filename
         fileDecisionModel = re.compile(r"([A-z]*)\d*\.json")
         model = re.search(fileDecisionModel, filename).group(1)
         log = open(filePath)
@@ -124,17 +124,11 @@ def generatePopulationPlot():
     print("Generating population plot script", file=sys.stderr)
     plot = open("population.plg", 'w')
     config = "set title \"Population per Timestep\"\nset xlabel \"Timestep\"\nset ylabel \"Population\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"population.pdf\"\n\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf mono\nset output \"population.pdf\"\n\n"
     plot.write(config)
-    lines = "plot ARGV[1] using 'timestep':'bhlb_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
-    lines += "\t'' u 'timestep':'bhlt_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
-    lines += "\t'' u 'timestep':'bnlb_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
-    lines += "\t'' u 'timestep':'bnlt_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
-    lines += "\t'' u 'timestep':'ehlb_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
-    lines += "\t'' u 'timestep':'ehlt_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
-    lines += "\t'' u 'timestep':'enlb_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
-    lines += "\t'' u 'timestep':'enlt_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
-    lines += "\t'' u 'timestep':'rs_pop' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    lines = "plot ARGV[1] using 'timestep':'bhlb_pop' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian', \\\n"
+    lines += "\t'' u 'timestep':'ehlb_pop' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Egoist', \\\n"
+    lines += "\t'' u 'timestep':'rs_pop' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 0 title 'Raw Sugarscape'"
     plot.write(lines)
     plot.close()
 
@@ -142,17 +136,11 @@ def generateMeanTimeToLivePlot():
     print("Generating mean time to live plot script", file=sys.stderr)
     plot = open("meanttl.plg", 'w')
     config = "set title \"Mean Time to Live per Timestep\"\nset xlabel \"Timestep\"\nset ylabel \"Mean Time to Live\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"meanttl.pdf\"\n\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right top\nset term pdf mono\nset output \"meanttl.pdf\"\n\n"
     plot.write(config)
-    lines = "plot ARGV[1] using 'timestep':'bhlb_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
-    lines += "\t'' u 'timestep':'bhlt_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
-    lines += "\t'' u 'timestep':'bnlb_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
-    lines += "\t'' u 'timestep':'bnlt_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
-    lines += "\t'' u 'timestep':'ehlb_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
-    lines += "\t'' u 'timestep':'ehlt_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
-    lines += "\t'' u 'timestep':'enlb_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
-    lines += "\t'' u 'timestep':'enlt_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
-    lines += "\t'' u 'timestep':'rs_mttl' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    lines = "plot ARGV[1] using 'timestep':'bhlb_mttl' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian', \\\n"
+    lines += "\t'' u 'timestep':'ehlb_mttl' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Egoist', \\\n"
+    lines += "\t'' u 'timestep':'rs_mttl' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 0 title 'Raw Sugarscape'"
     plot.write(lines)
     plot.close()
 
@@ -160,17 +148,11 @@ def generateTotalWealthPlot():
     print("Generating total wealth plot script", file=sys.stderr)
     plot = open("wealth.plg", 'w')
     config = "set title \"Agent Total Wealth per Timestep\"\nset xlabel \"Timestep\"\nset ylabel \"Total Wealth\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"wealth.pdf\"\n\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf mono\nset output \"wealth.pdf\"\n\n"
     plot.write(config)
-    lines = "plot ARGV[1] using 'timestep':'bhlb_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
-    lines += "\t'' u 'timestep':'bhlt_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
-    lines += "\t'' u 'timestep':'bnlb_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
-    lines += "\t'' u 'timestep':'bnlt_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
-    lines += "\t'' u 'timestep':'ehlb_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
-    lines += "\t'' u 'timestep':'ehlt_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
-    lines += "\t'' u 'timestep':'enlb_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
-    lines += "\t'' u 'timestep':'enlt_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
-    lines += "\t'' u 'timestep':'rs_welt' with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    lines = "plot ARGV[1] using 'timestep':'bhlb_welt' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian', \\\n"
+    lines += "\t'' u 'timestep':'ehlb_welt' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Egoist', \\\n"
+    lines += "\t'' u 'timestep':'rs_welt' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 0 title 'Raw Sugarscape'"
     plot.write(lines)
     plot.close()
 
@@ -178,17 +160,11 @@ def generateTotalWealthNormalizedPlot():
     print("Generating total wealth normalized plot script", file=sys.stderr)
     plot = open("wealth_normalized.plg", 'w')
     config = "set title \"Agent Total Wealth per Timestep Normalized by Population\"\nset xlabel \"Timestep\"\nset ylabel \"Total Wealth / Population\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"wealth_normalized.pdf\"\n\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf mono\nset output \"wealth_normalized.pdf\"\n\n"
     plot.write(config)
-    lines = "plot ARGV[1] using 'timestep':(column('bhlb_welt')/column('bhlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
-    lines += "\t'' u 'timestep':(column('bhlt_welt')/column('bhlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
-    lines += "\t'' u 'timestep':(column('bnlb_welt')/column('bnlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
-    lines += "\t'' u 'timestep':(column('bnlt_welt')/column('bnlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
-    lines += "\t'' u 'timestep':(column('ehlb_welt')/column('ehlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
-    lines += "\t'' u 'timestep':(column('ehlt_welt')/column('ehlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
-    lines += "\t'' u 'timestep':(column('enlb_welt')/column('enlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
-    lines += "\t'' u 'timestep':(column('enlt_welt')/column('enlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
-    lines += "\t'' u 'timestep':(column('rs_welt')/column('rs_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    lines = "plot ARGV[1] using 'timestep':(column('bhlb_welt')/column('bhlb_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian', \\\n"
+    lines += "\t'' u 'timestep':(column('ehlb_welt')/column('ehlb_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Egoist', \\\n"
+    lines += "\t'' u 'timestep':(column('rs_welt')/column('rs_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 0 title 'Raw Sugarscape'"
     plot.write(lines)
     plot.close()
 
@@ -196,17 +172,11 @@ def generateStarvationAndCombatPlot():
     print("Generating starvation and combat deaths plot script", file=sys.stderr)
     plot = open("starvation_combat.plg", 'w')
     config = "set title \"Starvation and Combat Deaths per Timestep Normalized by Population\"\nset xlabel \"Timestep\"\nset ylabel \"Deaths / Population\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf\nset output \"starvation_combat.pdf\"\n\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right top\nset term pdf mono\nset output \"starvation_combat.pdf\"\n\n"
     plot.write(config)
-    lines = "plot ARGV[1] using 'timestep':(column('bhlb_strv')/column('bhlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 1 pt 0 title 'bhlb', \\\n"
-    lines += "\t'' u 'timestep':(column('bhlt_strv')/column('bhlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 2 pt 1 title 'bhlt', \\\n"
-    lines += "\t'' u 'timestep':(column('bnlb_strv')/column('bnlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 3 pt 2 title 'bnlb', \\\n"
-    lines += "\t'' u 'timestep':(column('bnlt_strv')/column('bnlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 4 pt 2 title 'bnlt', \\\n"
-    lines += "\t'' u 'timestep':(column('ehlb_strv')/column('ehlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 5 pt 3 title 'ehlb', \\\n"
-    lines += "\t'' u 'timestep':(column('ehlt_strv')/column('ehlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 6 pt 3 title 'ehlt', \\\n"
-    lines += "\t'' u 'timestep':(column('enlb_strv')/column('enlb_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 7 pt 4 title 'enlb', \\\n"
-    lines += "\t'' u 'timestep':(column('enlt_strv')/column('enlt_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 8 pt 4 title 'enlt', \\\n"
-    lines += "\t'' u 'timestep':(column('rs_strv')/column('rs_pop')) with linespoints pointinterval 100 pointsize 0.75 lt 1 dt 9 pt 5 title 'Raw Sugarscape'"
+    lines = "plot ARGV[1] using 'timestep':((column('bhlb_strv') + column('bhlb_comd'))/column('bhlb_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian Starvation and Combat Death', \\\n"
+    lines += "\t'' u 'timestep':((column('ehlb_strv') + column('ehlb_comd'))/column('ehlb_pop')) with linespoints pointinterval 100 pointsize 0.75  pt 2 title 'Egoist Starvation and Combat Death', \\\n"
+    lines += "\t'' u 'timestep':((column('rs_strv') + column('rs_comd'))/column('rs_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Raw Sugarscape Starvation and Combat Death'"
     plot.write(lines)
     plot.close()
 

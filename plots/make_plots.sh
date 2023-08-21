@@ -3,7 +3,7 @@ plots=( population.plg meanttl.plg wealth.plg wealth_normalized.plg starvation_c
 # Change to python3 (or other alias) if needed
 py=python
 
-$py parselogs.py -p ../data/ -t 1000 > data.dat
+$py parselogs.py -p ../data/ -t 5000 > data.dat
 
 for ((i=0; i<"${#plots[@]}"; i++))
 do
