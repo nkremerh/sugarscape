@@ -48,7 +48,7 @@ class Sugarscape:
         self.end = False # Simulation end flag
         # TODO: Remove redundant metrics
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
-                             "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanAgeAtDeath": 0,
+                             "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanAgeAtDeath": 0,
                              "seed": self.seed, "totalWealthLost": 0, "totalMetabolismCost": 0, "agentReproduced": 0,
                              "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0, "environmentWealthTotal": 0,
                              "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
@@ -611,6 +611,7 @@ class Sugarscape:
         tradeVolume = 0
         maxWealth = 0
         minWealth = sys.maxsize
+        meanHappiness = 0
         numTraders = 0
         totalWealthLost = 0
         totalMetabolismCost = 0
@@ -652,6 +653,7 @@ class Sugarscape:
             meanVision += agent.vision
             meanAge += agent.age
             meanWealth += agent.wealth
+            meanHappiness += agent.happiness
             if agent.tradeVolume > 0:
                 meanTradePrice += max(agent.spicePrice, agent.sugarPrice)
                 tradeVolume += agent.tradeVolume
@@ -689,6 +691,7 @@ class Sugarscape:
             agentWealthTotal = round(agentWealthTotal, 2)
             minWealth = round(minWealth, 2)
             maxWealth = round(maxWealth, 2)
+            meanHappiness = round(meanHappiness / numAgents, 2)
             agentWealthBurnRate = round(agentWealthBurnRate / numAgents, 2)
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
         else:
@@ -698,6 +701,7 @@ class Sugarscape:
             meanWealth = 0
             minWealth = 0
             maxWealth = 0
+            meanHappiness = 0
             tradeVolume = 0
             agentWealthBurnRate = 0
             agentMeanTimeToLive = 0
@@ -726,6 +730,7 @@ class Sugarscape:
         self.runtimeStats["meanWealth"] = meanWealth
         self.runtimeStats["minWealth"] = minWealth
         self.runtimeStats["maxWealth"] = maxWealth
+        self.runtimeStats["meanHappiness"] = meanHappiness
         self.runtimeStats["meanTradePrice"] = meanTradePrice
         self.runtimeStats["tradeVolume"] = tradeVolume
         self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.agents) > 1 else 0
