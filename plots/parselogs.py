@@ -123,8 +123,8 @@ def generatePlots():
 def generatePopulationPlot():
     print("Generating population plot script", file=sys.stderr)
     plot = open("population.plg", 'w')
-    config = "set title \"Population per Timestep\"\nset xlabel \"Timestep\"\nset ylabel \"Population\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf mono\nset output \"population.pdf\"\n\n"
+    config = "set xlabel \"Timestep\"\nset ylabel \"Population\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf mono font \"Times,16\"\nset output \"population.pdf\"\n\n"
     plot.write(config)
     lines = "plot ARGV[1] using 'timestep':'bhlb_pop' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian', \\\n"
     lines += "\t'' u 'timestep':'ehlb_pop' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Egoist', \\\n"
@@ -135,8 +135,8 @@ def generatePopulationPlot():
 def generateMeanTimeToLivePlot():
     print("Generating mean time to live plot script", file=sys.stderr)
     plot = open("meanttl.plg", 'w')
-    config = "set title \"Mean Time to Live per Timestep\"\nset xlabel \"Timestep\"\nset ylabel \"Mean Time to Live\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right top\nset term pdf mono\nset output \"meanttl.pdf\"\n\n"
+    config = "set xlabel \"Timestep\"\nset ylabel \"Mean Time to Live\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right top\nset term pdf mono font \"Times,16\"\nset output \"meanttl.pdf\"\n\n"
     plot.write(config)
     lines = "plot ARGV[1] using 'timestep':'bhlb_mttl' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian', \\\n"
     lines += "\t'' u 'timestep':'ehlb_mttl' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Egoist', \\\n"
@@ -147,8 +147,8 @@ def generateMeanTimeToLivePlot():
 def generateTotalWealthPlot():
     print("Generating total wealth plot script", file=sys.stderr)
     plot = open("wealth.plg", 'w')
-    config = "set title \"Agent Total Wealth per Timestep\"\nset xlabel \"Timestep\"\nset ylabel \"Total Wealth\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf mono\nset output \"wealth.pdf\"\n\n"
+    config = "set xlabel \"Timestep\"\nset ylabel \"Total Wealth\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf mono font \"Times,16\"\nset output \"wealth.pdf\"\n\n"
     plot.write(config)
     lines = "plot ARGV[1] using 'timestep':'bhlb_welt' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian', \\\n"
     lines += "\t'' u 'timestep':'ehlb_welt' with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Egoist', \\\n"
@@ -159,8 +159,8 @@ def generateTotalWealthPlot():
 def generateTotalWealthNormalizedPlot():
     print("Generating total wealth normalized plot script", file=sys.stderr)
     plot = open("wealth_normalized.plg", 'w')
-    config = "set title \"Agent Total Wealth per Timestep Normalized by Population\"\nset xlabel \"Timestep\"\nset ylabel \"Total Wealth / Population\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf mono\nset output \"wealth_normalized.pdf\"\n\n"
+    config = "set xlabel \"Timestep\"\nset ylabel \"Total Wealth / Population\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right bottom\nset term pdf mono font \"Times,16\"\nset output \"wealth_normalized.pdf\"\n\n"
     plot.write(config)
     lines = "plot ARGV[1] using 'timestep':(column('bhlb_welt')/column('bhlb_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian', \\\n"
     lines += "\t'' u 'timestep':(column('ehlb_welt')/column('ehlb_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Egoist', \\\n"
@@ -171,12 +171,12 @@ def generateTotalWealthNormalizedPlot():
 def generateStarvationAndCombatPlot():
     print("Generating starvation and combat deaths plot script", file=sys.stderr)
     plot = open("starvation_combat.plg", 'w')
-    config = "set title \"Starvation and Combat Deaths per Timestep Normalized by Population\"\nset xlabel \"Timestep\"\nset ylabel \"Deaths / Population\"\nset lt 1 lw 2 lc \"black\"\n"
-    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right top\nset term pdf mono\nset output \"starvation_combat.pdf\"\n\n"
+    config = "set xlabel \"Timestep\"\nset ylabel \"Deaths / Population\"\nset lt 1 lw 2 lc \"black\"\n"
+    config += "set xtics nomirror\nset ytics nomirror\nset key fixed right top\nset term pdf mono font \"Times,16\"\nset output \"starvation_combat.pdf\"\n\n"
     plot.write(config)
     lines = "plot ARGV[1] using 'timestep':((column('bhlb_strv') + column('bhlb_comd'))/column('bhlb_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 2 title 'Utilitarian Starvation and Combat Death', \\\n"
-    lines += "\t'' u 'timestep':((column('ehlb_strv') + column('ehlb_comd'))/column('ehlb_pop')) with linespoints pointinterval 100 pointsize 0.75  pt 2 title 'Egoist Starvation and Combat Death', \\\n"
-    lines += "\t'' u 'timestep':((column('rs_strv') + column('rs_comd'))/column('rs_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Raw Sugarscape Starvation and Combat Death'"
+    lines += "\t'' u 'timestep':((column('ehlb_strv') + column('ehlb_comd'))/column('ehlb_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 1 title 'Egoist Starvation and Combat Death', \\\n"
+    lines += "\t'' u 'timestep':((column('rs_strv') + column('rs_comd'))/column('rs_pop')) with linespoints pointinterval 100 pointsize 0.75  lt 1 dt 1 pt 0 title 'Raw Sugarscape Starvation and Combat Death'"
     plot.write(lines)
     plot.close()
 
