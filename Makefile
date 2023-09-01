@@ -34,6 +34,10 @@ data: $(DATACHECK)
 
 plots: $(PLOTCHECK)
 
+setup:
+	@echo "Attempting to find local Python 3 installation."
+	eval "type -P 'python3' && python3 setup.py || python setup.py" && mv setup.json $(CONFIG)
+
 test:
 	$(PYTHON) $(SUGARSCAPE) --conf $(CONFIG)
 
@@ -43,6 +47,6 @@ clean:
 lean:
 	rm -rf $(PLOTS) || true
 
-.PHONY: all clean data lean plots
+.PHONY: all clean data lean plots setup
 
 # vim: set noexpandtab tabstop=4:

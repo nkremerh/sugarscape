@@ -768,6 +768,9 @@ class Sugarscape:
 def parseConfiguration(configFile, configuration):
     file = open(configFile)
     options = json.loads(file.read())
+    # If using the top-level config file, access correct JSON object
+    if "sugarscapeOptions" in options:
+        options = options["sugarscapeOptions"]
     for opt in configuration:
         if opt in options:
             configuration[opt] = options[opt]
@@ -775,8 +778,8 @@ def parseConfiguration(configFile, configuration):
 
 def parseOptions(configuration):
     commandLineArgs = sys.argv[1:]
-    shortOptions = "chp:"
-    longOptions = ["conf=", "help", "profile"]
+    shortOptions = "ch:"
+    longOptions = ["conf=", "help"]
     try:
         args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
     except getopt.GetoptError as err:
@@ -794,8 +797,6 @@ def parseOptions(configuration):
             parseConfiguration(currVal, configuration)
         elif currArg in ("-h", "--help"):
             printHelp()
-        elif currArg in ("-p", "--profile"):
-            configuration["profileMode"] = True
     return configuration
 
 def printHelp():
