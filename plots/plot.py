@@ -114,12 +114,17 @@ def printRawData(dataset, totalTimesteps):
         file.write(line)
     file.close()
 
-def generatePlots(models):
-    generatePopulationPlot(models)
-    generateMeanTimeToLivePlot(models)
-    generateTotalWealthPlot(models)
-    generateTotalWealthNormalizedPlot(models)
-    generateStarvationAndCombatPlot(models)
+def generatePlots(config, models):
+    if "population" in config["plots"]:
+        generatePopulationPlot(models)
+    if "meanttl" in config["plots"]:
+        generateMeanTimeToLivePlot(models)
+    if "wealth" in config["plots"]:
+        generateTotalWealthPlot(models)
+    if "wealthNormalized" in config["plots"]:
+        generateTotalWealthNormalizedPlot(models)
+    if "starvationCombat" in config["plots"]:
+        generateStarvationAndCombatPlot(models)
 
 def generatePopulationPlot(models):
     print("Generating population plot script")
@@ -251,6 +256,6 @@ if __name__ == "__main__":
     dataset = parseDataset(path, dataset, totalTimesteps)
     dataset = findMeans(dataset)
     printRawData(dataset, totalTimesteps)
-    generatePlots(models)
+    generatePlots(config, models)
     printSummaryStats(dataset)
     exit(0)
