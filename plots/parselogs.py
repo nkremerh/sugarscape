@@ -236,16 +236,17 @@ if __name__ == "__main__":
     path = options["path"]
     config = options["config"]
     configFile = open(config)
-    configs = json.loads(configFile.read())
+    config = json.loads(configFile.read())
     configFile.close()
-    totalTimesteps = configs["plotTimesteps"]
-    models = configs["decisionModels"]
+    totalTimesteps = config["plotTimesteps"]
+    models = config["decisionModels"]
     dataset = {}
     for model in models:
         dataset[model] = {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}}
 
-    if (not os.path.exists(path)):
-        raise Exception("Path {0} not recognized".format(path))
+    if not os.path.exists(path):
+        print("Path {0} not recognized.".format(path))
+        printHelp()
 
     dataset = parseDataset(path, dataset, totalTimesteps)
     dataset = findMeans(dataset)

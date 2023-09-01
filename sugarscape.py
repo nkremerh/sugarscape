@@ -422,6 +422,9 @@ class Sugarscape:
         ethicalFactor = configs["agentEthicalFactor"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
         ethicalTheory = configs["agentEthicalTheory"]
+        # Convert clever name for default behavior
+        if ethicalTheory == "rawSugarscape":
+            ethicalTheory = "none"
 
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},

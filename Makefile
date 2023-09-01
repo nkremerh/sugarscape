@@ -4,7 +4,8 @@ PLOTCHECK = plots/plots.complete
 
 DATASET = $(DATACHECK) \
 		data/*[[:digit:]]*.config \
-		data/*.json
+		data/*.json \
+		data/*.sh
 
 PLOTS = $(PLOTCHECK) \
 		plots/*.dat \
@@ -17,11 +18,10 @@ CLEAN = log.json \
 
 # Change to python3 (or other alias) if needed
 PYTHON = python
-SH = bash
 SUGARSCAPE = sugarscape.py
 
 $(DATACHECK):
-	cd data && $(SH) collect.sh
+	cd data && $(PYTHON) run.py --conf ../$(CONFIG)
 	touch $(DATACHECK)
 
 $(PLOTCHECK): $(DATACHECK)
