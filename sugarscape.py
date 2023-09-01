@@ -778,7 +778,7 @@ def parseConfiguration(configFile, configuration):
 
 def parseOptions(configuration):
     commandLineArgs = sys.argv[1:]
-    shortOptions = "ch:"
+    shortOptions = "c:h:"
     longOptions = ["conf=", "help"]
     try:
         args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
@@ -789,8 +789,6 @@ def parseOptions(configuration):
     for currArg, currVal in args:
         nextArg += 1
         if currArg in("-c", "--conf"):
-            if currArg == "-c" and nextArg < len(commandLineArgs):
-                currVal = commandLineArgs[nextArg]
             if currVal == "":
                 print("No config file provided.")
                 printHelp()

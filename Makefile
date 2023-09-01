@@ -25,7 +25,7 @@ $(DATACHECK):
 	touch $(DATACHECK)
 
 $(PLOTCHECK): $(DATACHECK)
-	cd plots && $(SH) make_plots.sh
+	cd plots && $(PYTHON) parselogs.py --path ../data/ --conf ../$(CONFIG)
 	touch $(PLOTCHECK)
 
 all: $(DATACHECK) $(PLOTCHECK)
