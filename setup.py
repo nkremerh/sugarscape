@@ -33,19 +33,9 @@ def printHelp():
     print("Usage:\n\tpython setup.py --conf config.json\n\nOptions:\n\t-c,--conf\tUse specified config file for simulation settings.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
-def replaceMakefileSettings(settings, currShell, currPython):
-    flag = 0
-    if settings["pathToBash"] != currShell:
-        flag = 1
-        print("The settings for the Bash and Python paths are replaced in the Makefile.\nYou will be prompted to allow in-file replacement if you changed either setting.\nDenying change will cause the given option to be reverted to its previous value.")
-        replace = input("Replace Bash setting in the Makefile to {0} (currently: {1}) [Y/n]: ".format(settings["pathToBash"], currShell))
-        if replace.upper() == 'Y':
-            os.system("sed -i 's/SH = {0}/SH = {1}/g' Makefile".format(currShell, settings["pathToBash"]))
-        else:
-            settings["pathToBash"] = currShell
+def replaceMakefileSettings(settings, currPython):
     if settings["pathToPython"] != currPython:
-        if flag == 0:
-            print("The settings for the Bash and Python paths are replaced in the Makefile.\nYou will be prompted to allow in-file replacement if you changed either setting.\nDenying change will cause the given option to be reverted to its previous value.")
+        print("The setting for the Python path is replaced in the Makefile.\nYou will be prompted to allow in-file replacement if you changed this setting.\nDenying the change will cause the given option to be reverted to its previous value.")
         replace = input("Replace Python setting in the Makefile to {0} (currently: {1}) [Y/n]: ".format(settings["pathToPython"], currPython))
         if replace.upper() == 'Y':
             os.system("sed -i 's/PYTHON = {0}/PYTHON = {1}/g' Makefile".format(currPython, settings["pathToPython"]))
@@ -91,11 +81,10 @@ if __name__ == "__main__":
     configFile = open(configuration)
     settings = json.loads(configFile.read())
     configFile.close()
-    makefileShell = settings["pathToBash"]
     makefilePython = settings["pathToPython"]
     newSettings = selectSettings(settings)
     newSettings["sugarscapeOptions"] = selectSettings(settings["sugarscapeOptions"], "sugarscape")
-    replaceMakefileSettings(newSettings, makefileShell, makefilePython)
+    replaceMakefileSettings(newSettings, makefilePython)
 
     outfile = open("setup.json", 'w')
     outfile.write(json.dumps(newSettings, sort_keys=True))
