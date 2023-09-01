@@ -348,46 +348,33 @@ timesteps: int
     Note: Value of -1 causes simulation to run forever or until there are no more living agents.
     Default: 200
 
-Other Configurable Parameters:
-data/collect.sh:
-configs (line 3): [string, ...]
-    Sets the list of decision models to run.
-    Default: ["benthamNoLookaheadBinary", "benthamNoLookaheadTop", "benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "egoisticHalfLookaheadTop", "egoisticHalfLookaheadBinary", "egoisticNoLookaheadTop", "egoisticNoLookaheadBinary", "rawSugarscape"]
-    Note: adding a new decision model requires a matching [model].config file to be present in the data subdirectory.
+Other JSON Configurable Options:
+decisionModels: [string, ...]
+    Set the decision models (ethical theories) to be tested in data collection.
+    Default: ["benthamHalfLookaheadBinary", "egoisticHalfLookaheadBinary", "rawSugarscape"]
 
-n (line 10): int
-    Set the number of seeds to run.
+numParallelSimJobs: int
+    Set the number of simulations to run in parallel during data collection.
+    Default: 1
+
+numSeeds: int
+    Set the number of random seeds to be tested in data collection.
     Default: 100
 
-N (line 12): int
-    Set the number of parallel instances of the simulation to run.
-    Default: 1
-    Note: this number should not exceed available CPU cores.
+pathToBash: path
+    Set the path to the local Bash installation.
+    Note: Bash is required to run the data collection.
+    Default: "bash"
 
-py (line 7): path
-    Sets an alias to the system Python 3 executable.
-    Default: python
+pathToPython: path
+    Set the path to the local Python 3 installation.
+    Note: Python 3 is required to run the simulation.
+    Default: "python"
 
-Makefile:
-PYTHON (line 19): path
-    Sets an alias to the system Python 3 executable.
-    Default: python
+plots: [string, ...]
+    Set the plots to be created once data has been collected.
+    Default: ["population", "meanttl", "starvationCombat", "wealth", "wealthNormalized"]
 
-SH (line 20): path
-    Sets an alias to the system Bash executable.
-    Default: bash
-    Note: use of Bash is a requirement for the shell scripts to function properly.
-
-plots/make_plots.sh:
-plots (line 1): [string, ...]
-    Sets the list of plots to render.
-    Default: ["population.plg", "meanttl.plg", "wealth.plg", "wealth_normalized.plg", "starvation_combat.plg"]
-    Note: adding a new plot requires modifying the source code of plots/parselogs.py.
-
-py (line 4): path
-    Sets an alias to the system Python 3 executable.
-    Default: python
-
--t (line 6): int
-    Sets the number of timesteps to render for the plots.
+plotTimesteps: int
+    Set the number of timesteps to plot.
     Default: 1000

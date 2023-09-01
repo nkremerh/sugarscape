@@ -5,7 +5,7 @@
     "numSeeds": 100,
     "pathToBash": "bash",
     "pathToPython": "python",
-    "plots": ["population.plg", "meanttl.plg", "wealth.plg", "wealth_normalized.plg", "starvation_combat.plg"],
+    "plots": ["population", "meanttl", "starvationCombat", "wealth", "wealthNormalized"],
     "plotTimesteps": 1000,
     "sugarscapeOptions": {
         "__README__": "Default values for Sugarscape simulation provided here. Details can be found in the README.",
