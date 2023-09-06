@@ -4,7 +4,7 @@ import agent
 import cell
 import disease
 import environment
-import gui
+#import gui
 
 import cProfile
 import getopt
@@ -918,6 +918,8 @@ if __name__ == "__main__":
                      }
     configuration = parseOptions(configuration)
     configuration = verifyConfiguration(configuration)
+    if configuration["headlessMode"] == False:
+        import gui
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
     if configuration["profileMode"] == True:
