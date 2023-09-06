@@ -4,7 +4,6 @@ import agent
 import cell
 import disease
 import environment
-#import gui
 
 import cProfile
 import getopt
