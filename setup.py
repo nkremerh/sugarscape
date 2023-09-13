@@ -62,12 +62,16 @@ def selectSettings(settings, mode=None):
                     value = list(map(float, listValues))
                 elif isinstance(value[0], int):
                     value = list(map(int, listValues))
+                elif isinstance(value[0], bool):
+                    value = list(map(bool, listValues))
                 elif isinstance(value[0], str):
                     value = listValues
             elif isinstance(settings[setting], float):
                 value = float(value)
             elif isinstance(settings[setting], int):
                 value = int(value)
+            elif isinstance(value[0], bool):
+                value = list(map(bool, listValues))
         else:
             value = settings[setting]
         newSettings[setting] = value
