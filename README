@@ -360,6 +360,10 @@ decisionModels: [string, ...]
     Set the decision models (ethical theories) to be tested in data collection.
     Default: ["benthamHalfLookaheadBinary", "egoisticHalfLookaheadBinary", "rawSugarscape"]
 
+jobUpdateFrequency: int
+    Set the frequency at which the number of remaining jobs is reported.
+    Default: 5
+
 numParallelSimJobs: int
     Set the number of simulations to run in parallel during data collection.
     Default: 1

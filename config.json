@@ -1,6 +1,7 @@
 {
     "__README__": "Default values for helper scripts. Details can be found in the README.",
     "decisionModels": ["benthamHalfLookaheadBinary", "egoisticHalfLookaheadBinary", "rawSugarscape"],
+    "jobUpdateFrequency": 5,
     "numParallelSimJobs": 1,
     "numSeeds": 100,
     "pathToBash": "bash",

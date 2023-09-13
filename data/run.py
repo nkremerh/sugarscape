@@ -83,7 +83,9 @@ def runSimulations(config, path):
     shell += "echo \"Running decision model $f ($i/$j)\"\n# Run simulation for config\n"
     shell += "{0} ../sugarscape.py --conf $f &\n\n".format(config["pathToPython"])
     shell += "if [[ $(jobs -r -p | wc -l) -ge $N ]]; then\nwait -n\nfi\ni=$((i+1))\ndone\n\n"
-    shell += "echo \"Waiting for jobs to finish up.\"\nwhile [[ $(jobs -r -p | wc -l) -gt 0 ]];\ndo\nwait -n\ndone\n"
+    shell += "sem=0\necho \"Waiting for jobs to finish up.\"\nwhile [[ $(jobs -r -p | wc -l) -gt 0 ]];\ndo\n"
+    shell += "sem=$(((sem+1)%{0}))\nif [[ $sem -eq 0 ]]; then\nstatus=$( ps -AF | grep 'sugarscape' | wc -l )\nstatus=$((status-1))\n"
+    shell += "echo -n $status\necho ' jobs remaining.'\nfi\nwait -n\ndone\n".format(config["jobUpdateFrequency"])
 
     sh = open("temp.sh", 'w')
     sh.write(shell)
