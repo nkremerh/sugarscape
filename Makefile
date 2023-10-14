@@ -25,7 +25,7 @@ $(DATACHECK):
 	touch $(DATACHECK)
 
 $(PLOTCHECK): $(DATACHECK)
-	cd plots && $(PYTHON) plot.py --path ../data/ --conf ../$(CONFIG)
+	cd plots && $(PYTHON) plot.py --path ../data/ --conf ../$(CONFIG) --outf data.dat
 	touch $(PLOTCHECK)
 
 all: $(DATACHECK) $(PLOTCHECK)
