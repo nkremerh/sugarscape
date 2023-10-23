@@ -5,7 +5,9 @@ Python implementation of the Sugarscape agent-based computational model introduc
 Inspired by previous work from Herve Lange (https://github.com/langerv/sugarscape) and Joshua Palicka (https://github.com/joshuapalicka/sugarscape).
 
 Requirements:
+Bash
 Python 3
+TkInter
 
 Usage:
 python sugarscape.py
@@ -95,21 +97,25 @@ A JSON configuration file can be passed to the simulation, overwriting the defau
 
 agentAggressionFactor: [float, float]
     Set the aggressiveness of an agent.
-    The more aggressive an agent the more likely they will be enticed by combat options.
+    Note: The more aggressive an agent the more likely they will be enticed by combat options.
     Default: [0, 0]
 
 agentBaseInterestRate: [float, float]
     Set the interest rate for an agent's lending as a percentage.
     Default: [0.0, 0.0]
 
-agentEthicalFactor: [float, float]
-    Set the agent weight of ethical decisionmaking over biological imperatives.
-    Default: [0, 0]
-
-agentEthicalTheory: string
-    Set the agent ethical theory for algorithmic decisionmaking.
-    Options: "altruisticHalfLookaheadBinary", "altruisticHalfLookaheadTop", "benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "benthamNoLookaheadBinary", "benthamNoLookaheadTop", "egoisticHalfLookaheadBinary", "egoisticHalfLookaheadTop", "none"
+agentDecisionModel: string
+    Set the agent decision model for different decisionmaking.
+    Options: "altruisticHalfLookaheadBinary", "altruisticHalfLookaheadTop", "benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "benthamNoLookaheadBinary", "benthamNoLookaheadTop", "egoisticHalfLookaheadBinary", "egoisticHalfLookaheadTop", "none", "rawSugarscape"
     Default: "none"
+
+agentDecisionModelData: object
+    Set additional data for the agent decision model.
+    Note: Not currently implemented.
+
+agentDecisionModelFactor: [float, float]
+    Set the agent weight of their decision model over biological imperatives.
+    Default: [0, 0]
 
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
@@ -210,7 +216,7 @@ agentTagStringLength: int
 
 agentTradeFactor: [float, float]
     Set agent trade aggressiveness.
-    The more aggressive in trading an agent, the more resources they will attempt to trade.
+    Note: The more aggressive in trading an agent, the more resources they will attempt to trade.
     Default: [0, 0]
 
 agentVision: [int, int]

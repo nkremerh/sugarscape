@@ -36,7 +36,7 @@ def findAltruisticHalfLookaheadValueOfCell(agent, cell):
             intensity = -1 * intensity
             futureDuration = -1 * futureDuration
             futureIntensity = -1 * futureIntensity
-            neighborValueOfCell = neighbor.ethicalFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+            neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
         # If move will kill this neighbor, consider this a penalty
         elif neighbor != agent and cell == neighbor.cell:
             neighborValueOfCell = -1 * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
@@ -44,7 +44,7 @@ def findAltruisticHalfLookaheadValueOfCell(agent, cell):
             if neighborValueOfCell > -1:
                 neighborValueOfCell = -1
         else:
-            neighborValueOfCell = neighbor.ethicalFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+            neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
         cellValue += neighborValueOfCell
     return cellValue
 
@@ -79,13 +79,13 @@ def findBenthamHalfLookaheadValueOfCell(agent, cell):
             intensity = -1 * intensity
             futureDuration = -1 * futureDuration
             futureIntensity = -1 * futureIntensity
-            neighborValueOfCell = neighbor.ethicalFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+            neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
         elif neighbor != agent and cell == neighbor.cell:
             neighborValueOfCell = -1 * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
             if neighborValueOfCell > -1:
                 neighborValueOfCell = -1
         else:
-            neighborValueOfCell = neighbor.ethicalFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+            neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
         if selfishnessFactor != -1:
             if neighbor == agent:
                 neighborValueOfCell *= selfishnessFactor
@@ -130,7 +130,7 @@ def findBenthamNoLookaheadValueOfCell(agent, cell):
             intensity = -1 * intensity
             futureDuration = -1 * futureDuration
             futureIntensity = -1 * futureIntensity
-            neighborValueOfCell = neighbor.ethicalFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
+            neighborValueOfCell = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
         # If move will kill this neighbor, consider this a penalty
         elif neighbor != agent and cell == neighbor.cell:
             neighborValueOfCell = -1 * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
@@ -138,7 +138,7 @@ def findBenthamNoLookaheadValueOfCell(agent, cell):
             if neighborValueOfCell > -1:
                 neighborValueOfCell = -1
         else:
-            neighborValueOfCell = neighbor.ethicalFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
+            neighborValueOfCell = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
         if selfishnessFactor != -1:
             if neighbor == agent:
                 neighborValueOfCell *= selfishnessFactor
@@ -176,7 +176,7 @@ def findEgoisticHalfLookaheadValueOfCell(agent, cell):
     futureExtent = len(agent.findNeighborhood(cell)) / (neighbor.vision * 4) if neighbor.vision > 0 else 1
     # Assuming agent can only see in four cardinal directions
     extent = canSee / (neighbor.vision * 4) if neighbor.vision > 0 else 1
-    neighborValueOfCell = neighbor.ethicalFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+    neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
     cellValue += neighborValueOfCell
     return cellValue
 
@@ -208,6 +208,6 @@ def findEgoisticNoLookaheadValueOfCell(agent, cell):
     futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
     # Assuming agent can only see in four cardinal directions
     extent = canSee / (neighbor.vision * 4) if neighbor.vision > 0 else 1
-    neighborValueOfCell = neighbor.ethicalFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
+    neighborValueOfCell = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
     cellValue += neighborValueOfCell
     return cellValue

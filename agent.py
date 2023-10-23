@@ -38,9 +38,9 @@ class Agent:
         self.inheritancePolicy = configuration["inheritancePolicy"]
         self.startingImmuneSystem = configuration["immuneSystem"]
         self.immuneSystem = configuration["immuneSystem"]
-        self.ethicalFactor = configuration["ethicalFactor"]
+        self.decisionModelFactor = configuration["decisionModelFactor"]
         self.selfishnessFactor = configuration["selfishnessFactor"]
-        self.ethicalTheory = configuration["ethicalTheory"]
+        self.decisionModel = configuration["decisionModel"]
 
         self.alive = True
         self.age = 0
@@ -567,7 +567,7 @@ class Agent:
             cellRecord = {"cell": cell, "wealth": cellWealth, "range": travelDistance}
             potentialCells.append(cellRecord)
 
-        if self.ethicalFactor > 0:
+        if self.decisionModelFactor > 0:
             bestCell = self.findBestEthicalCell(potentialCells, bestCell)
         if bestCell == None:
             bestCell = self.cell
@@ -584,11 +584,11 @@ class Agent:
         if "all" in self.debug or "agent" in self.debug:
             self.printCellScores(cells)
         # If not an ethical agent, return top selfish choice
-        if self.ethicalTheory == "none":
+        if self.decisionModel == "none":
             return greedyBestCell
 
         # Calculate initial utility value calculation and naively select based on binary decision first
-        if "benthamNoLookahead" in self.ethicalTheory:
+        if "benthamNoLookahead" in self.decisionModel:
             for cell in cells:
                 ethicalScore = ethics.findBenthamNoLookaheadValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
@@ -596,7 +596,7 @@ class Agent:
                 if cell["wealth"] > 0:
                     bestCell = cell["cell"]
                     break
-        elif "benthamHalfLookahead" in self.ethicalTheory:
+        elif "benthamHalfLookahead" in self.decisionModel:
             for cell in cells:
                 ethicalScore = ethics.findBenthamHalfLookaheadValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
@@ -605,7 +605,7 @@ class Agent:
                     bestCell = cell["cell"]
                     break
 
-        elif "altruisticHalfLookahead" in self.ethicalTheory:
+        elif "altruisticHalfLookahead" in self.decisionModel:
             for cell in cells:
                 ethicalScore = ethics.findAltruisticHalfLookaheadValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
@@ -613,7 +613,7 @@ class Agent:
                 if cell["wealth"] > 0:
                     bestCell = cell["cell"]
                     break
-        elif "egoisticHalfLookahead" in self.ethicalTheory:
+        elif "egoisticHalfLookahead" in self.decisionModel:
             for cell in cells:
                 ethicalScore = ethics.findEgoisticHalfLookaheadValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
@@ -621,7 +621,7 @@ class Agent:
                 if cell["wealth"] > 0:
                     bestCell = cell["cell"]
                     break
-        elif "egoisticNoLookahead" in self.ethicalTheory:
+        elif "egoisticNoLookahead" in self.decisionModel:
             for cell in cells:
                 ethicalScore = ethics.findEgoisticNoLookaheadValueOfCell(self, cell["cell"])
                 cell["wealth"] = ethicalScore
@@ -631,7 +631,7 @@ class Agent:
                     break
 
         # If additional ordering consideration, select new best cell
-        if "Top" in self.ethicalTheory:
+        if "Top" in self.decisionModel:
             cells = self.sortCellsByWealth(cells)
             cells.reverse()
             if "all" in self.debug or "agent" in self.debug:
@@ -674,8 +674,8 @@ class Agent:
         parentEndowments = {
         "aggressionFactor": [self.aggressionFactor, mate.aggressionFactor],
         "baseInterestRate": [self.baseInterestRate, mate.baseInterestRate],
-        "ethicalFactor": [self.ethicalFactor, mate.ethicalFactor],
-        "ethicalTheory": [self.ethicalTheory, mate.ethicalTheory],
+        "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
+        "decisionModel": [self.decisionModel, mate.decisionModel],
         "fertilityAge": [self.fertilityAge, mate.fertilityAge],
         "fertilityFactor": [self.fertilityFactor, mate.fertilityFactor],
         "infertilityAge": [self.infertilityAge, mate.infertilityAge],

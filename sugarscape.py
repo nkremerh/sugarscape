@@ -418,16 +418,16 @@ class Sugarscape:
         baseInterestRate = configs["agentBaseInterestRate"]
         maxFriends = configs["agentMaxFriends"]
         inheritancePolicy = configs["agentInheritancePolicy"]
-        ethicalFactor = configs["agentEthicalFactor"]
+        decisionModelFactor = configs["agentDecisionModelFactor"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
-        ethicalTheory = configs["agentEthicalTheory"]
+        decisionModel = configs["agentDecisionModel"]
         # Convert clever name for default behavior
-        if ethicalTheory == "rawSugarscape":
-            ethicalTheory = "none"
+        if decisionModel == "rawSugarscape":
+            decisionModel = "none"
 
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
-                          "ethicalFactor": {"endowments": [], "curr": ethicalFactor[0], "min": ethicalFactor[0], "max": ethicalFactor[1]},
+                          "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
                           "selfishnessFactor": {"endowments": [], "curr": selfishnessFactor[0], "min": selfishnessFactor[0], "max": selfishnessFactor[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
@@ -520,7 +520,7 @@ class Sugarscape:
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
-                              "ethicalTheory": ethicalTheory}
+                              "decisionModel": decisionModel}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -773,6 +773,14 @@ def parseConfiguration(configFile, configuration):
     # If using the top-level config file, access correct JSON object
     if "sugarscapeOptions" in options:
         options = options["sugarscapeOptions"]
+
+    # Keep compatibility with outdated configuration files
+    optkeys = options.keys()
+    if "agentEthicalTheory" in optkeys:
+        options["agentDecisionModel"] = options["agentEthicalTheory"]
+    if "agentEthicalFactor" in optkeys:
+        options["agentDecisionModelFactor"] = options["agentEthicalFactor"]
+
     for opt in configuration:
         if opt in options:
             configuration[opt] = options[opt]
@@ -818,9 +826,13 @@ def verifyConfiguration(configuration):
 
     # Ensure at most number of tribes equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
-            configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
+        configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
     if configuration["environmentMaxTribes"] > 11:
         configuration["environmentMaxTribes"] = 11
+
+    # Keep compatibility with outdated configuration files
+    if configuration["agentDecisionModel"] == "rawSugarscape":
+        configuration["agentDecisionModel"] = "none"
 
     if len(configuration["agentStartingQuadrants"]) == 0:
         configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
@@ -858,9 +870,8 @@ if __name__ == "__main__":
     # Set default values for simulation configuration
     configuration = {"agentAggressionFactor": [0, 0],
                      "agentBaseInterestRate": [0.0, 0.0],
-                     "agentEthicalFactor": [0, 0],
-                     "agentSelfishnessFactor": [-1, -1],
-                     "agentEthicalTheory": "none",
+                     "agentDecisionModel": "none",
+                     "agentDecisionModelFactor": [0, 0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
@@ -876,6 +887,7 @@ if __name__ == "__main__":
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentReplacements": 0,
+                     "agentSelfishnessFactor": [-1, -1],
                      "agentSpiceMetabolism": [0, 0],
                      "agentStartingSpice": [0, 0],
                      "agentStartingSugar": [10, 40],
