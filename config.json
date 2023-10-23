@@ -65,6 +65,7 @@
         "headlessMode": false,
         "logfile": "log.json",
         "profileMode": false,
+        "screenshots": false,
         "seed": -1,
         "startingAgents": 250,
         "startingDiseases": 50,

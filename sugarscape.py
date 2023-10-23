@@ -569,7 +569,11 @@ class Sugarscape:
             self.pauseSimulation()
         t = 1
         timesteps = timesteps - self.timestep
+        screenshots = 0
         while t <= timesteps and len(self.agents) > 0:
+            if self.configuration["screenshots"] == True:
+                self.gui.canvas.postscript(file="screenshot{0}.ps".format(psacc), colormode="color")
+                screenshots += 1
             self.doTimestep()
             t += 1
             if self.gui != None and self.run == False:
@@ -922,6 +926,7 @@ if __name__ == "__main__":
                      "headlessMode": False,
                      "logfile": None,
                      "profileMode": False,
+                     "screenshots": False,
                      "seed": -1,
                      "startingAgents": 250,
                      "startingDiseases": 0,
