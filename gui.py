@@ -57,7 +57,7 @@ class GUI:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
         environmentColorButton.grid(row=0, column=3, sticky="nsew")
 
-        statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
+        statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Vision: - | Movement - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
         cellLabel = tkinter.Label(window, text="Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sex: - | Sugar: - | Spice: - ", font="Roboto 10", justify=tkinter.CENTER)
         cellLabel.grid(row=2, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
@@ -70,7 +70,7 @@ class GUI:
         self.widgets["environmentColorMenu"] = environmentColorMenu
         self.widgets["statsLabel"] = statsLabel
         self.widgets["cellLabel"] = cellLabel
-
+ 
     def configureEnvironment(self):
         for i in range(self.sugarscape.environmentHeight):
             for j in range(self.sugarscape.environmentWidth):
@@ -244,8 +244,8 @@ class GUI:
 
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats
-        statsString = "Timestep: {0} | Agents: {1} | Metabolism: {2:.2f} | Vision: {3:.2f} | Gini: {4:.2f} | Trade Price: {5:.2f} | Trade Volume: {6:.2f}".format(
-                self.sugarscape.timestep, stats["population"], stats["meanMetabolism"], stats["meanVision"], stats["giniCoefficient"], stats["meanTradePrice"], stats["tradeVolume"])
+        statsString = "Timestep: {0} | Agents: {1} | Metabolism: {2:.2f} | Vision: {3:.2f} | Movement: {4:.2f} | Gini: {5:.2f} | Trade Price: {6:.2f} | Trade Volume: {7:.2f}".format(
+                self.sugarscape.timestep, stats["population"], stats["meanMetabolism"], stats["meanVision"], stats["meanMovement"], stats["giniCoefficient"], stats["meanTradePrice"], stats["tradeVolume"])
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
         if self.lastSelectedCell != None:
