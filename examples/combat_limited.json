@@ -1,5 +1,5 @@
 {
-    "__README__": "Agent combat with unlimited combat loot and constant sugar growback (pgs. 86-90 of Growing Artificial Societies).",
+    "__README__": "Agent combat with limited combat loot and constant sugar growback (pgs. 86-90 of Growing Artificial Societies).",
     "agentAggressionFactor": [0, 0],
     "agentBaseInterestRate": [0, 0],
     "agentFemaleInfertilityAge": [40, 50],
