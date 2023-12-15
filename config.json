@@ -38,6 +38,9 @@
         "agentSugarMetabolism": [1, 4],
         "agentTagStringLength": 11,
         "agentTradeFactor": [1, 1],
+        "agentUniversalSpice": [0, 0],
+        "agentUniversalSugar": [0, 0],
+        "agentUniversalIncomeTimestep": [1, 1],
         "agentVision": [1, 6],
         "debugMode": ["none"],
         "diseaseAggressionPenalty": [-1, 1],
@@ -69,6 +72,6 @@
         "seed": -1,
         "startingAgents": 250,
         "startingDiseases": 50,
-        "timesteps": 1000
+        "timesteps": 100
     }
 }
