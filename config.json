@@ -40,7 +40,6 @@
         "agentTradeFactor": [1, 1],
         "agentUniversalSpice": [0, 0],
         "agentUniversalSugar": [0, 0],
-        "agentUniversalIncomeTimestep": [1, 1],
         "agentVision": [1, 6],
         "debugMode": ["none"],
         "diseaseAggressionPenalty": [-1, 1],
@@ -64,6 +63,8 @@
         "environmentSugarConsumptionPollutionFactor": 0,
         "environmentSugarProductionPollutionFactor": 0,
         "environmentSugarRegrowRate": 1,
+        "environmentUniversalSpiceIncomeInterval": 0,
+        "environmentUniversalSugarIncomeInterval": 0,
         "environmentWidth": 50,
         "headlessMode": false,
         "logfile": "log.json",
@@ -72,6 +73,6 @@
         "seed": -1,
         "startingAgents": 250,
         "startingDiseases": 50,
-        "timesteps": 100
+        "timesteps": 1000
     }
 }

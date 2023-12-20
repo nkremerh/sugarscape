@@ -227,10 +227,6 @@ agentUniversalSugar: [float, float]
     Set the amount agents recieve for universal basic sugar income. 
     Default: [0, 0]
 
-agentUniversalIncomeTimestep: [int, int]
-    Set the first time step that universal income starts.
-    Default: [1, 1]
-
 agentVision: [int, int]
     Set the distance in the four cardinal directions an agent can see.
     Default: [1, 6]
@@ -337,6 +333,14 @@ environmentSugarRegrowRate: int
     Set the amount of sugar regrown across the environment per timestep.
     Each cell can only grow up to their maximum sugar value.
     Default: 1
+
+environmentUniversalSpiceIncomeInterval: int
+    Set the interval in timesteps when environment produces universal basic spice income.
+    Default: 0
+
+environmentUniversalSugarIncomeInterval: int
+    Set the interval in timesteps when environment produces universal basic sugar income.
+    Default: 0
 
 environmentWidth: int
     Set the width in cells of the Sugarscape environment.

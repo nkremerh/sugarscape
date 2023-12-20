@@ -25,6 +25,8 @@ class Environment:
         self.sugarProductionPollutionFactor = configuration["sugarProductionPollutionFactor"]
         self.spiceProductionPollutionFactor = configuration["spiceProductionPollutionFactor"]
         self.maxCombatLoot = configuration["maxCombatLoot"]
+        self.universalSpiceIncomeInterval = configuration["universalSpiceIncomeInterval"]
+        self.universalSugarIncomeInterval = configuration["universalSugarIncomeInterval"]
         self.equator = math.ceil(self.height / 2)
         # Populate grid with NoneType objects
         self.grid = [[None for j in range(width)]for i in range(height)]

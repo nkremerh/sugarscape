@@ -30,6 +30,8 @@ class Sugarscape:
                                     "sugarProductionPollutionFactor": configuration["environmentSugarProductionPollutionFactor"],
                                     "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"], "maxCombatLoot": configuration["environmentMaxCombatLoot"],
                                     "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"],
+                                    "universalSpiceIncomeInterval": configuration["environmentUniversalSpiceIncomeInterval"],
+                                    "universalSugarIncomeInterval": configuration["environmentUniversalSugarIncomeInterval"],
                                     "sugarscapeSeed": configuration["seed"]}
         self.seed = configuration["seed"]
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
@@ -426,7 +428,6 @@ class Sugarscape:
             decisionModel = "none"
         universalSpice = configs["agentUniversalSpice"]
         universalSugar = configs["agentUniversalSugar"]
-        universalIncomeTimestep = configs["agentUniversalIncomeTimestep"]
 
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
@@ -450,10 +451,9 @@ class Sugarscape:
                           "tradeFactor": {"endowments": [], "curr": tradeFactor[0], "min": tradeFactor[0], "max": tradeFactor[1]},
                           "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]},
                           "universalSpice": {"endowments": [], "curr": universalSpice[0], "min": universalSpice[0], "max": universalSugar[1]},
-                          "universalSugar": {"endowments": [], "curr": universalSugar[0], "min": universalSugar[0], "max": universalSugar[1]},
-                          "universalIncomeTimestep": {"endowments": [], "curr": universalIncomeTimestep[0], "min": universalIncomeTimestep[0], "max": universalIncomeTimestep[1]}}
-                          
-        
+                          "universalSugar": {"endowments": [], "curr": universalSugar[0], "min": universalSugar[0], "max": universalSugar[1]}
+                          }
+
         if self.agentConfigHashes == None:
             self.agentConfigHashes = {}
             # Map configuration to a random number via hash to make random number generation independent of iteration order
@@ -907,7 +907,6 @@ if __name__ == "__main__":
                      "agentTradeFactor": [0, 0],
                      "agentUniversalSpice": [0,0],
                      "agentUniversalSugar": [0,0],
-                     "agentUniversalIncomeTimestep": [1, 1],
                      "agentVision": [1, 6],
                      "debugMode": ["none"],
                      "diseaseAggressionPenalty": [0, 0],
@@ -931,6 +930,8 @@ if __name__ == "__main__":
                      "environmentSugarConsumptionPollutionFactor": 0,
                      "environmentSugarProductionPollutionFactor": 0,
                      "environmentSugarRegrowRate": 1,
+                     "environmentUniversalSpiceIncomeInterval": 0,
+                     "environmentUniversalSugarIncomeInterval": 0,
                      "environmentWidth": 50,
                      "headlessMode": False,
                      "logfile": None,
