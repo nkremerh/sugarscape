@@ -46,7 +46,7 @@ class Agent:
 
         self.alive = True
         self.age = 0
-        self.cellsInVision = []
+        self.cellsInRange = []
         self.neighborhood = []
         self.lastMoved = -1
         self.vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
@@ -127,7 +127,7 @@ class Agent:
         self.socialNetwork["creditors"].append(loan)
 
     def canReachCell(self, cell):
-        for seenCell in self.cellsInVision:
+        for seenCell in self.cellsInRange:
             if seenCell["cell"] == cell:
                 return True
         return False
@@ -546,7 +546,7 @@ class Agent:
     def findBestCell(self):
         self.findNeighborhood()
         retaliators = self.findRetaliatorsInVision()
-        random.shuffle(self.cellsInVision)
+        random.shuffle(self.cellsInRange)
 
         bestCell = None
         bestRange = max(self.cell.environment.height, self.cell.environment.width)
@@ -558,7 +558,7 @@ class Agent:
         potentialCells = []
         aggression = self.findAggression()
 
-        for currCell in self.cellsInVision:
+        for currCell in self.cellsInRange:
             cell = currCell["cell"]
             travelDistance = currCell["distance"]
 
@@ -691,13 +691,15 @@ class Agent:
                 minHammingDistance = friend["hammingDistance"]
         return bestFriend
 
-    def findCellsInVision(self, newCell=None):
+    def findCellsInRange(self, newCell=None):
         cell = self.cell if newCell == None else newCell
         vision = self.findVision()
-        if vision > 0 and self.cell != None:
-            allCells = self.cell.environment.findCellsInRange(cell.x, cell.y, vision)
+        movement = self.findMovement()
+        cellRange = min(vision, movement)
+        if cellRange > 0 and self.cell != None:
+            allCells = self.cell.environment.findCellsInRange(cell.x, cell.y, cellRange)
             if newCell == None:
-                self.cellsInVision = allCells
+                self.cellsInRange = allCells
             # Shuffle cells for movement considerations
             random.shuffle(allCells)
             return allCells
@@ -883,7 +885,7 @@ class Agent:
         return diseaseStats
 
     def findNeighborhood(self, newCell=None):
-        newNeighborhood = self.findCellsInVision(newCell)
+        newNeighborhood = self.findCellsInRange(newCell)
         neighborhood = []
         for neighborCell in newNeighborhood:
             neighbor = neighborCell["cell"].agent
@@ -944,7 +946,7 @@ class Agent:
 
     def findRetaliatorsInVision(self):
         retaliators = {}
-        for cell in self.cellsInVision:
+        for cell in self.cellsInRange:
             agent = cell["cell"].agent
             if agent != None:
                 if agent.tribe not in retaliators:

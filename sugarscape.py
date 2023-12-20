@@ -48,7 +48,7 @@ class Sugarscape:
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
         # TODO: Remove redundant metrics
-        self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
+        self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanMovement": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                              "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanAgeAtDeath": 0,
                              "seed": self.seed, "totalWealthLost": 0, "totalMetabolismCost": 0, "agentReproduced": 0,
                              "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0, "environmentWealthTotal": 0,
@@ -616,6 +616,7 @@ class Sugarscape:
         meanSugarMetabolism = 0
         meanSpiceMetabolism = 0
         meanMetabolism = 0
+        meanMovement = 0
         meanVision = 0
         meanWealth = 0
         meanAge = 0
@@ -662,6 +663,7 @@ class Sugarscape:
             agentTimeToLiveAgeLimited = agent.findTimeToLive(True)
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
+            meanMovement += agent.movement
             meanVision += agent.vision
             meanAge += agent.age
             meanWealth += agent.wealth
@@ -695,6 +697,7 @@ class Sugarscape:
             if meanSugarMetabolism > 0 and meanSpiceMetabolism > 0:
                 combinedMetabolism = round(combinedMetabolism / 2, 2)
             meanMetabolism = round(combinedMetabolism / numAgents, 2)
+            meanMovement = round(meanMovement / numAgents, 2)
             meanVision = round(meanVision / numAgents, 2)
             meanAge = round(meanAge / numAgents, 2)
             meanWealth = round(meanWealth / numAgents, 2)
@@ -708,6 +711,7 @@ class Sugarscape:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
         else:
             meanMetabolism = 0
+            meanMovement = 0
             meanVision = 0
             meanAge = 0
             meanWealth = 0
@@ -735,6 +739,7 @@ class Sugarscape:
         self.runtimeStats["timestep"] = self.timestep
         self.runtimeStats["population"] = numAgents
         self.runtimeStats["meanMetabolism"] = meanMetabolism
+        self.runtimeStats["meanMovement"] = meanMovement
         self.runtimeStats["meanVision"] = meanVision
         self.runtimeStats["meanAge"] = meanAge
 
