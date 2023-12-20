@@ -16,20 +16,29 @@ class Agent:
         self.spiceMetabolism = configuration["spiceMetabolism"]
         self.movement = configuration["movement"]
         self.vision = configuration["vision"]
+        self.sickSugarMetabolism = self.sugarMetabolism
+        self.sickSpiceMetabolism = self.spiceMetabolism
+        self.sickMovement = self.movement
+        self.sickVision = self.vision
         self.sugar = configuration["sugar"]
         self.spice = configuration["spice"]
         self.startingSugar = configuration["sugar"]
         self.startingSpice = configuration["spice"]
+        self.universalSugar = configuration["universalSugar"]
+        self.universalSpice = configuration["universalSpice"]
+        self.universalIncomeTimestep = configuration["universalIncomeTimestep"]
         self.maxAge = configuration["maxAge"]
         self.sex = configuration["sex"]
         self.fertilityAge = configuration["fertilityAge"]
         self.infertilityAge = configuration["infertilityAge"]
         self.tags = configuration["tags"]
         self.aggressionFactor = configuration["aggressionFactor"]
+        self.sickAggressionFactor = self.aggressionFactor
         self.tradeFactor = configuration["tradeFactor"]
         self.lookaheadFactor = configuration["lookaheadFactor"]
         self.lendingFactor = configuration["lendingFactor"]
         self.fertilityFactor = configuration["fertilityFactor"]
+        self.sickFertilityFactor = self.fertilityFactor
         self.baseInterestRate = configuration["baseInterestRate"]
         self.loanDuration = configuration["loanDuration"]
         self.maxFriends = configuration["maxFriends"]
@@ -324,13 +333,19 @@ class Agent:
                     print("Agent {0} lending [{1},{2}]".format(str(self), sugarLoanAmount, spiceLoanAmount))
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
 
-    def doMetabolism(self):
+    def doMetabolism(self): 
         if self.alive == False:
             return
-        self.sugar -= self.sugarMetabolism
-        self.spice -= self.spiceMetabolism
-        self.cell.doSugarConsumptionPollution(self.sugarMetabolism)
-        self.cell.doSpiceConsumptionPollution(self.spiceMetabolism)
+        if self.isSick:
+            self.sugar -= self.sickSugarMetabolism
+            self.spice -= self.sickSpiceMetabolism
+            self.cell.doSugarConsumptionPollution(self.sickSugarMetabolism)
+            self.cell.doSpiceConsumptionPollution(self.sickSpiceMetabolism)
+        else:
+            self.sugar -= self.sugarMetabolism
+            self.spice -= self.spiceMetabolism
+            self.cell.doSugarConsumptionPollution(self.sugarMetabolism)
+            self.cell.doSpiceConsumptionPollution(self.spiceMetabolism)
         if (self.sugar < 1 and self.sugarMetabolism > 0) or (self.spice < 1 and self.spiceMetabolism > 0):
             self.doDeath("starvation")
 
@@ -394,10 +409,16 @@ class Agent:
         self.timestep = timestep
         # Prevent dead or already moved agent from moving
         if self.alive == True and self.cell != None and self.lastMoved != self.timestep:
+            self.sugar += self.universalSugar
+            self.spice += self.universalSpice
+            self.lastReproduced = 0
+            self.lastSugar = self.sugar
+            self.lastSpice = self.spice
             self.lastReproduced = 0
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
             self.lastMoved = self.timestep
+            self.doUniversalIncome()
             self.moveToBestCell()
             self.updateNeighbors()
             self.collectResourcesAtCell()
@@ -412,6 +433,12 @@ class Agent:
             self.doDisease()
             self.doAging()
             self.updateHappiness()
+
+    def doUniversalIncome(self):
+        if self.timestep < self.universalIncomeTimestep:
+            return
+        self.spice += self.universalSpice 
+        self.sugar += self.universalSugar
 
     def doTrading(self):
         # If not a trader, skip trading
@@ -673,11 +700,13 @@ class Agent:
     def findChildEndowment(self, mate):
         parentEndowments = {
         "aggressionFactor": [self.aggressionFactor, mate.aggressionFactor],
+        "sickAggressionFactor": [self.sickAggressionFactor, mate.sickAggressionFactor],
         "baseInterestRate": [self.baseInterestRate, mate.baseInterestRate],
         "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
         "decisionModel": [self.decisionModel, mate.decisionModel],
         "fertilityAge": [self.fertilityAge, mate.fertilityAge],
         "fertilityFactor": [self.fertilityFactor, mate.fertilityFactor],
+        "sickFertilityFactor": [self.sickFertilityFactor, mate.sickFertilityFactor],
         "infertilityAge": [self.infertilityAge, mate.infertilityAge],
         "inheritancePolicy": [self.inheritancePolicy, mate.inheritancePolicy],
         "lendingFactor": [self.lendingFactor, mate.lendingFactor],
@@ -686,12 +715,19 @@ class Agent:
         "maxAge": [self.maxAge, mate.maxAge],
         "maxFriends": [self.maxFriends, mate.maxFriends],
         "movement": [self.movement, mate.movement],
+        "sickMovement": [self.sickMovement, mate.sickMovement],
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
         "spiceMetabolism": [self.spiceMetabolism, mate.spiceMetabolism],
         "sugarMetabolism": [self.sugarMetabolism, mate.sugarMetabolism],
+        "sickSpiceMetabolism": [self.sickSpiceMetabolism, mate.sickSpiceMetabolism],
+        "sickSugarMetabolism": [self.sickSugarMetabolism, mate.sickSugarMetabolism],
         "sex": [self.sex, mate.sex],
         "tradeFactor": [self.tradeFactor, mate.tradeFactor],
-        "vision": [self.vision, mate.vision]
+        "vision": [self.vision, mate.vision],
+        "sickVision": [self.sickVision, mate.sickVision],
+        "universalSpice": [self.universalSpice, mate.universalSpice],
+        "universalSugar": [self.universalSugar, mate.universalSugar],
+        "universalIncomeTimestep": [self.universalIncomeTimestep, mate.universalIncomeTimestep]
         }
         childEndowment = {"seed": self.seed}
         randomNumberReset = random.getstate() 
@@ -792,7 +828,10 @@ class Agent:
             if child.isAlive() == False and totalFamilyHappiness != -1:
                 totalFamilyHappiness -= 0.125 
             if child.isAlive() == True and totalFamilyHappiness < 1:
-                totalFamilyHappiness += 0.05
+                if child.isSick():
+                    totalFamilyHappiness -= 0.05
+                else:
+                    totalFamilyHappiness += 0.05
         return totalFamilyHappiness
 
     def findHammingDistanceInTags(self, neighbor):
@@ -807,7 +846,12 @@ class Agent:
     
     def findHappiness(self):
         if self.cell != None:
-            return self.findWealthHappiness() + self.findConflictHappiness() + self.findFamilyHappiness() + self.findSocialHappiness()
+            return self.findWealthHappiness() + self.findConflictHappiness() + self.findFamilyHappiness() + self.findSocialHappiness() + self.findHealthHappiness()
+        
+    def findHealthHappiness(self):
+        if self.isSick:
+            return -1
+        else: return 1
     
     def findMarginalRateOfSubstitution(self):
         spiceNeed = self.spice / self.spiceMetabolism if self.spiceMetabolism > 0 else 1
@@ -1176,12 +1220,12 @@ class Agent:
         fertilityPenalty = disease.fertilityPenalty * recoveryCheck
         aggressionPenalty = disease.aggressionPenalty * recoveryCheck
 
-        self.sugarMetabolism = max(0, self.sugarMetabolism + sugarMetabolismPenalty)
-        self.spiceMetabolism = max(0, self.spiceMetabolism + spiceMetabolismPenalty)
-        self.vision = max(0, self.vision + visionPenalty)
-        self.movement = max(0, self.movement + movementPenalty)
-        self.fertilityFactor = max(0, self.fertilityFactor + fertilityPenalty)
-        self.aggressionFactor = max(0, self.aggressionFactor + aggressionPenalty)
+        self.sickSugarMetabolism = max(0, self.sugarMetabolism + sugarMetabolismPenalty)
+        self.sickSpiceMetabolism = max(0, self.spiceMetabolism + spiceMetabolismPenalty)
+        self.sickVision = max(0, self.vision + visionPenalty)
+        self.sickMovement = max(0, self.movement + movementPenalty)
+        self.sickFertilityFactor = max(0, self.fertilityFactor + fertilityPenalty)
+        self.sickAggressionFactor = max(0, self.aggressionFactor + aggressionPenalty)
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.ID

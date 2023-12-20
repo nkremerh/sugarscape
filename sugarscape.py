@@ -424,6 +424,9 @@ class Sugarscape:
         # Convert clever name for default behavior
         if decisionModel == "rawSugarscape":
             decisionModel = "none"
+        universalSpice = configs["agentUniversalSpice"]
+        universalSugar = configs["agentUniversalSugar"]
+        universalIncomeTimestep = configs["agentUniversalIncomeTimestep"]
 
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
@@ -445,8 +448,11 @@ class Sugarscape:
                           "sugar": {"endowments": [], "curr": startingSugar[0], "min": startingSugar[0], "max": startingSugar[1]},
                           "sugarMetabolism": {"endowments": [], "curr": sugarMetabolism[0], "min": sugarMetabolism[0], "max": sugarMetabolism[1]},
                           "tradeFactor": {"endowments": [], "curr": tradeFactor[0], "min": tradeFactor[0], "max": tradeFactor[1]},
-                          "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]}
-                          }
+                          "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]},
+                          "universalSpice": {"endowments": [], "curr": universalSpice[0], "min": universalSpice[0], "max": universalSugar[1]},
+                          "universalSugar": {"endowments": [], "curr": universalSugar[0], "min": universalSugar[0], "max": universalSugar[1]},
+                          "universalIncomeTimestep": {"endowments": [], "curr": universalIncomeTimestep[0], "min": universalIncomeTimestep[0], "max": universalIncomeTimestep[1]}}
+                          
         
         if self.agentConfigHashes == None:
             self.agentConfigHashes = {}
@@ -899,6 +905,9 @@ if __name__ == "__main__":
                      "agentSugarMetabolism": [1, 4],
                      "agentTagStringLength": 0,
                      "agentTradeFactor": [0, 0],
+                     "agentUniversalSpice": [0,0],
+                     "agentUniversalSugar": [0,0],
+                     "agentUniversalIncomeTimestep": [1, 1],
                      "agentVision": [1, 6],
                      "debugMode": ["none"],
                      "diseaseAggressionPenalty": [0, 0],

@@ -219,6 +219,18 @@ agentTradeFactor: [float, float]
     Note: The more aggressive in trading an agent, the more resources they will attempt to trade.
     Default: [0, 0]
 
+agentUniversalSpice: [float, float]
+    Set the amount agents recieve for universal basic spice income.
+    Default: [0, 0]
+
+agentUniversalSugar: [float, float]
+    Set the amount agents recieve for universal basic sugar income. 
+    Default: [0, 0]
+
+agentUniversalIncomeTimestep: [int, int]
+    Set the first time step that universal income starts.
+    Default: [1, 1]
+
 agentVision: [int, int]
     Set the distance in the four cardinal directions an agent can see.
     Default: [1, 6]
