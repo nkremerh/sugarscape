@@ -5,7 +5,6 @@ import cell
 import disease
 import environment
 
-import cProfile
 import getopt
 import hashlib
 import json
@@ -369,7 +368,7 @@ class Sugarscape:
                      "fertilityPenalties": fertilityPenalties,
                      "aggressionPenalties": aggressionPenalties,
                      "diseaseTags": diseaseTags}
-        
+
         # Map configuration to a random number via hash to make random number generation independent of iteration order
         if (self.diseaseConfigHashes == None):
             self.diseaseConfigHashes = {}
@@ -461,7 +460,7 @@ class Sugarscape:
                 hashed = hashlib.md5(config.encode())
                 hashNum = int(hashed.hexdigest(), 16)
                 self.agentConfigHashes[config] = hashNum
-        
+
         for config in configurations:
             configMin = configurations[config]["min"]
             configMax = configurations[config]["max"]
@@ -878,7 +877,7 @@ def verifyConfiguration(configuration):
         configuration["debugMode"] = "all"
     elif "none" in configuration["debugMode"] and len(configuration["debugMode"]) > 1:
         configuration["debugMode"] = "none"
-        
+
     return configuration
 
 if __name__ == "__main__":
@@ -954,7 +953,14 @@ if __name__ == "__main__":
     random.seed(configuration["seed"])
     S = Sugarscape(configuration)
     if configuration["profileMode"] == True:
+        import cProfile
+        import tracemalloc
+        tracemalloc.start()
         cProfile.run("S.runSimulation(configuration[\"timesteps\"])")
+        snapshot = tracemalloc.take_snapshot()
+        memoryStats = snapshot.statistics("lineno", True)
+        for stat in memoryStats[:100]:
+            print(stat)
     else:
         S.runSimulation(configuration["timesteps"])
     exit(0)

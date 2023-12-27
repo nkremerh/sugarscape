@@ -731,7 +731,7 @@ class Agent:
         "universalSugar": [self.universalSugar, mate.universalSugar]
         }
         childEndowment = {"seed": self.seed}
-        randomNumberReset = random.getstate() 
+        randomNumberReset = random.getstate()
         # Map configuration to a random number via hash to make random number generation independent of iteration order
         if self.childEndowmentHashes == None:
             self.childEndowmentHashes = {}
@@ -744,7 +744,7 @@ class Agent:
             random.seed(self.childEndowmentHashes[endowment] + self.timestep)
             endowmentValue = parentEndowments[endowment][random.randrange(2)]
             childEndowment[endowment] = endowmentValue
-        
+
         # Each parent gives a portion of their starting endowment for child endowment
         childStartingSugar = (self.startingSugar / (self.fertilityFactor * 2)) + (mate.startingSugar / (mate.fertilityFactor * 2))
         childStartingSpice = (self.startingSpice / (self.fertilityFactor * 2)) + (mate.startingSpice / (mate.fertilityFactor * 2))
@@ -782,7 +782,7 @@ class Agent:
         childEndowment["immuneSystem"] = childImmuneSystem
         random.setstate(randomNumberReset)
         return childEndowment
-    
+
     def findConflictHappiness(self):
         if self.cell != None and self.lastDoneCombat == self.cell.environment.sugarscape.timestep:
             if(self.findAggression() > 1):
@@ -790,7 +790,7 @@ class Agent:
             else:
                 return -0.5
         return 0
-    
+
     def findCurrentSpiceDebt(self):
         spiceDebt = 0
         for creditor in self.socialNetwork["creditors"]:
@@ -821,14 +821,14 @@ class Agent:
             if neighborCell.agent == None:
                 emptyCells.append(neighborCell)
         return emptyCells
-    
+
     def findFamilyHappiness(self):
         totalFamilyHappiness = 0
         if self.lastReproduced == self.cell.environment.sugarscape.timestep:
             totalFamilyHappiness = 0.5
         for child in self.socialNetwork["children"]:
             if child.isAlive() == False and totalFamilyHappiness != -1:
-                totalFamilyHappiness -= 0.125 
+                totalFamilyHappiness -= 0.125
             if child.isAlive() == True and totalFamilyHappiness < 1:
                 if child.isSick():
                     totalFamilyHappiness -= 0.05
@@ -845,16 +845,16 @@ class Agent:
             if self.tags[i] != neighborTags[i]:
                 hammingDistance += 1
         return hammingDistance
-    
+
     def findHappiness(self):
         if self.cell != None:
             return self.findWealthHappiness() + self.findConflictHappiness() + self.findFamilyHappiness() + self.findSocialHappiness() + self.findHealthHappiness()
-        
+
     def findHealthHappiness(self):
         if self.isSick:
             return -1
         else: return 1
-    
+
     def findMarginalRateOfSubstitution(self):
         spiceMetabolism = self.findSpiceMetabolism()
         sugarMetabolism = self.findSugarMetabolism()
@@ -954,7 +954,7 @@ class Agent:
                 elif retaliators[agent.tribe] < agent.wealth:
                     retaliators[agent.tribe] = agent.wealth
         return retaliators
-       
+
     def findSocialHappiness(self):
         if len(self.socialNetwork["friends"]) < 1:
             return -0.8
@@ -969,7 +969,7 @@ class Agent:
         else:
             if len(self.socialNetwork["friends"]) * 0.1 < 1:
                 return len(self.socialNetwork["friends"]) * 0.1
-            else: 
+            else:
                 return 1
 
     def findSpiceMetabolism(self):
@@ -1012,7 +1012,7 @@ class Agent:
                 elif math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5 < -1:
                     return -1
                 return (math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5)
-    
+
     def findWelfare(self, sugarReward, spiceReward):
         spiceMetabolism = self.findSpiceMetabolism()
         sugarMetabolism = self.findSugarMetabolism()
