@@ -1,32 +1,87 @@
 import getopt
 import json
 import os
+import os.path
 import random
 import re
 import sys
 
 def createConfigurations(config, path):
-    print("Generating configurations for random seeds.")
-    if path[-1] != '/':
-        path = path + '/'
+    configs = getJobsToDo(config, path)
+    if len(configs) == 0:
+        print("Generating new configurations for random seeds.")
+        if path[-1] != '/':
+            path = path + '/'
+        dataOpts = config["dataCollectionOptions"]
+        seeds = generateSeeds(dataOpts)
+        confFiles = []
+        for seed in seeds:
+            for model in dataOpts["decisionModels"]:
+                simOpts = config["sugarscapeOptions"]
+                simOpts["agentEthicalTheory"] = model
+                simOpts["seed"] = seed
+                simOpts["logfile"] = "{0}{1}{2}.json".format(path, model, seed)
+                # Enforce noninteractive, no-output mode
+                simOpts["headlessMode"] = True
+                simOpts["debugMode"] = ["none"]
+                confFilePath = "{0}{1}{2}.config".format(path, model, seed)
+                confFiles.append(confFilePath)
+                conf = open(confFilePath, 'w')
+                conf.write(json.dumps(simOpts))
+                conf.close()
+        return confFiles
+    return configs
+
+def generateSeeds(config):
     seeds = []
     for i in range(config["numSeeds"]):
         seed = random.randint(0, sys.maxsize)
         while seed in seeds:
             seed = random.randint(0, sys.maxsize)
         seeds.append(seed)
-    for seed in seeds:
-        for model in config["decisionModels"]:
-            simOpts = config["sugarscapeOptions"]
-            simOpts["agentEthicalTheory"] = model
-            simOpts["seed"] = seed
-            simOpts["logfile"] = "{0}{1}{2}.json".format(path, model, seed)
-            # Enforce noninteractive, no-output mode
-            simOpts["headlessMode"] = True
-            simOpts["debugMode"] = ["none"]
-            conf = open("{0}{1}{2}.config".format(path, model, seed), 'w')
-            conf.write(json.dumps(simOpts))
-            conf.close()
+    return seeds
+
+def getJobsToDo(config, path):
+    print("Searching for incomplete logs from previously created seeds.")
+    encodedDir = os.fsencode(path)
+    dataOpts = config["dataCollectionOptions"]
+    simOpts = config["sugarscapeOptions"]
+    configs = []
+    for file in os.listdir(encodedDir):
+        filename = os.fsdecode(file)
+        if not filename.endswith('.config'):
+            continue
+        filePath = path + filename
+        fileDecisionModel = re.compile(r"([A-z]*)\d*\.config")
+        model = re.search(fileDecisionModel, filename).group(1)
+        if model not in dataOpts["decisionModels"]:
+            continue
+        configs.append(filePath)
+    completedRuns = []
+    for config in configs:
+        configFile = open(config)
+        log = json.loads(configFile.read())["logfile"]
+        configFile.close()
+        if os.path.exists(log) == False:
+            continue
+        try:
+            logFile = open(log)
+            lastEntry = json.loads(logFile.read())[-1]
+            if lastEntry["timestep"] == simOpts["timesteps"] or lastEntry["population"] == 0:
+                completedRuns.append(config)
+            else:
+                print("Existing log {0} is incomplete. Adding it to be rerun.".format(log))
+            logFile.close()
+        except:
+            print("Existing log {0} is incomplete. Adding it to be rerun.".format(log))
+            continue
+    for run in completedRuns:
+        configs.remove(run)
+    for config in configs:
+        print("Configuration file {0} has no matching log. Adding it to be rerun".format(config))
+    if len(configs) == 0:
+        print("No incomplete logs found.")
+    return configs
 
 def parseOptions():
     commandLineArgs = sys.argv[1:]
@@ -60,42 +115,28 @@ def printHelp():
     print("Usage:\n\tpython run.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-p,--path\tUse the specified directory path to store dataset JSON files.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
-def runSimulations(config, path):
-    encodedDir = os.fsencode(path) 
-    configs = []
-    for file in os.listdir(encodedDir):
-        filename = os.fsdecode(file)
-        if not filename.endswith('.config'):
-            continue
-        filePath = path + filename
-        fileDecisionModel = re.compile(r"([A-z]*)\d*\.config")
-        model = re.search(fileDecisionModel, filename).group(1)
-        if model not in config["decisionModels"]:
-            continue
-        configs.append(filePath)
+def runSimulations(config, configFiles, path):
+    dataOpts = config["dataCollectionOptions"]
 
     shell = "files=("
-    for conf in configs:
+    for conf in configFiles:
         shell += " {0}".format(conf)
     shell += " )\n\n"
-    shell += "# Number of parallel processes to run\nN={0}\n\n".format(config["numParallelSimJobs"])
+    shell += "# Number of parallel processes to run\nN={0}\n\n".format(dataOpts["numParallelSimJobs"])
     shell += "i=1\nj=${#files[@]}\nfor f in \"${files[@]}\"\ndo\n"
     shell += "echo \"Running decision model $f ($i/$j)\"\n# Run simulation for config\n"
-    shell += "{0} ../sugarscape.py --conf $f &\n\n".format(config["pathToPython"])
+    shell += "{0} ../sugarscape.py --conf $f &\n\n".format(dataOpts["pathToPython"])
     shell += "if [[ $(jobs -r -p | wc -l) -ge $N ]]; then\nwait -n\nfi\ni=$((i+1))\ndone\n\n"
     shell += "sem=0\necho \"Waiting for jobs to finish up.\"\nwhile [[ $(jobs -r -p | wc -l) -gt 0 ]];\ndo\n"
-    shell += "sem=$(((sem+1)%{0}))\nif [[ $sem -eq 0 ]]; then\n".format(config["jobUpdateFrequency"])
+    shell += "sem=$(((sem+1)%{0}))\nif [[ $sem -eq 0 ]]; then\n".format(dataOpts["jobUpdateFrequency"])
     shell += "status=$( ps -AF | grep 'sugarscape' | wc -l )\nstatus=$((status-1))\n"
     shell += "echo -n $status\necho ' jobs remaining.'\nfi\nwait -n\ndone\n"
 
     sh = open("temp.sh", 'w')
     sh.write(shell)
     sh.close()
-    os.system("{0} temp.sh".format(config["pathToBash"]))
+    os.system("{0} temp.sh".format(dataOpts["pathToBash"]))
     os.remove("temp.sh")
-
-    for config in configs:
-        os.remove(config)
 
 if __name__ == "__main__":
     options = parseOptions()
@@ -111,7 +152,7 @@ if __name__ == "__main__":
     config = json.loads(configFile.read())
     configFile.close()
 
-    createConfigurations(config, path)
-    runSimulations(config, path)
+    configFiles = createConfigurations(config, path)
+    runSimulations(config, configFiles, path)
 
     exit(0)
