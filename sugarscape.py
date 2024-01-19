@@ -43,7 +43,7 @@ class Sugarscape:
         self.diseases = []
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
-        self.gui = gui.GUI(self) if configuration["headlessMode"] == False else None
+        self.gui = gui.GUI(self, self.configuration["interfaceHeight"], self.configuration["interfaceWidth"]) if configuration["headlessMode"] == False else None
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
         # TODO: Remove redundant metrics
@@ -593,7 +593,7 @@ class Sugarscape:
         self.writeToLog()
 
     def toggleEnd(self):
-        self.end = not self.end
+        self.end = True
 
     def toggleRun(self):
         self.run = not self.run
@@ -938,6 +938,8 @@ if __name__ == "__main__":
                      "environmentUniversalSugarIncomeInterval": 0,
                      "environmentWidth": 50,
                      "headlessMode": False,
+                     "interfaceHeight": 1000,
+                     "interfaceWidth": 900,
                      "logfile": None,
                      "profileMode": False,
                      "screenshots": False,

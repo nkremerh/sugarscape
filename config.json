@@ -69,6 +69,8 @@
         "environmentUniversalSugarIncomeInterval": 0,
         "environmentWidth": 50,
         "headlessMode": false,
+        "interfaceHeight": 1000,
+        "interfaceWidth": 900,
         "logfile": "log.json",
         "profileMode": false,
         "screenshots": false,

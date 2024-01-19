@@ -8,7 +8,7 @@ class GUI:
         self.screenWidth = screenWidth
         self.window = None
         self.canvas = None
-        self.grid = [[None for j in range(screenWidth)]for i in range(screenHeight)]
+        self.grid = [[None for j in range(self.sugarscape.environmentWidth)]for i in range(self.sugarscape.environmentHeight)]
         self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
                          "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "pink": "#FA32FA", "yellow": "#FAFA32", "teal": "#32FAFA", "purple": "#6432FA", "orange": "#FA6432",
                          "salmon": "#FA6464", "mint": "#64FA64", "blue2": "#3264FA"}
@@ -23,6 +23,7 @@ class GUI:
         self.siteHeight = (self.screenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
         self.siteWidth = (self.screenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
         self.configureWindow()
+        self.stopSimulation = False
 
     def configureAgentColorNames(self):
         return ["Disease", "Sex", "Tribes"]
@@ -90,6 +91,12 @@ class GUI:
         window = tkinter.Tk()
         self.window = window
         window.title("Sugarscape")
+        # Do one-quarter window sizing only after initial window object is created to get user's monitor dimensions
+        if self.screenWidth < 0:
+            self.screenWidth = math.ceil(window.winfo_screenwidth() / 2) - borderEdge
+        if self.screenHeight < 0:
+            self.screenHeight = math.ceil(window.winfo_screenheight() / 2) - borderEdge
+        self.updateSiteDimensions()
         window.geometry("%dx%d" % (self.screenWidth + borderEdge, self.screenHeight + borderEdge))
         window.resizable(True, True)
         window.configure(background="white")
@@ -111,9 +118,6 @@ class GUI:
         window.bind("<space>", self.doPlayButton)
         window.bind("<Right>", self.doStepForwardButton)
         canvas.bind("<Button-1>", self.doClick)
-
-    def destroyGUI(self):
-        self.window.destroy()
 
     def doAgentColorMenu(self, *args):
         self.activeColorOptions["agent"] = self.lastSelectedAgentColor.get()
@@ -149,6 +153,9 @@ class GUI:
             self.doTimestep()
 
     def doTimestep(self):
+        if self.stopSimulation == True:
+            self.sugarscape.toggleEnd()
+            return
         for i in range(self.sugarscape.environmentHeight):
             for j in range(self.sugarscape.environmentWidth):
                 cell = self.sugarscape.environment.findCell(i, j)
@@ -160,6 +167,8 @@ class GUI:
         self.window.update()
 
     def doWindowClose(self, *args):
+        # Indicate to per-timestep rendering to stop rendering
+        self.stopSimulation = True
         self.window.destroy()
         self.sugarscape.toggleEnd()
 
@@ -252,3 +261,7 @@ class GUI:
             cellString = self.findCellStats(self.lastSelectedCell['x'], self.lastSelectedCell['y'])
             label = self.widgets["cellLabel"]
             label.config(text=cellString)
+
+    def updateSiteDimensions(self):
+        self.siteHeight = (self.screenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
+        self.siteWidth = (self.screenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
