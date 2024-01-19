@@ -73,14 +73,15 @@ class GUI:
         self.widgets["cellLabel"] = cellLabel
 
     def configureEnvironment(self):
+        borderEdge = 5
         for i in range(self.sugarscape.environmentHeight):
             for j in range(self.sugarscape.environmentWidth):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
-                x1 = 5 + (0.50 * self.siteWidth) + i * self.siteWidth - (0.50 * self.siteWidth) # Upper right x coordinate
-                y1 = 5 + (0.50 * self.siteHeight) + j * self.siteHeight - (0.50 * self.siteHeight) # Upper right y coordinate
-                x2 = 5 + (0.50 * self.siteWidth) + i * self.siteWidth + (0.50 * self.siteWidth) # Lower left x coordinate
-                y2 = 5 + (0.50 * self.siteHeight) + j * self.siteHeight + (0.50 * self.siteHeight) # Lower left y coordinate
+                x1 = borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth - (0.50 * self.siteWidth) # Upper right x coordinate
+                y1 = borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight - (0.50 * self.siteHeight) # Upper right y coordinate
+                x2 = borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth + (0.50 * self.siteWidth) # Lower left x coordinate
+                y2 = borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight + (0.50 * self.siteHeight) # Lower left y coordinate
                 self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
 
     def configureEnvironmentColorNames(self):
