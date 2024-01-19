@@ -353,12 +353,12 @@ headlessMode: bool
 interfaceHeight: int
     Set number of pixels for GUI height.
     Default: 1000
-    Note: Values below zero will cause the interface to fit to 1/4 total display height.
+    Note: Values below zero will cause the interface to fit to 1/2 total display height.
 
 interfaceWidth: int
     Set number of pixels for GUI width.
     Default: 900
-    Note: Values below zero will cause the interface to fit to 1/4 total display width.
+    Note: Values below zero will cause the interface to fit to 1/2 total display width.
 
 logfile: path
     Set the path of the log file.
