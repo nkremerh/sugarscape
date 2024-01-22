@@ -18,11 +18,11 @@ make clean
     Note: will remove any JSON files created by the other make options.
 
 make data
-    Run 20 random seeds comparing Bentham's utility calculus to the baseline greedy decisionmaking.
+    Run a number of random seeds comparing implemented decision models to the baseline greedy decisionmaking.
     Note: results will be saved in the data subdirectory.
 
 make plots
-    Generate data plots from any JSON files in the data subdirectory.
+    Generate graph plots from any JSON files in the data subdirectory.
     Note: plots are dependent on a dataset existing and will create it if necessary.
 
 make setup
