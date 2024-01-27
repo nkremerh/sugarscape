@@ -29,6 +29,11 @@ class GUI:
         return ["Disease", "Sex", "Tribes"]
 
     def configureButtons(self, window):
+        tkinter.Grid.columnconfigure(window, 0, weight = 1)
+        tkinter.Grid.columnconfigure(window, 1, weight = 1)
+        tkinter.Grid.columnconfigure(window, 2, weight = 1)
+        tkinter.Grid.columnconfigure(window, 3, weight = 1)
+        
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
         playButton.grid(row=0, column=0, sticky="nsew")
         stepButton = tkinter.Button(window, text="Step Forward", command=self.doStepForwardButton, relief=tkinter.RAISED)
@@ -102,8 +107,11 @@ class GUI:
         window.resizable(True, True)
         window.configure(background="white")
         window.option_add("*font", "Roboto 10")
+        tkinter.Grid.rowconfigure(window, 3, weight = 1)
+        tkinter.Grid.columnconfigure(window, 0, weight = 1)
 
-        canvas = tkinter.Canvas(window, width=self.screenWidth, height=self.screenHeight, bg="white")
+        canvas = tkinter.Canvas(window, width=self.screenWidth, height=self.screenHeight, bg="white")     
+
         self.canvas = canvas
         self.configureButtons(window)
         canvas.grid(row=3, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
