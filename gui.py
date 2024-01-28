@@ -18,8 +18,9 @@ class GUI:
         self.lastSelectedCell = None
         self.activeColorOptions = {"agent": None, "environment": None}
         self.menuTrayColumns = 4
-        self.menuTrayOffset = 70
+        self.menuTrayOffset = 110
         self.windowBorderOffset = 10
+        self.borderEdge = 5
         self.siteHeight = (self.screenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
         self.siteWidth = (self.screenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
         self.configureWindow()
@@ -29,11 +30,6 @@ class GUI:
         return ["Disease", "Sex", "Tribes"]
 
     def configureButtons(self, window):
-        tkinter.Grid.columnconfigure(window, 0, weight = 1)
-        tkinter.Grid.columnconfigure(window, 1, weight = 1)
-        tkinter.Grid.columnconfigure(window, 2, weight = 1)
-        tkinter.Grid.columnconfigure(window, 3, weight = 1)
-        
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
         playButton.grid(row=0, column=0, sticky="nsew")
         stepButton = tkinter.Button(window, text="Step Forward", command=self.doStepForwardButton, relief=tkinter.RAISED)
@@ -77,56 +73,61 @@ class GUI:
         self.widgets["statsLabel"] = statsLabel
         self.widgets["cellLabel"] = cellLabel
 
+    def configureCanvas(self):
+        canvas = tkinter.Canvas(self.window, width=self.screenWidth, height=self.screenHeight, bg="white")
+        canvas.grid(row=3, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
+        canvas.bind("<Button-1>", self.doClick)
+        self.canvas = canvas
+
     def configureEnvironment(self):
-        borderEdge = 5
         for i in range(self.sugarscape.environmentHeight):
             for j in range(self.sugarscape.environmentWidth):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
-                x1 = borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth - (0.50 * self.siteWidth) # Upper right x coordinate
-                y1 = borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight - (0.50 * self.siteHeight) # Upper right y coordinate
-                x2 = borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth + (0.50 * self.siteWidth) # Lower left x coordinate
-                y2 = borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight + (0.50 * self.siteHeight) # Lower left y coordinate
+                x1 = self.borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth - (0.50 * self.siteWidth) # Upper right x coordinate
+                y1 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight - (0.50 * self.siteHeight) # Upper right y coordinate
+                x2 = self.borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth + (0.50 * self.siteWidth) # Lower left x coordinate
+                y2 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight + (0.50 * self.siteHeight) # Lower left y coordinate
                 self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
 
     def configureWindow(self):
-        borderEdge = 5
         window = tkinter.Tk()
         self.window = window
         window.title("Sugarscape")
         # Do one-quarter window sizing only after initial window object is created to get user's monitor dimensions
         if self.screenWidth < 0:
-            self.screenWidth = math.ceil(window.winfo_screenwidth() / 2) - borderEdge
+            self.screenWidth = math.ceil(window.winfo_screenwidth() / 2) - self.borderEdge
         if self.screenHeight < 0:
-            self.screenHeight = math.ceil(window.winfo_screenheight() / 2) - borderEdge
+            self.screenHeight = math.ceil(window.winfo_screenheight() / 2) - self.borderEdge
         self.updateSiteDimensions()
-        window.geometry("%dx%d" % (self.screenWidth + borderEdge, self.screenHeight + borderEdge))
+        window.geometry("%dx%d" % (self.screenWidth + self.borderEdge, self.screenHeight + self.borderEdge))
         window.resizable(True, True)
         window.configure(background="white")
         window.option_add("*font", "Roboto 10")
-        tkinter.Grid.rowconfigure(window, 3, weight = 1)
-        tkinter.Grid.columnconfigure(window, 0, weight = 1)
-
-        canvas = tkinter.Canvas(window, width=self.screenWidth, height=self.screenHeight, bg="white")     
-
-        self.canvas = canvas
         self.configureButtons(window)
-        canvas.grid(row=3, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
+        self.configureCanvas()
         window.update()
 
         self.configureEnvironment()
         buttonsOffset = self.widgets["playButton"].winfo_height()
-        window.geometry("%dx%d" % (self.screenWidth + borderEdge, self.screenHeight + borderEdge + buttonsOffset))
+        window.geometry("%dx%d" % (self.screenWidth + self.borderEdge, self.screenHeight + self.borderEdge + buttonsOffset))
         window.update()
 
-        window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
-        window.bind("<Escape>", self.doWindowClose)
-        window.bind("<space>", self.doPlayButton)
-        window.bind("<Right>", self.doStepForwardButton)
-        canvas.bind("<Button-1>", self.doClick)
+        self.window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
+        self.window.bind("<Escape>", self.doWindowClose)
+        self.window.bind("<space>", self.doPlayButton)
+        self.window.bind("<Right>", self.doStepForwardButton)
+        self.canvas.bind("<Button-1>", self.doClick)
+
+        # Adjust for slight deviations from initially configured window size
+        self.resizeInterface()
+        window.update()
+
+    def destroyCanvas(self):
+        self.canvas.destroy()
 
     def doAgentColorMenu(self, *args):
         self.activeColorOptions["agent"] = self.lastSelectedAgentColor.get()
@@ -134,10 +135,20 @@ class GUI:
 
     def doClick(self, event):
         # Account for padding in GUI cells
-        eventX = event.x - 5
-        eventY = event.y - 5
+        eventX = event.x - self.borderEdge
+        eventY = event.y - self.borderEdge
         gridX = math.floor(eventX / self.siteWidth)
         gridY = math.floor(eventY / self.siteHeight)
+        # Handle clicking just outside edge cells
+        if gridX < 0:
+            gridX = 0
+        elif gridX > self.sugarscape.environmentWidth - 1:
+            gridX = self.sugarscape.environmentWidth - 1
+        if gridY < 0:
+            gridY = 0
+        elif gridY > self.sugarscape.environmentHeight - 1:
+            gridY = self.sugarscape.environmentHeight - 1
+
         cellString = self.findCellStats(gridX, gridY)
         label = self.widgets["cellLabel"]
         label.config(text=cellString)
@@ -165,6 +176,8 @@ class GUI:
         if self.stopSimulation == True:
             self.sugarscape.toggleEnd()
             return
+        if self.screenHeight != self.window.winfo_height() or self.screenWidth != self.window.winfo_width():
+            self.resizeInterface()
         for i in range(self.sugarscape.environmentHeight):
             for j in range(self.sugarscape.environmentWidth):
                 cell = self.sugarscape.environment.findCell(i, j)
@@ -260,6 +273,13 @@ class GUI:
         fillColor = self.intToHex(subcolors)
         return fillColor
 
+    def resizeInterface(self):
+        self.updateScreenDimensions()
+        self.updateSiteDimensions()
+        self.destroyCanvas()
+        self.configureCanvas()
+        self.configureEnvironment()
+
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats
         statsString = "Timestep: {0} | Agents: {1} | Metabolism: {2:.2f} | Movement: {3:.2f} | Vision: {4:.2f} | Gini: {5:.2f} | Trade Price: {6:.2f} | Trade Volume: {7:.2f}".format(
@@ -270,6 +290,10 @@ class GUI:
             cellString = self.findCellStats(self.lastSelectedCell['x'], self.lastSelectedCell['y'])
             label = self.widgets["cellLabel"]
             label.config(text=cellString)
+
+    def updateScreenDimensions(self):
+        self.screenHeight = self.window.winfo_height()
+        self.screenWidth = self.window.winfo_width()
 
     def updateSiteDimensions(self):
         self.siteHeight = (self.screenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
