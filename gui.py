@@ -120,6 +120,7 @@ class GUI:
         self.window.bind("<Escape>", self.doWindowClose)
         self.window.bind("<space>", self.doPlayButton)
         self.window.bind("<Right>", self.doStepForwardButton)
+        self.window.bind("<Configure>", self.resizeInterface)
         self.canvas.bind("<Button-1>", self.doClick)
 
         # Adjust for slight deviations from initially configured window size
@@ -273,7 +274,10 @@ class GUI:
         fillColor = self.intToHex(subcolors)
         return fillColor
 
-    def resizeInterface(self):
+    def resizeInterface(self, event=None):
+        # Do not do resizing if capturing a user input event but the event does not come from the GUI window
+        if event != None and (event.widget != self.window or (event.widget == self.window and (self.screenHeight == event.height and self.screenWidth == event.width))):
+            return
         self.updateScreenDimensions()
         self.updateSiteDimensions()
         self.destroyCanvas()
