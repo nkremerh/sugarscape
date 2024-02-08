@@ -48,10 +48,10 @@ class Sugarscape:
         self.end = False # Simulation end flag
         # TODO: Remove redundant metrics
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanMovement": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
-                             "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanAgeAtDeath": 0,
-                             "seed": self.seed, "totalWealthLost": 0, "totalMetabolismCost": 0, "agentReproduced": 0,
-                             "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0, "environmentWealthTotal": 0,
-                             "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
+                             "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
+                             "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness":0, "meanAgeAtDeath": 0, "seed": self.seed, "totalWealthLost": 0, 
+                             "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, 
+                             "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
                              "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logAgent = None
@@ -624,6 +624,11 @@ class Sugarscape:
         maxWealth = 0
         minWealth = sys.maxsize
         meanHappiness = 0
+        meanHealthHappiness = 0
+        meanWealthHappiness = 0
+        meanSocialHappiness = 0
+        meanFamilyHappiness = 0
+        meanConflictHappiness = 0
         numTraders = 0
         totalWealthLost = 0
         totalMetabolismCost = 0
@@ -667,6 +672,11 @@ class Sugarscape:
             meanAge += agent.age
             meanWealth += agent.wealth
             meanHappiness += agent.happiness
+            meanWealthHappiness += agent.wealthHappiness
+            meanHealthHappiness += agent.healthHappiness
+            meanFamilyHappiness += agent.familyHappiness
+            meanSocialHappiness += agent.socialHappiness
+            meanConflictHappiness += agent.conflictHappiness
             if agent.tradeVolume > 0:
                 meanTradePrice += max(agent.spicePrice, agent.sugarPrice)
                 tradeVolume += agent.tradeVolume
@@ -706,6 +716,11 @@ class Sugarscape:
             minWealth = round(minWealth, 2)
             maxWealth = round(maxWealth, 2)
             meanHappiness = round(meanHappiness / numAgents, 2)
+            meanWealthHappiness = round(meanWealthHappiness / numAgents, 2)
+            meanHealthHappiness = round(meanHealthHappiness / numAgents, 2)
+            meanFamilyHappiness = round(meanFamilyHappiness / numAgents, 2)
+            meanSocialHappiness = round(meanSocialHappiness / numAgents, 2)
+            meanConflictHappiness = round(meanConflictHappiness / numAgents, 2)
             agentWealthBurnRate = round(agentWealthBurnRate / numAgents, 2)
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
         else:
@@ -717,6 +732,11 @@ class Sugarscape:
             minWealth = 0
             maxWealth = 0
             meanHappiness = 0
+            meanWealthHappiness = 0
+            meanHealthHappiness = 0
+            meanFamilyHappiness = 0
+            meanSocialHappiness = 0
+            meanConflictHappiness = 0
             tradeVolume = 0
             agentWealthBurnRate = 0
             agentMeanTimeToLive = 0
@@ -747,6 +767,11 @@ class Sugarscape:
         self.runtimeStats["minWealth"] = minWealth
         self.runtimeStats["maxWealth"] = maxWealth
         self.runtimeStats["meanHappiness"] = meanHappiness
+        self.runtimeStats["meanWealthHappiness"] = meanWealthHappiness
+        self.runtimeStats["meanHealthHappiness"] = meanHealthHappiness
+        self.runtimeStats["meanFamilyHappiness"] = meanFamilyHappiness
+        self.runtimeStats["meanSocialHappiness"] = meanSocialHappiness
+        self.runtimeStats["meanConflictHappiness"] = meanConflictHappiness
         self.runtimeStats["meanTradePrice"] = meanTradePrice
         self.runtimeStats["tradeVolume"] = tradeVolume
         self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient() if len(self.agents) > 1 else 0

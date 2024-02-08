@@ -66,6 +66,11 @@ class Agent:
         self.nice = 0
         self.childEndowmentHashes = None
         self.happiness = 0
+        self.wealthHappiness = 0
+        self.healthHappiness = 0
+        self.familyHappiness = 0
+        self.socialHappiness = 0
+        self.conflictHappiness = 0
         self.lastDoneCombat = -1
         self.lastReproduced = -1
         self.lastSugar = 0
@@ -789,7 +794,7 @@ class Agent:
                 return 1
             else:
                 return -0.5
-        return 0
+        else: return 0
 
     def findCurrentSpiceDebt(self):
         spiceDebt = 0
@@ -823,18 +828,18 @@ class Agent:
         return emptyCells
 
     def findFamilyHappiness(self):
-        totalFamilyHappiness = 0
-        if self.lastReproduced == self.cell.environment.sugarscape.timestep:
-            totalFamilyHappiness = 0.5
+        familyHappinessCount = 0
+        if self.lastReproduced == self.timestep:
+            familyHappinessCount = 0.5
         for child in self.socialNetwork["children"]:
-            if child.isAlive() == False and totalFamilyHappiness != -1:
-                totalFamilyHappiness -= 0.125
-            if child.isAlive() == True and totalFamilyHappiness < 1:
+            if child.isAlive() == False and familyHappinessCount != -1:
+                familyHappinessCount -= 0.125
+            if child.isAlive() == True and familyHappinessCount < 1:
                 if child.isSick():
-                    totalFamilyHappiness -= 0.05
+                    familyHappinessCount -= 0.05
                 else:
-                    totalFamilyHappiness += 0.05
-        return totalFamilyHappiness
+                    familyHappinessCount += 0.05
+        return familyHappinessCount
 
     def findHammingDistanceInTags(self, neighbor):
         if self.tags == None:
@@ -851,8 +856,7 @@ class Agent:
             return self.findWealthHappiness() + self.findConflictHappiness() + self.findFamilyHappiness() + self.findSocialHappiness() + self.findHealthHappiness()
 
     def findHealthHappiness(self):
-        if self.isSick:
-            return -1
+        if self.isSick(): return -1
         else: return 1
 
     def findMarginalRateOfSubstitution(self):
@@ -1012,6 +1016,7 @@ class Agent:
                 elif math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5 < -1:
                     return -1
                 return (math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5)
+        return self.wealthHappiness
 
     def findWelfare(self, sugarReward, spiceReward):
         spiceMetabolism = self.findSpiceMetabolism()
@@ -1362,6 +1367,11 @@ class Agent:
         self.vonNeumannNeighbors["west"] = self.cell.findWestNeighbor().agent
 
     def updateHappiness(self):
+        self.healthHappiness = self.findHealthHappiness()
+        self.wealthHappiness = self.findWealthHappiness()
+        self.socialHappiness = self.findSocialHappiness()
+        self.familyHappiness = self.findFamilyHappiness()
+        self.conflictHappiness = self.findConflictHappiness()
         self.happiness = self.findHappiness()
 
     def __str__(self):
