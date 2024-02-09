@@ -794,7 +794,7 @@ class Agent:
                 return 1
             else:
                 return -0.5
-        else: return 0
+        return 0
 
     def findCurrentSpiceDebt(self):
         spiceDebt = 0
@@ -828,18 +828,18 @@ class Agent:
         return emptyCells
 
     def findFamilyHappiness(self):
-        familyHappinessCount = 0
+        familyHappiness = 0
         if self.lastReproduced == self.timestep:
-            familyHappinessCount = 0.5
+            familyHappiness = 0.5
         for child in self.socialNetwork["children"]:
-            if child.isAlive() == False and familyHappinessCount != -1:
-                familyHappinessCount -= 0.125
-            if child.isAlive() == True and familyHappinessCount < 1:
+            if child.isAlive() == False and familyHappiness != -1:
+                familyHappiness -= 0.125
+            if child.isAlive() == True and familyHappiness < 1:
                 if child.isSick():
-                    familyHappinessCount -= 0.05
+                    familyHappiness -= 0.05
                 else:
-                    familyHappinessCount += 0.05
-        return familyHappinessCount
+                    familyHappiness += 0.05
+        return familyHappiness
 
     def findHammingDistanceInTags(self, neighbor):
         if self.tags == None:
@@ -854,10 +854,13 @@ class Agent:
     def findHappiness(self):
         if self.cell != None:
             return self.findWealthHappiness() + self.findConflictHappiness() + self.findFamilyHappiness() + self.findSocialHappiness() + self.findHealthHappiness()
+        return 0
 
     def findHealthHappiness(self):
-        if self.isSick(): return -1
-        else: return 1
+        if self.isSick():
+            return -1
+        else:
+            return 1
 
     def findMarginalRateOfSubstitution(self):
         spiceMetabolism = self.findSpiceMetabolism()
@@ -1016,7 +1019,7 @@ class Agent:
                 elif math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5 < -1:
                     return -1
                 return (math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5)
-        return self.wealthHappiness
+        return 0
 
     def findWelfare(self, sugarReward, spiceReward):
         spiceMetabolism = self.findSpiceMetabolism()
