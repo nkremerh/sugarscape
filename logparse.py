@@ -10,7 +10,8 @@ def parseLog(logFile):
     timesteps = -1
 
     data = {"population": 0, "agentWealthCollected": 0, "agentWealthTotal": 0,
-            "environmentWealthCreated": 0, "environmentWealthTotal": 0, "meanHappiness": 0,
+            "environmentWealthCreated": 0, "environmentWealthTotal": 0, "meanHappiness": 0, "meanWealthHappiness": 0, 
+            "meanHealthHappiness": 0, "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0,
             "agentStarvationDeaths": 0, "agentMeanTimeToLive": 0,
             "agentMeanTimeToLiveAgeLimited": 0, "agentReproduced": 0}
 
