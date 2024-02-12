@@ -412,8 +412,6 @@ class Agent:
         self.timestep = timestep
         # Prevent dead or already moved agent from moving
         if self.alive == True and self.cell != None and self.lastMoved != self.timestep:
-            self.sugar += self.universalSugar
-            self.spice += self.universalSpice
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
             self.lastMoved = self.timestep
