@@ -413,9 +413,6 @@ class Agent:
             self.lastReproduced = 0
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
-            self.lastReproduced = 0
-            self.lastSugar = self.sugar
-            self.lastSpice = self.spice
             self.lastMoved = self.timestep
             self.doUniversalIncome()
             self.moveToBestCell()
