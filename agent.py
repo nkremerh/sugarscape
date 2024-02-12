@@ -619,44 +619,27 @@ class Agent:
         if self.decisionModel == "none":
             return greedyBestCell
 
-        # Calculate initial utility value calculation and naively select based on binary decision first
-        if "benthamNoLookahead" in self.decisionModel:
-            for cell in cells:
-                ethicalScore = ethics.findBenthamNoLookaheadValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif "benthamHalfLookahead" in self.decisionModel:
-            for cell in cells:
-                ethicalScore = ethics.findBenthamHalfLookaheadValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
+        # Dictionary mapping decision models to corresponding ethics functions
+        modelFunctions = {
+            "benthamNoLookahead": ethics.findBenthamNoLookaheadValueOfCell,
+            "benthamHalfLookahead": ethics.findBenthamHalfLookaheadValueOfCell,
+            "altruisticHalfLookahead": ethics.findAltruisticHalfLookaheadValueOfCell,
+            "egoisticHalfLookahead": ethics.findEgoisticHalfLookaheadValueOfCell,
+            "egoisticNoLookahead": ethics.findEgoisticNoLookaheadValueOfCell
+        }
+        # Find the selected decision model
+        selectedModel = None
+        for model in modelFunctions:
+            if model in self.decisionModel:
+                selectedModel = model
+                break
 
-        elif "altruisticHalfLookahead" in self.decisionModel:
+        # Calculate initial utility value calculation
+        if selectedModel:
             for cell in cells:
-                ethicalScore = ethics.findAltruisticHalfLookaheadValueOfCell(self, cell["cell"])
+                ethicalScore = modelFunctions[selectedModel](self, cell["cell"])
                 cell["wealth"] = ethicalScore
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif "egoisticHalfLookahead" in self.decisionModel:
-            for cell in cells:
-                ethicalScore = ethics.findEgoisticHalfLookaheadValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif "egoisticNoLookahead" in self.decisionModel:
-            for cell in cells:
-                ethicalScore = ethics.findEgoisticNoLookaheadValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
+            # Naively select based on binary decision first
             for cell in cells:
                 if cell["wealth"] > 0:
                     bestCell = cell["cell"]
