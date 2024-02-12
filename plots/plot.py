@@ -276,7 +276,7 @@ if __name__ == "__main__":
     config = options["config"]
     outfile = options["outfile"]
     configFile = open(config)
-    config = json.loads(configFile.read())
+    config = json.loads(configFile.read())["dataCollectionOptions"]
     configFile.close()
     totalTimesteps = config["plotTimesteps"]
     models = config["decisionModels"]
