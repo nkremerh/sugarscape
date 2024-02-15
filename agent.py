@@ -700,8 +700,6 @@ class Agent:
             allCells = self.cell.environment.findCellsInRange(cell.x, cell.y, cellRange)
             if newCell == None:
                 self.cellsInRange = allCells
-            # Shuffle cells for movement considerations
-            random.shuffle(allCells)
             return allCells
         return []
 
@@ -895,7 +893,12 @@ class Agent:
                 neighborhood.append(neighbor)
         neighborhood.append(self)
         if newCell == None:
+            # Shuffle cells for movement considerations
+            random.shuffle(allCells)
             self.neighborhood = neighborhood
+        # This neighborhood should not be used for movement,
+        # only for calculating len(agent.findNeighborhood(cell))
+        # in *HalfLookahead decision models.
         return neighborhood
 
     def findNewMarginalRateOfSubstitution(self, sugar, spice):
