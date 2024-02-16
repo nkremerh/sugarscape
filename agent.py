@@ -611,7 +611,7 @@ class Agent:
         if len(cells) == 0:
             return None
         bestCell = None
-        cells = self.sortCellsByWealthDescending(cells)
+        cells = self.sortCellsByWealth(cells)
         if "all" in self.debug or "agent" in self.debug:
             self.printCellScores(cells)
         # If not an ethical agent, return top selfish choice
@@ -663,7 +663,7 @@ class Agent:
 
         # If additional ordering consideration, select new best cell
         if "Top" in self.decisionModel:
-            cells = self.sortCellsByWealthDescending(cells)
+            cells = self.sortCellsByWealth(cells)
             if "all" in self.debug or "agent" in self.debug:
                 self.printEthicalCellScores(cells)
             bestCell = cells[0]["cell"]
@@ -1219,7 +1219,7 @@ class Agent:
         sugarscape = self.cell.environment.sugarscape
         sugarscape.addDisease(disease, agent)
 
-    def sortCellsByWealthDescending(self, cells):
+    def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
         i = 0
         while i < len(cells):
