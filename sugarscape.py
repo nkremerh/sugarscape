@@ -971,7 +971,5 @@ if __name__ == "__main__":
         for stat in memoryStats[:100]:
             print(stat)
     else:
-        print("Timesteps: ", configuration["timesteps"])
-        print("Model: ", configuration["agentDecisionModel"])
         S.runSimulation(configuration["timesteps"])
     exit(0)
