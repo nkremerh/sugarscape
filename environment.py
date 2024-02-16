@@ -1,5 +1,6 @@
 import math
 import random
+import cell
 
 class Environment:
     # Assumption: grid is always indexed by [height][width]
@@ -28,8 +29,14 @@ class Environment:
         self.universalSpiceIncomeInterval = configuration["universalSpiceIncomeInterval"]
         self.universalSugarIncomeInterval = configuration["universalSugarIncomeInterval"]
         self.equator = math.ceil(self.height / 2)
-        # Populate grid with NoneType objects
-        self.grid = [[None for j in range(width)]for i in range(height)]
+        # Populate grid with default Cell objects
+        self.grid = [[cell.Cell(i, j, self) for j in range(width)] for i in range(height)]
+        seasons = True if configuration["seasonInterval"] > 0 else False
+        if seasons == True:
+            for i in range(self.height):
+                for j in range(self.width):
+                    self.grid[i][j].season = self.seasonNorth if j >= self.equator else self.seasonSouth
+
 
     def doCellUpdate(self):
         for i in range(self.height):
@@ -95,9 +102,6 @@ class Environment:
             cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
             cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
         return cellsInRange
-
-    def placeCell(self, cell, x, y):
-        self.grid[x][y] = cell
 
     def resetCell(self, x, y):
         self.grid[x][y] = None

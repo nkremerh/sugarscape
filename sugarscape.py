@@ -69,17 +69,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        seasons = True if self.configuration["environmentSeasonInterval"] > 0 else False
         for i in range(height):
             for j in range(width):
-                if self.environment.findCell(i, j) == None:
-                    newCell = cell.Cell(i, j, self.environment)
-                    if seasons == True:
-                        if j >= self.environment.equator:
-                            newCell.season = "summer"
-                        else:
-                            newCell.season = "winter"
-                    self.environment.placeCell(newCell, i, j)
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSpice * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSpice)
@@ -92,17 +83,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        seasons = True if self.configuration["environmentSeasonInterval"] > 0 else False
         for i in range(height):
             for j in range(width):
-                if self.environment.findCell(i, j) == None:
-                    newCell = cell.Cell(i, j, self.environment)
-                    if seasons == True:
-                        if j >= self.environment.equator:
-                            newCell.season = "summer"
-                        else:
-                            newCell.season = "winter"
-                    self.environment.placeCell(newCell, i, j)
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSugar * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSugar)
@@ -989,5 +971,7 @@ if __name__ == "__main__":
         for stat in memoryStats[:100]:
             print(stat)
     else:
+        print("Timesteps: ", configuration["timesteps"])
+        print("Model: ", configuration["agentDecisionModel"])
         S.runSimulation(configuration["timesteps"])
     exit(0)
