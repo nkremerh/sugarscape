@@ -421,10 +421,11 @@ class Sugarscape:
         inheritancePolicy = configs["agentInheritancePolicy"]
         decisionModelFactor = configs["agentDecisionModelFactor"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
-        decisionModel = configs["agentDecisionModel"]
-        # Convert clever name for default behavior
-        if decisionModel == "rawSugarscape":
-            decisionModel = "none"
+        decisionModels = [
+            # Convert clever name for default behavior
+            "none" if model == "rawSugarscape" else model
+            for model in configs["agentDecisionModel"]
+        ]
         universalSpice = configs["agentUniversalSpice"]
         universalSugar = configs["agentUniversalSugar"]
 
@@ -520,12 +521,18 @@ class Sugarscape:
         for config in configurations:
             random.seed(self.agentConfigHashes[config] + self.timestep)
             random.shuffle(configurations[config]["endowments"])
+
         random.setstate(randomNumberReset)
         random.shuffle(sexes)
+        # Calculate number of models beforehand to avoid repeated len() calls
+        numDecisionModels = len(decisionModels)
         for i in range(numAgents):
+            # Randomize decision model order but maintain correct relative frequencies by cycling through model list
+            if numDecisionModels > 1 and i % numDecisionModels == 0:
+                    random.shuffle(decisionModels)
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
-                              "decisionModel": decisionModel}
+                              "decisionModel": decisionModels[i % numDecisionModels]}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -869,10 +876,6 @@ def verifyConfiguration(configuration):
     if configuration["environmentMaxTribes"] > 11:
         configuration["environmentMaxTribes"] = 11
 
-    # Keep compatibility with outdated configuration files
-    if configuration["agentDecisionModel"] == "rawSugarscape":
-        configuration["agentDecisionModel"] = "none"
-
     if len(configuration["agentStartingQuadrants"]) == 0:
         configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
 
@@ -909,7 +912,7 @@ if __name__ == "__main__":
     # Set default values for simulation configuration
     configuration = {"agentAggressionFactor": [0, 0],
                      "agentBaseInterestRate": [0.0, 0.0],
-                     "agentDecisionModel": "none",
+                     "agentDecisionModel": ["none"],
                      "agentDecisionModelFactor": [0, 0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
