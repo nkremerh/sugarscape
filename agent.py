@@ -1224,7 +1224,7 @@ class Agent:
         i = 0
         while i < len(cells):
             j = i
-            while j > 0 and (cells[j - 1]["wealth"] < cells[j]["wealth"] or (cells[j - 1]["wealth"] == cells[j]["wealth"] and cells[j - 1]["range"] >= cells[j]["range"])):
+            while j > 0 and (cells[j - 1]["wealth"] < cells[j]["wealth"] or (cells[j - 1]["wealth"] == cells[j]["wealth"] and cells[j - 1]["range"] > cells[j]["range"])):
                 currCell = cells[j]
                 cells[j] = cells[j - 1]
                 cells[j - 1] = currCell
