@@ -149,28 +149,28 @@ class Egoist(agent.Agent):
         for neighbor in self.neighborhood:
             if neighbor.canReachCell(cell) == True:
                 canSee += 1
-
-        for neighbor in self.neighborhood:
-            timestepDistance = 1
-            neighborMetabolism = neighbor.sugarMetabolism + neighbor.spiceMetabolism
-            cellDuration = cellSiteWealth / neighborMetabolism if neighborMetabolism > 0 else 0
-            certainty = 1 if neighbor.canReachCell(cell) == True else 0
-            proximity = 1 / timestepDistance
-            intensity = (1 / (1 + neighbor.findTimeToLive()) / (1 + cell.pollution))
-            duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
-            discount = 0.5
-            futureDuration = (cellSiteWealth - neighborMetabolism) / neighborMetabolism if neighborMetabolism > 0 else cellSiteWealth
-            futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
-            futureExtent = len(self.findNeighborhood(cell)) / (neighbor.vision * 4) if neighbor.vision > 0 and self.lookahead != None else 1
-            # Assuming agent can only see in four cardinal directions
-            extent = canSee / (neighbor.vision * 4) if neighbor.vision > 0 else 1
-            if self.lookahead == None:
-                neighborValueOfCell = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
-            else:
-                neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
-            cellValue += neighborValueOfCell
+        timestepDistance = 1
+        totalMetabolism = self.sugarMetabolism + self.spiceMetabolism
+        cellDuration = cellSiteWealth / totalMetabolism if totalMetabolism > 0 else 0
+        
+        # Assuming agent can only see in four cardinal directions
+        extent = canSee / (self.vision * 4) if self.vision > 0 else 1
+        # Agent can always reach cell
+        certainty = 1
+        proximity = 1 / timestepDistance
+        intensity = (1 / (1 + self.findTimeToLive()) / (1 + cell.pollution))
+        duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
+        # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
+        discount = 0.5
+        futureDuration = (cellSiteWealth - totalMetabolism) / totalMetabolism if totalMetabolism > 0 else cellSiteWealth
+        futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
+        futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
+        
+        if self.lookahead == None:
+            cellValue = self.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
+        else:
+            futureExtent = len(self.findNeighborhood(cell)) / (self.vision * 4) if self.vision > 0 and self.lookahead != None else 1
+            cellValue = self.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
         return cellValue
 
     def spawnChild(self, childID, birthday, cell, configuration):
