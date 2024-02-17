@@ -18,7 +18,7 @@ def createConfigurations(config, path):
         for seed in seeds:
             for model in dataOpts["decisionModels"]:
                 simOpts = config["sugarscapeOptions"]
-                simOpts["agentEthicalTheory"] = model
+                simOpts["agentDecisionModel"] = model
                 simOpts["seed"] = seed
                 simOpts["logfile"] = "{0}{1}{2}.json".format(path, model, seed)
                 # Enforce noninteractive, no-output mode
@@ -151,6 +151,10 @@ if __name__ == "__main__":
     configFile = open(config)
     config = json.loads(configFile.read())
     configFile.close()
+
+    if "dataCollectionOptions" not in config:
+        print("Configuration file must have specific data collection options in order to run automated data collection.")
+        exit(1)
 
     configFiles = createConfigurations(config, path)
     runSimulations(config, configFiles, path)
