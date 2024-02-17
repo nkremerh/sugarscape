@@ -155,6 +155,10 @@ if __name__ == "__main__":
     config = json.loads(configFile.read())
     configFile.close()
 
+    if "dataCollectionOptions" not in config:
+        print("Configuration file must have specific data collection options in order to run automated data collection.")
+        exit(1)
+
     configFiles = createConfigurations(config, path)
     runSimulations(config, configFiles, path)
 
