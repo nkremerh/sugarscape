@@ -96,6 +96,9 @@ class Environment:
             cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
         return cellsInRange
 
+    def resetCell(self, x, y):
+        self.grid[x][y] = None
+
     def setCell(self, cell, x, y):
         if self.grid[x][y] == None:
             if y >= self.equator:
@@ -103,9 +106,6 @@ class Environment:
             else:
                 cell.season = self.seasonSouth
             self.grid[x][y] = cell
-
-    def resetCell(self, x, y):
-        self.grid[x][y] = None
 
     def updatePollution(self):
         if self.pollutionDiffusionDelay > 0:

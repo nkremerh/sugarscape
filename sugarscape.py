@@ -4,6 +4,7 @@ import agent
 import cell
 import disease
 import environment
+import ethics
 
 import getopt
 import hashlib
@@ -120,6 +121,19 @@ class Sugarscape:
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, c, agentConfiguration)
+            # If using a different decision model, replace new agent with instance of child class
+            if "altruisticHalfLookahead" in agentConfiguration["decisionModel"]:
+                a = ethics.Altruist(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+            elif "altruisticNoLookahead" in agentConfiguration["decisionModel"]:
+                a = ethics.Altruist(agentID, self.timestep, c, agentConfiguration)
+            elif "benthamHalfLookahead" in agentConfiguration["decisionModel"]:
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+            elif "benthamNoLookahead" in agentConfiguration["decisionModel"]:
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+            elif "egoisticHalfLookahead" in agentConfiguration["decisionModel"]:
+                a = ethics.Egoist(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+            elif "egoisticNoLookahead" in agentConfiguration["decisionModel"]:
+                a = ethics.Egoist(agentID, self.timestep, c, agentConfiguration)
             c.agent = a
             self.agents.append(a)
 

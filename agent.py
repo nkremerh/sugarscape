@@ -3,8 +3,6 @@ import math
 import random
 import sys
 
-import ethics
-
 class Agent:
     def __init__(self, agentID, birthday, cell, configuration):
         self.ID = agentID
@@ -88,7 +86,7 @@ class Agent:
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
         childID = sugarscape.generateAgentID()
-        child = Agent(childID, self.timestep, cell, childConfiguration)
+        child = self.spawnChild(childID, self.timestep, cell, childConfiguration)
         child.gotoCell(cell)
         sugarscape.addAgent(child)
         child.collectResourcesAtCell()
@@ -176,6 +174,8 @@ class Agent:
             self.cell.doSpiceProductionPollution(spiceCollected)
             self.cell.resetSugar()
             self.cell.resetSpice()
+        else:
+            print("Agent not in a cell")
 
     def defaultOnLoan(self, loan):
         for creditor in self.socialNetwork["creditors"]:
@@ -617,48 +617,13 @@ class Agent:
         if self.decisionModel == "none":
             return greedyBestCell
 
-        # Calculate initial utility value calculation and naively select based on binary decision first
-        if "benthamNoLookahead" in self.decisionModel:
-            for cell in cells:
-                ethicalScore = ethics.findBenthamNoLookaheadValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif "benthamHalfLookahead" in self.decisionModel:
-            for cell in cells:
-                ethicalScore = ethics.findBenthamHalfLookaheadValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-
-        elif "altruisticHalfLookahead" in self.decisionModel:
-            for cell in cells:
-                ethicalScore = ethics.findAltruisticHalfLookaheadValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif "egoisticHalfLookahead" in self.decisionModel:
-            for cell in cells:
-                ethicalScore = ethics.findEgoisticHalfLookaheadValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-        elif "egoisticNoLookahead" in self.decisionModel:
-            for cell in cells:
-                ethicalScore = ethics.findEgoisticNoLookaheadValueOfCell(self, cell["cell"])
-                cell["wealth"] = ethicalScore
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
+        for cell in cells:
+            ethicalScore = self.findEthicalValueOfCell(cell["cell"])
+            cell["wealth"] = ethicalScore
+        for cell in cells:
+            if cell["wealth"] > 0:
+                bestCell = cell["cell"]
+                break
 
         # If additional ordering consideration, select new best cell
         if "Top" in self.decisionModel:
@@ -1214,6 +1179,9 @@ class Agent:
         if motherID not in self.socialNetwork:
             self.addAgentToSocialNetwork(mother)
         self.socialNetwork["mother"] = mother
+
+    def spawnChild(self, childID, birthday, cell, configuration):
+        return Agent(childID, birthday, cell, configuration)
 
     def spreadDisease(self, agent, disease):
         sugarscape = self.cell.environment.sugarscape
