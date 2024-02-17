@@ -96,8 +96,13 @@ class Environment:
             cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
         return cellsInRange
 
-    def placeCell(self, cell, x, y):
-        self.grid[x][y] = cell
+    def setCell(self, cell, x, y):
+        if self.grid[x][y] == None:
+            if y >= self.equator:
+                cell.season = self.seasonNorth
+            else:
+                cell.season = self.seasonSouth
+            self.grid[x][y] = cell
 
     def resetCell(self, x, y):
         self.grid[x][y] = None

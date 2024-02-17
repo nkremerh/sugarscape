@@ -69,17 +69,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        seasons = True if self.configuration["environmentSeasonInterval"] > 0 else False
         for i in range(height):
             for j in range(width):
-                if self.environment.findCell(i, j) == None:
-                    newCell = cell.Cell(i, j, self.environment)
-                    if seasons == True:
-                        if j >= self.environment.equator:
-                            newCell.season = "summer"
-                        else:
-                            newCell.season = "winter"
-                    self.environment.placeCell(newCell, i, j)
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSpice * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSpice)
@@ -92,17 +83,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        seasons = True if self.configuration["environmentSeasonInterval"] > 0 else False
         for i in range(height):
             for j in range(width):
-                if self.environment.findCell(i, j) == None:
-                    newCell = cell.Cell(i, j, self.environment)
-                    if seasons == True:
-                        if j >= self.environment.equator:
-                            newCell.season = "summer"
-                        else:
-                            newCell.season = "winter"
-                    self.environment.placeCell(newCell, i, j)
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSugar * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSugar)
@@ -172,6 +154,11 @@ class Sugarscape:
     def configureEnvironment(self, maxSugar, maxSpice):
         height = self.environment.height
         width = self.environment.width
+        for i in range(height):
+            for j in range(width):
+                newCell = cell.Cell(i, j, self.environment)
+                self.environment.setCell(newCell, i, j)
+
         startX1 = math.ceil(height * 0.7)
         startX2 = math.ceil(height * 0.3)
         startY1 = math.ceil(width * 0.3)
