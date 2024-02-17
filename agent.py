@@ -893,12 +893,7 @@ class Agent:
                 neighborhood.append(neighbor)
         neighborhood.append(self)
         if newCell == None:
-            # Shuffle cells for movement considerations
-            random.shuffle(allCells)
             self.neighborhood = neighborhood
-        # This neighborhood should not be used for movement,
-        # only for calculating len(agent.findNeighborhood(cell))
-        # in *HalfLookahead decision models.
         return neighborhood
 
     def findNewMarginalRateOfSubstitution(self, sugar, spice):
