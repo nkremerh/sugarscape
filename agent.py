@@ -661,8 +661,6 @@ class Agent:
             allCells = self.cell.environment.findCellsInRange(cell.x, cell.y, cellRange)
             if newCell == None:
                 self.cellsInRange = allCells
-            # Shuffle cells for movement considerations
-            random.shuffle(allCells)
             return allCells
         return []
 
