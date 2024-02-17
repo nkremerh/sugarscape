@@ -163,19 +163,16 @@ class Agent:
         disease.agent = self
 
     def collectResourcesAtCell(self):
-        if self.cell != None:
-            sugarCollected = self.cell.sugar
-            spiceCollected = self.cell.spice
-            self.sugar += sugarCollected
-            self.spice += spiceCollected
-            self.wealth += sugarCollected + spiceCollected
-            self.updateMeanIncome(sugarCollected, spiceCollected)
-            self.cell.doSugarProductionPollution(sugarCollected)
-            self.cell.doSpiceProductionPollution(spiceCollected)
-            self.cell.resetSugar()
-            self.cell.resetSpice()
-        else:
-            print("Agent not in a cell")
+        sugarCollected = self.cell.sugar
+        spiceCollected = self.cell.spice
+        self.sugar += sugarCollected
+        self.spice += spiceCollected
+        self.wealth += sugarCollected + spiceCollected
+        self.updateMeanIncome(sugarCollected, spiceCollected)
+        self.cell.doSugarProductionPollution(sugarCollected)
+        self.cell.doSpiceProductionPollution(spiceCollected)
+        self.cell.resetSugar()
+        self.cell.resetSpice()
 
     def defaultOnLoan(self, loan):
         for creditor in self.socialNetwork["creditors"]:
@@ -411,7 +408,7 @@ class Agent:
     def doTimestep(self, timestep):
         self.timestep = timestep
         # Prevent dead or already moved agent from moving
-        if self.alive == True and self.cell != None and self.lastMoved != self.timestep:
+        if self.alive == True and self.lastMoved != self.timestep:
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
             self.lastMoved = self.timestep
@@ -429,6 +426,9 @@ class Agent:
             self.doLending()
             self.doDisease()
             self.doAging()
+            # If dead from aging, skip remainder of timestep
+            if self.alive == False:
+                return
             self.updateHappiness()
 
     def doUniversalIncome(self):
@@ -657,7 +657,7 @@ class Agent:
         vision = self.findVision()
         movement = self.findMovement()
         cellRange = min(vision, movement)
-        if cellRange > 0 and self.cell != None:
+        if cellRange > 0:
             allCells = self.cell.environment.findCellsInRange(cell.x, cell.y, cellRange)
             if newCell == None:
                 self.cellsInRange = allCells
@@ -745,7 +745,7 @@ class Agent:
         return childEndowment
 
     def findConflictHappiness(self):
-        if self.cell != None and self.lastDoneCombat == self.cell.environment.sugarscape.timestep:
+        if self.lastDoneCombat == self.cell.environment.sugarscape.timestep:
             if(self.findAggression() > 1):
                 return 1
             else:
@@ -808,9 +808,7 @@ class Agent:
         return hammingDistance
 
     def findHappiness(self):
-        if self.cell != None:
-            return self.findWealthHappiness() + self.findConflictHappiness() + self.findFamilyHappiness() + self.findSocialHappiness() + self.findHealthHappiness()
-        return 0
+        return self.findWealthHappiness() + self.findConflictHappiness() + self.findFamilyHappiness() + self.findSocialHappiness() + self.findHealthHappiness()
 
     def findHealthHappiness(self):
         if self.isSick():
@@ -964,18 +962,16 @@ class Agent:
         return max(0, self.vision + self.visionModifier)
 
     def findWealthHappiness(self):
-        if self.cell != None:
-            if self.cell.environment.sugarscape.runtimeStats["meanWealth"] < 1:
-                return 0
-            elif(self.wealth < 1):
+        if self.cell.environment.sugarscape.runtimeStats["meanWealth"] < 1:
+            return 0
+        elif(self.wealth < 1):
+            return -1
+        else:
+            if math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5 > 1:
+                return 1
+            elif math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5 < -1:
                 return -1
-            else:
-                if math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5 > 1:
-                    return 1
-                elif math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5 < -1:
-                    return -1
-                return (math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5)
-        return 0
+            return (math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5)
 
     def findWelfare(self, sugarReward, spiceReward):
         spiceMetabolism = self.findSpiceMetabolism()
@@ -1016,8 +1012,7 @@ class Agent:
         self.tags[position] = value
 
     def gotoCell(self, cell):
-        if(self.cell != None):
-            self.resetCell()
+        self.resetCell()
         self.cell = cell
         self.cell.agent = self
 
@@ -1329,6 +1324,8 @@ class Agent:
         self.vonNeumannNeighbors["west"] = self.cell.findWestNeighbor().agent
 
     def updateHappiness(self):
+        if self.cell == None:
+            print("Agent {0} has no cell and isAlive = {1}".format(self.ID, self.isAlive()))
         self.healthHappiness = self.findHealthHappiness()
         self.wealthHappiness = self.findWealthHappiness()
         self.socialHappiness = self.findSocialHappiness()
