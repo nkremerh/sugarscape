@@ -177,6 +177,11 @@ agentMovement: [int, int]
     Set maximum movement distance per timestep for agent.
     Default: [1, 6]
 
+agentMovementMode: string
+    Set the directionality used to figure out which cells an agent can move to.
+    Options: "cardinal", "radial"
+    Default: "cardinal"
+
 agentReplacements: int
     Set maximum number of agents to replace in environment on agent death.
     Default: 0
@@ -230,6 +235,11 @@ agentUniversalSugar: [float, float]
 agentVision: [int, int]
     Set the distance in the four cardinal directions an agent can see.
     Default: [1, 6]
+
+agentVisionMode: string
+    Set the directionality used to figure out which cells an agent can see.
+    Options: "cardinal", "radial"
+    Default: "cardinal"
 
 debugMode: [string, ...]
     Set the debug printing mode.

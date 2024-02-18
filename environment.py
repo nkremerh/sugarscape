@@ -83,7 +83,7 @@ class Environment:
             for j in range(self.width):
                 self.grid[i][j].findNeighbors()
 
-    def findCellsInRange(self, startX, startY, gridRange):
+    def findCellsInCardinalRange(self, startX, startY, gridRange):
         cellsInRange = []
         for i in range(1, gridRange + 1):
             deltaNorth = (startY + i + self.height) % self.height
@@ -94,6 +94,16 @@ class Environment:
             cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
             cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
             cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
+        return cellsInRange
+
+    # TODO: fix this brutally inefficient means of finding all cells within a Euclidean distance
+    def findCellsInRadialRange(self, startX, startY, gridRange):
+        cellsInRange = []
+        for i in range(self.height):
+            for j in range(self.width):
+                euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
+                if euclideanDistance < gridRange + 1:
+                    cellsInRange.append({"cell": self.grid[i][j], "distance": euclideanDistance})
         return cellsInRange
 
     def resetCell(self, x, y):
