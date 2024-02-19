@@ -96,14 +96,17 @@ class Environment:
             cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
         return cellsInRange
 
-    # TODO: fix this brutally inefficient means of finding all cells within a Euclidean distance
     def findCellsInRadialRange(self, startX, startY, gridRange):
         cellsInRange = []
-        for i in range(self.height):
-            for j in range(self.width):
+        # Iterate through the bounding box of the circle
+        for i in range(startX - gridRange, startX + gridRange + 1):
+            for j in range(startY - gridRange, startY + gridRange + 1):
                 euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
                 if euclideanDistance < gridRange + 1:
-                    cellsInRange.append({"cell": self.grid[i][j], "distance": euclideanDistance})
+                    # Use mod to include wraparound behavior
+                    wrappedI = (i + self.height) % self.height
+                    wrappedJ = (j + self.width) % self.width
+                    cellsInRange.append({"cell": self.grid[wrappedI][wrappedJ], "distance": euclideanDistance})
         return cellsInRange
 
     def resetCell(self, x, y):
