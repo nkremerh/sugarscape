@@ -102,11 +102,11 @@ class Environment:
         for i in range(startX - gridRange, startX + gridRange + 1):
             for j in range(startY - gridRange, startY + gridRange + 1):
                 euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
+                # If agent can see at least part of a cell, they should be allowed to consider it
                 if euclideanDistance < gridRange + 1:
-                    # Use mod to include wraparound behavior
-                    wrappedI = (i + self.height) % self.height
-                    wrappedJ = (j + self.width) % self.width
-                    cellsInRange.append({"cell": self.grid[wrappedI][wrappedJ], "distance": euclideanDistance})
+                    deltaX = (i + self.height) % self.height
+                    deltaY = (j + self.width) % self.width
+                    cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
         return cellsInRange
 
     def resetCell(self, x, y):
