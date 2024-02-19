@@ -55,7 +55,6 @@ class Sugarscape:
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
                              "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
-        self.logAgent = None
 
     def addAgent(self, agent):
         self.agents.append(agent)
@@ -123,17 +122,21 @@ class Sugarscape:
             a = agent.Agent(agentID, self.timestep, c, agentConfiguration)
             # If using a different decision model, replace new agent with instance of child class
             if "altruisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Altruist(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a.selfishnessFactor = 0
             elif "altruisticNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Altruist(agentID, self.timestep, c, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                a.selfishnessFactor = 0
             elif "benthamHalfLookahead" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
             elif "benthamNoLookahead" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
             elif "egoisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Egoist(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a.selfishnessFactor = 1
             elif "egoisticNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Egoist(agentID, self.timestep, c, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                a.selfishnessFactor = 1
             c.agent = a
             self.agents.append(a)
 
@@ -429,6 +432,8 @@ class Sugarscape:
         ]
         universalSpice = configs["agentUniversalSpice"]
         universalSugar = configs["agentUniversalSugar"]
+        movementMode = configs["agentMovementMode"]
+        visionMode = configs["agentVisionMode"]
 
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
@@ -533,7 +538,8 @@ class Sugarscape:
                     random.shuffle(decisionModels)
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
-                              "decisionModel": decisionModels[i % numDecisionModels]}
+                              "decisionModel": decisionModels[i % numDecisionModels], "movementMode": movementMode,
+                              "visionMode": visionMode}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -929,6 +935,7 @@ if __name__ == "__main__":
                      "agentMaxAge": [-1, -1],
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
+                     "agentMovementMode": "cardinal",
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],
                      "agentSpiceMetabolism": [0, 0],
@@ -941,6 +948,7 @@ if __name__ == "__main__":
                      "agentUniversalSpice": [0,0],
                      "agentUniversalSugar": [0,0],
                      "agentVision": [1, 6],
+                     "agentVisionMode": "cardinal",
                      "debugMode": ["none"],
                      "diseaseAggressionPenalty": [0, 0],
                      "diseaseFertilityPenalty": [0, 0],
