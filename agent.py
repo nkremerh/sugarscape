@@ -47,7 +47,7 @@ class Agent:
         self.alive = True
         self.age = 0
         self.cellsInRange = []
-        self.neighborhood = []
+        self.neighborhood = set()
         self.lastMoved = -1
         self.vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
@@ -84,6 +84,7 @@ class Agent:
         self.visionModifier = 0
         self.aggressionFactorModifier = 0
         self.fertilityFactorModifier = 0
+        self.findNeighborhood()
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
@@ -852,12 +853,12 @@ class Agent:
 
     def findNeighborhood(self, newCell=None):
         newNeighborhood = self.findCellsInRange(newCell)
-        neighborhood = []
+        neighborhood = set()
         for neighborCell in newNeighborhood:
             neighbor = neighborCell["cell"].agent
             if neighbor != None and neighbor.isAlive() == True:
-                neighborhood.append(neighbor)
-        neighborhood.append(self)
+                neighborhood.add(neighbor)
+        neighborhood.add(self)
         if newCell == None:
             self.neighborhood = neighborhood
         return neighborhood

@@ -17,6 +17,7 @@ class Bentham(agent.Agent):
         globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
         cellValue = 0
         selfishnessFactor = self.selfishnessFactor
+        futureNeighborhood = self.findNeighborhood(cell)
         for neighbor in self.neighborhood:
             # Timesteps to reach cell, currently 1 since agents only plan for the current timestep
             timestepDistance = 1
@@ -32,9 +33,8 @@ class Bentham(agent.Agent):
             futureDuration = (cellSiteWealth - neighborMetabolism) / neighborMetabolism if neighborMetabolism > 0 else cellSiteWealth
             futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
             futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
-            # Assuming agent can only see in four cardinal directions
-            extent = len(self.neighborhood) / (neighbor.vision * 4) if neighbor.vision > 0 else 1
-            futureExtent = len(self.findNeighborhood(cell)) / (neighbor.vision * 4) if neighbor.vision > 0 and self.lookahead != None else 1
+            neighborsNeighborhoodSize = len(neighbor.neighborhood)
+            extent = len(self.neighborhood & neighbor.neighborhood) / neighborsNeighborhoodSize
             neighborValueOfCell = 0
             # If not the agent moving, consider these as opportunity costs
             if neighbor != self and cell != neighbor.cell and self.selfishnessFactor < 1:
@@ -45,12 +45,14 @@ class Bentham(agent.Agent):
                 if self.lookahead == None:
                     neighborValueOfCell = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
+                    futureExtent = len(futureNeighborhood & neighbor.neighborhood) / neighborsNeighborhoodSize
                     neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
             # If move will kill this neighbor, consider this a penalty
             elif neighbor != self and cell == neighbor.cell and self.selfishnessFactor < 1:
                 if self.lookahead == None:
                     neighborValueOfCell = -1 * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
+                    futureExtent = len(futureNeighborhood & neighbor.neighborhood) / neighborsNeighborhoodSize
                     neighborValueOfCell = -1 * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
                 # If penalty is too slight, make it more severe
                 if neighborValueOfCell > -1:
@@ -59,6 +61,7 @@ class Bentham(agent.Agent):
                 if self.lookahead == None:
                     neighborValueOfCell = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
+                    futureExtent = len(futureNeighborhood & neighbor.neighborhood) / neighborsNeighborhoodSize
                     neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
             if selfishnessFactor != -1:
                 if neighbor == self:
