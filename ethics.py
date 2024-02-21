@@ -17,6 +17,7 @@ class Bentham(agent.Agent):
         globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
         cellValue = 0
         selfishnessFactor = self.selfishnessFactor
+        futureNeighborhood = self.findNeighborhood(cell)
         for neighbor in self.neighborhood:
             # Timesteps to reach cell, currently 1 since agents only plan for the current timestep
             timestepDistance = 1
@@ -34,7 +35,7 @@ class Bentham(agent.Agent):
             futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
             # Assuming agent can only see in four cardinal directions
             extent = len(self.neighborhood) / (neighbor.vision * 4) if neighbor.vision > 0 else 1
-            futureExtent = len(self.findNeighborhood(cell)) / (neighbor.vision * 4) if neighbor.vision > 0 and self.lookahead != None else 1
+            futureExtent = len(futureNeighborhood) / (neighbor.vision * 4) if neighbor.vision > 0 and self.lookahead != None else 1
             neighborValueOfCell = 0
             # If not the agent moving, consider these as opportunity costs
             if neighbor != self and cell != neighbor.cell and self.selfishnessFactor < 1:
