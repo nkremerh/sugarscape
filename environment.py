@@ -85,37 +85,41 @@ class Environment:
 
     def findCellsInCardinalRange(self, startX, startY, gridRange):
         cellsInRange = [{"cell": self.grid[startX][startY], "distance": 0}]
+        height = self.height
+        width = self.width
         for i in range(1, gridRange + 1):
-            deltaNorth = (startY + i + self.height) % self.height
-            deltaSouth = (startY - i + self.height) % self.height
-            deltaEast = (startX + i + self.width) % self.width
-            deltaWest = (startX - i + self.width) % self.width
-            cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
-            cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
-            cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
-            cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
+            deltaNorth = (startY + i + height) % height
+            deltaSouth = (startY - i + height) % height
+            deltaEast = (startX + i + width) % width
+            deltaWest = (startX - i + width) % width
+            cellsInRange.extend([
+                {"cell": self.grid[startX][deltaNorth], "distance": i},
+                {"cell": self.grid[startX][deltaSouth], "distance": i},
+                {"cell": self.grid[deltaEast][startY], "distance": i},
+                {"cell": self.grid[deltaWest][startY], "distance": i}])
         return cellsInRange
 
     def findCellsInRadialRange(self, startX, startY, gridRange):
-        cellsInRange = []
+        cellsInRange = self.findCellsInCardinalRange(startX, startY, gridRange)
+        height = self.height
+        width = self.width
         # Iterate through the upper left quadrant of the circle's bounding box
         for i in range(startX - gridRange, startX):
             for j in range(startY - gridRange, startY):
                 euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
                 # If agent can see at least part of a cell, they should be allowed to consider it
                 if euclideanDistance < gridRange + 1:
-                    # Append cells in the top left quadrant
-                    deltaX = (i + self.height) % self.height
-                    deltaY = (j + self.width) % self.width
-                    cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
-                    # Reflect to the other three quadrants
-                    reflectedX = (2 * startX - i + self.height) % self.height
-                    reflectedY = (2 * startY - j + self.width) % self.width
-                    cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
-                    cellsInRange.append({"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance})
-                    cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})
-        # Include cardinal cells in between quadrants
-        cellsInRange += self.findCellsInCardinalRange(startX, startY, gridRange)
+                    # Coordinates for the top left quadrant
+                    deltaX = (i + height) % height
+                    deltaY = (j + width) % width
+                    # Reflected coordinates for the other three quadrants
+                    reflectedX = (2 * startX - i + height) % height
+                    reflectedY = (2 * startY - j + width) % width
+                    cellsInRange.extend([
+                        {"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance},
+                        {"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance},
+                        {"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance},
+                        {"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance}])
         return cellsInRange
 
     def resetCell(self, x, y):
