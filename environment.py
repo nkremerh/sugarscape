@@ -88,10 +88,13 @@ class Environment:
         height = self.height
         width = self.width
         for i in range(1, gridRange + 1):
-            deltaXs = [(startX + i + width) % width, (startX - i + width) % width]
-            deltaYs = [(startY + i + height) % height, (startY - i + height) % height]
-            cellsInRange.extend([{"cell": self.grid[startX][y], "distance": i} for y in deltaYs])
-            cellsInRange.extend([{"cell": self.grid[x][startY], "distance": i} for x in deltaXs])
+            deltaNorth, deltaSouth = (startY + i + height) % height, (startY - i + height) % height
+            deltaEast, deltaWest = (startX + i + width) % width, (startX - i + width) % width
+            cellsInRange.extend([
+                {"cell": self.grid[startX][deltaNorth], "distance": i},
+                {"cell": self.grid[startX][deltaSouth], "distance": i},
+                {"cell": self.grid[deltaEast][startY], "distance": i},
+                {"cell": self.grid[deltaWest][startY], "distance": i}])
         return cellsInRange
 
     def findCellsInRadialRange(self, startX, startY, gridRange):
@@ -104,11 +107,13 @@ class Environment:
                 euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
                 # If agent can see at least part of a cell, they should be allowed to consider it
                 if euclideanDistance < gridRange + 1:
-                    deltaXs = [(i + height) % height, (2 * startX - i + height) % height]
-                    deltaYs = [(j + width) % width, (2 * startY - j + width) % width]
+                    deltaX, reflectedX = (i + height) % height, (2 * startX - i + height) % height
+                    deltaY, reflectedY = (j + width) % width, (2 * startY - j + width) % width
                     cellsInRange.extend([
-                        {"cell": self.grid[x][y], "distance": euclideanDistance} 
-                        for x in deltaXs for y in deltaYs])
+                        {"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance},
+                        {"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance},
+                        {"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance},
+                        {"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance}])
         return cellsInRange
 
     def resetCell(self, x, y):
