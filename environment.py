@@ -96,6 +96,8 @@ class Environment:
 
     def findCellsInRadialRange(self, startX, startY, gridRange):
         cellsInRange = self.findCellsInCardinalRange(startX, startY, gridRange)
+        # Current cell shouldn't be included, but we want to maintain current behavior for now
+        cellsInRange.append({"cell": self.grid[startX][startY], "distance": 0})
         height = self.height
         width = self.width
         # Iterate through the upper left quadrant of the circle's bounding box
