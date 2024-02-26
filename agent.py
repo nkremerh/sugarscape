@@ -551,8 +551,8 @@ class Agent:
         retaliators = self.findRetaliatorsInVision()
         random.shuffle(self.cellsInRange)
 
-        bestCell = None
-        bestRange = max(self.cell.environment.height, self.cell.environment.width)
+        bestCell = self.cellsInRange[0]["cell"]
+        bestRange = self.cellsInRange[0]["distance"]
         bestWealth = 0
         combatMaxLoot = self.cell.environment.maxCombatLoot
         potentialCells = []
@@ -582,11 +582,6 @@ class Agent:
             # Avoid attacking agents protected via retaliation
             if prey != None and retaliators[preyTribe] > self.wealth + cellWealth:
                 continue
-
-            if bestCell == None:
-                bestCell = cell
-                bestRange = travelDistance
-                bestWealth = cellWealth
 
             # Select closest cell with the most resources
             if cellWealth > bestWealth or (cellWealth == bestWealth and travelDistance < bestRange):
