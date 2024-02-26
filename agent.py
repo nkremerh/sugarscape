@@ -545,6 +545,9 @@ class Agent:
 
     def findBestCell(self):
         self.findNeighborhood()
+        if len(self.cellsInRange) == 0:
+            return self.cell
+
         retaliators = self.findRetaliatorsInVision()
         random.shuffle(self.cellsInRange)
 
@@ -603,8 +606,6 @@ class Agent:
         return bestCell
 
     def findBestEthicalCell(self, cells, greedyBestCell=None):
-        if len(cells) == 0:
-            return None
         bestCell = None
         cells = self.sortCellsByWealth(cells)
         if "all" in self.debug or "agent" in self.debug:
