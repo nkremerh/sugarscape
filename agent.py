@@ -551,10 +551,7 @@ class Agent:
         bestCell = None
         bestRange = max(self.cell.environment.height, self.cell.environment.width)
         bestWealth = 0
-        agentX = self.cell.x
-        agentY = self.cell.y
         combatMaxLoot = self.cell.environment.maxCombatLoot
-        wraparound = self.findVision() + 1
         potentialCells = []
         aggression = self.findAggression()
 
@@ -569,14 +566,12 @@ class Agent:
             if prey != None and self.isNeighborValidPrey(prey) == False:
                 continue
             preyTribe = prey.tribe if prey != None else "empty"
-            preyWealth = prey.wealth if prey != None else 0
             preySugar = prey.sugar if prey != None else 0
             preySpice = prey.spice if prey != None else 0
             # Aggression factor may lead agent to see more reward than possible meaning combat itself is a reward
             welfarePreySugar = aggression * min(combatMaxLoot, preySugar)
             welfarePreySpice = aggression * min(combatMaxLoot, preySpice)
 
-            cellWealth = 0
             # Modify value of cell relative to the metabolism needs of the agent
             welfare = self.findWelfare((cell.sugar + welfarePreySugar), (cell.spice + welfarePreySpice))
             cellWealth = welfare / (1 + cell.pollution)
