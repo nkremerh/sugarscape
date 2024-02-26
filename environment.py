@@ -85,13 +85,11 @@ class Environment:
 
     def findCellsInCardinalRange(self, startX, startY, gridRange):
         cellsInRange = []
-        height = self.height
-        width = self.width
         for i in range(1, gridRange + 1):
-            deltaNorth = (startY + i + height) % height
-            deltaSouth = (startY - i + height) % height
-            deltaEast = (startX + i + width) % width
-            deltaWest = (startX - i + width) % width
+            deltaNorth = (startY + i + self.height) % self.height
+            deltaSouth = (startY - i + self.height) % self.height
+            deltaEast = (startX + i + self.width) % self.width
+            deltaWest = (startX - i + self.width) % self.width
             cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
             cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
             cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
@@ -100,18 +98,16 @@ class Environment:
 
     def findCellsInRadialRange(self, startX, startY, gridRange):
         cellsInRange = self.findCellsInCardinalRange(startX, startY, gridRange)
-        height = self.height
-        width = self.width
         # Iterate through the upper left quadrant of the circle's bounding box
         for i in range(startX - gridRange, startX):
             for j in range(startY - gridRange, startY):
                 euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
                 # If agent can see at least part of a cell, they should be allowed to consider it
                 if euclideanDistance < gridRange + 1:
-                    deltaX = (i + height) % height
-                    reflectedX = (2 * startX - i + height) % height
-                    deltaY = (j + width) % width
-                    reflectedY = (2 * startY - j + width) % width
+                    deltaX = (i + self.height) % self.height
+                    reflectedX = (2 * startX - i + self.height) % self.height
+                    deltaY = (j + self.width) % self.width
+                    reflectedY = (2 * startY - j + self.width) % self.width
                     cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
                     cellsInRange.append({"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance})
                     cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
