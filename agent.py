@@ -547,16 +547,16 @@ class Agent:
         self.findNeighborhood()
         if len(self.cellsInRange) == 0:
             return self.cell
-
-        retaliators = self.findRetaliatorsInVision()
         random.shuffle(self.cellsInRange)
 
-        bestCell = self.cellsInRange[0]["cell"]
-        bestRange = self.cellsInRange[0]["distance"]
-        bestWealth = 0
+        retaliators = self.findRetaliatorsInVision()
         combatMaxLoot = self.cell.environment.maxCombatLoot
-        potentialCells = []
         aggression = self.findAggression()
+
+        bestCell = self.cellsInRange[0]["cell"]
+        bestWealth = 0
+        bestRange = self.cellsInRange[0]["distance"]
+        potentialCells = []
 
         for currCell in self.cellsInRange:
             cell = currCell["cell"]
@@ -585,17 +585,17 @@ class Agent:
 
             # Select closest cell with the most resources
             if cellWealth > bestWealth or (cellWealth == bestWealth and travelDistance < bestRange):
-                bestRange = travelDistance
                 bestCell = cell
                 bestWealth = cellWealth
-
+                bestRange = travelDistance
+                
             cellRecord = {"cell": cell, "wealth": cellWealth, "range": travelDistance}
             potentialCells.append(cellRecord)
 
         if self.decisionModelFactor > 0:
             bestCell = self.findBestEthicalCell(potentialCells, bestCell)
-        if bestCell == None:
-            bestCell = self.cell
+            if bestCell == None:
+                bestCell = self.cell
         if "all" in self.debug or "agent" in self.debug:
             print("Agent {0} moving to ({1},{2})".format(self.ID, bestCell.x, bestCell.y))
         return bestCell
