@@ -546,6 +546,8 @@ class Agent:
     def findBestCell(self):
         self.findNeighborhood()
         if len(self.cellsInRange) == 0:
+            if "all" in self.debug or "agent" in self.debug:
+                print("Agent {0} moving to ({1},{2})".format(self.ID, self.cell.x, self.cell.y))
             return self.cell
         random.shuffle(self.cellsInRange)
 
