@@ -85,9 +85,9 @@ def getJobsToDo(config, path):
 
 def parseOptions():
     commandLineArgs = sys.argv[1:]
-    shortOptions = "c:p:t:h"
-    longOptions = ("conf=", "path=", "help")
-    options = {"config": None, "path": None}
+    shortOptions = "c:p:s:t:h"
+    longOptions = ("conf=", "path=", "seeds", "help")
+    options = {"config": None, "path": None, "seeds": False}
     try:
         args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
     except getopt.GetoptError as err:
@@ -96,7 +96,7 @@ def parseOptions():
     for currArg, currVal in args:
         if currArg in ("-c", "--conf"):
             if currVal == "":
-                print("No config file provided.")
+                print("No configuration file provided.")
                 printHelp()
             options["config"] = currVal
         elif currArg in ("-p", "--path"):
@@ -106,6 +106,8 @@ def parseOptions():
                 printHelp()
         elif currArg in ("-h", "--help"):
             printHelp()
+        elif currArg in ("-s", "--seeds"):
+            options["seeds"] = True
     if options["config"] == None:
         print("Configuration file path required.")
         printHelp()
@@ -140,6 +142,7 @@ def runSimulations(config, configFiles, path):
 
 if __name__ == "__main__":
     options = parseOptions()
+    seedsOnly = options["seeds"]
     path = options["path"]
     if path == None:
         path = "./"
@@ -151,12 +154,12 @@ if __name__ == "__main__":
     configFile = open(config)
     config = json.loads(configFile.read())
     configFile.close()
-
     if "dataCollectionOptions" not in config:
         print("Configuration file must have specific data collection options in order to run automated data collection.")
         exit(1)
 
     configFiles = createConfigurations(config, path)
-    runSimulations(config, configFiles, path)
+    if seedsOnly == False:
+        runSimulations(config, configFiles, path)
 
     exit(0)
