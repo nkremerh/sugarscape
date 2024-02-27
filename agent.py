@@ -211,9 +211,8 @@ class Agent:
         self.resetCell()
         self.doInheritance()
 
-        # Remove unnecessary references
-        self.socialNetwork = {"debtors": self.socialNetwork["debtors"],
-                              "children": self.socialNetwork["children"]}
+        # Keep only debtors and children in social network to handle outstanding loans
+        self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
         self.neighborhood = []
         self.vonNeumannNeighbors = {}
         self.mooreNeighbors = {}
