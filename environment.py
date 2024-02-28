@@ -97,16 +97,21 @@ class Environment:
         return cellsInRange
 
     def findCellsInRadialRange(self, startX, startY, gridRange):
-        cellsInRange = []
-        # Iterate through the bounding box of the circle
-        for i in range(startX - gridRange, startX + gridRange + 1):
-            for j in range(startY - gridRange, startY + gridRange + 1):
+        cellsInRange = self.findCellsInCardinalRange(startX, startY, gridRange)
+        # Iterate through the upper left quadrant of the circle's bounding box
+        for i in range(startX - gridRange, startX):
+            for j in range(startY - gridRange, startY):
                 euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
                 # If agent can see at least part of a cell, they should be allowed to consider it
                 if euclideanDistance < gridRange + 1:
                     deltaX = (i + self.height) % self.height
+                    reflectedX = (2 * startX - i + self.height) % self.height
                     deltaY = (j + self.width) % self.width
+                    reflectedY = (2 * startY - j + self.width) % self.width
                     cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
+                    cellsInRange.append({"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance})
+                    cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
+                    cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})
         return cellsInRange
 
     def resetCell(self, x, y):

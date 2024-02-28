@@ -34,6 +34,9 @@ data: $(DATACHECK)
 
 plots: $(PLOTCHECK)
 
+seeds:
+	cd data && $(PYTHON) run.py --conf ../$(CONFIG) --seeds
+
 setup:
 	@echo "Setup only works with a local Python 3 installation."
 	@echo "Please change the PYTHON variable to the path of your local Python 3 installation in the Makefile if this step fails."

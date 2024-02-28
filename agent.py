@@ -211,6 +211,12 @@ class Agent:
         self.resetCell()
         self.doInheritance()
 
+        # Keep only debtors and children in social network to handle outstanding loans
+        self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
+        self.neighborhood = []
+        self.vonNeumannNeighbors = {}
+        self.mooreNeighbors = {}
+
     def doDisease(self):
         diseases = self.diseases
         for diseaseRecord in diseases:
