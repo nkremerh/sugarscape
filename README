@@ -18,12 +18,16 @@ make clean
     Note: will remove any JSON files created by the other make options.
 
 make data
-    Run a number of random seeds comparing implemented decision models to the baseline greedy decisionmaking.
+    Run a number of random seeds comparing selected decision models.
     Note: results will be saved in the data subdirectory.
 
 make plots
     Generate graph plots from any JSON files in the data subdirectory.
     Note: plots are dependent on a dataset existing and will create it if necessary.
+
+make seeds
+    Generate a set of random seeds comparing selected decision models.
+    Note: results will be saved in the data subdirectory.
 
 make setup
     Change preconfigured settings for the simulation, data collection, and datset plotting.
