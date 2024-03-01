@@ -402,6 +402,11 @@ timesteps: int
     Default: 200
 
 Other JSON Configurable Options:
+bashAlias: string
+    Set the alias to the local Bash installation.
+    Note: Bash is required to run the data collection.
+    Default: "bash"
+
 decisionModels: [string, ...]
     Set the decision models (ethical theories) to be tested in data collection.
     Default: ["benthamHalfLookaheadBinary", "egoisticHalfLookaheadBinary", "rawSugarscape"]
@@ -418,16 +423,6 @@ numSeeds: int
     Set the number of random seeds to be tested in data collection.
     Default: 100
 
-pathToBash: path
-    Set the path to the local Bash installation.
-    Note: Bash is required to run the data collection.
-    Default: "bash"
-
-pathToPython: path
-    Set the path to the local Python 3 installation.
-    Note: Python 3 is required to run the simulation.
-    Default: "python"
-
 plots: [string, ...]
     Set the plots to be created once data has been collected.
     Default: ["population", "meanttl", "starvationCombat", "wealth", "wealthNormalized"]
@@ -435,3 +430,8 @@ plots: [string, ...]
 plotTimesteps: int
     Set the number of timesteps to plot.
     Default: 1000
+
+pythonAlias: string
+    Set the alias to the local Python 3 installation.
+    Note: Python 3 is required to run the simulation.
+    Default: "python"

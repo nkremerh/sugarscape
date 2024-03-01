@@ -127,7 +127,7 @@ def runSimulations(config, configFiles, path):
     shell += "# Number of parallel processes to run\nN={0}\n\n".format(dataOpts["numParallelSimJobs"])
     shell += "i=1\nj=${#files[@]}\nfor f in \"${files[@]}\"\ndo\n"
     shell += "echo \"Running decision model $f ($i/$j)\"\n# Run simulation for config\n"
-    shell += "{0} ../sugarscape.py --conf $f &\n\n".format(dataOpts["pathToPython"])
+    shell += "{0} ../sugarscape.py --conf $f &\n\n".format(dataOpts["pythonAlias"])
     shell += "if [[ $(jobs -r -p | wc -l) -ge $N ]]; then\nwait -n\nfi\ni=$((i+1))\ndone\n\n"
     shell += "sem=0\necho \"Waiting for jobs to finish up.\"\nwhile [[ $(jobs -r -p | wc -l) -gt 0 ]];\ndo\n"
     shell += "sem=$(((sem+1)%{0}))\nif [[ $sem -eq 0 ]]; then\n".format(dataOpts["jobUpdateFrequency"])
@@ -137,7 +137,7 @@ def runSimulations(config, configFiles, path):
     sh = open("temp.sh", 'w')
     sh.write(shell)
     sh.close()
-    os.system("{0} temp.sh".format(dataOpts["pathToBash"]))
+    os.system("{0} temp.sh".format(dataOpts["bashAlias"]))
     os.remove("temp.sh")
 
 if __name__ == "__main__":
