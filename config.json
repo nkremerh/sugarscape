@@ -1,14 +1,14 @@
 {
     "__README__": "Default values for helper scripts. Details can be found in the README.",
     "dataCollectionOptions": {
+        "bashAlias": "bash",
         "decisionModels": ["benthamHalfLookaheadBinary", "egoisticHalfLookaheadBinary", "rawSugarscape"],
         "jobUpdateFrequency": 5,
         "numParallelSimJobs": 1,
         "numSeeds": 100,
-        "pathToBash": "bash",
-        "pathToPython": "python",
         "plots": ["population", "meanttl", "starvationCombat", "wealth", "wealthNormalized", "meanAgeAtDeath"],
-        "plotTimesteps": 1000
+        "plotTimesteps": 1000,
+        "pythonAlias": "python"
     },
     "sugarscapeOptions": {
         "__README__": "Default values for Sugarscape simulation provided here. Details can be found in the README.",

@@ -15,19 +15,23 @@ python sugarscape.py
 Makefile Options:
 make clean
     Clean up working files and logs created by the software.
-    Note: will remove any JSON files created by the other make options.
+    Note: This will remove any JSON files created by the other make options.
 
 make data
-    Run a number of random seeds comparing implemented decision models to the baseline greedy decisionmaking.
-    Note: results will be saved in the data subdirectory.
+    Run a number of random seeds comparing selected decision models.
+    Note: Results will be saved in the data subdirectory.
 
 make plots
     Generate graph plots from any JSON files in the data subdirectory.
-    Note: plots are dependent on a dataset existing and will create it if necessary.
+    Note: Plots are dependent on a dataset existing and will create it if necessary.
+
+make seeds
+    Generate a set of random seeds comparing selected decision models.
+    Note: Results will be saved in the data subdirectory.
 
 make setup
-    Change preconfigured settings for the simulation, data collection, and datset plotting.
-    Note: changed settings may alter files in-place if editing the simulation configuration or Makefile options.
+    Change preconfigured settings for Bash and Python aliases.
+    Note: Changed settings may alter Makefile and configuration file in-place.
 
 make test
     Run the simulation using the default config.json file and storing a local log in the log.json file.
@@ -188,7 +192,7 @@ agentReplacements: int
 
 agentSelfishnessFactor: [float, float]
     Set the agent weight of how egoistic ethical decisions are
-    Note: Valid range [0.0, 1.0], use -1 to disable
+    Note: Valid range is [0.0, 1.0], use -1 to disable
     Default: [-1, -1]
 
 agentSpiceMetabolism: [float, float]
@@ -255,7 +259,7 @@ diseaseAggressionPenalty: [float, float]
 
 diseaseFertilityPenalty: [float, float]
     Set the impact a disease will have on an agent's fertility.
-    Note: Negative values constitute a lack of fertility.
+    Note: Negative values constitute a fertility decrease.
     Default: [0, 0]
 
 diseaseMovementPenalty: [int, int]
@@ -265,12 +269,12 @@ diseaseMovementPenalty: [int, int]
 
 diseaseSpiceMetabolismPenalty: [float, float]
     Set the impact a disease will have on an agent's spice metabolism rate.
-    Note: Negative values constitute a decrease in agent metabolism.
+    Note: Negative values constitute a decrease in agent spice metabolism.
     Default: [0, 0]
 
 diseaseSugarMetabolismPenalty: [float, float]
     Set the impact a disease will have on an agent's sugar metabolism rate.
-    Note: Negative values constitute a decrease in agent metabolism.
+    Note: Negative values constitute a decrease in agent sugar metabolism.
     Default: [0, 0]
 
 diseaseTagStringLength: [int, int]
@@ -362,8 +366,8 @@ headlessMode: bool
 
 interfaceHeight: int
     Set number of pixels for GUI height.
-    Default: 1000
     Note: Values below zero will cause the interface to fit to 1/2 total display height.
+    Default: 1000
 
 interfaceWidth: int
     Set number of pixels for GUI width.
@@ -398,6 +402,11 @@ timesteps: int
     Default: 200
 
 Other JSON Configurable Options:
+bashAlias: string
+    Set the alias to the local Bash installation.
+    Note: Bash is required to run the data collection.
+    Default: "bash"
+
 decisionModels: [string, ...]
     Set the decision models (ethical theories) to be tested in data collection.
     Default: ["benthamHalfLookaheadBinary", "egoisticHalfLookaheadBinary", "rawSugarscape"]
@@ -414,20 +423,16 @@ numSeeds: int
     Set the number of random seeds to be tested in data collection.
     Default: 100
 
-pathToBash: path
-    Set the path to the local Bash installation.
-    Note: Bash is required to run the data collection.
-    Default: "bash"
-
-pathToPython: path
-    Set the path to the local Python 3 installation.
-    Note: Python 3 is required to run the simulation.
-    Default: "python"
-
 plots: [string, ...]
     Set the plots to be created once data has been collected.
     Default: ["population", "meanttl", "starvationCombat", "wealth", "wealthNormalized"]
 
 plotTimesteps: int
-    Set the number of timesteps to plot.
+    Set the number of timesteps to plot in graphs as the X axis.
+    Note: This option does not control how many timesteps the simulation runs.
     Default: 1000
+
+pythonAlias: string
+    Set the alias to the local Python 3 installation.
+    Note: Python 3 is required to run the simulation.
+    Default: "python"
