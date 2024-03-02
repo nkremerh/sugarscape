@@ -13,6 +13,7 @@ def createConfigurations(config, path):
         if path[-1] != '/':
             path = path + '/'
         dataOpts = config["dataCollectionOptions"]
+        timesteps = dataOpts["plotTimesteps"]
         seeds = generateSeeds(dataOpts)
         confFiles = []
         for seed in seeds:
@@ -20,6 +21,7 @@ def createConfigurations(config, path):
                 simOpts = config["sugarscapeOptions"]
                 simOpts["agentDecisionModel"] = model
                 simOpts["seed"] = seed
+                simOpts["timesteps"] = timesteps
                 simOpts["logfile"] = "{0}{1}{2}.json".format(path, model, seed)
                 # Enforce noninteractive, no-output mode
                 simOpts["headlessMode"] = True
