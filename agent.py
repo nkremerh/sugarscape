@@ -559,9 +559,9 @@ class Agent:
         combatMaxLoot = self.cell.environment.maxCombatLoot
         aggression = self.findAggression()
 
-        bestCell = self.cellsInRange[0]["cell"]
+        bestCell = None
         bestWealth = 0
-        bestRange = self.cellsInRange[0]["distance"]
+        bestRange = max(self.cell.environment.height, self.cell.environment.width)
         potentialCells = []
 
         for currCell in self.cellsInRange:
