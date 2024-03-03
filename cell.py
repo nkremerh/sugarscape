@@ -28,11 +28,11 @@ class Cell:
 
     def doPollutionDiffusion(self):
         meanPollution = self.pollution
-        for neighbor in self.neighbors:
-            meanPollution += neighbor.pollution
-        meanPollution = meanPollution / (len(self.neighbors) + 1)
-        for neighbor in self.neighbors:
-            neighbor.pollution = meanPollution
+        for adjacentCell in self.adjacentCells:
+            meanPollution += adjacentCell.pollution
+        meanPollution = meanPollution / (len(self.adjacentCells) + 1)
+        for adjacentCell in self.adjacentCells:
+            adjacentCell.pollution = meanPollution
         self.pollution = meanPollution
 
     def doSpiceProductionPollution(self, spiceProduced):
@@ -45,8 +45,8 @@ class Cell:
 
     def findNeighborWealth(self):
         neighborWealth = 0
-        for neighbor in self.neighbors:
-            neighborWealth += neighbor.sugar + neighbor.spice
+        for adjacentCell in self.adjacentCells:
+            neighborWealth += adjacentCell.sugar + adjacentCell.spice
         return neighborWealth
 
     def isOccupied(self):
