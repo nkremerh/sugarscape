@@ -14,7 +14,7 @@ class Cell:
         self.hemisphere = "north" if self.x >= self.environment.equator else "south"
         self.season = None
         self.timestep = 0
-        self.adjacentCells = set()
+        self.adjacentCells = []
         self.sugarLastProduced = 0
         self.spiceLastProduced = 0
 
