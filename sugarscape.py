@@ -39,7 +39,7 @@ class Sugarscape:
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
         # Maintain backwards compatibility for configs without adjacencyMode
-        adjacencyMode = configuration.get("agentAdjacencyMode", None)
+        adjacencyMode = configuration.get("adjacencyMode", None)
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], adjacencyMode)
         self.agents = []
         self.deadAgents = []

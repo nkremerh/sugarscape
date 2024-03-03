@@ -12,7 +12,7 @@
     },
     "sugarscapeOptions": {
         "__README__": "Default values for Sugarscape simulation provided here. Details can be found in the README.",
-        "agentAdjacencyMode": "von Neumann",
+        "adjacencyMode": "von Neumann",
         "agentAggressionFactor": [1, 1],
         "agentBaseInterestRate": [0.05, 0.10],
         "agentDecisionModel": "none",
