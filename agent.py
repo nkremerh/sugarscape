@@ -306,8 +306,8 @@ class Agent:
         # Maximum interest rate of 100%
         interestRate = min(1, self.lendingFactor * self.baseInterestRate)
         borrowers = []
-        for adjacentCell in self.cell.adjacentCells:
-            neighbor = adjacentCell.agent
+        for neighborCell in self.cell.adjacentCells:
+            neighbor = neighborCell.agent
             if neighbor != None:
                 if neighbor.isAlive() == False:
                     continue
@@ -361,8 +361,8 @@ class Agent:
             return
         random.shuffle(self.cell.adjacentCells)
         emptyCells = self.findEmptyNeighborCells()
-        for adjacentCell in self.cell.adjacentCells:
-            neighbor = adjacentCell.agent
+        for neighborCell in self.cell.adjacentCells:
+            neighbor = neighborCell.agent
             if neighbor != None:
                 neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
                 emptyCellsWithNeighbor = emptyCells + neighbor.findEmptyNeighborCells()
@@ -400,8 +400,8 @@ class Agent:
         if self.tags == None or self.alive == False:
             return
         random.shuffle(self.cell.adjacentCells)
-        for adjacentCell in self.cell.adjacentCells:
-            neighbor = adjacentCell.agent
+        for neighborCell in self.cell.adjacentCells:
+            neighbor = neighborCell.agent
             if neighbor != None:
                 position = random.randrange(len(self.tags))
                 neighbor.flipTag(position, self.tags[position])
@@ -451,8 +451,8 @@ class Agent:
         self.spicePrice = 0
         self.findMarginalRateOfSubstitution()
         traders = []
-        for adjacentCell in self.cell.adjacentCells:
-            neighbor = adjacentCell.agent
+        for neighborCell in self.cell.adjacentCells:
+            neighbor = neighborCell.agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighborMRS = neighbor.marginalRateOfSubstitution
                 if neighborMRS != self.marginalRateOfSubstitution:
@@ -782,8 +782,7 @@ class Agent:
 
     def findEmptyNeighborCells(self):
         emptyCells = []
-        neighborCells = self.cell.adjacentCells
-        for neighborCell in neighborCells:
+        for neighborCell in self.cell.adjacentCells:
             if neighborCell.agent == None:
                 emptyCells.append(neighborCell)
         return emptyCells
