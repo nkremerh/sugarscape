@@ -108,10 +108,11 @@ agentBaseInterestRate: [float, float]
     Set the interest rate for an agent's lending as a percentage.
     Default: [0.0, 0.0]
 
-agentDecisionModel: string
-    Set the agent decision model for different decisionmaking.
+agentDecisionModel: [string, ...]
+    Set the agent decision models for different decisionmaking.
     Options: "altruisticHalfLookaheadBinary", "altruisticHalfLookaheadTop", "benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "benthamNoLookaheadBinary", "benthamNoLookaheadTop", "egoisticHalfLookaheadBinary", "egoisticHalfLookaheadTop", "none", "rawSugarscape"
     Default: "none"
+    Note: Can select multiple decision models simultaneuously and include the same decision model multiple times. The relative frequency of a decision model in the starting population will be equal to its relative frequency in this list.
 
 agentDecisionModelData: object
     Set additional data for the agent decision model.
