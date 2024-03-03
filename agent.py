@@ -237,8 +237,9 @@ class Agent:
         if diseaseCount == 0:
             return
         neighbors = []
-        for neighbor in self.adjacentNeighbors:
-            if neighbor.isAlive() == True:
+        for neighborCell in self.cell.adjacentCells:
+            neighbor = neighborCell.agent
+            if neighbor != None and neighbor.isAlive() == True:
                 neighbors.append(neighbor)
         random.shuffle(neighbors)
         for neighbor in neighbors:
@@ -356,9 +357,11 @@ class Agent:
         # Agent marked for removal or not interested in reproduction should not reproduce
         if self.alive == False or self.isFertile() == False:
             return
-        random.shuffle(self.cell.adjacentCells)
+        # Copy to maintain determinism with current repo
+        adjacentCells = self.cell.adjacentCells[:]
+        random.shuffle(adjacentCells)
         emptyCells = self.findEmptyNeighborCells()
-        for neighborCell in self.cell.adjacentCells:
+        for neighborCell in adjacentCells:
             neighbor = neighborCell.agent
             if neighbor != None:
                 neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
@@ -374,8 +377,6 @@ class Agent:
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
                     self.socialNetwork["children"].append(child)
-                    childID = child.ID
-                    neighborID = neighbor.ID
                     self.addAgentToSocialNetwork(child)
                     neighbor.addAgentToSocialNetwork(child)
                     neighbor.updateTimesVisitedWithAgent(self, self.lastMoved)
@@ -398,8 +399,10 @@ class Agent:
     def doTagging(self):
         if self.tags == None or self.alive == False:
             return
-        random.shuffle(self.cell.adjacentCells)
-        for neighborCell in self.cell.adjacentCells:
+        # Copy to maintain determinism with current repo
+        adjacentCells = self.cell.adjacentCells[:]
+        random.shuffle(adjacentCells)
+        for neighborCell in adjacentCells:
             neighbor = neighborCell.agent
             if neighbor != None:
                 position = random.randrange(len(self.tags))
