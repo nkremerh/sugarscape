@@ -425,10 +425,14 @@ class Sugarscape:
         inheritancePolicy = configs["agentInheritancePolicy"]
         decisionModelFactor = configs["agentDecisionModelFactor"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
+        decisionModels = configs["agentDecisionModel"]
+        # Maintain backwards compatibility with strings
+        if isinstance(decisionModels, str):
+            decisionModels = [decisionModels]
         decisionModels = [
             # Convert clever name for default behavior
             "none" if model == "rawSugarscape" else model
-            for model in configs["agentDecisionModel"]
+            for model in decisionModels
         ]
         universalSpice = configs["agentUniversalSpice"]
         universalSugar = configs["agentUniversalSugar"]
