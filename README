@@ -99,6 +99,11 @@ JSON Configuration File Options:
 The simulation provides a default set of options in a dictionary in the sugarscape.py file.
 A JSON configuration file can be passed to the simulation, overwriting the default configuration, with the --conf option.
 
+agentAdjacencyMode: string
+    Set the behavior of agents' adjacency neighborhoods used for tagging, trading, disease, and reproduction.
+    Options: "von Neumann", "Moore"
+    Default: "von Neumann"
+
 agentAggressionFactor: [float, float]
     Set the aggressiveness of an agent.
     Note: The more aggressive an agent the more likely they will be enticed by combat options.

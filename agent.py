@@ -49,8 +49,7 @@ class Agent:
         self.cellsInRange = []
         self.neighborhood = []
         self.lastMoved = -1
-        self.vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
-        self.mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
+        self.adjacentNeighbors = []
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
         self.diseases = []
         self.fertile = False
@@ -238,11 +237,9 @@ class Agent:
         diseaseCount = len(self.diseases)
         if diseaseCount == 0:
             return
-        neighborCells = self.cell.neighbors
         neighbors = []
-        for neighborCell in neighborCells:
-            neighbor = neighborCell.agent
-            if neighbor != None and neighbor.isAlive() == True:
+        for neighbor in self.adjacentNeighbors:
+            if neighbor.isAlive() == True:
                 neighbors.append(neighbor)
         random.shuffle(neighbors)
         for neighbor in neighbors:
@@ -308,9 +305,8 @@ class Agent:
             return
         # Maximum interest rate of 100%
         interestRate = min(1, self.lendingFactor * self.baseInterestRate)
-        neighbors = self.cell.findNeighborAgents()
         borrowers = []
-        for neighbor in neighbors:
+        for neighbor in self.adjacentNeighbors:
             if neighbor.isAlive() == False:
                 continue
             elif neighbor.isBorrower() == True:
@@ -361,57 +357,51 @@ class Agent:
         # Agent marked for removal or not interested in reproduction should not reproduce
         if self.alive == False or self.isFertile() == False:
             return
-        neighborCells = self.cell.neighbors
-        random.shuffle(neighborCells)
+        random.shuffle(self.adjacentNeighbors)
         emptyCells = self.findEmptyNeighborCells()
-        for neighborCell in neighborCells:
-            neighbor = neighborCell.agent
-            if neighbor != None:
-                neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
-                emptyCellsWithNeighbor = emptyCells + neighbor.findEmptyNeighborCells()
-                random.shuffle(emptyCellsWithNeighbor)
-                if self.isFertile() == True and neighborCompatibility == True and len(emptyCellsWithNeighbor) != 0:
+        for neighbor in self.adjacentNeighbors:
+            neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
+            emptyCellsWithNeighbor = emptyCells + neighbor.findEmptyNeighborCells()
+            random.shuffle(emptyCellsWithNeighbor)
+            if self.isFertile() == True and neighborCompatibility == True and len(emptyCellsWithNeighbor) != 0:
+                emptyCell = emptyCellsWithNeighbor.pop()
+                while emptyCell.agent != None and len(emptyCellsWithNeighbor) != 0:
                     emptyCell = emptyCellsWithNeighbor.pop()
-                    while emptyCell.agent != None and len(emptyCellsWithNeighbor) != 0:
-                        emptyCell = emptyCellsWithNeighbor.pop()
-                    # If no adjacent empty cell is found, skip reproduction with this neighbor
-                    if emptyCell.agent != None:
-                        continue
-                    childEndowment = self.findChildEndowment(neighbor)
-                    child = self.addChildToCell(neighbor, emptyCell, childEndowment)
-                    self.socialNetwork["children"].append(child)
-                    childID = child.ID
-                    neighborID = neighbor.ID
-                    self.addAgentToSocialNetwork(child)
-                    neighbor.addAgentToSocialNetwork(child)
-                    neighbor.updateTimesVisitedWithAgent(self, self.lastMoved)
-                    neighbor.updateTimesReproducedWithAgent(self, self.lastMoved)
-                    self.updateTimesReproducedWithAgent(neighbor, self.lastMoved)
-                    self.lastReproduced += 1
+                # If no adjacent empty cell is found, skip reproduction with this neighbor
+                if emptyCell.agent != None:
+                    continue
+                childEndowment = self.findChildEndowment(neighbor)
+                child = self.addChildToCell(neighbor, emptyCell, childEndowment)
+                self.socialNetwork["children"].append(child)
+                childID = child.ID
+                neighborID = neighbor.ID
+                self.addAgentToSocialNetwork(child)
+                neighbor.addAgentToSocialNetwork(child)
+                neighbor.updateTimesVisitedWithAgent(self, self.lastMoved)
+                neighbor.updateTimesReproducedWithAgent(self, self.lastMoved)
+                self.updateTimesReproducedWithAgent(neighbor, self.lastMoved)
+                self.lastReproduced += 1
 
-                    sugarCost = self.startingSugar / (self.fertilityFactor * 2)
-                    spiceCost = self.startingSpice / (self.fertilityFactor * 2)
-                    mateSugarCost = neighbor.startingSugar / (neighbor.fertilityFactor * 2)
-                    mateSpiceCost = neighbor.startingSpice / (neighbor.fertilityFactor * 2)
-                    self.sugar -= sugarCost
-                    self.spice -= spiceCost
-                    neighbor.sugar = neighbor.sugar - mateSugarCost
-                    neighbor.spice = neighbor.spice - mateSpiceCost
-                    self.lastReproduced = self.cell.environment.sugarscape.timestep
-                    if "all" in self.debug or "agent" in self.debug:
-                        print("Agent {0} reproduced with agent {1} at cell ({2},{3})".format(self.ID, str(neighbor), emptyCell.x, emptyCell.y))
+                sugarCost = self.startingSugar / (self.fertilityFactor * 2)
+                spiceCost = self.startingSpice / (self.fertilityFactor * 2)
+                mateSugarCost = neighbor.startingSugar / (neighbor.fertilityFactor * 2)
+                mateSpiceCost = neighbor.startingSpice / (neighbor.fertilityFactor * 2)
+                self.sugar -= sugarCost
+                self.spice -= spiceCost
+                neighbor.sugar = neighbor.sugar - mateSugarCost
+                neighbor.spice = neighbor.spice - mateSpiceCost
+                self.lastReproduced = self.cell.environment.sugarscape.timestep
+                if "all" in self.debug or "agent" in self.debug:
+                    print("Agent {0} reproduced with agent {1} at cell ({2},{3})".format(self.ID, str(neighbor), emptyCell.x, emptyCell.y))
 
     def doTagging(self):
         if self.tags == None or self.alive == False:
             return
-        neighborCells = self.cell.neighbors
-        random.shuffle(neighborCells)
-        for neighborCell in neighborCells:
-            neighbor = neighborCell.agent
-            if neighbor != None:
-                position = random.randrange(len(self.tags))
-                neighbor.flipTag(position, self.tags[position])
-                neighbor.tribe = neighbor.findTribe()
+        random.shuffle(self.adjacentNeighbors)
+        for neighbor in self.adjacentNeighbors:
+            position = random.randrange(len(self.tags))
+            neighbor.flipTag(position, self.tags[position])
+            neighbor.tribe = neighbor.findTribe()
 
     def doTimestep(self, timestep):
         self.timestep = timestep
@@ -422,7 +412,8 @@ class Agent:
             self.lastMoved = self.timestep
             self.doUniversalIncome()
             self.moveToBestCell()
-            self.updateNeighbors()
+            self.updateAdjacentNeighbors()
+            self.updateSocialNetwork()
             self.collectResourcesAtCell()
             self.doMetabolism()
             # If dead from metabolism, skip remainder of timestep
@@ -455,11 +446,9 @@ class Agent:
         self.sugarPrice = 0
         self.spicePrice = 0
         self.findMarginalRateOfSubstitution()
-        neighborCells = self.cell.neighbors
         traders = []
-        for neighborCell in neighborCells:
-            neighbor = neighborCell.agent
-            if neighbor != None and neighbor.isAlive() == True:
+        for neighbor in self.adjacentNeighbors:
+            if neighbor.isAlive() == True:
                 neighborMRS = neighbor.marginalRateOfSubstitution
                 if neighborMRS != self.marginalRateOfSubstitution:
                     traders.append(neighbor)
@@ -788,7 +777,7 @@ class Agent:
 
     def findEmptyNeighborCells(self):
         emptyCells = []
-        neighborCells = self.cell.neighbors
+        neighborCells = self.cell.adjacentCells
         for neighborCell in neighborCells:
             if neighborCell.agent == None:
                 emptyCells.append(neighborCell)
@@ -1261,22 +1250,6 @@ class Agent:
             if timeRemaining == 0:
                 self.payDebt(creditor)
 
-    def updateMooreNeighbors(self):
-        for direction, neighbor in self.vonNeumannNeighbors.items():
-            self.mooreNeighbors[direction] = neighbor
-        north = self.mooreNeighbors["north"]
-        south = self.mooreNeighbors["south"]
-        east = self.mooreNeighbors["east"]
-        west = self.mooreNeighbors["west"]
-        self.mooreNeighbors["northeast"] = north.cell.findEastNeighbor() if north != None else None
-        self.mooreNeighbors["northeast"] = east.cell.findNorthNeighbor() if east != None and self.mooreNeighbors["northeast"] == None else None
-        self.mooreNeighbors["northwest"] = north.cell.findWestNeighbor() if north != None else None
-        self.mooreNeighbors["northwest"] = west.cell.findNorthNeighbor() if west != None and self.mooreNeighbors["northwest"] == None else None
-        self.mooreNeighbors["southeast"] = south.cell.findEastNeighbor() if south != None else None
-        self.mooreNeighbors["southeast"] = east.cell.findSouthNeighbor() if east != None and self.mooreNeighbors["southeast"] == None else None
-        self.mooreNeighbors["southwest"] = south.cell.findWestNeighbor() if south != None else None
-        self.mooreNeighbors["southwest"] = west.cell.findSouthNeighbor() if west != None and self.mooreNeighbors["southwest"] == None else None
-
     def updateMarginalRateOfSubstitutionForAgent(self, agent):
         agentID = agent.ID
         if agentID not in self.socialNetwork:
@@ -1289,13 +1262,15 @@ class Agent:
         self.sugarMeanIncome = (alpha * sugarIncome) + ((1 - alpha) * self.sugarMeanIncome)
         self.spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome)
 
-    def updateNeighbors(self):
-        self.updateVonNeumannNeighbors()
-        self.updateMooreNeighbors()
-        self.updateSocialNetwork()
+    def updateAdjacentNeighbors(self):
+        adjacentNeighbors = []
+        for adjacentCell in self.cell.adjacentCells:
+            if adjacentCell != None and adjacentCell.agent != None:
+                adjacentNeighbors.append(adjacentCell.agent)
+        self.adjacentNeighbors = adjacentNeighbors
 
     def updateSocialNetwork(self):
-        for direction, neighbor in self.vonNeumannNeighbors.items():
+        for neighbor in self.adjacentNeighbors:
             if neighbor == None:
                 continue
             neighborID = neighbor.ID
@@ -1327,12 +1302,6 @@ class Agent:
         else:
             self.socialNetwork[agentID]["timesVisited"] += 1
             self.socialNetwork[agentID]["lastSeen"] = timestep
-
-    def updateVonNeumannNeighbors(self):
-        self.vonNeumannNeighbors["north"] = self.cell.findNorthNeighbor().agent
-        self.vonNeumannNeighbors["south"] = self.cell.findSouthNeighbor().agent
-        self.vonNeumannNeighbors["east"] = self.cell.findEastNeighbor().agent
-        self.vonNeumannNeighbors["west"] = self.cell.findWestNeighbor().agent
 
     def updateHappiness(self):
         if self.cell == None:

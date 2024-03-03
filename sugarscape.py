@@ -34,11 +34,13 @@ class Sugarscape:
                                     "universalSugarIncomeInterval": configuration["environmentUniversalSugarIncomeInterval"],
                                     "sugarscapeSeed": configuration["seed"]}
         self.seed = configuration["seed"]
+        self.debug = configuration["debugMode"]
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
-        self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"])
-        self.debug = configuration["debugMode"]
+        # Maintain backwards compatibility for configs without adjacencyMode
+        adjacencyMode = configuration.get("agentAdjacencyMode", None)
+        self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], adjacencyMode)
         self.agents = []
         self.deadAgents = []
         self.diseases = []
@@ -168,7 +170,7 @@ class Sugarscape:
         if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
             print("Could not place {0} diseases.".format(len(diseases)))
 
-    def configureEnvironment(self, maxSugar, maxSpice):
+    def configureEnvironment(self, maxSugar, maxSpice, adjacencyMode):
         height = self.environment.height
         width = self.environment.width
         for i in range(height):
@@ -193,7 +195,7 @@ class Sugarscape:
         radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
         self.addSpicePeak(startX1, startY1, radius, maxSpice)
         self.addSpicePeak(startX2, startY2, radius, maxSpice)
-        self.environment.findCellNeighbors()
+        self.environment.findCellNeighbors(adjacencyMode)
 
     def doTimestep(self):
         self.removeDeadAgents()

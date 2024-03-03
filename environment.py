@@ -11,6 +11,7 @@ class Environment:
         self.globalMaxSpice = configuration["globalMaxSpice"]
         self.spiceRegrowRate = configuration["spiceRegrowRate"]
         self.sugarscape = sugarscape
+        self.debug = sugarscape.debug
         self.timestep = 0
         self.seed = configuration["sugarscapeSeed"]
         self.seasonInterval = configuration["seasonInterval"]
@@ -78,10 +79,24 @@ class Environment:
     def findCell(self, x, y):
         return self.grid[x][y]
 
-    def findCellNeighbors(self):
+    def findCellNeighbors(self, adjacencyMode):
+        if adjacencyMode == None:
+            if "all" in self.debug or "cell" in self.debug or "environment" in self.debug:
+                print("No adjacency mode found, defaulting to von Neumann.")
+            adjacencyMode = "von Neumann"
+
+        normalizedAdjacencyMode = adjacencyMode.lower().replace(" ", "")
+        if normalizedAdjacencyMode == "moore":
+            for i in range(self.height):
+                for j in range(self.width):
+                    self.findMooreNeighbors(i, j)
+            return
+        if normalizedAdjacencyMode != "vonneumann":
+            if "all" in self.debug or "cell" in self.debug or "environment" in self.debug:
+                print("Adjacency mode not recognized, defaulting to von Neumann.")
         for i in range(self.height):
             for j in range(self.width):
-                self.grid[i][j].findNeighbors()
+                self.findVonNeumannNeighbors(i, j)
 
     def findCellsInCardinalRange(self, startX, startY, gridRange):
         cellsInRange = []
@@ -113,6 +128,14 @@ class Environment:
                     cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
                     cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})
         return cellsInRange
+
+    def findMooreNeighbors(self, x, y):
+        cellRecords = self.findCellsInCardinalRange(x, y, 1)
+        self.grid[x][y].adjacentCells = {cellRecord["cell"] for cellRecord in cellRecords}
+    
+    def findVonNeumannNeighbors(self, x, y):
+        cellRecords = self.findCellsInRadialRange(x, y, 1)
+        self.grid[x][y].adjacentCells = {cellRecord["cell"] for cellRecord in cellRecords}
 
     def resetCell(self, x, y):
         self.grid[x][y] = None
