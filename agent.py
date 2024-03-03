@@ -306,11 +306,13 @@ class Agent:
         # Maximum interest rate of 100%
         interestRate = min(1, self.lendingFactor * self.baseInterestRate)
         borrowers = []
-        for neighbor in self.adjacentNeighbors:
-            if neighbor.isAlive() == False:
-                continue
-            elif neighbor.isBorrower() == True:
-                borrowers.append(neighbor)
+        for adjacentCell in self.cell.adjacentCells:
+            neighbor = adjacentCell.agent
+            if neighbor != None:
+                if neighbor.isAlive() == False:
+                    continue
+                elif neighbor.isBorrower() == True:
+                    borrowers.append(neighbor)
         random.shuffle(borrowers)
         spiceMetabolism = self.findSpiceMetabolism()
         sugarMetabolism = self.findSugarMetabolism()
@@ -357,12 +359,10 @@ class Agent:
         # Agent marked for removal or not interested in reproduction should not reproduce
         if self.alive == False or self.isFertile() == False:
             return
-        # Copy to maintain determinism with current repo
-        adjacentCells = self.cell.adjacentCells[:]
-        random.shuffle(adjacentCells)
+        random.shuffle(self.cell.adjacentCells)
         emptyCells = self.findEmptyNeighborCells()
-        for neighborCell in adjacentCells:
-            neighbor = neighborCell.agent
+        for adjacentCell in self.cell.adjacentCells:
+            neighbor = adjacentCell.agent
             if neighbor != None:
                 neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
                 emptyCellsWithNeighbor = emptyCells + neighbor.findEmptyNeighborCells()
@@ -399,11 +399,9 @@ class Agent:
     def doTagging(self):
         if self.tags == None or self.alive == False:
             return
-        # Copy to maintain determinism with current repo
-        adjacentCells = self.cell.adjacentCells[:]
-        random.shuffle(adjacentCells)
-        for neighborCell in adjacentCells:
-            neighbor = neighborCell.agent
+        random.shuffle(self.cell.adjacentCells)
+        for adjacentCell in self.cell.adjacentCells:
+            neighbor = adjacentCell.agent
             if neighbor != None:
                 position = random.randrange(len(self.tags))
                 neighbor.flipTag(position, self.tags[position])
@@ -453,8 +451,9 @@ class Agent:
         self.spicePrice = 0
         self.findMarginalRateOfSubstitution()
         traders = []
-        for neighbor in self.adjacentNeighbors:
-            if neighbor.isAlive() == True:
+        for adjacentCell in self.cell.adjacentCells:
+            neighbor = adjacentCell.agent
+            if neighbor != None and neighbor.isAlive() == True:
                 neighborMRS = neighbor.marginalRateOfSubstitution
                 if neighborMRS != self.marginalRateOfSubstitution:
                     traders.append(neighbor)

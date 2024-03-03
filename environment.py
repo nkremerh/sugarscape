@@ -130,11 +130,11 @@ class Environment:
         return cellsInRange
 
     def findMooreNeighbors(self, x, y):
-        cellRecords = self.findCellsInCardinalRange(x, y, 1)
+        cellRecords = self.findCellsInRadialRange(x, y, 1)
         self.grid[x][y].adjacentCells = [cellRecord["cell"] for cellRecord in cellRecords]
     
     def findVonNeumannNeighbors(self, x, y):
-        cellRecords = self.findCellsInRadialRange(x, y, 1)
+        cellRecords = self.findCellsInCardinalRange(x, y, 1)
         self.grid[x][y].adjacentCells = [cellRecord["cell"] for cellRecord in cellRecords]
 
     def resetCell(self, x, y):
