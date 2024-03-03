@@ -1268,7 +1268,7 @@ class Agent:
     def updateAdjacentNeighbors(self):
         adjacentNeighbors = []
         for adjacentCell in self.cell.adjacentCells:
-            if adjacentCell != None and adjacentCell.agent != None:
+            if adjacentCell.agent != None:
                 adjacentNeighbors.append(adjacentCell.agent)
         self.adjacentNeighbors = adjacentNeighbors
 
