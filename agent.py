@@ -356,51 +356,55 @@ class Agent:
         # Agent marked for removal or not interested in reproduction should not reproduce
         if self.alive == False or self.isFertile() == False:
             return
-        random.shuffle(self.adjacentNeighbors)
+        random.shuffle(self.cell.adjacentCells)
         emptyCells = self.findEmptyNeighborCells()
-        for neighbor in self.adjacentNeighbors:
-            neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
-            emptyCellsWithNeighbor = emptyCells + neighbor.findEmptyNeighborCells()
-            random.shuffle(emptyCellsWithNeighbor)
-            if self.isFertile() == True and neighborCompatibility == True and len(emptyCellsWithNeighbor) != 0:
-                emptyCell = emptyCellsWithNeighbor.pop()
-                while emptyCell.agent != None and len(emptyCellsWithNeighbor) != 0:
+        for neighborCell in self.cell.adjacentCells:
+            neighbor = neighborCell.agent
+            if neighbor != None:
+                neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
+                emptyCellsWithNeighbor = emptyCells + neighbor.findEmptyNeighborCells()
+                random.shuffle(emptyCellsWithNeighbor)
+                if self.isFertile() == True and neighborCompatibility == True and len(emptyCellsWithNeighbor) != 0:
                     emptyCell = emptyCellsWithNeighbor.pop()
-                # If no adjacent empty cell is found, skip reproduction with this neighbor
-                if emptyCell.agent != None:
-                    continue
-                childEndowment = self.findChildEndowment(neighbor)
-                child = self.addChildToCell(neighbor, emptyCell, childEndowment)
-                self.socialNetwork["children"].append(child)
-                childID = child.ID
-                neighborID = neighbor.ID
-                self.addAgentToSocialNetwork(child)
-                neighbor.addAgentToSocialNetwork(child)
-                neighbor.updateTimesVisitedWithAgent(self, self.lastMoved)
-                neighbor.updateTimesReproducedWithAgent(self, self.lastMoved)
-                self.updateTimesReproducedWithAgent(neighbor, self.lastMoved)
-                self.lastReproduced += 1
+                    while emptyCell.agent != None and len(emptyCellsWithNeighbor) != 0:
+                        emptyCell = emptyCellsWithNeighbor.pop()
+                    # If no adjacent empty cell is found, skip reproduction with this neighbor
+                    if emptyCell.agent != None:
+                        continue
+                    childEndowment = self.findChildEndowment(neighbor)
+                    child = self.addChildToCell(neighbor, emptyCell, childEndowment)
+                    self.socialNetwork["children"].append(child)
+                    childID = child.ID
+                    neighborID = neighbor.ID
+                    self.addAgentToSocialNetwork(child)
+                    neighbor.addAgentToSocialNetwork(child)
+                    neighbor.updateTimesVisitedWithAgent(self, self.lastMoved)
+                    neighbor.updateTimesReproducedWithAgent(self, self.lastMoved)
+                    self.updateTimesReproducedWithAgent(neighbor, self.lastMoved)
+                    self.lastReproduced += 1
 
-                sugarCost = self.startingSugar / (self.fertilityFactor * 2)
-                spiceCost = self.startingSpice / (self.fertilityFactor * 2)
-                mateSugarCost = neighbor.startingSugar / (neighbor.fertilityFactor * 2)
-                mateSpiceCost = neighbor.startingSpice / (neighbor.fertilityFactor * 2)
-                self.sugar -= sugarCost
-                self.spice -= spiceCost
-                neighbor.sugar = neighbor.sugar - mateSugarCost
-                neighbor.spice = neighbor.spice - mateSpiceCost
-                self.lastReproduced = self.cell.environment.sugarscape.timestep
-                if "all" in self.debug or "agent" in self.debug:
-                    print("Agent {0} reproduced with agent {1} at cell ({2},{3})".format(self.ID, str(neighbor), emptyCell.x, emptyCell.y))
+                    sugarCost = self.startingSugar / (self.fertilityFactor * 2)
+                    spiceCost = self.startingSpice / (self.fertilityFactor * 2)
+                    mateSugarCost = neighbor.startingSugar / (neighbor.fertilityFactor * 2)
+                    mateSpiceCost = neighbor.startingSpice / (neighbor.fertilityFactor * 2)
+                    self.sugar -= sugarCost
+                    self.spice -= spiceCost
+                    neighbor.sugar = neighbor.sugar - mateSugarCost
+                    neighbor.spice = neighbor.spice - mateSpiceCost
+                    self.lastReproduced = self.cell.environment.sugarscape.timestep
+                    if "all" in self.debug or "agent" in self.debug:
+                        print("Agent {0} reproduced with agent {1} at cell ({2},{3})".format(self.ID, str(neighbor), emptyCell.x, emptyCell.y))
 
     def doTagging(self):
         if self.tags == None or self.alive == False:
             return
-        random.shuffle(self.adjacentNeighbors)
-        for neighbor in self.adjacentNeighbors:
-            position = random.randrange(len(self.tags))
-            neighbor.flipTag(position, self.tags[position])
-            neighbor.tribe = neighbor.findTribe()
+        random.shuffle(self.cell.adjacentCells)
+        for neighborCell in self.cell.adjacentCells:
+            neighbor = neighborCell.agent
+            if neighbor != None:
+                position = random.randrange(len(self.tags))
+                neighbor.flipTag(position, self.tags[position])
+                neighbor.tribe = neighbor.findTribe()
 
     def doTimestep(self, timestep):
         self.timestep = timestep
