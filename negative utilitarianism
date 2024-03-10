@@ -1,0 +1,38 @@
+def negativeBentham(agent, cell):
+    cellSiteWealth = cell.sugar + cell.spice
+    globalMaxCombatLoot = cell.environment.maxCombatLoot * 2
+    cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
+    if cell.agent is not None:
+        cellSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
+        cellMaxSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
+    cellNeighborWealth = cell.findNeighborWealth()
+    globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
+    
+    positiveCellValue = 0
+    negativeCellValue = 0
+    selfishnessFactor = agent.selfishnessFactor
+    
+    for neighbor in agent.neighborhood:        
+        neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+        
+        if neighbor != agent:
+            if cell != neighbor.cell:
+                if neighborValueOfCell < 0:
+                    negativeCellValue += neighborValueOfCell
+            else:
+                if neighborValueOfCell < 0:
+                    negativeCellValue += neighborValueOfCell
+        else:
+            positiveCellValue += neighborValueOfCell
+        
+        if selfishnessFactor != -1:
+            if neighbor == agent:
+                positiveCellValue *= selfishnessFactor
+            else:
+                if neighborValueOfCell < 0:
+                    negativeCellValue *= (1 - selfishnessFactor)
+
+    if positiveCellValue >= abs(negativeCellValue):
+        return positiveCellValue
+    else:
+        return negativeCellValue
