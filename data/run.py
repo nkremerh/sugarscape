@@ -12,23 +12,64 @@ def createConfigurations(config, path):
         print("Generating new configurations for random seeds.")
         if path[-1] != '/':
             path = path + '/'
-        dataOpts = config["dataCollectionOptions"]
+        dataOpts = config["configurationOptions"]
+        variableOpts = config["dataCollectionOptions"]
         seeds = generateSeeds(dataOpts)
         confFiles = []
-        for seed in seeds:
-            for model in dataOpts["decisionModels"]:
-                simOpts = config["sugarscapeOptions"]
-                simOpts["agentEthicalTheory"] = model
-                simOpts["seed"] = seed
-                simOpts["logfile"] = "{0}{1}{2}.json".format(path, model, seed)
-                # Enforce noninteractive, no-output mode
-                simOpts["headlessMode"] = True
-                simOpts["debugMode"] = ["none"]
-                confFilePath = "{0}{1}{2}.config".format(path, model, seed)
-                confFiles.append(confFilePath)
-                conf = open(confFilePath, 'w')
-                conf.write(json.dumps(simOpts))
-                conf.close()
+
+        if len(variableOpts) == 1:
+            for seed in seeds:
+                for variable in variableOpts:
+                    for val in variableOpts[variable]:
+                        simOpts = config["sugarscapeOptions"]
+                        simOpts[variable] = val
+                        simOpts["seed"] = seed
+                        if type(val) is list:
+                            simOpts["logfile"] = "{0}{1}{2}.json".format(path, variable, val[0], seed)
+                        else:
+                            simOpts["logfile"] = "{0}{1}{2}.json".format(path, variable, val, seed)                   
+                        # Enforce noninteractive, no-output mode
+                        simOpts["headlessMode"] = True
+                        simOpts["debugMode"] = ["none"]
+                        if type(val) is list:
+                            confFilePath = "{0}{1}{2}.config".format(path, variable, val[0], seed)
+                        else:
+                            confFilePath = "{0}{1}{2}.config".format(path, variable, val, seed)                            
+                        confFiles.append(confFilePath)
+                        conf = open(confFilePath, 'w')
+                        conf.write(json.dumps(simOpts))
+                        conf.close()
+        else:
+            for seed in seeds:
+                innerList = variableOpts.copy()
+                for variable in variableOpts:
+                    #if len(innerList) == 0:
+                    #    continue
+                    if variable in innerList:
+                        del innerList[variable]
+                    for val in variableOpts[variable]:
+                        for variable2 in innerList:
+                            for val2 in innerList[variable2]:
+                                print(variable, " ", val, " ", variable2, " ", val2)
+                                simOpts = config["sugarscapeOptions"]
+                                simOpts[variable] = val
+                                simOpts[variable2] = val2
+                                simOpts["seed"] = seed
+                                if type(val) is list and type(val2) is list:
+                                    simOpts["logfile"] = "{0}{1}{2}.json".format(path, val[0], val2[0], seed)
+                                else:
+                                    simOpts["logfile"] = "{0}{1}{2}.json".format(path,variable, val, variable2, seed)                   
+                                # Enforce noninteractive, no-output mode
+                                simOpts["headlessMode"] = True
+                                simOpts["debugMode"] = ["none"]
+                                if type(val) is list and type(val2) is list:
+                                    confFilePath = "{0}{1}{2}.config".format(path, val[0], val2[0], seed)
+                                else:
+                                    confFilePath = "{0}{1}{2}.config".format(path,variable, val, variable2, seed)
+                                confFiles.append(confFilePath)
+                                conf = open(confFilePath, 'w')
+                                conf.write(json.dumps(simOpts))
+                                conf.close()
         return confFiles
     return configs
 
@@ -44,7 +85,7 @@ def generateSeeds(config):
 def getJobsToDo(config, path):
     print("Searching for incomplete logs from previously created seeds.")
     encodedDir = os.fsencode(path)
-    dataOpts = config["dataCollectionOptions"]
+    dataOpts = config["configurationOptions"]
     simOpts = config["sugarscapeOptions"]
     configs = []
     for file in os.listdir(encodedDir):
@@ -116,7 +157,7 @@ def printHelp():
     exit(0)
 
 def runSimulations(config, configFiles, path):
-    dataOpts = config["dataCollectionOptions"]
+    dataOpts = config["configurationOptions"]
 
     shell = "files=("
     for conf in configFiles:
@@ -151,6 +192,10 @@ if __name__ == "__main__":
     configFile = open(config)
     config = json.loads(configFile.read())
     configFile.close()
+
+    if "configurationOptions" not in config:
+        print("Configuration file must have specific data collection options in order to run automated data collection.")
+        exit(1)
 
     configFiles = createConfigurations(config, path)
     runSimulations(config, configFiles, path)
