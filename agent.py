@@ -726,17 +726,18 @@ class Agent:
                 hashNum = int(hashed.hexdigest(), 16)
                 self.childEndowmentHashes[config] = hashNum
 
-        pairedEndowmentIndex = -1
         for endowment in parentEndowments:
             index = random.randrange(2)
             random.seed(self.childEndowmentHashes[endowment] + self.timestep)
             endowmentValue = parentEndowments[endowment][index]
             childEndowment[endowment] = endowmentValue
-            if pairedEndowmentIndex == -1 and endowment in pairedEndowments:
-                pairedEndowmentIndex = index
 
+        pairedEndowmentIndex = -1
         for endowment in pairedEndowments:
-            endowmentValue = pairedEndowments[endowment][index]
+            if pairedEndowmentIndex == -1:
+                random.seed(self.childEndowmentHashes[endowment] + self.timestep)
+                pairedEndowmentIndex = random.randrange(2)
+            endowmentValue = pairedEndowments[endowment][pairedEndowmentIndex]
             childEndowment[endowment] = endowmentValue
 
         # Each parent gives a portion of their starting endowment for child endowment
