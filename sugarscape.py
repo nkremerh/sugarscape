@@ -939,9 +939,11 @@ def verifyConfiguration(configuration):
     elif "none" in configuration["debugMode"] and len(configuration["debugMode"]) > 1:
         configuration["debugMode"] = "none"
 
-    # Ensure compatibility with outdated configurations of single decision models
+    # Keep compatibility with outdated configuration files
     if configuration["agentDecisionModel"] != None:
             configuration["agentDecisionModels"] = [configuration["agentDecisionModel"]]
+    if type(configuration["agentDecisionModels"]) == str:
+            configuration["agentDecisionModels"] = [configuration["agentDecisionModels"]]
 
     return configuration
 

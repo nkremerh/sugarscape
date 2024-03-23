@@ -684,8 +684,6 @@ class Agent:
         parentEndowments = {
         "aggressionFactor": [self.aggressionFactor, mate.aggressionFactor],
         "baseInterestRate": [self.baseInterestRate, mate.baseInterestRate],
-        "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
-        "decisionModel": [self.decisionModel, mate.decisionModel],
         "fertilityAge": [self.fertilityAge, mate.fertilityAge],
         "fertilityFactor": [self.fertilityFactor, mate.fertilityFactor],
         "infertilityAge": [self.infertilityAge, mate.infertilityAge],
@@ -697,7 +695,6 @@ class Agent:
         "maxFriends": [self.maxFriends, mate.maxFriends],
         "movement": [self.movement, mate.movement],
         "movementMode": [self.movementMode, mate.movementMode],
-        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
         "spiceMetabolism": [self.spiceMetabolism, mate.spiceMetabolism],
         "sugarMetabolism": [self.sugarMetabolism, mate.sugarMetabolism],
         "sex": [self.sex, mate.sex],
@@ -707,8 +704,16 @@ class Agent:
         "universalSpice": [self.universalSpice, mate.universalSpice],
         "universalSugar": [self.universalSugar, mate.universalSugar]
         }
+
+        # These endowments should always come from the same parent for sensible outcomes
+        pairedEndowments = {
+        "decisionModel": [self.decisionModel, mate.decisionModel],
+        "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
+        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
+        }
         childEndowment = {"seed": self.seed}
         randomNumberReset = random.getstate()
+
         # Map configuration to a random number via hash to make random number generation independent of iteration order
         if self.childEndowmentHashes == None:
             self.childEndowmentHashes = {}
@@ -716,10 +721,22 @@ class Agent:
                 hashed = hashlib.md5(config.encode())
                 hashNum = int(hashed.hexdigest(), 16)
                 self.childEndowmentHashes[config] = hashNum
+            for config in pairedEndowments:
+                hashed = hashlib.md5(config.encode())
+                hashNum = int(hashed.hexdigest(), 16)
+                self.childEndowmentHashes[config] = hashNum
 
+        pairedEndowmentIndex = -1
         for endowment in parentEndowments:
+            index = random.randrange(2)
             random.seed(self.childEndowmentHashes[endowment] + self.timestep)
-            endowmentValue = parentEndowments[endowment][random.randrange(2)]
+            endowmentValue = parentEndowments[endowment][index]
+            childEndowment[endowment] = endowmentValue
+            if pairedEndowmentIndex == -1 and endowment in pairedEndowments:
+                pairedEndowmentIndex = index
+
+        for endowment in pairedEndowments:
+            endowmentValue = pairedEndowments[endowment][index]
             childEndowment[endowment] = endowmentValue
 
         # Each parent gives a portion of their starting endowment for child endowment
