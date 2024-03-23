@@ -65,7 +65,7 @@ class GUI:
 
         statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Movement: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
-        cellLabel = tkinter.Label(window, text="Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Model: - | Age: - | Sex: - | Sugar: - | Spice: - ", font="Roboto 10", justify=tkinter.CENTER)
+        cellLabel = tkinter.Label(window, text="Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - ", font="Roboto 10", justify=tkinter.CENTER)
         cellLabel.grid(row=2, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
 
         self.widgets["playButton"] = playButton
@@ -205,11 +205,11 @@ class GUI:
         if cell.season == None:
             cellSeason = '-'
         cellStats = "Cell: ({0},{1}) | Sugar: {2}/{3} | Spice: {4}/{5} | Pollution: {6} | Season: {7}".format(cellX, cellY, cell.sugar, cell.maxSugar, cell.spice, cell.maxSpice, round(cell.pollution, 2), cellSeason)
-        agentStats = "Agent: - | Model: - | Age: - | Sex: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: -"
+        agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: -"
         agent = cell.agent
         if agent != None:
-            agentStats = "Agent: {0} | Model: {1} | Age: {2} | Sex: {3} | Vision: {4} | Movement: {5} | Sugar: {6} | Spice: {7} | Metabolism: {8}".format(str(agent), agent.decisionModel, agent.age, agent.sex, round(agent.vision, 2), round(agent.movement, 2),
-                                                                                                                                    round(agent.sugar, 2), round(agent.spice, 2), round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2))
+            agentStats = "Agent: {0} | Age: {1} | Vision: {2} | Movement: {3} | Sugar: {4} | Spice: {5} | Metabolism: {6}".format(str(agent), agent.age, round(agent.vision, 2), round(agent.movement, 2),
+                                                                                                                        round(agent.sugar, 2), round(agent.spice, 2), round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2))
         cellStats += "\n  {0}".format(agentStats)
         self.lastSelectedCell = {'x': cellX, 'y': cellY}
         return cellStats
