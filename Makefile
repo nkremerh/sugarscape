@@ -1,9 +1,11 @@
 CONFIG = config.json
 DATACHECK = data/data.complete
 PLOTCHECK = plots/plots.complete
+LOGS = log.csv log.json
 
 DATASET = $(DATACHECK) \
 		data/*[[:digit:]]*.config \
+		data/*.csv \
 		data/*.json \
 		data/*.sh
 
@@ -12,8 +14,8 @@ PLOTS = $(PLOTCHECK) \
 		plots/*.pdf \
 		plots/*.plg
 
-CLEAN = log.json \
-		$(DATASET) \
+CLEAN = $(DATASET) \
+		$(LOGS) \
 		$(PLOTS)
 
 # Change to python3 (or other alias) if needed

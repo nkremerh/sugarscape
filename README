@@ -378,6 +378,10 @@ logfile: path
     Set the path of the log file.
     Default: ""
 
+logfileFormat: string
+    Set the file format for the log file.
+    Default: "json"
+
 profileMode: bool
     Set whether performance profiling mode is enabled.
     Default: false

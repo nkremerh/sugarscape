@@ -74,6 +74,7 @@
         "interfaceHeight": 1000,
         "interfaceWidth": 900,
         "logfile": "log.json",
+        "logfileFormat": "json",
         "profileMode": false,
         "screenshots": false,
         "seed": -1,

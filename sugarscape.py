@@ -48,13 +48,15 @@ class Sugarscape:
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
         # TODO: Remove redundant metrics
+        # TODO: Streamline naming
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanMovement": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                              "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "totalWealthLost": 0,
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
-                             "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0}
+                             "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
+        self.logFormat = configuration["logfileFormat"]
 
     def addAgent(self, agent):
         self.agents.append(agent)
@@ -234,6 +236,15 @@ class Sugarscape:
         self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
         self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
         logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
+        if self.logFormat == "csv":
+            logString = ""
+            # Ensure consistent ordering for CSV format
+            for stat in sorted(self.runtimeStats):
+                if logString == "":
+                    logString += "{0}".format(self.runtimeStats[stat])
+                else:
+                    logString += ",{0}".format(self.runtimeStats[stat])
+            logString += "\n"
         self.log.write(logString)
         self.log.flush()
         self.log.close()
@@ -583,7 +594,7 @@ class Sugarscape:
         timesteps = timesteps - self.timestep
         screenshots = 0
         while t <= timesteps and len(self.agents) > 0:
-            if self.configuration["screenshots"] == True:
+            if self.configuration["screenshots"] == True and self.configuration["headlessMode"] == False:
                 self.gui.canvas.postscript(file="screenshot{0}.ps".format(psacc), colormode="color")
                 screenshots += 1
             self.doTimestep()
@@ -595,7 +606,18 @@ class Sugarscape:
     def startLog(self):
         if self.log == None:
             return
-        self.log.write("[\n")
+        if self.logFormat == "csv":
+            header = ""
+            # Ensure consistent ordering for CSV format
+            for stat in sorted(self.runtimeStats):
+                if header == "":
+                    header += "{0}".format(stat)
+                else:
+                    header += ",{0}".format(stat)
+            header += "\n"
+            self.log.write(header)
+        else:
+            self.log.write("[\n")
         self.updateRuntimeStats()
         self.writeToLog()
 
@@ -807,6 +829,15 @@ class Sugarscape:
         if self.log == None:
             return
         logString = '\t' + json.dumps(self.runtimeStats) + ",\n"
+        if self.logFormat == "csv":
+            logString = ""
+            # Ensure consistent ordering for CSV format
+            for stat in sorted(self.runtimeStats):
+                if logString == "":
+                    logString += "{0}".format(self.runtimeStats[stat])
+                else:
+                    logString += ",{0}".format(self.runtimeStats[stat])
+            logString += "\n"
         self.log.write(logString)
 
     def __str__(self):
@@ -975,6 +1006,7 @@ if __name__ == "__main__":
                      "interfaceHeight": 1000,
                      "interfaceWidth": 900,
                      "logfile": None,
+                     "logfileFormat": "json",
                      "profileMode": False,
                      "screenshots": False,
                      "seed": -1,
