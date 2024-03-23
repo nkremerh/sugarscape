@@ -37,7 +37,7 @@ class Sugarscape:
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
-        self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"])
+        self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
         self.agents = []
         self.deadAgents = []
@@ -170,7 +170,7 @@ class Sugarscape:
         if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
             print("Could not place {0} diseases.".format(len(diseases)))
 
-    def configureEnvironment(self, maxSugar, maxSpice):
+    def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
         width = self.environment.width
         for i in range(height):
@@ -184,8 +184,8 @@ class Sugarscape:
         startY2 = math.ceil(width * 0.7)
         sugarRadiusScale = 2
         radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
-        self.addSugarPeak(startX1, startY1, radius, maxSugar)
-        self.addSugarPeak(startX2, startY2, radius, maxSugar)
+        for peak in sugarPeaks:
+            self.addSugarPeak(peak[0], peak[1], radius, maxSugar)
 
         startX1 = math.ceil(height * 0.7)
         startX2 = math.ceil(height * 0.3)
@@ -193,8 +193,8 @@ class Sugarscape:
         startY2 = math.ceil(width * 0.3)
         spiceRadiusScale = 2
         radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
-        self.addSpicePeak(startX1, startY1, radius, maxSpice)
-        self.addSpicePeak(startX2, startY2, radius, maxSpice)
+        for peak in spicePeaks:
+            self.addSpicePeak(peak[0], peak[1], radius, maxSpice)
         self.environment.findCellNeighbors()
 
     def doTimestep(self):
@@ -1001,9 +1001,11 @@ if __name__ == "__main__":
                      "environmentSeasonalGrowbackDelay": 0,
                      "environmentSeasonInterval": 0,
                      "environmentSpiceConsumptionPollutionFactor": 0,
+                     "environmentSpicePeaks": [[35, 35], [15, 15]],
                      "environmentSpiceProductionPollutionFactor": 0,
                      "environmentSpiceRegrowRate": 0,
                      "environmentSugarConsumptionPollutionFactor": 0,
+                     "environmentSugarPeaks": [[35, 15], [15, 35]],
                      "environmentSugarProductionPollutionFactor": 0,
                      "environmentSugarRegrowRate": 1,
                      "environmentUniversalSpiceIncomeInterval": 0,
