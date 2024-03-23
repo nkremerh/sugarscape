@@ -407,9 +407,9 @@ bashAlias: string
     Note: Bash is required to run the data collection.
     Default: "bash"
 
-decisionModels: [string, ...]
-    Set the decision models (ethical theories) to be tested in data collection.
-    Default: ["benthamHalfLookaheadBinary", "egoisticHalfLookaheadBinary", "rawSugarscape"]
+decisionModels: [[string, ...], ...]
+    Set the agent decision models to be tested in data collection.
+    Default: [["none"]]
 
 jobUpdateFrequency: int
     Set the frequency at which the number of remaining jobs is reported.

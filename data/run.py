@@ -17,14 +17,17 @@ def createConfigurations(config, path):
         confFiles = []
         for seed in seeds:
             for model in dataOpts["decisionModels"]:
+                modelString = model
+                if type(model) == list:
+                    modelString = '_'.join(model)
                 simOpts = config["sugarscapeOptions"]
-                simOpts["agentDecisionModel"] = model
+                simOpts["agentDecisionModels"] = model
                 simOpts["seed"] = seed
-                simOpts["logfile"] = "{0}{1}{2}.json".format(path, model, seed)
+                simOpts["logfile"] = "{0}{1}{2}.json".format(path, modelString, seed)
                 # Enforce noninteractive, no-output mode
                 simOpts["headlessMode"] = True
                 simOpts["debugMode"] = ["none"]
-                confFilePath = "{0}{1}{2}.config".format(path, model, seed)
+                confFilePath = "{0}{1}{2}.config".format(path, modelString, seed)
                 confFiles.append(confFilePath)
                 conf = open(confFilePath, 'w')
                 conf.write(json.dumps(simOpts))

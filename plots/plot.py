@@ -145,7 +145,7 @@ def generatePopulationPlot(models, outfile):
     i = 0
     j = len(models) - 1
     lines = ""
-    for model in models:
+    for model in dataset:
         if i == 0:
             lines += "plot ARGV[1] using 'timestep':'{0}_pop' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
         elif i < len(models) - 1:
@@ -167,7 +167,7 @@ def generateMeanAgeAtDeathPlot(models, outfile):
     i = 0
     j = len(models) - 1
     lines = ""
-    for model in models:
+    for model in dataset:
         if i == 0:
             lines += "plot ARGV[1] using 'timestep':'{0}_maad' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
         elif i < len(models) - 1:
@@ -191,7 +191,7 @@ def generateMeanTimeToLivePlot(models, outfile):
     i = 0
     j = len(models) - 1
     lines = ""
-    for model in models:
+    for model in dataset:
         if i == 0:
             lines += "plot ARGV[1] using 'timestep':'{0}_mttl' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
         elif i < len(models) - 1:
@@ -213,7 +213,7 @@ def generateTotalWealthPlot(models, outfile):
     i = 0
     j = len(models) - 1
     lines = ""
-    for model in models:
+    for model in dataset:
         if i == 0:
             lines += "plot ARGV[1] using 'timestep':'{0}_welt' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
         elif i < len(models) - 1:
@@ -235,7 +235,7 @@ def generateTotalWealthNormalizedPlot(models, outfile):
     i = 0
     j = len(models) - 1
     lines = ""
-    for model in models:
+    for model in dataset:
         if i == 0:
             lines += "plot ARGV[1] using 'timestep':(column('{0}_welt')/column('{0}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
         elif i < len(models) - 1:
@@ -257,7 +257,7 @@ def generateStarvationAndCombatPlot(models, outfile):
     i = 0
     j = len(models) - 1
     lines = ""
-    for model in models:
+    for model in dataset:
         if i == 0:
             lines += "plot ARGV[1] using 'timestep':((column('{0}_strv') + column('{0}_comd'))/column('{0}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
         elif i < len(models) - 1:
@@ -282,7 +282,10 @@ if __name__ == "__main__":
     models = config["decisionModels"]
     dataset = {}
     for model in models:
-        dataset[model] = {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}}
+        modelString = model
+        if type(model) == list:
+            modelString = '_'.join(model)
+        dataset[modelString] = {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}}
 
     if not os.path.exists(path):
         print("Path {0} not recognized.".format(path))

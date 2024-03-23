@@ -2,7 +2,7 @@
     "__README__": "Default values for helper scripts. Details can be found in the README.",
     "dataCollectionOptions": {
         "bashAlias": "bash",
-        "decisionModels": ["benthamHalfLookaheadBinary", "egoisticHalfLookaheadBinary", "rawSugarscape"],
+        "decisionModels": [["none"]],
         "jobUpdateFrequency": 5,
         "numParallelSimJobs": 1,
         "numSeeds": 100,

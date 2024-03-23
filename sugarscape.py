@@ -940,8 +940,10 @@ def verifyConfiguration(configuration):
         configuration["debugMode"] = "none"
 
     # Keep compatibility with outdated configuration files
-    if configuration["agentDecisionModel"] != None:
+    if configuration["agentDecisionModel"] != None and type(configuration["agentDecisionModel"]) == str:
             configuration["agentDecisionModels"] = [configuration["agentDecisionModel"]]
+    elif configuration["agentDecisionModel"] != None and type(configuration["agentDecisionModel"]) == list:
+            configuration["agentDecisionModels"] = configuration["agentDecisionModel"]
     if type(configuration["agentDecisionModels"]) == str:
             configuration["agentDecisionModels"] = [configuration["agentDecisionModels"]]
 
