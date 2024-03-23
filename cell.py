@@ -14,7 +14,7 @@ class Cell:
         self.hemisphere = "north" if self.x >= self.environment.equator else "south"
         self.season = None
         self.timestep = 0
-        self.neighbors = []
+        self.adjacentCells = []
         self.sugarLastProduced = 0
         self.spiceLastProduced = 0
 
@@ -28,11 +28,11 @@ class Cell:
 
     def doPollutionDiffusion(self):
         meanPollution = self.pollution
-        for neighbor in self.neighbors:
-            meanPollution += neighbor.pollution
-        meanPollution = meanPollution / (len(self.neighbors) + 1)
-        for neighbor in self.neighbors:
-            neighbor.pollution = meanPollution
+        for adjacentCell in self.adjacentCells:
+            meanPollution += adjacentCell.pollution
+        meanPollution = meanPollution / (len(self.adjacentCells) + 1)
+        for adjacentCell in self.adjacentCells:
+            adjacentCell.pollution = meanPollution
         self.pollution = meanPollution
 
     def doSpiceProductionPollution(self, spiceProduced):
@@ -43,54 +43,11 @@ class Cell:
         productionPollutionFactor = self.environment.sugarProductionPollutionFactor
         self.pollution += productionPollutionFactor * sugarProduced
 
-    def findNeighborAgents(self):
-        agents = []
-        for neighbor in self.neighbors:
-            agent = neighbor.agent
-            if agent != None:
-                agents.append(agent)
-        return agents
-
-    def findNeighbors(self):
-        self.neighbors = []
-        self.neighbors.append(self.findNorthNeighbor())
-        self.neighbors.append(self.findSouthNeighbor())
-        self.neighbors.append(self.findEastNeighbor())
-        self.neighbors.append(self.findWestNeighbor())
-
     def findNeighborWealth(self):
         neighborWealth = 0
-        for neighbor in self.neighbors:
-            neighborWealth += neighbor.sugar + neighbor.spice
+        for adjacentCell in self.adjacentCells:
+            neighborWealth += adjacentCell.sugar + adjacentCell.spice
         return neighborWealth
-
-    def findEastNeighbor(self):
-        eastWrapAround = self.environment.width
-        eastIndex = self.x + 1
-        if eastIndex >= eastWrapAround:
-            eastIndex = 0
-        eastNeighbor = self.environment.findCell(eastIndex, self.y)
-        return eastNeighbor
-
-    def findNorthNeighbor(self):
-        northNeighbor = self.environment.findCell(self.x, (self.y + 1 + self.environment.height) % self.environment.height)
-        return northNeighbor
-
-    def findSouthNeighbor(self):
-        southWrapAround = 0
-        southIndex = self.y - 1
-        if southIndex < southWrapAround:
-            southIndex = self.environment.height - 1
-        southNeighbor = self.environment.findCell(self.x, southIndex)
-        return southNeighbor
-
-    def findWestNeighbor(self):
-        westWrapAround = 0
-        westIndex = self.x - 1
-        if westIndex < westWrapAround:
-            westIndex = self.environment.width - 1
-        westNeighbor = self.environment.findCell(westIndex, self.y)
-        return westNeighbor
 
     def isOccupied(self):
         return self.agent != None

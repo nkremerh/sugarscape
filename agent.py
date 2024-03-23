@@ -49,8 +49,7 @@ class Agent:
         self.cellsInRange = []
         self.neighborhood = []
         self.lastMoved = -1
-        self.vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
-        self.mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
+        self.adjacentNeighbors = []
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
         self.diseases = []
         self.fertile = False
@@ -219,8 +218,7 @@ class Agent:
         # Keep only debtors and children in social network to handle outstanding loans
         self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
         self.neighborhood = []
-        self.vonNeumannNeighbors = {}
-        self.mooreNeighbors = {}
+        self.adjacentNeighbors = []
 
     def doDisease(self):
         diseases = self.diseases
@@ -243,9 +241,8 @@ class Agent:
         diseaseCount = len(self.diseases)
         if diseaseCount == 0:
             return
-        neighborCells = self.cell.neighbors
         neighbors = []
-        for neighborCell in neighborCells:
+        for neighborCell in self.cell.adjacentCells:
             neighbor = neighborCell.agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighbors.append(neighbor)
@@ -313,13 +310,14 @@ class Agent:
             return
         # Maximum interest rate of 100%
         interestRate = min(1, self.lendingFactor * self.baseInterestRate)
-        neighbors = self.cell.findNeighborAgents()
         borrowers = []
-        for neighbor in neighbors:
-            if neighbor.isAlive() == False:
-                continue
-            elif neighbor.isBorrower() == True:
-                borrowers.append(neighbor)
+        for neighborCell in self.cell.adjacentCells:
+            neighbor = neighborCell.agent
+            if neighbor != None:
+                if neighbor.isAlive() == False:
+                    continue
+                elif neighbor.isBorrower() == True:
+                    borrowers.append(neighbor)
         random.shuffle(borrowers)
         spiceMetabolism = self.findSpiceMetabolism()
         sugarMetabolism = self.findSugarMetabolism()
@@ -366,10 +364,9 @@ class Agent:
         # Agent marked for removal or not interested in reproduction should not reproduce
         if self.alive == False or self.isFertile() == False:
             return
-        neighborCells = self.cell.neighbors
-        random.shuffle(neighborCells)
+        random.shuffle(self.cell.adjacentCells)
         emptyCells = self.findEmptyNeighborCells()
-        for neighborCell in neighborCells:
+        for neighborCell in self.cell.adjacentCells:
             neighbor = neighborCell.agent
             if neighbor != None:
                 neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
@@ -385,8 +382,6 @@ class Agent:
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
                     self.socialNetwork["children"].append(child)
-                    childID = child.ID
-                    neighborID = neighbor.ID
                     self.addAgentToSocialNetwork(child)
                     neighbor.addAgentToSocialNetwork(child)
                     neighbor.updateTimesVisitedWithAgent(self, self.lastMoved)
@@ -409,9 +404,8 @@ class Agent:
     def doTagging(self):
         if self.tags == None or self.alive == False:
             return
-        neighborCells = self.cell.neighbors
-        random.shuffle(neighborCells)
-        for neighborCell in neighborCells:
+        random.shuffle(self.cell.adjacentCells)
+        for neighborCell in self.cell.adjacentCells:
             neighbor = neighborCell.agent
             if neighbor != None:
                 position = random.randrange(len(self.tags))
@@ -427,7 +421,8 @@ class Agent:
             self.lastMoved = self.timestep
             self.doUniversalIncome()
             self.moveToBestCell()
-            self.updateNeighbors()
+            self.updateAdjacentNeighbors()
+            self.updateSocialNetwork()
             self.collectResourcesAtCell()
             self.doMetabolism()
             # If dead from metabolism, skip remainder of timestep
@@ -460,9 +455,8 @@ class Agent:
         self.sugarPrice = 0
         self.spicePrice = 0
         self.findMarginalRateOfSubstitution()
-        neighborCells = self.cell.neighbors
         traders = []
-        for neighborCell in neighborCells:
+        for neighborCell in self.cell.adjacentCells:
             neighbor = neighborCell.agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighborMRS = neighbor.marginalRateOfSubstitution
@@ -810,8 +804,7 @@ class Agent:
 
     def findEmptyNeighborCells(self):
         emptyCells = []
-        neighborCells = self.cell.neighbors
-        for neighborCell in neighborCells:
+        for neighborCell in self.cell.adjacentCells:
             if neighborCell.agent == None:
                 emptyCells.append(neighborCell)
         return emptyCells
@@ -1283,22 +1276,6 @@ class Agent:
             if timeRemaining == 0:
                 self.payDebt(creditor)
 
-    def updateMooreNeighbors(self):
-        for direction, neighbor in self.vonNeumannNeighbors.items():
-            self.mooreNeighbors[direction] = neighbor
-        north = self.mooreNeighbors["north"]
-        south = self.mooreNeighbors["south"]
-        east = self.mooreNeighbors["east"]
-        west = self.mooreNeighbors["west"]
-        self.mooreNeighbors["northeast"] = north.cell.findEastNeighbor() if north != None else None
-        self.mooreNeighbors["northeast"] = east.cell.findNorthNeighbor() if east != None and self.mooreNeighbors["northeast"] == None else None
-        self.mooreNeighbors["northwest"] = north.cell.findWestNeighbor() if north != None else None
-        self.mooreNeighbors["northwest"] = west.cell.findNorthNeighbor() if west != None and self.mooreNeighbors["northwest"] == None else None
-        self.mooreNeighbors["southeast"] = south.cell.findEastNeighbor() if south != None else None
-        self.mooreNeighbors["southeast"] = east.cell.findSouthNeighbor() if east != None and self.mooreNeighbors["southeast"] == None else None
-        self.mooreNeighbors["southwest"] = south.cell.findWestNeighbor() if south != None else None
-        self.mooreNeighbors["southwest"] = west.cell.findSouthNeighbor() if west != None and self.mooreNeighbors["southwest"] == None else None
-
     def updateMarginalRateOfSubstitutionForAgent(self, agent):
         agentID = agent.ID
         if agentID not in self.socialNetwork:
@@ -1311,13 +1288,15 @@ class Agent:
         self.sugarMeanIncome = (alpha * sugarIncome) + ((1 - alpha) * self.sugarMeanIncome)
         self.spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome)
 
-    def updateNeighbors(self):
-        self.updateVonNeumannNeighbors()
-        self.updateMooreNeighbors()
-        self.updateSocialNetwork()
+    def updateAdjacentNeighbors(self):
+        adjacentNeighbors = []
+        for adjacentCell in self.cell.adjacentCells:
+            if adjacentCell.agent != None:
+                adjacentNeighbors.append(adjacentCell.agent)
+        self.adjacentNeighbors = adjacentNeighbors
 
     def updateSocialNetwork(self):
-        for direction, neighbor in self.vonNeumannNeighbors.items():
+        for neighbor in self.adjacentNeighbors:
             if neighbor == None:
                 continue
             neighborID = neighbor.ID
@@ -1349,12 +1328,6 @@ class Agent:
         else:
             self.socialNetwork[agentID]["timesVisited"] += 1
             self.socialNetwork[agentID]["lastSeen"] = timestep
-
-    def updateVonNeumannNeighbors(self):
-        self.vonNeumannNeighbors["north"] = self.cell.findNorthNeighbor().agent
-        self.vonNeumannNeighbors["south"] = self.cell.findSouthNeighbor().agent
-        self.vonNeumannNeighbors["east"] = self.cell.findEastNeighbor().agent
-        self.vonNeumannNeighbors["west"] = self.cell.findWestNeighbor().agent
 
     def updateHappiness(self):
         if self.cell == None:
