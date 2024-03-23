@@ -939,6 +939,10 @@ def verifyConfiguration(configuration):
     elif "none" in configuration["debugMode"] and len(configuration["debugMode"]) > 1:
         configuration["debugMode"] = "none"
 
+    # Ensure compatibility with outdated configurations of single decision models
+    if configuration["agentDecisionModel"] != None:
+            configuration["agentDecisionModels"] = [configuration["agentDecisionModel"]]
+
     return configuration
 
 if __name__ == "__main__":
@@ -946,6 +950,7 @@ if __name__ == "__main__":
     configuration = {"agentAggressionFactor": [0, 0],
                      "agentBaseInterestRate": [0.0, 0.0],
                      "agentDecisionModels": ["none"],
+                     "agentDecisionModel": None,
                      "agentDecisionModelFactor": [0, 0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
