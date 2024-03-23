@@ -108,18 +108,14 @@ agentBaseInterestRate: [float, float]
     Set the interest rate for an agent's lending as a percentage.
     Default: [0.0, 0.0]
 
-agentDecisionModel: string
-    Set the agent decision model for different decisionmaking.
-    Options: "altruisticHalfLookaheadBinary", "altruisticHalfLookaheadTop", "benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "benthamNoLookaheadBinary", "benthamNoLookaheadTop", "egoisticHalfLookaheadBinary", "egoisticHalfLookaheadTop", "none", "rawSugarscape"
-    Default: "none"
-
-agentDecisionModelData: object
-    Set additional data for the agent decision model.
-    Note: Not currently implemented.
-
 agentDecisionModelFactor: [float, float]
     Set the agent weight of their decision model over biological imperatives.
     Default: [0, 0]
+
+agentDecisionModels: [string, ...]
+    Set the agent decision models for different decisionmaking.
+    Options: "altruisticHalfLookaheadBinary", "altruisticHalfLookaheadTop", "benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "benthamNoLookaheadBinary", "benthamNoLookaheadTop", "egoisticHalfLookaheadBinary", "egoisticHalfLookaheadTop", "none", "rawSugarscape"
+    Default: ["none"]
 
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.

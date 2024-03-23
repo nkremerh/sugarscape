@@ -88,7 +88,12 @@ class Agent:
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
         childID = sugarscape.generateAgentID()
-        child = self.spawnChild(childID, self.timestep, cell, childConfiguration)
+        childDecisionModel = childConfiguration["decisionModel"]
+        child = None
+        if childDecisionModel == self.decisionModel:
+            child = self.spawnChild(childID, self.timestep, cell, childConfiguration)
+        else:
+            child = mate.spawnChild(childID, self.timestep, cell, childConfiguration)
         child.gotoCell(cell)
         sugarscape.addAgent(child)
         child.collectResourcesAtCell()

@@ -9,9 +9,13 @@ class GUI:
         self.window = None
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentWidth)]for i in range(self.sugarscape.environmentHeight)]
+        # TODO: Add a simplified way to have a bunch of colors programatically chosen during runtime
         self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
-                         "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "pink": "#FA32FA", "yellow": "#FAFA32", "teal": "#32FAFA", "purple": "#6432FA", "orange": "#FA6432",
-                         "salmon": "#FA6464", "mint": "#64FA64", "blue2": "#3264FA"}
+                       "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "pink": "#FA32FA", "yellow": "#FAFA32", "teal": "#32FAFA", "purple": "#6432FA", "orange": "#FA6432",
+                       "salmon": "#FA6464", "mint": "#64FA64", "blue2": "#3264FA",
+                       "none": "#32FA32", "benthamHalfLookaheadBinary": "#3232FA", "egoisticHalfLookaheadBinary": "#FA3232", "altruisticHalfLookaheadBinary": "#FA32FA",
+                       "benthamNoLookaheadBinary": "#FAFA32", "egoisticNoLookaheadBinary": "#32FAFA", "altruisticNoLookaheadBinary": "#6432FA", "benthamHalfLookaheadTop": "#FA6432",
+                       "egoisticHalfLookaheadTop": "#FA6464", "altruisticHalfLookaheadTop": "#64FA64", "benthamNoLookaheadTop": "#3264FA"}
         self.widgets = {}
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
@@ -27,7 +31,7 @@ class GUI:
         self.stopSimulation = False
 
     def configureAgentColorNames(self):
-        return ["Disease", "Sex", "Tribes"]
+        return ["Disease", "Sex", "Tribes", "Decision Models"]
 
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
@@ -241,6 +245,8 @@ class GUI:
             return self.colors[agent.sex]
         elif agent.tribe != None and self.activeColorOptions["agent"] == "Tribes":
             return self.colors[agent.tribe]
+        elif agent.decisionModel != None and self.activeColorOptions["agent"] == "Decision Models":
+            return self.colors[agent.decisionModel]
         elif len(agent.diseases) > 0 and self.activeColorOptions["agent"] == "Disease":
             return self.colors["red"]
         elif len(agent.diseases) == 0 and self.activeColorOptions["agent"] == "Disease":
