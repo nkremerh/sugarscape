@@ -597,7 +597,7 @@ class Sugarscape:
         screenshots = 0
         while t <= timesteps and len(self.agents) > 0:
             if self.configuration["screenshots"] == True and self.configuration["headlessMode"] == False:
-                self.gui.canvas.postscript(file="screenshot{0}.ps".format(psacc), colormode="color")
+                self.gui.canvas.postscript(file="screenshot{0}.ps".format(screenshots), colormode="color")
                 screenshots += 1
             self.doTimestep()
             t += 1
