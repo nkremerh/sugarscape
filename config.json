@@ -52,6 +52,7 @@
         "diseaseSugarMetabolismPenalty": [1, 3],
         "diseaseTagStringLength": [11, 21],
         "diseaseVisionPenalty": [-1, 1],
+        "environmentEquator": -1,
         "environmentHeight": 50,
         "environmentMaxCombatLoot": 2,
         "environmentMaxSpice": 4,

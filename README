@@ -283,6 +283,11 @@ diseaseVisionPenalty: [int, int]
     Note: Negative values constitute a decrease in agent vision.
     Default: [0, 0]
 
+environmentEquator: int
+    Set the equator of the environment for seasonal changes.
+    Note: Value of -1 causes equator to be set at the midpoint of the environment.
+    Default: -1
+
 environmentHeight: int
     Set the height in cells of the Sugarscape environment.
     Default: 50

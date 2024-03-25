@@ -15,8 +15,8 @@ class Environment:
         self.seed = configuration["sugarscapeSeed"]
         self.seasonInterval = configuration["seasonInterval"]
         self.seasonalGrowbackDelay = configuration["seasonalGrowbackDelay"]
-        self.seasonNorth = "summer" if configuration["seasonInterval"] > 0 else None
-        self.seasonSouth = "winter" if configuration["seasonInterval"] > 0 else None
+        self.seasonNorth = "wet" if configuration["seasonInterval"] > 0 else None
+        self.seasonSouth = "dry" if configuration["seasonInterval"] > 0 else None
         self.seasonalGrowbackCountdown = configuration["seasonalGrowbackDelay"]
         self.pollutionDiffusionDelay = configuration["pollutionDiffusionDelay"]
         self.pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
@@ -27,7 +27,7 @@ class Environment:
         self.maxCombatLoot = configuration["maxCombatLoot"]
         self.universalSpiceIncomeInterval = configuration["universalSpiceIncomeInterval"]
         self.universalSugarIncomeInterval = configuration["universalSugarIncomeInterval"]
-        self.equator = math.ceil(self.height / 2)
+        self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
         # Populate grid with NoneType objects
         self.grid = [[None for j in range(width)]for i in range(height)]
 
@@ -44,7 +44,7 @@ class Environment:
                 if self.seasonInterval > 0:
                     if self.timestep % self.seasonInterval == 0:
                         self.grid[i][j].updateSeason()
-                    if (cellSeason == "summer") or (cellSeason == "winter" and self.seasonalGrowbackCountdown == self.seasonalGrowbackDelay):
+                    if (cellSeason == "wet") or (cellSeason == "dry" and self.seasonalGrowbackCountdown == self.seasonalGrowbackDelay):
                         if self.grid[i][j].sugar + self.sugarRegrowRate != self.grid[i][j].sugar:
                             self.grid[i][j].sugarLastProduced = self.sugarRegrowRate
                         else:
@@ -139,12 +139,12 @@ class Environment:
             if self.seasonalGrowbackCountdown == 0:
                 self.seasonalGrowbackCountdown = self.seasonalGrowbackDelay
             if self.timestep % self.seasonInterval == 0:
-                if self.seasonNorth == "summer":
-                    self.seasonNorth = "winter"
-                    self.seasonSouth = "summer"
+                if self.seasonNorth == "wet":
+                    self.seasonNorth = "dry"
+                    self.seasonSouth = "wet"
                 else:
-                    self.seasonNorth = "summer"
-                    self.seasonSouth = "winter"
+                    self.seasonNorth = "wet"
+                    self.seasonSouth = "dry"
 
     def __str__(self):
         string = ""

@@ -105,10 +105,10 @@ class Cell:
         self.sugar = 0
 
     def updateSeason(self):
-        if self.season == "summer":
-            self.season = "winter"
+        if self.season == "wet":
+            self.season = "dry"
         else:
-            self.season = "summer"
+            self.season = "wet"
 
     def __str__(self):
         string = ""

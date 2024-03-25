@@ -32,7 +32,7 @@ class Sugarscape:
                                     "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"],
                                     "universalSpiceIncomeInterval": configuration["environmentUniversalSpiceIncomeInterval"],
                                     "universalSugarIncomeInterval": configuration["environmentUniversalSugarIncomeInterval"],
-                                    "sugarscapeSeed": configuration["seed"]}
+                                    "equator": configuration["environmentEquator"], "sugarscapeSeed": configuration["seed"]}
         self.seed = configuration["seed"]
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
@@ -992,6 +992,7 @@ if __name__ == "__main__":
                      "diseaseSugarMetabolismPenalty": [0, 0],
                      "diseaseTagStringLength": [0, 0],
                      "diseaseVisionPenalty": [0, 0],
+                     "environmentEquator": -1,
                      "environmentHeight": 50,
                      "environmentMaxCombatLoot": 0,
                      "environmentMaxSpice": 0,
