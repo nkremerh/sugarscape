@@ -556,18 +556,18 @@ class Agent:
 
     def findBestCell(self):
         self.findNeighborhood()
-        retaliators = self.findRetaliatorsInVision()
+        if len(self.cellsInRange) == 0:
+            return self.cell
         random.shuffle(self.cellsInRange)
 
-        bestCell = None
-        bestRange = max(self.cell.environment.height, self.cell.environment.width)
-        bestWealth = 0
-        agentX = self.cell.x
-        agentY = self.cell.y
+        retaliators = self.findRetaliatorsInVision()
         combatMaxLoot = self.cell.environment.maxCombatLoot
-        wraparound = self.findVision() + 1
-        potentialCells = []
         aggression = self.findAggression()
+
+        bestCell = None
+        bestWealth = 0
+        bestRange = max(self.cell.environment.height, self.cell.environment.width)
+        potentialCells = []
 
         for currCell in self.cellsInRange:
             cell = currCell["cell"]
@@ -580,14 +580,12 @@ class Agent:
             if prey != None and self.isNeighborValidPrey(prey) == False:
                 continue
             preyTribe = prey.tribe if prey != None else "empty"
-            preyWealth = prey.wealth if prey != None else 0
             preySugar = prey.sugar if prey != None else 0
             preySpice = prey.spice if prey != None else 0
             # Aggression factor may lead agent to see more reward than possible meaning combat itself is a reward
             welfarePreySugar = aggression * min(combatMaxLoot, preySugar)
             welfarePreySpice = aggression * min(combatMaxLoot, preySpice)
 
-            cellWealth = 0
             # Modify value of cell relative to the metabolism needs of the agent
             welfare = self.findWelfare((cell.sugar + welfarePreySugar), (cell.spice + welfarePreySpice))
             cellWealth = welfare / (1 + cell.pollution)
@@ -596,26 +594,19 @@ class Agent:
             if prey != None and retaliators[preyTribe] > self.wealth + cellWealth:
                 continue
 
-            if bestCell == None:
-                bestCell = cell
-                bestRange = travelDistance
-                bestWealth = cellWealth
-
             # Select closest cell with the most resources
             if cellWealth > bestWealth or (cellWealth == bestWealth and travelDistance < bestRange):
-                bestRange = travelDistance
                 bestCell = cell
                 bestWealth = cellWealth
-
+                bestRange = travelDistance
+                
             cellRecord = {"cell": cell, "wealth": cellWealth, "range": travelDistance}
             potentialCells.append(cellRecord)
 
         if self.decisionModelFactor > 0:
             bestCell = self.findBestEthicalCell(potentialCells, bestCell)
-        if bestCell == None:
-            bestCell = self.cell
-        if "all" in self.debug or "agent" in self.debug:
-            print("Agent {0} moving to ({1},{2})".format(self.ID, bestCell.x, bestCell.y))
+            if bestCell == None:
+                bestCell = self.cell
         return bestCell
 
     def findBestEthicalCell(self, cells, greedyBestCell=None):
@@ -1114,6 +1105,8 @@ class Agent:
 
     def moveToBestCell(self):
         bestCell = self.findBestCell()
+        if "all" in self.debug or "agent" in self.debug:
+            print("Agent {0} moving to ({1},{2})".format(self.ID, bestCell.x, bestCell.y))
         if self.findAggression() > 0:
             self.doCombat(bestCell)
         else:
