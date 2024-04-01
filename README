@@ -182,6 +182,11 @@ agentMovementMode: string
     Options: "cardinal", "radial"
     Default: "cardinal"
 
+agentNeighborhoodMode: string
+    Set the type of neighborhood adjacency used by agents.
+    Options: "moore", "vonNeumann"
+    Default: "vonNeumann"
+
 agentReplacements: int
     Set maximum number of agents to replace in environment on agent death.
     Default: 0

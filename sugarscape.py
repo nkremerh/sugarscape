@@ -439,6 +439,7 @@ class Sugarscape:
         universalSpice = configs["agentUniversalSpice"]
         universalSugar = configs["agentUniversalSugar"]
         movementMode = configs["agentMovementMode"]
+        neighborhoodMode = configs["agentNeighborhoodMode"]
         visionMode = configs["agentVisionMode"]
 
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
@@ -545,7 +546,7 @@ class Sugarscape:
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "movementMode": movementMode,
-                              "visionMode": visionMode}
+                              "neighborhoodMode": neighborhoodMode, "visionMode": visionMode}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -971,6 +972,7 @@ if __name__ == "__main__":
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
+                     "agentNeighborhoodMode": "vonNeumann",
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],
                      "agentSpiceMetabolism": [0, 0],

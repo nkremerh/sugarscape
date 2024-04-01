@@ -43,12 +43,13 @@ class Agent:
         self.decisionModelFactor = configuration["decisionModelFactor"]
         self.selfishnessFactor = configuration["selfishnessFactor"]
         self.decisionModel = configuration["decisionModel"]
+        self.neighborhoodMode = configuration["neighborhoodMode"]
 
         self.alive = True
         self.age = 0
         self.cellsInRange = []
-        self.neighborhood = []
         self.lastMoved = -1
+        self.neighborhood = []
         self.vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
@@ -693,7 +694,8 @@ class Agent:
         "vision": [self.vision, mate.vision],
         "visionMode": [self.visionMode, mate.visionMode],
         "universalSpice": [self.universalSpice, mate.universalSpice],
-        "universalSugar": [self.universalSugar, mate.universalSugar]
+        "universalSugar": [self.universalSugar, mate.universalSugar],
+        "neighborhoodMode": [self.neighborhoodMode, mate.neighborhoodMode]
         }
 
         # These endowments should always come from the same parent for sensible outcomes
@@ -1278,20 +1280,21 @@ class Agent:
                 self.payDebt(creditor)
 
     def updateMooreNeighbors(self):
+        # Necessitates finding von Neumann neighbors before invoking this method
         for direction, neighbor in self.vonNeumannNeighbors.items():
             self.mooreNeighbors[direction] = neighbor
         north = self.mooreNeighbors["north"]
         south = self.mooreNeighbors["south"]
         east = self.mooreNeighbors["east"]
         west = self.mooreNeighbors["west"]
-        self.mooreNeighbors["northeast"] = north.cell.findEastNeighbor() if north != None else None
-        self.mooreNeighbors["northeast"] = east.cell.findNorthNeighbor() if east != None and self.mooreNeighbors["northeast"] == None else None
-        self.mooreNeighbors["northwest"] = north.cell.findWestNeighbor() if north != None else None
-        self.mooreNeighbors["northwest"] = west.cell.findNorthNeighbor() if west != None and self.mooreNeighbors["northwest"] == None else None
-        self.mooreNeighbors["southeast"] = south.cell.findEastNeighbor() if south != None else None
-        self.mooreNeighbors["southeast"] = east.cell.findSouthNeighbor() if east != None and self.mooreNeighbors["southeast"] == None else None
-        self.mooreNeighbors["southwest"] = south.cell.findWestNeighbor() if south != None else None
-        self.mooreNeighbors["southwest"] = west.cell.findSouthNeighbor() if west != None and self.mooreNeighbors["southwest"] == None else None
+        self.mooreNeighbors["northeast"] = north.cell.findEastNeighbor().agent if north != None else None
+        self.mooreNeighbors["northeast"] = east.cell.findNorthNeighbor().agent if east != None and self.mooreNeighbors["northeast"] == None else None
+        self.mooreNeighbors["northwest"] = north.cell.findWestNeighbor().agent if north != None else None
+        self.mooreNeighbors["northwest"] = west.cell.findNorthNeighbor().agent if west != None and self.mooreNeighbors["northwest"] == None else None
+        self.mooreNeighbors["southeast"] = south.cell.findEastNeighbor().agent if south != None else None
+        self.mooreNeighbors["southeast"] = east.cell.findSouthNeighbor().agent if east != None and self.mooreNeighbors["southeast"] == None else None
+        self.mooreNeighbors["southwest"] = south.cell.findWestNeighbor().agent if south != None else None
+        self.mooreNeighbors["southwest"] = west.cell.findSouthNeighbor().agent if west != None and self.mooreNeighbors["southwest"] == None else None
 
     def updateMarginalRateOfSubstitutionForAgent(self, agent):
         agentID = agent.ID
@@ -1311,7 +1314,8 @@ class Agent:
         self.updateSocialNetwork()
 
     def updateSocialNetwork(self):
-        for direction, neighbor in self.vonNeumannNeighbors.items():
+        neighborhood = self.vonNeumannNeighbors if self.neighborhoodMode == "vonNeumann" else self.mooreNeighbors
+        for direction, neighbor in neighborhood.items():
             if neighbor == None:
                 continue
             neighborID = neighbor.ID

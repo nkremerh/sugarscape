@@ -31,6 +31,7 @@
         "agentMaxFriends": [5, 10],
         "agentMovement": [1, 6],
         "agentMovementMode": "cardinal",
+        "agentNeighborhoodMode": "vonNeumann",
         "agentReplacements": 0,
         "agentSelfishnessFactor": [-1, -1],
         "agentSpiceMetabolism": [1, 4],

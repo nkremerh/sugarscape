@@ -98,7 +98,7 @@ def printHelp():
     exit(0)
 
 def printSummaryStats(dataset):
-    print("Model population performance:\n{0:^30} {1:^5} {2:^5} {3:^5}".format("Decision Model", "Died", "Worse", "Better"))
+    print("Model population performance:\n{0:^30} {1:^5} {2:^5} {3:^5}".format("Decision Model", "Extinct", "Worse", "Better"))
     for model in dataset:
         better = dataset[model]["runs"] - (dataset[model]["died"] + dataset[model]["worse"])
         print("{0:^30}: {1:^5} {2:^5} {3:^5}".format(model, dataset[model]["died"], dataset[model]["worse"], better))
