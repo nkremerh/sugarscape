@@ -28,6 +28,7 @@ class Environment:
         self.universalSpiceIncomeInterval = configuration["universalSpiceIncomeInterval"]
         self.universalSugarIncomeInterval = configuration["universalSugarIncomeInterval"]
         self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
+        self.neighborhoodMode = configuration["neighborhoodMode"]
         # Populate grid with NoneType objects
         self.grid = [[None for j in range(width)]for i in range(height)]
 
@@ -81,7 +82,7 @@ class Environment:
     def findCellNeighbors(self):
         for i in range(self.height):
             for j in range(self.width):
-                self.grid[i][j].findNeighbors()
+                self.grid[i][j].findNeighbors(self.neighborhoodMode)
 
     def findCellsInCardinalRange(self, startX, startY, gridRange):
         cellsInRange = []

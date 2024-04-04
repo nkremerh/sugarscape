@@ -182,11 +182,6 @@ agentMovementMode: string
     Options: "cardinal", "radial"
     Default: "cardinal"
 
-agentNeighborhoodMode: string
-    Set the type of neighborhood adjacency used by agents.
-    Options: "moore", "vonNeumann"
-    Default: "vonNeumann"
-
 agentReplacements: int
     Set maximum number of agents to replace in environment on agent death.
     Default: 0
@@ -395,6 +390,11 @@ logfile: path
 logfileFormat: string
     Set the file format for the log file.
     Default: "json"
+
+neighborhoodMode: string
+    Set the type of neighborhood adjacency used by agents and environment cells.
+    Options: "moore", "vonNeumann"
+    Default: "vonNeumann"
 
 profileMode: bool
     Set whether performance profiling mode is enabled.

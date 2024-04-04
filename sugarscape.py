@@ -32,7 +32,8 @@ class Sugarscape:
                                     "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"],
                                     "universalSpiceIncomeInterval": configuration["environmentUniversalSpiceIncomeInterval"],
                                     "universalSugarIncomeInterval": configuration["environmentUniversalSugarIncomeInterval"],
-                                    "equator": configuration["environmentEquator"], "sugarscapeSeed": configuration["seed"]}
+                                    "equator": configuration["environmentEquator"], "sugarscapeSeed": configuration["seed"],
+                                    "neighborhoodMode": configuration["neighborhoodMode"]}
         self.seed = configuration["seed"]
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
@@ -439,7 +440,7 @@ class Sugarscape:
         universalSpice = configs["agentUniversalSpice"]
         universalSugar = configs["agentUniversalSugar"]
         movementMode = configs["agentMovementMode"]
-        neighborhoodMode = configs["agentNeighborhoodMode"]
+        neighborhoodMode = configs["neighborhoodMode"]
         visionMode = configs["agentVisionMode"]
 
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
@@ -972,7 +973,6 @@ if __name__ == "__main__":
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
-                     "agentNeighborhoodMode": "vonNeumann",
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],
                      "agentSpiceMetabolism": [0, 0],
@@ -1019,6 +1019,7 @@ if __name__ == "__main__":
                      "interfaceWidth": 900,
                      "logfile": None,
                      "logfileFormat": "json",
+                     "neighborhoodMode": "vonNeumann",
                      "profileMode": False,
                      "screenshots": False,
                      "seed": -1,

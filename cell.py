@@ -51,12 +51,19 @@ class Cell:
                 agents.append(agent)
         return agents
 
-    def findNeighbors(self):
+    def findNeighbors(self, mode):
         self.neighbors = []
-        self.neighbors.append(self.findNorthNeighbor())
-        self.neighbors.append(self.findSouthNeighbor())
+        north = self.findNorthNeighbor()
+        south = self.findSouthNeighbor()
+        self.neighbors.append(north)
+        self.neighbors.append(south)
         self.neighbors.append(self.findEastNeighbor())
         self.neighbors.append(self.findWestNeighbor())
+        if mode == "moore":
+            self.neighbors.append(north.findEastNeighbor())
+            self.neighbors.append(north.findWestNeighbor())
+            self.neighbors.append(south.findEastNeighbor())
+            self.neighbors.append(south.findWestNeighbor())
 
     def findNeighborWealth(self):
         neighborWealth = 0
