@@ -31,8 +31,4 @@ def negativeBentham(agent, cell):
             else:
                 if neighborValueOfCell < 0:
                     negativeCellValue *= (1 - selfishnessFactor)
-
-    if positiveCellValue >= abs(negativeCellValue):
-        return positiveCellValue
-    else:
-        return negativeCellValue
+return positiveCellValue, negativeCellValue
