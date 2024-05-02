@@ -188,7 +188,7 @@ class Agent:
         return
 
     def doAging(self):
-        if self.alive == False:
+        if self.isAlive() == False:
             return
         self.age += 1
         # Die if reached max age and if not infinitely-lived
@@ -352,7 +352,7 @@ class Agent:
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
 
     def doMetabolism(self):
-        if self.alive == False:
+        if self.isAlive() == False:
             return
         spiceMetabolism = self.findSpiceMetabolism()
         sugarMetabolism = self.findSugarMetabolism()
@@ -360,19 +360,21 @@ class Agent:
         self.spice -= spiceMetabolism
         self.cell.doSugarConsumptionPollution(sugarMetabolism)
         self.cell.doSpiceConsumptionPollution(spiceMetabolism)
-        if (self.sugar < 1 and sugarMetabolism > 0) or (self.spice < 1 and spiceMetabolism > 0):
+        if self.sugar < 0 or self.spice < 0:
+            self.doDeath("starvation")
+        elif (self.sugar <= 0 and sugarMetabolism > 0) or (self.spice <= 0 and spiceMetabolism > 0):
             self.doDeath("starvation")
 
     def doReproduction(self):
         # Agent marked for removal or not interested in reproduction should not reproduce
-        if self.alive == False or self.isFertile() == False:
+        if self.isAlive() == False or self.isFertile() == False:
             return
         neighborCells = self.cell.neighbors
         random.shuffle(neighborCells)
         emptyCells = self.findEmptyNeighborCells()
         for neighborCell in neighborCells:
             neighbor = neighborCell.agent
-            if neighbor != None:
+            if neighbor != None and neighbor.isAlive() == True:
                 neighborCompatibility = self.isNeighborReproductionCompatible(neighbor)
                 emptyCellsWithNeighbor = emptyCells + neighbor.findEmptyNeighborCells()
                 random.shuffle(emptyCellsWithNeighbor)
@@ -408,7 +410,7 @@ class Agent:
                         print("Agent {0} reproduced with agent {1} at cell ({2},{3})".format(self.ID, str(neighbor), emptyCell.x, emptyCell.y))
 
     def doTagging(self):
-        if self.tags == None or self.alive == False:
+        if self.tags == None or self.isAlive() == False:
             return
         neighborCells = self.cell.neighbors
         random.shuffle(neighborCells)
@@ -422,7 +424,7 @@ class Agent:
     def doTimestep(self, timestep):
         self.timestep = timestep
         # Prevent dead or already moved agent from moving
-        if self.alive == True and self.lastMoved != self.timestep:
+        if self.isAlive() == True and self.lastMoved != self.timestep:
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
             self.lastMoved = self.timestep
@@ -1044,7 +1046,9 @@ class Agent:
         self.cell.agent = self
 
     def isAlive(self):
-        return self.alive
+        if self.spice < 0 and self.sugar < 0:
+            self.alive = False
+        return self.alive and self.spice >= 0 and self.sugar >= 0
 
     def isBorrower(self):
         if self.age >= self.fertilityAge and self.age < self.infertilityAge and self.isFertile() == False:
@@ -1355,8 +1359,8 @@ class Agent:
         self.vonNeumannNeighbors["west"] = self.cell.findWestNeighbor().agent
 
     def updateHappiness(self):
-        if self.cell == None:
-            print("Agent {0} has no cell and isAlive = {1}".format(self.ID, self.isAlive()))
+        if self.isAlive() == False:
+            return
         self.healthHappiness = self.findHealthHappiness()
         self.wealthHappiness = self.findWealthHappiness()
         self.socialHappiness = self.findSocialHappiness()
