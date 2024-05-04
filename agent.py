@@ -428,10 +428,10 @@ class Agent:
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
             self.lastMoved = self.timestep
-            self.doUniversalIncome()
             self.moveToBestCell()
             self.updateNeighbors()
             self.collectResourcesAtCell()
+            self.doUniversalIncome()
             self.doMetabolism()
             # If dead from metabolism, skip remainder of timestep
             if self.alive == False:
