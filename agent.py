@@ -578,7 +578,7 @@ class Agent:
 
             # Avoid attacking agents ineligible to attack
             prey = cell.agent
-            if self.isNeighborValidPrey(prey) == False:
+            if cell.isOccupied() and self.isNeighborValidPrey(prey) == False:
                 continue
             preyTribe = prey.tribe if prey != None else "empty"
             preySugar = prey.sugar if prey != None else 0
