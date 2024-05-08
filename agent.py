@@ -576,11 +576,9 @@ class Agent:
             cell = currCell["cell"]
             travelDistance = currCell["distance"]
 
-            if cell.isOccupied() == True and aggression == 0:
-                continue
-            prey = cell.agent
             # Avoid attacking agents ineligible to attack
-            if prey != None and self.isNeighborValidPrey(prey) == False:
+            prey = cell.agent
+            if self.isNeighborValidPrey(prey) == False:
                 continue
             preyTribe = prey.tribe if prey != None else "empty"
             preySugar = prey.sugar if prey != None else 0
