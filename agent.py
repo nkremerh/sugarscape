@@ -555,7 +555,7 @@ class Agent:
             return agent.wealth
 
     def findAggression(self):
-        return self.aggressionFactor + self.aggressionFactorModifier
+        return max(0, self.aggressionFactor + self.aggressionFactorModifier)
 
     def findBestCell(self):
         self.findNeighborhood()
@@ -576,11 +576,9 @@ class Agent:
             cell = currCell["cell"]
             travelDistance = currCell["distance"]
 
-            if cell.isOccupied() == True and aggression == 0:
-                continue
-            prey = cell.agent
             # Avoid attacking agents ineligible to attack
-            if prey != None and self.isNeighborValidPrey(prey) == False:
+            prey = cell.agent
+            if cell.isOccupied() and self.isNeighborValidPrey(prey) == False:
                 continue
             preyTribe = prey.tribe if prey != None else "empty"
             preySugar = prey.sugar if prey != None else 0
@@ -1098,7 +1096,7 @@ class Agent:
             return False
 
     def isNeighborValidPrey(self, neighbor):
-        if neighbor == None or self.findAggression() == 0:
+        if neighbor == None or self.findAggression() <= 0:
             return False
         elif self.tribe != neighbor.tribe and self.wealth >= neighbor.wealth:
             return True
