@@ -555,7 +555,7 @@ class Agent:
             return agent.wealth
 
     def findAggression(self):
-        return self.aggressionFactor + self.aggressionFactorModifier
+        return max(0, self.aggressionFactor + self.aggressionFactorModifier)
 
     def findBestCell(self):
         self.findNeighborhood()
