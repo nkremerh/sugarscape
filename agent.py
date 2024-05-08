@@ -1098,7 +1098,7 @@ class Agent:
             return False
 
     def isNeighborValidPrey(self, neighbor):
-        if neighbor == None or self.findAggression() == 0:
+        if neighbor == None or self.findAggression() <= 0:
             return False
         elif self.tribe != neighbor.tribe and self.wealth >= neighbor.wealth:
             return True
