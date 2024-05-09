@@ -55,7 +55,7 @@ class Sugarscape:
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "totalWealthLost": 0,
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
-                             "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0}
+                             "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
 
@@ -665,6 +665,7 @@ class Sugarscape:
         numTraders = 0
         totalWealthLost = 0
         totalMetabolismCost = 0
+        totalSickAgents = 0
 
         # Log per-agent stats every quarter of the total runtime
         perAgentStatsInterval = self.maxTimestep / 4
@@ -720,6 +721,9 @@ class Sugarscape:
             agentMeanTimeToLive += agentTimeToLiveAgeLimited
             agentReproduced += agent.lastReproduced
             agentTotalMetabolism += agent.sugarMetabolism + agent.spiceMetabolism
+
+            if agent.isSick():
+                totalSickAgents += 1
 
             if agent.wealth < minWealth:
                 minWealth = agent.wealth
@@ -828,6 +832,7 @@ class Sugarscape:
         self.runtimeStats["agentTimesToLive"] = timesToLive
         self.runtimeStats["agentTimesToLiveAgeLimited"] = timesToLiveAgeLimited
         self.runtimeStats["agentTotalMetabolism"] = agentTotalMetabolism
+        self.runtimeStats["totalSickAgents"] = totalSickAgents
 
     def writeToLog(self):
         if self.log == None:
