@@ -16,7 +16,7 @@
     "agentMaxAge": [60, 100],
     "agentMaxFriends": [0, 0],
     "agentMovement": [1, 6],
-    "agentReplacements": 0,
+    "agentReplacements": 400,
     "agentSpiceMetabolism": [0, 0],
     "agentStartingSpice": [0, 0],
     "agentStartingSugar": [50, 100],
