@@ -387,6 +387,8 @@ class Agent:
                         continue
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
+                    child.findCellsInRange()
+                    child.findNeighborhood()
                     self.socialNetwork["children"].append(child)
                     childID = child.ID
                     neighborID = neighbor.ID
