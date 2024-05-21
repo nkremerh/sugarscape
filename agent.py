@@ -608,8 +608,8 @@ class Agent:
 
         if self.decisionModelFactor > 0:
             bestCell = self.findBestEthicalCell(potentialCells, bestCell)
-            if bestCell == None:
-                bestCell = self.cell
+        if bestCell == None:
+            bestCell = self.cell
         return bestCell
 
     def findBestEthicalCell(self, cells, greedyBestCell=None):
