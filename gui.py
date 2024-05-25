@@ -88,11 +88,11 @@ class GUI:
             for j in range(self.sugarscape.environmentWidth):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
-                x1 = self.borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth - (0.50 * self.siteWidth) # Upper right x coordinate
-                y1 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight - (0.50 * self.siteHeight) # Upper right y coordinate
-                x2 = self.borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth + (0.50 * self.siteWidth) # Lower left x coordinate
-                y2 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight + (0.50 * self.siteHeight) # Lower left y coordinate
-                self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
+                x1 = self.borderEdge + i * self.siteWidth # Upper right x coordinate
+                y1 = self.borderEdge + j * self.siteHeight # Upper right y coordinate
+                x2 = self.borderEdge + (i + 1) * self.siteWidth # Lower left x coordinate
+                y2 = self.borderEdge + (j + 1) * self.siteHeight # Lower left y coordinate
+                self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
@@ -188,7 +188,7 @@ class GUI:
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
                 if self.grid[i][j]["color"] != fillColor:
-                    self.canvas.itemconfig(self.grid[i][j]["rectangle"], fill=fillColor, outline="#C0C0C0")
+                    self.canvas.itemconfig(self.grid[i][j]["rectangle"], fill=fillColor, outline="")
                     self.grid[i][j] = {"rectangle": self.grid[i][j]["rectangle"], "color": fillColor}
         self.updateLabels()
         self.window.update()
