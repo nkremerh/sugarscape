@@ -20,6 +20,8 @@ class GUI:
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
         self.lastSelectedCell = None
+        self.selectedAgent = None
+        self.selectedAgentRectangle = None
         self.activeColorOptions = {"agent": None, "environment": None}
         self.menuTrayColumns = 4
         self.menuTrayOffset = 110
@@ -29,6 +31,11 @@ class GUI:
         self.siteWidth = (self.screenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
         self.configureWindow()
         self.stopSimulation = False
+
+    def clearHighlight(self):
+        if self.selectedAgentRectangle is not None:
+            self.canvas.delete(self.selectedAgentRectangle)
+            self.selectedAgentRectangle = None
 
     def configureAgentColorNames(self):
         return ["Disease", "Sex", "Tribes", "Decision Models"]
@@ -92,7 +99,9 @@ class GUI:
                 y1 = self.borderEdge + j * self.siteHeight # Upper right y coordinate
                 x2 = self.borderEdge + (i + 1) * self.siteWidth # Lower left x coordinate
                 y2 = self.borderEdge + (j + 1) * self.siteHeight # Lower left y coordinate
-                self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
+                self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="", activestipple="gray50"), "color": fillColor}
+        if self.selectedAgent != None:
+            self.highlightAgent(self.selectedAgent.cell.x, self.selectedAgent.cell.y)
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
@@ -154,6 +163,16 @@ class GUI:
         elif gridY > self.sugarscape.environmentHeight - 1:
             gridY = self.sugarscape.environmentHeight - 1
 
+        cell = self.sugarscape.environment.findCell(gridX, gridY)
+        agent = cell.agent
+
+        if agent != None:
+            self.selectedAgent = agent
+            self.highlightAgent(gridX, gridY)
+        else:
+            self.selectedAgent = None
+            self.clearHighlight()
+
         cellString = self.findCellStats(gridX, gridY)
         label = self.widgets["cellLabel"]
         label.config(text=cellString)
@@ -190,6 +209,17 @@ class GUI:
                 if self.grid[i][j]["color"] != fillColor:
                     self.canvas.itemconfig(self.grid[i][j]["rectangle"], fill=fillColor, outline="")
                     self.grid[i][j] = {"rectangle": self.grid[i][j]["rectangle"], "color": fillColor}
+
+        if self.selectedAgent != None:
+            if self.selectedAgent.isAlive() == True:
+                self.lastSelectedCell = self.selectedAgent.cell
+                self.highlightAgent(self.lastSelectedCell.x, self.lastSelectedCell.y)
+    
+            else:
+                self.lastSelectedCell = None
+                self.selectedAgent = None
+                self.clearHighlight()
+
         self.updateLabels()
         self.window.update()
 
@@ -211,7 +241,7 @@ class GUI:
             agentStats = "Agent: {0} | Age: {1} | Vision: {2} | Movement: {3} | Sugar: {4} | Spice: {5} | Metabolism: {6}".format(str(agent), agent.age, round(agent.vision, 2), round(agent.movement, 2),
                                                                                                                         round(agent.sugar, 2), round(agent.spice, 2), round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2))
         cellStats += "\n  {0}".format(agentStats)
-        self.lastSelectedCell = {'x': cellX, 'y': cellY}
+        self.lastSelectedCell = cell
         return cellStats
 
     def hexToInt(self, hexval):
@@ -221,6 +251,17 @@ class GUI:
             subval = hexval[i:i + 2]
             intvals.append(int(subval, 16))
         return intvals
+    
+    def highlightAgent(self, x, y):
+        x1 = self.borderEdge + x * self.siteWidth
+        y1 = self.borderEdge + y * self.siteHeight
+        x2 = self.borderEdge + (x + 1) * self.siteWidth
+        y2 = self.borderEdge + (y + 1) * self.siteHeight
+
+        if self.selectedAgentRectangle != None:
+            self.canvas.delete(self.selectedAgentRectangle)
+
+        self.selectedAgentRectangle = self.canvas.create_rectangle(x1, y1, x2, y2, fill="", activefill="#88cafc", outline="black", width=5)
 
     def intToHex(self, intvals):
         hexval = "#"
@@ -297,9 +338,12 @@ class GUI:
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
         if self.lastSelectedCell != None:
-            cellString = self.findCellStats(self.lastSelectedCell['x'], self.lastSelectedCell['y'])
-            label = self.widgets["cellLabel"]
-            label.config(text=cellString)
+            cellString = self.findCellStats(self.lastSelectedCell.x, self.lastSelectedCell.y)
+        else:
+            cellString = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - "
+        # TODO: default (empty) cell info does not need to be updated every timestep, just to get rid of dead agent
+        label = self.widgets["cellLabel"]
+        label.config(text=cellString)
 
     def updateScreenDimensions(self):
         self.screenHeight = self.window.winfo_height()
