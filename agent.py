@@ -497,6 +497,12 @@ class Agent:
                 spiceSellerMRS = spiceSeller.marginalRateOfSubstitution
                 sugarSellerMRS = sugarSeller.marginalRateOfSubstitution
 
+                # TODO: Fix bug where a spice or sugar seller has a negative MRS
+                if spiceSellerMRS < 0 or sugarSellerMRS < 0:
+                    spiceSeller = None
+                    sugarSeller = None
+                    break
+
                 # Find geometric mean of spice and sugar seller MRS for trade price
                 tradePrice = math.sqrt(spiceSellerMRS * sugarSellerMRS)
                 sugarPrice = 0
