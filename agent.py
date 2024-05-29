@@ -205,6 +205,7 @@ class Agent:
             spiceLoot = min(maxCombatLoot, preySpice)
             self.sugar += sugarLoot
             self.spice += spiceLoot
+            self.lastDoneCombat = self.cell.environment.sugarscape.timestep
             self.wealth = self.sugar + self.spice
             prey.sugar -= sugarLoot
             prey.spice -= spiceLoot
