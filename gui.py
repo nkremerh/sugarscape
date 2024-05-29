@@ -91,6 +91,7 @@ class GUI:
         canvas = tkinter.Canvas(self.window, width=self.screenWidth, height=self.screenHeight, bg="white")
         canvas.grid(row=3, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
         canvas.bind("<Button-1>", self.doClick)
+        canvas.bind("<Button-3>", self.doClick)
         self.canvas = canvas
 
     def configureEnvironment(self):
@@ -137,7 +138,6 @@ class GUI:
         self.window.bind("<space>", self.doPlayButton)
         self.window.bind("<Right>", self.doStepForwardButton)
         self.window.bind("<Configure>", self.resizeInterface)
-        self.canvas.bind("<Button-1>", self.doClick)
 
         # Adjust for slight deviations from initially configured window size
         self.resizeInterface()
@@ -167,12 +167,20 @@ class GUI:
             gridY = self.sugarscape.environmentHeight - 1
 
         cell = self.sugarscape.environment.findCell(gridX, gridY)
-        if cell == self.highlightedCell:
-            self.clearHighlight()
-        else:
-            self.highlightedCell = cell
-            self.highlightedAgent = cell.agent
-            self.highlightCell(gridX, gridY)
+        if event.num == 1: # Left click
+            if cell == self.highlightedCell and self.highlightedAgent == None:
+                self.clearHighlight()
+            else:
+                self.highlightedCell = cell
+                self.highlightedAgent = None
+                self.highlightCell(gridX, gridY)
+        elif event.num == 3: # Right click
+            if cell == self.highlightedCell or cell.agent == None:
+                self.clearHighlight()
+            elif cell.agent != None:
+                self.highlightedCell = cell
+                self.highlightedAgent = cell.agent
+                self.highlightCell(gridX, gridY)
 
         self.doTimestep()
 
