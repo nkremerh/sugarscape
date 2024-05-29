@@ -608,7 +608,7 @@ class Agent:
                 bestCell = cell
                 bestWealth = cellWealth
                 bestRange = travelDistance
-                
+
             cellRecord = {"cell": cell, "wealth": cellWealth, "range": travelDistance}
             potentialCells.append(cellRecord)
 
