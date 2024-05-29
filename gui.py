@@ -103,7 +103,7 @@ class GUI:
                 y1 = self.borderEdge + j * self.siteHeight # Upper right y coordinate
                 x2 = self.borderEdge + (i + 1) * self.siteWidth # Lower left x coordinate
                 y2 = self.borderEdge + (j + 1) * self.siteHeight # Lower left y coordinate
-                self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="", activestipple="gray50"), "color": fillColor}
+                self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0", activestipple="gray50"), "color": fillColor}
         if self.highlightedCell != None:
             self.highlightCell(self.highlightedCell.x, self.highlightedCell.y)
 
@@ -213,7 +213,7 @@ class GUI:
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
                 if self.grid[i][j]["color"] != fillColor:
-                    self.canvas.itemconfig(self.grid[i][j]["rectangle"], fill=fillColor, outline="")
+                    self.canvas.itemconfig(self.grid[i][j]["rectangle"], fill=fillColor, outline="#C0C0C0")
                     self.grid[i][j] = {"rectangle": self.grid[i][j]["rectangle"], "color": fillColor}
 
         if self.highlightedAgent != None:
