@@ -72,8 +72,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        for i in range(height):
-            for j in range(width):
+        for i in range(width):
+            for j in range(height):
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSpice * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSpice)
@@ -86,8 +86,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        for i in range(height):
-            for j in range(width):
+        for i in range(width):
+            for j in range(height):
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSugar * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSugar)
@@ -182,24 +182,16 @@ class Sugarscape:
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
         width = self.environment.width
-        for i in range(height):
-            for j in range(width):
+        for i in range(width):
+            for j in range(height):
                 newCell = cell.Cell(i, j, self.environment)
                 self.environment.setCell(newCell, i, j)
 
-        startX1 = math.ceil(height * 0.7)
-        startX2 = math.ceil(height * 0.3)
-        startY1 = math.ceil(width * 0.3)
-        startY2 = math.ceil(width * 0.7)
         sugarRadiusScale = 2
         radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
         for peak in sugarPeaks:
             self.addSugarPeak(peak[0], peak[1], radius, maxSugar)
 
-        startX1 = math.ceil(height * 0.7)
-        startX2 = math.ceil(height * 0.3)
-        startY1 = math.ceil(width * 0.7)
-        startY2 = math.ceil(width * 0.3)
         spiceRadiusScale = 2
         radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
         for peak in spicePeaks:
@@ -238,8 +230,8 @@ class Sugarscape:
             self.runtimeStats["totalMetabolismCost"] += agent.sugarMetabolism + agent.spiceMetabolism
         environmentWealthCreated = 0
         environmentWealthTotal = 0
-        for i in range(self.environment.height):
-            for j in range(self.environment.width):
+        for i in range(self.environment.width):
+            for j in range(self.environment.height):
                 environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
                 environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
         self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
@@ -686,8 +678,8 @@ class Sugarscape:
 
         environmentWealthCreated = 0
         environmentWealthTotal = 0
-        for i in range(self.environment.height):
-            for j in range(self.environment.width):
+        for i in range(self.environment.width):
+            for j in range(self.environment.height):
                 environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
                 environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
                 if self.timestep == 1:

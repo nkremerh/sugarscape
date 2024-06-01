@@ -72,31 +72,19 @@ class Cell:
         return neighborWealth
 
     def findEastNeighbor(self):
-        eastWrapAround = self.environment.width
-        eastIndex = self.x + 1
-        if eastIndex >= eastWrapAround:
-            eastIndex = 0
-        eastNeighbor = self.environment.findCell(eastIndex, self.y)
+        eastNeighbor = self.environment.findCell((self.x + 1 + self.environment.width) % self.environment.width, self.y)
         return eastNeighbor
 
     def findNorthNeighbor(self):
-        northNeighbor = self.environment.findCell(self.x, (self.y + 1 + self.environment.height) % self.environment.height)
+        northNeighbor = self.environment.findCell(self.x, (self.y - 1 + self.environment.height) % self.environment.height)
         return northNeighbor
 
     def findSouthNeighbor(self):
-        southWrapAround = 0
-        southIndex = self.y - 1
-        if southIndex < southWrapAround:
-            southIndex = self.environment.height - 1
-        southNeighbor = self.environment.findCell(self.x, southIndex)
+        southNeighbor = self.environment.findCell(self.x, (self.y + 1 + self.environment.height) % self.environment.height)
         return southNeighbor
 
     def findWestNeighbor(self):
-        westWrapAround = 0
-        westIndex = self.x - 1
-        if westIndex < westWrapAround:
-            westIndex = self.environment.width - 1
-        westNeighbor = self.environment.findCell(westIndex, self.y)
+        westNeighbor = self.environment.findCell((self.x - 1 + self.environment.width) % self.environment.width, self.y)
         return westNeighbor
 
     def isOccupied(self):
