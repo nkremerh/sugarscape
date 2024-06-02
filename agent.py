@@ -448,6 +448,7 @@ class Agent:
             # If dead from aging, skip remainder of timestep
             if self.alive == False:
                 return
+            self.findCellsInRange()
             self.updateHappiness()
 
     def doUniversalIncome(self):
@@ -882,10 +883,10 @@ class Agent:
         return diseaseStats
 
     def findNeighborhood(self, newCell=None):
-        newNeighborhood = self.findCellsInRange(newCell)
+        cell = self.cell if newCell == None else newCell
+        newNeighborhood = cell.findNeighborAgents()
         neighborhood = []
-        for neighborCell in newNeighborhood:
-            neighbor = neighborCell["cell"].agent
+        for neighbor in newNeighborhood:
             if neighbor != None and neighbor.isAlive() == True:
                 neighborhood.append(neighbor)
         neighborhood.append(self)
