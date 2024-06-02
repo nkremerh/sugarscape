@@ -88,27 +88,17 @@ class GUI:
 
     def configureEnvironment(self):
         if self.mode == "visualization":
-            self.canvas.create_rectangle(self.borderEdge, self.borderEdge, self.sugarscape.environmentHeight * self.siteWidth, self.sugarscape.environmentWidth * self.siteHeight, fill="white")
             for i in range(self.sugarscape.environmentHeight):
-                    for j in range(self.sugarscape.environmentWidth):
-                        cell = self.sugarscape.environment.findCell(i, j)
-                        if cell.agent != None:
-                            x1 = self.borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth - (0.50 * self.siteWidth) # Upper right x coordinate
-                            y1 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight - (0.50 * self.siteHeight) # Upper right y coordinate
-                            x2 = self.borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth + (0.50 * self.siteWidth) # Lower left x coordinate
-                            y2 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight + (0.50 * self.siteHeight) # Lower left y coordinate
-                            self.grid[i][j] = {"rectangle": self.canvas.create_oval(x1, y1, x2, y2, fill="black", outline=""), "color": "black"}
-            coords = set()
-            for agent in self.sugarscape.agents:
-                for neighbor in agent.neighborhood:
-                    if neighbor != agent and neighbor != None and neighbor.cell != None:
-                        coordPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
-                        coords.add(coordPair)
-            for coordPair in coords:
-                coordList = list(coordPair)
-                (x1, y1) = coordList[0]
-                (x2, y2) = coordList[1]
-                self.canvas.create_line((x1 + 0.5) * self.siteWidth + self.borderEdge, (y1 + 0.5) * self.siteHeight + self.borderEdge, (x2 + 0.5) * self.siteWidth + self.borderEdge, (y2 + 0.5)* self.siteHeight + self.borderEdge, fill="black", width="2")
+                for j in range(self.sugarscape.environmentWidth):
+                    cell = self.sugarscape.environment.findCell(i, j)
+                    fillColor = self.lookupFillColor(cell)
+                    x1 = self.borderEdge + (i + 0.2) * self.siteWidth # Upper right x coordinate
+                    y1 = self.borderEdge + (j + 0.2) * self.siteHeight # Upper right y coordinate
+                    x2 = self.borderEdge + (i + 0.8) * self.siteWidth # Lower left x coordinate
+                    y2 = self.borderEdge + (j + 0.8) * self.siteHeight # Lower left y coordinate
+                    self.grid[i][j] = {"object": self.canvas.create_oval(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
+ 
+            self.drawLines()
 
         else:
             # normal mode
@@ -120,7 +110,7 @@ class GUI:
                     y1 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight - (0.50 * self.siteHeight) # Upper right y coordinate
                     x2 = self.borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth + (0.50 * self.siteWidth) # Lower left x coordinate
                     y2 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight + (0.50 * self.siteHeight) # Lower left y coordinate
-                    self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
+                    self.grid[i][j] = {"object": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
@@ -158,6 +148,9 @@ class GUI:
         # Adjust for slight deviations from initially configured window size
         self.resizeInterface()
         window.update()
+
+    def deleteLines(self):
+        self.canvas.delete("line")
 
     def destroyCanvas(self):
         self.canvas.destroy()
@@ -203,7 +196,6 @@ class GUI:
             self.sugarscape.toggleEnd()
         else:
             self.sugarscape.doTimestep()
-            self.doTimestep()
 
     def doTimestep(self):
         if self.stopSimulation == True:
@@ -211,14 +203,21 @@ class GUI:
             return
         if self.screenHeight != self.window.winfo_height() or self.screenWidth != self.window.winfo_width():
             self.resizeInterface()
-        if self.mode != "visualization":
-            for i in range(self.sugarscape.environmentHeight):
-                for j in range(self.sugarscape.environmentWidth):
-                    cell = self.sugarscape.environment.findCell(i, j)
-                    fillColor = self.lookupFillColor(cell)
+        for i in range(self.sugarscape.environmentHeight):
+            for j in range(self.sugarscape.environmentWidth):
+                cell = self.sugarscape.environment.findCell(i, j)
+                fillColor = self.lookupFillColor(cell)
+                if self.mode != "visualization":
                     if self.grid[i][j]["color"] != fillColor:
-                        self.canvas.itemconfig(self.grid[i][j]["rectangle"], fill=fillColor, outline="#C0C0C0")
-                        self.grid[i][j] = {"rectangle": self.grid[i][j]["rectangle"], "color": fillColor}
+                        self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor, outline="#C0C0C0")
+                        self.grid[i][j] = {"object": self.grid[i][j]["object"], "color": fillColor}
+                else:
+                    if self.grid[i][j]["color"] != fillColor:
+                        self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
+                        self.grid[i][j] = {"object": self.grid[i][j]["object"], "color": fillColor}
+        if self.mode == "visualization":
+            self.deleteLines()
+            self.drawLines()
         self.updateLabels()
         self.window.update()
 
@@ -227,6 +226,22 @@ class GUI:
         self.stopSimulation = True
         self.window.destroy()
         self.sugarscape.toggleEnd()
+
+    def drawLines(self):
+        lineCoordinates = set()
+        for agent in self.sugarscape.agents:
+            for neighbor in agent.neighborhood:
+                if neighbor != agent and neighbor != None and neighbor.cell != None:
+                    lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
+                    lineCoordinates.add(lineEndpointsPair)
+        for lineEndpointsPair in lineCoordinates:
+            coordList = list(lineEndpointsPair)
+            (x1, y1), (x2, y2) = coordList[0], coordList[1]
+            x1 = (x1 + 0.5) * self.siteWidth + self.borderEdge
+            y1 = (y1 + 0.5) * self.siteHeight + self.borderEdge
+            x2 = (x2 + 0.5) * self.siteWidth + self.borderEdge
+            y2 = (y2 + 0.5) * self.siteHeight + self.borderEdge
+            self.canvas.create_line(x1, y1, x2, y2, fill="black", width="2", tag="line")
 
     def findCellStats(self, cellX, cellY):
         cell = self.sugarscape.environment.findCell(cellX, cellY)
@@ -260,6 +275,9 @@ class GUI:
 
     def lookupFillColor(self, cell):
         agent = cell.agent
+        if self.mode == "visualization":
+            return "white" if agent == None else "black"
+        
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
                 return self.recolorByResourceAmount(cell, self.colors["pollution"])
