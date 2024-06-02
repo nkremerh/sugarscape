@@ -4,7 +4,7 @@ import tkinter
 class GUI:
     def __init__(self, sugarscape, screenHeight=1000, screenWidth=900):
 
-        self.mode = "visualization"
+        self.visualization = "disease"
 
         self.sugarscape = sugarscape
         self.screenHeight = screenHeight
@@ -87,7 +87,7 @@ class GUI:
         self.canvas = canvas
 
     def configureEnvironment(self):
-        if self.mode == "visualization":
+        if self.visualization != "none":
             for i in range(self.sugarscape.environmentHeight):
                 for j in range(self.sugarscape.environmentWidth):
                     cell = self.sugarscape.environment.findCell(i, j)
@@ -207,7 +207,7 @@ class GUI:
             for j in range(self.sugarscape.environmentWidth):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
-                if self.mode != "visualization":
+                if self.visualization == "none":
                     if self.grid[i][j]["color"] != fillColor:
                         self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor, outline="#C0C0C0")
                         self.grid[i][j] = {"object": self.grid[i][j]["object"], "color": fillColor}
@@ -215,7 +215,7 @@ class GUI:
                     if self.grid[i][j]["color"] != fillColor:
                         self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
                         self.grid[i][j] = {"object": self.grid[i][j]["object"], "color": fillColor}
-        if self.mode == "visualization":
+        if self.visualization != "none":
             self.deleteLines()
             self.drawLines()
         self.updateLabels()
@@ -229,11 +229,65 @@ class GUI:
 
     def drawLines(self):
         lineCoordinates = set()
-        for agent in self.sugarscape.agents:
-            for neighbor in agent.neighborhood:
-                if neighbor != agent and neighbor != None and neighbor.cell != None:
-                    lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
-                    lineCoordinates.add(lineEndpointsPair)
+
+        if self.visualization == "neighbors":
+            for agent in self.sugarscape.agents:
+                for neighbor in agent.neighborhood:
+                    if neighbor != agent and neighbor.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+                        
+        elif self.visualization == "family":
+            for agent in self.sugarscape.agents:
+                family = [agent.socialNetwork["mother"], agent.socialNetwork["father"]] + agent.socialNetwork["children"]
+                for familyMember in family:
+                    if familyMember != None and familyMember.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (familyMember.cell.x, familyMember.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+
+        elif self.visualization == "friends":
+            for agent in self.sugarscape.agents:
+                for friendRecord in agent.socialNetwork["friends"]:
+                    friend = friendRecord["friend"]
+                    if friend.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (friend.cell.x, friend.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+
+        elif self.visualization == "traders":
+            for agent in self.sugarscape.agents:
+                nonTraders = {"father", "mother", "children", "friends", "creditors", "debtors"}
+                traders = {
+                    ID: traderRecord
+                    for ID, traderRecord in agent.socialNetwork.items()
+                    if ID not in nonTraders and traderRecord.get("lastSeen") == self.sugarscape.timestep and traderRecord.get("timesTraded") > 0
+                }
+                for ID, traderRecord in traders.items():
+                    trader = traderRecord["agent"]
+                    if trader.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (trader.cell.x, trader.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+
+        elif self.visualization == "credit":
+            for agent in self.sugarscape.agents:
+                # Loan records are always kept on both sides, so only one side is needed
+                for loanRecord in agent.socialNetwork["creditors"]:
+                    creditor = agent.socialNetwork[loanRecord["creditor"]]["agent"]
+                    if creditor.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (creditor.cell.x, creditor.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+
+        elif self.visualization == "disease":
+            for agent in self.sugarscape.agents:
+                if agent.isSick() == True:
+                    for diseaseRecord in agent.diseases:
+                        # Starting diseases without an infector are not considered
+                        if "infector" not in diseaseRecord:
+                            continue
+                        infector = next((agent for agent in self.sugarscape.agents if agent.ID == diseaseRecord["infector"]), None)
+                        if infector != None and infector.isAlive() == True:
+                            lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (infector.cell.x, infector.cell.y)])
+                            lineCoordinates.add(lineEndpointsPair)
+
         for lineEndpointsPair in lineCoordinates:
             coordList = list(lineEndpointsPair)
             (x1, y1), (x2, y2) = coordList[0], coordList[1]
@@ -275,9 +329,39 @@ class GUI:
 
     def lookupFillColor(self, cell):
         agent = cell.agent
-        if self.mode == "visualization":
+        if self.visualization == "neighbors" or self.visualization == "friends" or self.visualization == "traders":
             return "white" if agent == None else "black"
         
+        if self.visualization == "family":
+            if agent == None:
+                return "white"
+            isChild = agent.socialNetwork["father"] != None or agent.socialNetwork["mother"] != None
+            isParent = len(agent.socialNetwork["children"]) > 0
+            if isChild == False and isParent == False:
+                return "black"
+            elif isChild == False and isParent == True:
+                return "red"
+            elif isChild == True and isParent == False:
+                return "green"
+            else: # isChild == True and isParent == True
+                return "yellow"
+                        
+        if self.visualization == "credit":
+            if agent == None:
+                return "white"
+            isLender = len(agent.socialNetwork["debtors"]) > 0
+            isBorrower = len(agent.socialNetwork["creditors"]) > 0
+            if isLender:
+                return "yellow" if isBorrower else "green"
+            elif isBorrower:
+                return "red"
+            else:
+                return "black"
+
+        if self.visualization == "disease":
+            if agent == None: return "white"
+            return self.colors["red"] if agent.isSick() == True else self.colors["blue"]
+
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
                 return self.recolorByResourceAmount(cell, self.colors["pollution"])

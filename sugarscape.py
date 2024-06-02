@@ -62,12 +62,6 @@ class Sugarscape:
     def addAgent(self, agent):
         self.agents.append(agent)
 
-    def addDisease(self, oldDisease, agent):
-        diseaseID = oldDisease.ID
-        diseaseConfig = oldDisease.configuration
-        newDisease = disease.Disease(diseaseID, diseaseConfig)
-        agent.catchDisease(newDisease)
-
     def addSpicePeak(self, startX, startY, radius, maxSpice):
         height = self.environment.height
         width = self.environment.width
@@ -222,10 +216,10 @@ class Sugarscape:
             random.shuffle(self.agents)
             for agent in self.agents:
                 agent.doTimestep(self.timestep)
-            if self.gui != None:
-                self.gui.doTimestep()
             self.removeDeadAgents()
             self.updateRuntimeStats()
+            if self.gui != None:
+                self.gui.doTimestep()
             # If final timestep, do not write to log to cleanly close JSON array log structure
             if self.timestep != self.maxTimestep and len(self.agents) > 0:
                 self.writeToLog()
