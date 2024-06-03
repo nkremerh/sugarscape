@@ -3,15 +3,13 @@ import tkinter
 
 class GUI:
     def __init__(self, sugarscape, screenHeight=1000, screenWidth=900):
-
-        self.visualization = "disease"
-
         self.sugarscape = sugarscape
         self.screenHeight = screenHeight
         self.screenWidth = screenWidth
         self.window = None
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentWidth)]for i in range(self.sugarscape.environmentHeight)]
+        self.visualization = "None"
         # TODO: Add a simplified way to have a bunch of colors programatically chosen during runtime
         self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
                        "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "pink": "#FA32FA", "yellow": "#FAFA32", "teal": "#32FAFA", "purple": "#6432FA", "orange": "#FA6432",
@@ -24,7 +22,7 @@ class GUI:
         self.lastSelectedEnvironmentColor = None
         self.lastSelectedCell = None
         self.activeColorOptions = {"agent": None, "environment": None}
-        self.menuTrayColumns = 4
+        self.menuTrayColumns = 5
         self.menuTrayOffset = 110
         self.windowBorderOffset = 10
         self.borderEdge = 5
@@ -42,6 +40,17 @@ class GUI:
         stepButton = tkinter.Button(window, text="Step Forward", command=self.doStepForwardButton, relief=tkinter.RAISED)
         stepButton.grid(row=0, column=1, sticky="nsew")
 
+        visualizationButton = tkinter.Menubutton(window, text="Networks", relief=tkinter.RAISED)
+        visualizationMenu = tkinter.Menu(visualizationButton, tearoff=0)
+        visualizationButton.configure(menu=visualizationMenu)
+        visualizationNames = self.configureVisualizationNames()
+        visualizationNames.insert(0, "None")
+        self.lastSelectedVisualization = tkinter.StringVar(window)
+        self.lastSelectedVisualization.set(visualizationNames[0])  # Default
+        for visualization in visualizationNames:
+            visualizationMenu.add_checkbutton(label=visualization, onvalue=visualization, offvalue=visualization, variable=self.lastSelectedVisualization, command=self.doVisualizationMenu, indicatoron=True)
+        visualizationButton.grid(row=0, column=2, sticky="nsew") 
+
         agentColorButton = tkinter.Menubutton(window, text="Agent Coloring", relief=tkinter.RAISED)
         agentColorMenu = tkinter.Menu(agentColorButton, tearoff=0)
         agentColorButton.configure(menu=agentColorMenu)
@@ -52,7 +61,7 @@ class GUI:
         self.lastSelectedAgentColor.set(agentColorNames[0])  # Default
         for name in agentColorNames:
             agentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedAgentColor, command=self.doAgentColorMenu, indicatoron=True)
-        agentColorButton.grid(row=0, column=2, sticky="nsew")
+        agentColorButton.grid(row=0, column=3, sticky="nsew")
 
         environmentColorButton = tkinter.Menubutton(window, text="Environment Coloring", relief=tkinter.RAISED)
         environmentColorMenu = tkinter.Menu(environmentColorButton, tearoff=0)
@@ -64,7 +73,7 @@ class GUI:
         self.lastSelectedEnvironmentColor.set(environmentColorNames[0])  # Default
         for name in environmentColorNames:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
-        environmentColorButton.grid(row=0, column=3, sticky="nsew")
+        environmentColorButton.grid(row=0, column=4, sticky="nsew")
 
         statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Movement: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
@@ -73,6 +82,7 @@ class GUI:
 
         self.widgets["playButton"] = playButton
         self.widgets["stepButton"] = stepButton
+        self.widgets["visualizationButton"] = visualizationButton
         self.widgets["agentColorButton"] = agentColorButton
         self.widgets["environmentColorButton"] = environmentColorButton
         self.widgets["agentColorMenu"] = agentColorMenu
@@ -87,7 +97,7 @@ class GUI:
         self.canvas = canvas
 
     def configureEnvironment(self):
-        if self.visualization != "none":
+        if self.visualization != "None":
             for i in range(self.sugarscape.environmentHeight):
                 for j in range(self.sugarscape.environmentWidth):
                     cell = self.sugarscape.environment.findCell(i, j)
@@ -114,6 +124,9 @@ class GUI:
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
+    
+    def configureVisualizationNames(self):
+        return ["Neighbors", "Family", "Friends", "Trade", "Loans", "Diseases"]
 
     def configureWindow(self):
         window = tkinter.Tk()
@@ -207,7 +220,7 @@ class GUI:
             for j in range(self.sugarscape.environmentWidth):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
-                if self.visualization == "none":
+                if self.visualization == "None":
                     if self.grid[i][j]["color"] != fillColor:
                         self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor, outline="#C0C0C0")
                         self.grid[i][j] = {"object": self.grid[i][j]["object"], "color": fillColor}
@@ -215,10 +228,23 @@ class GUI:
                     if self.grid[i][j]["color"] != fillColor:
                         self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
                         self.grid[i][j] = {"object": self.grid[i][j]["object"], "color": fillColor}
-        if self.visualization != "none":
+        if self.visualization != "None":
             self.deleteLines()
             self.drawLines()
         self.updateLabels()
+        self.window.update()
+
+    def doVisualizationMenu(self, *args):
+        self.visualization = self.lastSelectedVisualization.get()
+        if self.visualization != "None":
+            self.widgets["agentColorButton"].configure(state="disabled")
+            self.widgets["environmentColorButton"].configure(state="disabled")
+        else:
+            self.widgets["agentColorButton"].configure(state="normal")
+            self.widgets["environmentColorButton"].configure(state="normal")
+        self.destroyCanvas()
+        self.configureCanvas()
+        self.configureEnvironment()
         self.window.update()
 
     def doWindowClose(self, *args):
@@ -230,14 +256,14 @@ class GUI:
     def drawLines(self):
         lineCoordinates = set()
 
-        if self.visualization == "neighbors":
+        if self.visualization == "Neighbors":
             for agent in self.sugarscape.agents:
                 for neighbor in agent.neighborhood:
                     if neighbor != agent and neighbor.isAlive() == True:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
                         
-        elif self.visualization == "family":
+        elif self.visualization == "Family":
             for agent in self.sugarscape.agents:
                 family = [agent.socialNetwork["mother"], agent.socialNetwork["father"]] + agent.socialNetwork["children"]
                 for familyMember in family:
@@ -245,7 +271,7 @@ class GUI:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (familyMember.cell.x, familyMember.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
 
-        elif self.visualization == "friends":
+        elif self.visualization == "Friends":
             for agent in self.sugarscape.agents:
                 for friendRecord in agent.socialNetwork["friends"]:
                     friend = friendRecord["friend"]
@@ -253,7 +279,7 @@ class GUI:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (friend.cell.x, friend.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
 
-        elif self.visualization == "traders":
+        elif self.visualization == "Trade":
             for agent in self.sugarscape.agents:
                 nonTraders = {"father", "mother", "children", "friends", "creditors", "debtors"}
                 traders = {
@@ -267,7 +293,7 @@ class GUI:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (trader.cell.x, trader.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
 
-        elif self.visualization == "credit":
+        elif self.visualization == "Loans":
             for agent in self.sugarscape.agents:
                 # Loan records are always kept on both sides, so only one side is needed
                 for loanRecord in agent.socialNetwork["creditors"]:
@@ -276,7 +302,7 @@ class GUI:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (creditor.cell.x, creditor.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
 
-        elif self.visualization == "disease":
+        elif self.visualization == "Disease":
             for agent in self.sugarscape.agents:
                 if agent.isSick() == True:
                     for diseaseRecord in agent.diseases:
@@ -328,40 +354,10 @@ class GUI:
         return hexval
 
     def lookupFillColor(self, cell):
-        agent = cell.agent
-        if self.visualization == "neighbors" or self.visualization == "friends" or self.visualization == "traders":
-            return "white" if agent == None else "black"
+        if self.visualization != "None":
+            return self.lookupVisualizationColor(cell)
         
-        if self.visualization == "family":
-            if agent == None:
-                return "white"
-            isChild = agent.socialNetwork["father"] != None or agent.socialNetwork["mother"] != None
-            isParent = len(agent.socialNetwork["children"]) > 0
-            if isChild == False and isParent == False:
-                return "black"
-            elif isChild == False and isParent == True:
-                return "red"
-            elif isChild == True and isParent == False:
-                return "green"
-            else: # isChild == True and isParent == True
-                return "yellow"
-                        
-        if self.visualization == "credit":
-            if agent == None:
-                return "white"
-            isLender = len(agent.socialNetwork["debtors"]) > 0
-            isBorrower = len(agent.socialNetwork["creditors"]) > 0
-            if isLender:
-                return "yellow" if isBorrower else "green"
-            elif isBorrower:
-                return "red"
-            else:
-                return "black"
-
-        if self.visualization == "disease":
-            if agent == None: return "white"
-            return self.colors["red"] if agent.isSick() == True else self.colors["blue"]
-
+        agent = cell.agent
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
                 return self.recolorByResourceAmount(cell, self.colors["pollution"])
@@ -383,6 +379,36 @@ class GUI:
         elif len(agent.diseases) == 0 and self.activeColorOptions["agent"] == "Disease":
             return self.colors["blue"]
         return self.colors["noSex"]
+
+    def lookupVisualizationColor(self, cell):
+        agent = cell.agent
+        if agent == None:
+            return "white"
+        elif self.visualization == "Neighbors" or self.visualization == "Friends" or self.visualization == "Trade":
+            return "black"
+        elif self.visualization == "Family":
+            isChild = agent.socialNetwork["father"] != None or agent.socialNetwork["mother"] != None
+            isParent = len(agent.socialNetwork["children"]) > 0
+            if isChild == False and isParent == False:
+                return "black"
+            elif isChild == False and isParent == True:
+                return "red"
+            elif isChild == True and isParent == False:
+                return "green"
+            else: # isChild == True and isParent == True
+                return "yellow"            
+        elif self.visualization == "Loans":
+            isLender = len(agent.socialNetwork["debtors"]) > 0
+            isBorrower = len(agent.socialNetwork["creditors"]) > 0
+            if isLender:
+                return "yellow" if isBorrower else "green"
+            elif isBorrower:
+                return "red"
+            else:
+                return "black"
+        elif self.visualization == "Disease":
+            return self.colors["red"] if agent.isSick() == True else self.colors["blue"]
+        return "black"
 
     def recolorByResourceAmount(self, cell, fillColor):
         recolorFactor = 0
