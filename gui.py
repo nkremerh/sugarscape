@@ -173,7 +173,7 @@ class GUI:
     #     self.doTimestep()
 
     def doClick(self, event):
-        self.canvas.after(200, self.doClickAction, event)
+        self.canvas.after(300, self.doClickAction, event)
 
     def doDoubleClick(self, event):
         self.doubleClick = True
