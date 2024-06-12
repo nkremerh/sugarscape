@@ -885,10 +885,10 @@ class Agent:
         return diseaseStats
 
     def findNeighborhood(self, newCell=None):
-        cell = self.cell if newCell == None else newCell
-        newNeighborhood = cell.findNeighborAgents()
+        newNeighborhood = self.findCellsInRange(newCell)
         neighborhood = []
-        for neighbor in newNeighborhood:
+        for neighborCell in newNeighborhood:
+            neighbor = neighborCell["cell"].agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighborhood.append(neighbor)
         neighborhood.append(self)

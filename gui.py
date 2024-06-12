@@ -126,7 +126,7 @@ class GUI:
         return ["Pollution"]
     
     def configureNetworkNames(self):
-        return ["Neighbors", "Family", "Friends", "Trade", "Loans", "Disease"]
+        return ["Neighbors (Von Neumann)", "Family", "Friends", "Trade", "Loans", "Disease"]
 
     def configureWindow(self):
         window = tkinter.Tk()
@@ -255,10 +255,10 @@ class GUI:
     def drawLines(self):
         lineCoordinates = set()
 
-        if self.activeNetwork.get() == "Neighbors":
+        if self.activeNetwork.get() == "Neighbors (Von Neumann)":
             for agent in self.sugarscape.agents:
-                for neighbor in agent.neighborhood:
-                    if neighbor != agent and neighbor.isAlive() == True:
+                for direction, neighbor in agent.vonNeumannNeighbors.items():
+                    if neighbor != None and neighbor != agent and neighbor.isAlive() == True:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
 
@@ -383,7 +383,7 @@ class GUI:
         agent = cell.agent
         if agent == None:
             return "white"
-        elif self.activeNetwork.get() in ["Neighbors", "Friends", "Trade"]:
+        elif self.activeNetwork.get() in ["Neighbors (Von Neumann)", "Friends", "Trade"]:
             return "black"
         elif self.activeNetwork.get() == "Family":
             isChild = agent.socialNetwork["father"] != None or agent.socialNetwork["mother"] != None
