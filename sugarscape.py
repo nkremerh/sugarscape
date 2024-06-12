@@ -62,12 +62,6 @@ class Sugarscape:
     def addAgent(self, agent):
         self.agents.append(agent)
 
-    def addDisease(self, oldDisease, agent):
-        diseaseID = oldDisease.ID
-        diseaseConfig = oldDisease.configuration
-        newDisease = disease.Disease(diseaseID, diseaseConfig)
-        agent.catchDisease(newDisease)
-
     def addSpicePeak(self, startX, startY, radius, maxSpice):
         height = self.environment.height
         width = self.environment.width
