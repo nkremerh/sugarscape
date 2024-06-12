@@ -261,7 +261,7 @@ class GUI:
                     if neighbor != agent and neighbor.isAlive() == True:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
-                        
+
         elif self.activeNetwork.get() == "Family":
             for agent in self.sugarscape.agents:
                 family = [agent.socialNetwork["mother"], agent.socialNetwork["father"]] + agent.socialNetwork["children"]
