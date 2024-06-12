@@ -450,7 +450,6 @@ class Agent:
             # If dead from aging, skip remainder of timestep
             if self.alive == False:
                 return
-            self.findCellsInRange()
             self.updateHappiness()
 
     def doUniversalIncome(self):
