@@ -167,7 +167,7 @@ class Agent:
         endIndex = diseaseInImmuneSystem["end"]
         caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex}
         if infector != None:
-            caughtDisease["infector"] = infector.ID
+            caughtDisease["infector"] = infector
         self.diseases.append(caughtDisease)
         self.updateDiseaseEffects(disease)
         disease.agent = self

@@ -308,7 +308,7 @@ class GUI:
                         # Starting diseases without an infector are not considered
                         if "infector" not in diseaseRecord:
                             continue
-                        infector = next((agent for agent in self.sugarscape.agents if agent.ID == diseaseRecord["infector"]), None)
+                        infector = diseaseRecord["infector"]
                         if infector != None and infector.isAlive() == True:
                             lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (infector.cell.x, infector.cell.y)])
                             lineCoordinates.add(lineEndpointsPair)
