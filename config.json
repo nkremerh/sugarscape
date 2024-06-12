@@ -28,7 +28,7 @@
         "agentMaleFertilityAge": [12, 15],
         "agentMaleToFemaleRatio": 1,
         "agentMaxAge": [60, 100],
-        "agentMaxFriends": [5, 5],
+        "agentMaxFriends": [5, 10],
         "agentMovement": [1, 6],
         "agentMovementMode": "cardinal",
         "agentReplacements": 0,
