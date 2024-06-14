@@ -92,7 +92,7 @@ class GUI:
         canvas.grid(row=3, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
         canvas.bind("<Button-1>", self.doClick)
         canvas.bind("<Double-Button-1>", self.doDoubleClick)
-        # canvas.bind("<Control-Button-1>", self.doControlClick)
+        canvas.bind("<Control-Button-1>", self.doControlClick)
         self.doubleClick = False
         self.canvas = canvas
 
@@ -152,25 +152,16 @@ class GUI:
         self.activeColorOptions["agent"] = self.lastSelectedAgentColor.get()
         self.doTimestep()
 
-    # def doClick(self, event):
-    #     cell = self.findClickedCell(event)
-    #     if cell == self.highlightedCell and self.highlightedAgent == None:
-    #         self.clearHighlight()
-    #     else:
-    #         self.highlightedCell = cell
-    #         self.highlightedAgent = None
-    #         self.highlightCell(cell)
-    #     self.doTimestep()
-
-    # def doControlClick(self, event):
-    #     cell = self.findClickedCell(event)
-    #     if cell == self.highlightedCell or cell.agent == None:
-    #         self.clearHighlight()
-    #     else:
-    #         self.highlightedCell = cell
-    #         self.highlightedAgent = cell.agent
-    #         self.highlightCell(cell)
-    #     self.doTimestep()
+    def doControlClick(self, event):
+        self.doubleClick = False
+        cell = self.findClickedCell(event)
+        if cell == self.highlightedCell or cell.agent == None:
+            self.clearHighlight()
+        else:
+            self.highlightedCell = cell
+            self.highlightedAgent = cell.agent
+            self.highlightCell(cell)
+        self.doTimestep()
 
     def doClick(self, event):
         self.canvas.after(300, self.doClickAction, event)
