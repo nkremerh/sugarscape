@@ -205,6 +205,7 @@ class Agent:
             spiceLoot = min(maxCombatLoot, preySpice)
             self.sugar += sugarLoot
             self.spice += spiceLoot
+            self.lastDoneCombat = self.cell.environment.sugarscape.timestep
             self.wealth = self.sugar + self.spice
             prey.sugar -= sugarLoot
             prey.spice -= spiceLoot
@@ -387,6 +388,8 @@ class Agent:
                         continue
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
+                    child.findCellsInRange()
+                    child.findNeighborhood()
                     self.socialNetwork["children"].append(child)
                     childID = child.ID
                     neighborID = neighbor.ID
@@ -495,6 +498,12 @@ class Agent:
                 spiceSellerMRS = spiceSeller.marginalRateOfSubstitution
                 sugarSellerMRS = sugarSeller.marginalRateOfSubstitution
 
+                # TODO: Fix bug where a spice or sugar seller has a negative MRS
+                if spiceSellerMRS < 0 or sugarSellerMRS < 0:
+                    spiceSeller = None
+                    sugarSeller = None
+                    break
+
                 # Find geometric mean of spice and sugar seller MRS for trade price
                 tradePrice = math.sqrt(spiceSellerMRS * sugarSellerMRS)
                 sugarPrice = 0
@@ -600,7 +609,7 @@ class Agent:
                 bestCell = cell
                 bestWealth = cellWealth
                 bestRange = travelDistance
-                
+
             cellRecord = {"cell": cell, "wealth": cellWealth, "range": travelDistance}
             potentialCells.append(cellRecord)
 

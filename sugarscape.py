@@ -132,8 +132,12 @@ class Sugarscape:
                 a.selfishnessFactor = 0
             elif "benthamHalfLookahead" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                if agentConfiguration["selfishnessFactor"] < 0:
+                    a.selfishnessFactor = 0.5
             elif "benthamNoLookahead" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                if agentConfiguration["selfishnessFactor"] < 0:
+                    a.selfishnessFactor = 0.5
             elif "egoisticHalfLookahead" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
                 a.selfishnessFactor = 1
@@ -142,6 +146,10 @@ class Sugarscape:
                 a.selfishnessFactor = 1
             c.agent = a
             self.agents.append(a)
+
+        for a in self.agents:
+            a.findCellsInRange()
+            a.findNeighborhood()
 
     def configureDiseases(self, numDiseases):
         numAgents = len(self.agents)
