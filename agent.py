@@ -1034,8 +1034,6 @@ class Agent:
             self.tribe = self.findTribe()
             fractionZeroesInTags = self.tagZeroes / len(self.tags)
             fractionOnesInTags = 1 - fractionZeroesInTags
-            spiceMetabolism = spiceMetabolism if spiceMetabolism > 0 else 1
-            sugarMetabolism = sugarMetabolism if sugarMetabolism > 0 else 1
             tagPreferences = (sugarMetabolism * fractionZeroesInTags) + (spiceMetabolism * fractionOnesInTags)
             if tagPreferences == 0:
                 tagPreferences = 1
