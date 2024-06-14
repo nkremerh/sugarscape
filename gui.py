@@ -281,7 +281,7 @@ class GUI:
                 traders = {
                     ID: traderRecord
                     for ID, traderRecord in agent.socialNetwork.items()
-                    if ID not in nonTraders and traderRecord.get("lastSeen") == self.sugarscape.timestep and traderRecord.get("timesTraded") > 0
+                    if ID not in nonTraders and traderRecord != None and traderRecord.get("lastSeen") == self.sugarscape.timestep and traderRecord.get("timesTraded") > 0
                 }
                 for ID, traderRecord in traders.items():
                     trader = traderRecord["agent"]
