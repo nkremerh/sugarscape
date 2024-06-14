@@ -1166,8 +1166,7 @@ class Agent:
         creditorChildren = creditor.socialNetwork["children"]
         livingCreditorChildren = []
         for child in creditorChildren:
-            # Children who took loans out with their parents should not owe themselves
-            if child.isAlive() == True and child != self:
+            if child.isAlive() == True:
                 livingCreditorChildren.append(child)
         numLivingChildren = len(livingCreditorChildren)
         if numLivingChildren > 0:
