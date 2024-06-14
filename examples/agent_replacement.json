@@ -19,7 +19,7 @@
     "agentReplacements": 250,
     "agentSpiceMetabolism": [0, 0],
     "agentStartingSpice": [0, 0],
-    "agentStartingSugar": [3, 10],
+    "agentStartingSugar": [5, 25],
     "agentStartingQuadrants": [1, 2, 3, 4],
     "agentSugarMetabolism": [1, 4],
     "agentTagStringLength": 0,
