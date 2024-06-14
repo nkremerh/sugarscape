@@ -601,6 +601,7 @@ class Sugarscape:
         self.startLog()
         if self.gui != None:
             # Simulation begins paused until start button in GUI pressed
+            self.gui.updateLabels()
             self.pauseSimulation()
         t = 1
         timesteps = timesteps - self.timestep
