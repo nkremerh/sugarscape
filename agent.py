@@ -170,7 +170,6 @@ class Agent:
             caughtDisease["infector"] = infector
         self.diseases.append(caughtDisease)
         self.updateDiseaseEffects(disease)
-        disease.agent = self
 
     def collectResourcesAtCell(self):
         sugarCollected = self.cell.sugar
@@ -225,6 +224,7 @@ class Agent:
         self.neighborhood = []
         self.vonNeumannNeighbors = {}
         self.mooreNeighbors = {}
+        self.diseases = []
 
     def doDisease(self):
         diseases = self.diseases

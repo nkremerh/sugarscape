@@ -9,7 +9,7 @@
     "agentInheritancePolicy": "none",
     "agentLendingFactor": [0, 0],
     "agentLoanDuration": [0, 0],
-    "agentLookaheadFactor": [1, 10],
+    "agentLookaheadFactor": [0, 10],
     "agentMaleInfertilityAge": [50, 60],
     "agentMaleFertilityAge": [12, 15],
     "agentMaleToFemaleRatio": 1,
