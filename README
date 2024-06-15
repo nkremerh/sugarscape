@@ -5,7 +5,7 @@ Python implementation of the Sugarscape agent-based computational model introduc
 Inspired by previous work from Herve Lange (https://github.com/langerv/sugarscape) and Joshua Palicka (https://github.com/joshuapalicka/sugarscape).
 
 Requirements:
-Bash 4.3 (macOS users will need to install a newer version of Bash from gnu.org or a package manager like Homebrew)
+Bash 4.3 (or newer)
 Python 3
 TkInter
 
