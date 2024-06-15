@@ -1039,7 +1039,7 @@ class Agent:
             fractionZeroesInTags = self.tagZeroes / len(self.tags)
             fractionOnesInTags = 1 - fractionZeroesInTags
             tagPreferences = (sugarMetabolism * fractionZeroesInTags) + (spiceMetabolism * fractionOnesInTags)
-            if tagPreferences == 0:
+            if tagPreferences <= 0:
                 tagPreferences = 1
             tagPreferencesSugar = (sugarMetabolism / tagPreferences) * fractionZeroesInTags
             tagPreferencesSpice = (spiceMetabolism / tagPreferences) * fractionOnesInTags
