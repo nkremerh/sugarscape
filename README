@@ -215,6 +215,12 @@ agentSugarMetabolism: [float, float]
     Set agent metabolism for sugar per timestep.
     Default: [1, 4]
 
+agentTagPreferences: bool
+    Set whether agents calculate welfare based on preferences that vary by tribe (pgs. 124-125).
+    If turned on, agents with more zeroes in their tribe tags will prefer sugar and agents with more ones in their tribe tags will prefer spice.
+    If turned off, agents use the original welfare calculation, which is solely based on metabolism and resource amounts (pgs. 97-99).
+    Default: false
+
 agentTagStringLength: int
     Set agent cultural tags string length.
     Default: 0
