@@ -47,7 +47,9 @@ class Agent:
 
         self.alive = True
         self.age = 0
+        self.cellsInRange = []
         self.lastMoved = -1
+        self.neighborhood = []
         self.vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
@@ -83,8 +85,6 @@ class Agent:
         self.visionModifier = 0
         self.aggressionFactorModifier = 0
         self.fertilityFactorModifier = 0
-        self.cellsInRange = self.findCellsInRange()
-        self.neighborhood = self.findNeighborhood()
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
