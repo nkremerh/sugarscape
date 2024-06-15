@@ -47,9 +47,7 @@ class Agent:
 
         self.alive = True
         self.age = 0
-        self.cellsInRange = []
         self.lastMoved = -1
-        self.neighborhood = []
         self.vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
         self.mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
@@ -85,6 +83,8 @@ class Agent:
         self.visionModifier = 0
         self.aggressionFactorModifier = 0
         self.fertilityFactorModifier = 0
+        self.cellsInRange = self.findCellsInRange()
+        self.neighborhood = self.findNeighborhood()
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
@@ -450,6 +450,7 @@ class Agent:
             # If dead from aging, skip remainder of timestep
             if self.alive == False:
                 return
+            self.findCellsInRange()
             self.updateHappiness()
 
     def doUniversalIncome(self):
@@ -884,7 +885,10 @@ class Agent:
         return diseaseStats
 
     def findNeighborhood(self, newCell=None):
-        newNeighborhood = self.findCellsInRange(newCell)
+        if newCell == None:
+            newNeighborhood = self.cellsInRange
+        else:
+            newNeighborhood = self.findCellsInRange(newCell)
         neighborhood = []
         for neighborCell in newNeighborhood:
             neighbor = neighborCell["cell"].agent
