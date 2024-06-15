@@ -151,7 +151,7 @@ class Agent:
         elif neighbor.marginalRateOfSubstitution == self.marginalRateOfSubstitution:
             return False
 
-    def catchDisease(self, disease):
+    def catchDisease(self, disease, infector=None):
         diseaseID = disease.ID
         for currDisease in self.diseases:
             currDiseaseID = currDisease["disease"].ID
@@ -166,9 +166,10 @@ class Agent:
         startIndex = diseaseInImmuneSystem["start"]
         endIndex = diseaseInImmuneSystem["end"]
         caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex}
+        if infector != None:
+            caughtDisease["infector"] = infector
         self.diseases.append(caughtDisease)
         self.updateDiseaseEffects(disease)
-        disease.agent = self
 
     def collectResourcesAtCell(self):
         sugarCollected = self.cell.sugar
@@ -223,6 +224,7 @@ class Agent:
         self.neighborhood = []
         self.vonNeumannNeighbors = {}
         self.mooreNeighbors = {}
+        self.diseases = []
 
     def doDisease(self):
         diseases = self.diseases
@@ -253,7 +255,7 @@ class Agent:
                 neighbors.append(neighbor)
         random.shuffle(neighbors)
         for neighbor in neighbors:
-            self.spreadDisease(neighbor, self.diseases[random.randrange(diseaseCount)]["disease"])
+            neighbor.catchDisease(self.diseases[random.randrange(diseaseCount)]["disease"], self)
 
     def doInheritance(self):
         if self.inheritancePolicy == "none":
@@ -1213,10 +1215,6 @@ class Agent:
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Agent(childID, birthday, cell, configuration)
-
-    def spreadDisease(self, agent, disease):
-        sugarscape = self.cell.environment.sugarscape
-        sugarscape.addDisease(disease, agent)
 
     def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
