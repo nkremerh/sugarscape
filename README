@@ -215,6 +215,11 @@ agentSugarMetabolism: [float, float]
     Set agent metabolism for sugar per timestep.
     Default: [1, 4]
 
+agentTagPreferences: bool
+    Set whether agents calculate welfare based on cultural tag preferences.
+    Note: Requires agents have a culutral tag string length greater than zero.
+    Default: false
+
 agentTagStringLength: int
     Set agent cultural tags string length.
     Default: 0
