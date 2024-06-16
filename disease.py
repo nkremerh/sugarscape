@@ -15,4 +15,4 @@ class Disease:
         self.agent = None
 
     def __str__(self):
-        return "{0}".format(self.ID)
+        return f"{self.ID}"

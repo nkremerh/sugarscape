@@ -204,13 +204,12 @@ class GUI:
         cellSeason = cell.season
         if cell.season == None:
             cellSeason = '-'
-        cellStats = "Cell: ({0},{1}) | Sugar: {2}/{3} | Spice: {4}/{5} | Pollution: {6} | Season: {7}".format(cellX, cellY, cell.sugar, cell.maxSugar, cell.spice, cell.maxSpice, round(cell.pollution, 2), cellSeason)
+        cellStats = f"Cell: ({cellX},{cellY}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
         agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: -"
         agent = cell.agent
         if agent != None:
-            agentStats = "Agent: {0} | Age: {1} | Vision: {2} | Movement: {3} | Sugar: {4} | Spice: {5} | Metabolism: {6}".format(str(agent), agent.age, round(agent.vision, 2), round(agent.movement, 2),
-                                                                                                                        round(agent.sugar, 2), round(agent.spice, 2), round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2))
-        cellStats += "\n  {0}".format(agentStats)
+            agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.vision, 2)} | Movement: {round(agent.movement, 2)} | Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | Metabolism: {round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2)}"
+        cellStats += f"\n  {agentStats}"
         self.lastSelectedCell = {'x': cellX, 'y': cellY}
         return cellStats
 
@@ -292,8 +291,7 @@ class GUI:
 
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats
-        statsString = "Timestep: {0} | Agents: {1} | Metabolism: {2:.2f} | Movement: {3:.2f} | Vision: {4:.2f} | Gini: {5:.2f} | Trade Price: {6:.2f} | Trade Volume: {7:.2f}".format(
-                self.sugarscape.timestep, stats["population"], stats["meanMetabolism"], stats["meanMovement"], stats["meanVision"], stats["giniCoefficient"], stats["meanTradePrice"], stats["tradeVolume"])
+        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats["population"]} | Metabolism: {stats["meanMetabolism"]} | Movement: {stats["meanMovement"]} | Vision: {stats["meanVision"]} | Gini: {stats["giniCoefficient"]} | Trade Price: {stats["meanTradePrice"]} | Trade Volume: {stats["tradeVolume"]}"
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
         if self.lastSelectedCell != None:
