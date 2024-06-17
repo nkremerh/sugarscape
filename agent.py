@@ -362,8 +362,9 @@ class Agent:
         sugarMetabolism = self.findSugarMetabolism()
         self.sugar -= sugarMetabolism
         self.spice -= spiceMetabolism
-        self.cell.doSugarConsumptionPollution(sugarMetabolism)
-        self.cell.doSpiceConsumptionPollution(spiceMetabolism)
+        if self.timestep >= self.cell.environment.pollutionStart:
+            self.cell.doSugarConsumptionPollution(sugarMetabolism)
+            self.cell.doSpiceConsumptionPollution(spiceMetabolism)
         if self.sugar < 0 or self.spice < 0:
             self.doDeath("starvation")
         elif (self.sugar <= 0 and sugarMetabolism > 0) or (self.spice <= 0 and spiceMetabolism > 0):

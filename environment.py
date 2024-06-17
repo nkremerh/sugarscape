@@ -20,6 +20,8 @@ class Environment:
         self.seasonalGrowbackCountdown = configuration["seasonalGrowbackDelay"]
         self.pollutionDiffusionDelay = configuration["pollutionDiffusionDelay"]
         self.pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
+        self.pollutionDiffusionStart = configuration["pollutionDiffusionStart"]
+        self.pollutionStart = configuration["pollutionStart"]
         self.sugarConsumptionPollutionFactor = configuration["sugarConsumptionPollutionFactor"]
         self.spiceConsumptionPollutionFactor = configuration["spiceConsumptionPollutionFactor"]
         self.sugarProductionPollutionFactor = configuration["sugarProductionPollutionFactor"]
