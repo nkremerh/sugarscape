@@ -2,7 +2,7 @@ import math
 import random
 
 class Environment:
-    # Assumption: grid is always indexed by [height][width]
+    # Assumption: grid is always indexed by [width][height]
     def __init__(self, height, width, sugarscape, configuration):
         self.width = width
         self.height = height
@@ -30,11 +30,11 @@ class Environment:
         self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
         self.neighborhoodMode = configuration["neighborhoodMode"]
         # Populate grid with NoneType objects
-        self.grid = [[None for j in range(width)]for i in range(height)]
+        self.grid = [[None for j in range(height)]for i in range(width)]
 
     def doCellUpdate(self):
-        for i in range(self.height):
-            for j in range(self.width):
+        for i in range(self.width):
+            for j in range(self.height):
                 cellCurrSugar = self.grid[i][j].sugar
                 cellCurrSpice = self.grid[i][j].spice
                 cellMaxSugar = self.grid[i][j].maxSugar
@@ -80,15 +80,15 @@ class Environment:
         return self.grid[x][y]
 
     def findCellNeighbors(self):
-        for i in range(self.height):
-            for j in range(self.width):
+        for i in range(self.width):
+            for j in range(self.height):
                 self.grid[i][j].findNeighbors(self.neighborhoodMode)
 
     def findCellsInCardinalRange(self, startX, startY, gridRange):
         cellsInRange = []
         for i in range(1, gridRange + 1):
-            deltaNorth = (startY + i + self.height) % self.height
-            deltaSouth = (startY - i + self.height) % self.height
+            deltaNorth = (startY - i + self.height) % self.height
+            deltaSouth = (startY + i + self.height) % self.height
             deltaEast = (startX + i + self.width) % self.width
             deltaWest = (startX - i + self.width) % self.width
             cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
@@ -105,10 +105,10 @@ class Environment:
                 euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
                 # If agent can see at least part of a cell, they should be allowed to consider it
                 if euclideanDistance < gridRange + 1:
-                    deltaX = (i + self.height) % self.height
-                    reflectedX = (2 * startX - i + self.height) % self.height
-                    deltaY = (j + self.width) % self.width
-                    reflectedY = (2 * startY - j + self.width) % self.width
+                    deltaX = (i + self.width) % self.width
+                    reflectedX = (2 * startX - i + self.width) % self.width
+                    deltaY = (j + self.height) % self.height
+                    reflectedY = (2 * startY - j + self.height) % self.height
                     cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
                     cellsInRange.append({"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance})
                     cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
@@ -120,7 +120,7 @@ class Environment:
 
     def setCell(self, cell, x, y):
         if self.grid[x][y] == None:
-            if y >= self.equator:
+            if y < self.equator:
                 cell.season = self.seasonNorth
             else:
                 cell.season = self.seasonSouth
@@ -149,8 +149,8 @@ class Environment:
 
     def __str__(self):
         string = ""
-        for i in range(0, self.height):
-            for j in range(0, self.width):
+        for i in range(self.width):
+            for j in range(self.height):
                 cell = self.grid[i][j]
                 if cell == None:
                     cell = '_'
