@@ -179,8 +179,9 @@ class Agent:
         self.spice += spiceCollected
         self.wealth += sugarCollected + spiceCollected
         self.updateMeanIncome(sugarCollected, spiceCollected)
-        self.cell.doSugarProductionPollution(sugarCollected)
-        self.cell.doSpiceProductionPollution(spiceCollected)
+        if self.timestep >= self.cell.environment.pollutionStart:
+            self.cell.doSugarProductionPollution(sugarCollected)
+            self.cell.doSpiceProductionPollution(spiceCollected)
         self.cell.resetSugar()
         self.cell.resetSpice()
 
