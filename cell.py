@@ -27,12 +27,10 @@ class Cell:
         self.pollution += consumptionPollutionFactor * sugarConsumed
 
     def doPollutionDiffusion(self):
-        meanPollution = self.pollution
+        meanPollution = 0
         for neighbor in self.neighbors:
             meanPollution += neighbor.pollution
-        meanPollution = meanPollution / (len(self.neighbors) + 1)
-        for neighbor in self.neighbors:
-            neighbor.pollution = meanPollution
+        meanPollution = meanPollution / (len(self.neighbors))
         self.pollution = meanPollution
 
     def doSpiceProductionPollution(self, spiceProduced):
