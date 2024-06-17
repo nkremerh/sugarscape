@@ -72,6 +72,9 @@ class Environment:
         if self.timestep >= self.pollutionDiffusionStart and self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
             for i in range(self.height):
                 for j in range(self.width):
+                    self.grid[i][j].findPollutionFlux()
+            for i in range(self.height):
+                for j in range(self.width):
                     self.grid[i][j].doPollutionDiffusion()
 
     def doTimestep(self, timestep):
