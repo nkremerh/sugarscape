@@ -67,7 +67,9 @@ class Environment:
                         self.grid[i][j].spiceLastProduced = 0
                     self.grid[i][j].sugar = sugarRegrowth
                     self.grid[i][j].spice = spiceRegrowth
-                if self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
+        if self.timestep >= self.pollutionDiffusionStart and self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
+            for i in range(self.height):
+                for j in range(self.width):
                     self.grid[i][j].doPollutionDiffusion()
 
     def doTimestep(self, timestep):
@@ -127,7 +129,7 @@ class Environment:
             self.grid[x][y] = cell
 
     def updatePollution(self):
-        if self.pollutionDiffusionDelay > 0:
+        if self.timestep >= self.pollutionDiffusionStart and self.pollutionDiffusionDelay > 0:
             self.pollutionDiffusionCountdown -= 1
             # Pollution diffusion delay over
             if self.pollutionDiffusionCountdown == 0:
