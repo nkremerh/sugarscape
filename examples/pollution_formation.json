@@ -38,6 +38,8 @@
     "environmentMaxSugar": 4,
     "environmentMaxTribes": 0,
     "environmentPollutionDiffusionDelay": 1,
+    "environmentPollutionDiffusionStart": 100,
+    "environmentPollutionStart": 50,
     "environmentSeasonalGrowbackDelay": 0,
     "environmentSeasonInterval": 0,
     "environmentSpiceConsumptionPollutionFactor": 1,
