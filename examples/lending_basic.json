@@ -15,7 +15,7 @@
     "agentMaleToFemaleRatio": 1,
     "agentMaxAge": [60, 100],
     "agentMaxFriends": [0, 0],
-    "agentMovement": [1, 6],
+    "agentMovement": [9999, 9999],
     "agentReplacements": 0,
     "agentSpiceMetabolism": [1, 4],
     "agentStartingSpice": [10, 40],
