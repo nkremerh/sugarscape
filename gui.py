@@ -139,7 +139,7 @@ class GUI:
         return ["Pollution"]
     
     def configureNetworkNames(self):
-        return ["Adjacent Neighbors", "Family", "Friends", "Trade", "Loans", "Disease"]
+        return ["Neighbors", "Family", "Friends", "Trade", "Loans", "Disease"]
 
     def configureWindow(self):
         window = tkinter.Tk()
@@ -281,21 +281,21 @@ class GUI:
         self.window.update()
 
     def doWindowClose(self, *args):
-        # Indicate to per-timestep rendering to stop rendering
         self.stopSimulation = True
         self.window.destroy()
         self.sugarscape.toggleEnd()
 
     def drawLines(self):
         lineCoordinates = set()
-        if self.activeNetwork.get() == "Adjacent Neighbors":
+        if self.activeNetwork.get() == "Neighbors":
             if self.sugarscape.environment.neighborhoodMode == "vonNeumann":
                 for agent in self.sugarscape.agents:
                     for direction, neighbor in agent.vonNeumannNeighbors.items():
                         if neighbor != None and neighbor.isAlive() == True:
                             lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
                             lineCoordinates.add(lineEndpointsPair)
-            else: # Moore neighborhoods
+            # Moore neighborhoods
+            else:
                 for agent in self.sugarscape.agents:
                     for direction, neighbor in agent.mooreNeighbors.items():
                         if neighbor != None and neighbor.isAlive() == True:
@@ -320,15 +320,13 @@ class GUI:
 
         elif self.activeNetwork.get() == "Trade":
             for agent in self.sugarscape.agents:
-                nonTraders = {"father", "mother", "children", "friends", "creditors", "debtors"}
-                traders = {
-                    ID: traderRecord
-                    for ID, traderRecord in agent.socialNetwork.items()
-                    if ID not in nonTraders and traderRecord != None and traderRecord.get("lastSeen") == self.sugarscape.timestep and traderRecord.get("timesTraded") > 0
-                }
-                for ID, traderRecord in traders.items():
-                    trader = traderRecord["agent"]
-                    if trader.isAlive() == True:
+                nonTraders = ["bestFriend", "children", "creditors", "debtors", "father", "friends", "mother"]
+                for other in agent.socialNetwork:
+                    if other in nonTraders:
+                        continue
+                    trader = agent.socialNetwork[other]
+                    if trader != None and trader["agent"].isAlive() == True and trader["lastSeen"] == self.sugarscape.timestep and trader["timesTraded"] > 0:
+                        trader = trader["agent"]
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (trader.cell.x, trader.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
 
@@ -456,7 +454,7 @@ class GUI:
         agent = cell.agent
         if agent == None:
             return "white"
-        elif self.activeNetwork.get() in ["Adjacent Neighbors", "Friends", "Trade"]:
+        elif self.activeNetwork.get() in ["Neighbors", "Friends", "Trade"]:
             return "black"
         elif self.activeNetwork.get() == "Family":
             isChild = agent.socialNetwork["father"] != None or agent.socialNetwork["mother"] != None
