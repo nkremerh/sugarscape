@@ -24,6 +24,7 @@
     "agentSugarMetabolism": [1, 4],
     "agentTagStringLength": 11,
     "agentTradeFactor": [0, 0],
+    "agentTribalStartingQuadrants": true,
     "agentVision": [1, 6],
     "diseaseAggressionPenalty": [0, 0],
     "diseaseFertilityPenalty": [0, 0],
