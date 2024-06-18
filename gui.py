@@ -248,12 +248,10 @@ class GUI:
             for j in range(self.sugarscape.environmentHeight):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
-                if self.activeNetwork.get() == "None":
-                    if self.grid[i][j]["color"] != fillColor:
-                        self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor, outline="#C0C0C0")
-                else:
-                    if self.grid[i][j]["color"] != fillColor:
-                        self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
+                if self.activeNetwork.get() == "None" and self.grid[i][j]["color"] != fillColor:
+                    self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor, outline="#C0C0C0")
+                elif self.grid[i][j]["color"] != fillColor:
+                    self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
                 self.grid[i][j]["color"] = fillColor
 
         if self.activeNetwork.get() != "None":
@@ -290,7 +288,6 @@ class GUI:
 
     def drawLines(self):
         lineCoordinates = set()
-
         if self.activeNetwork.get() == "Neighbors (Von Neumann)":
             for agent in self.sugarscape.agents:
                 for direction, neighbor in agent.vonNeumannNeighbors.items():
