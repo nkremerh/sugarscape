@@ -889,6 +889,11 @@ def verifyConfiguration(configuration):
     if len(configuration["agentStartingQuadrants"]) == 0:
         configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
 
+    if configuration["environmentQuadrantSizeFactor"] > 1:
+        configuration["environmentQuadrantSizeFactor"] = 1
+    elif configuration["environmentQuadrantSizeFactor"] < 0:
+        configuration["environmentQuadrantSizeFactor"] = 1
+
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
     totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["agentStartingQuadrants"]) / 4
