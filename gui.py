@@ -111,8 +111,8 @@ class GUI:
 
     def configureEnvironment(self):
         if self.activeNetwork.get() != "None":
-            for i in range(self.sugarscape.environmentHeight):
-                for j in range(self.sugarscape.environmentWidth):
+            for i in range(self.sugarscape.environmentWidth):
+                for j in range(self.sugarscape.environmentHeight):
                     cell = self.sugarscape.environment.findCell(i, j)
                     fillColor = self.lookupFillColor(cell)
                     x1 = self.borderEdge + (i + 0.2) * self.siteWidth # Upper right x coordinate
@@ -122,8 +122,8 @@ class GUI:
                     self.grid[i][j] = {"object": self.canvas.create_oval(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
             self.drawLines()
         else:
-            for i in range(self.sugarscape.environmentHeight):
-                for j in range(self.sugarscape.environmentWidth):
+            for i in range(self.sugarscape.environmentWidth):
+                for j in range(self.sugarscape.environmentHeight):
                     cell = self.sugarscape.environment.findCell(i, j)
                     fillColor = self.lookupFillColor(cell)
                     x1 = self.borderEdge + i * self.siteWidth # Upper right x coordinate
