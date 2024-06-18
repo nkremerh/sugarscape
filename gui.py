@@ -288,19 +288,11 @@ class GUI:
     def drawLines(self):
         lineCoordinates = set()
         if self.activeNetwork.get() == "Neighbors":
-            if self.sugarscape.environment.neighborhoodMode == "vonNeumann":
-                for agent in self.sugarscape.agents:
-                    for direction, neighbor in agent.vonNeumannNeighbors.items():
-                        if neighbor != None and neighbor.isAlive() == True:
-                            lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
-                            lineCoordinates.add(lineEndpointsPair)
-            # Moore neighborhoods
-            else:
-                for agent in self.sugarscape.agents:
-                    for direction, neighbor in agent.mooreNeighbors.items():
-                        if neighbor != None and neighbor.isAlive() == True:
-                            lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
-                            lineCoordinates.add(lineEndpointsPair)
+            for agent in self.sugarscape.agents:
+                for neighbor in agent.socialNeighbors:
+                    if neighbor != None and neighbor.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
 
         elif self.activeNetwork.get() == "Family":
             for agent in self.sugarscape.agents:

@@ -29,6 +29,7 @@ class Environment:
         self.universalSugarIncomeInterval = configuration["universalSugarIncomeInterval"]
         self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
         self.neighborhoodMode = configuration["neighborhoodMode"]
+        self.wraparound = configuration["wraparound"]
         # Populate grid with NoneType objects
         self.grid = [[None for j in range(height)]for i in range(width)]
 
@@ -86,33 +87,56 @@ class Environment:
 
     def findCellsInCardinalRange(self, startX, startY, gridRange):
         cellsInRange = []
-        for i in range(1, gridRange + 1):
-            deltaNorth = (startY - i + self.height) % self.height
-            deltaSouth = (startY + i + self.height) % self.height
-            deltaEast = (startX + i + self.width) % self.width
-            deltaWest = (startX - i + self.width) % self.width
-            cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
-            cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
-            cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
-            cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
+        if self.wraparound == True:
+            for i in range(1, gridRange + 1):
+                deltaNorth = startY - i
+                deltaSouth = (startY + i + self.height) % self.height
+                deltaEast = (startX + i + self.width) % self.width
+                deltaWest = startX - i
+                cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
+                cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
+                cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
+                cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
+        else:
+            for i in range(1, gridRange + 1):
+                deltaNorth = startY - i
+                deltaSouth = startY + i
+                deltaEast = startX + i
+                deltaWest = startX - i
+                if deltaNorth >= 0:
+                    cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
+                if deltaSouth <= self.height - 1:
+                    cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
+                if deltaEast <= self.width - 1:
+                    cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
+                if deltaWest >= 0:
+                    cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
         return cellsInRange
 
     def findCellsInRadialRange(self, startX, startY, gridRange):
-        cellsInRange = self.findCellsInCardinalRange(startX, startY, gridRange)
-        # Iterate through the upper left quadrant of the circle's bounding box
-        for i in range(startX - gridRange, startX):
-            for j in range(startY - gridRange, startY):
-                euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
-                # If agent can see at least part of a cell, they should be allowed to consider it
-                if euclideanDistance < gridRange + 1:
-                    deltaX = (i + self.width) % self.width
-                    reflectedX = (2 * startX - i + self.width) % self.width
-                    deltaY = (j + self.height) % self.height
-                    reflectedY = (2 * startY - j + self.height) % self.height
-                    cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
-                    cellsInRange.append({"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance})
-                    cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
-                    cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})
+        if self.wraparound == True:
+            cellsInRange = self.findCellsInCardinalRange(startX, startY, gridRange)
+            # Iterate through the upper left quadrant of the circle's bounding box
+            for deltaX in range(startX - gridRange, startX):
+                for deltaY in range(startY - gridRange, startY):
+                    euclideanDistance = math.sqrt(pow((deltaX - startX), 2) + pow((deltaY - startY), 2))
+                    # If agent can see at least part of a cell, they should be allowed to consider it
+                    if euclideanDistance < gridRange + 1:
+                        reflectedX = (2 * startX - deltaX + self.width) % self.width
+                        reflectedY = (2 * startY - deltaY + self.height) % self.height
+                        cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
+                        cellsInRange.append({"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance})
+                        cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
+                        cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})        
+        else:
+            cellsInRange = []
+            # Iterate through the bounding box of the circle
+            for deltaX in range(max(0, startX - gridRange), min(self.width, startX + gridRange + 1)):
+                for deltaY in range(max(0, startY - gridRange), min(self.height, startY + gridRange + 1)):
+                    # If agent can see at least part of a cell, they should be allowed to consider it
+                    euclideanDistance = math.sqrt((deltaX - startX)**2 + (deltaY - startY)**2)
+                    if euclideanDistance < gridRange + 1 and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
+                        cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
         return cellsInRange
 
     def resetCell(self, x, y):
