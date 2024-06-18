@@ -8,7 +8,7 @@ class GUI:
         self.screenWidth = screenWidth
         self.window = None
         self.canvas = None
-        self.grid = [[None for j in range(self.sugarscape.environmentWidth)]for i in range(self.sugarscape.environmentHeight)]
+        self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
         # TODO: Add a simplified way to have a bunch of colors programatically chosen during runtime
         self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
                        "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "pink": "#FA32FA", "yellow": "#FAFA32", "teal": "#32FAFA", "purple": "#6432FA", "orange": "#FA6432",
@@ -19,7 +19,9 @@ class GUI:
         self.widgets = {}
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
-        self.lastSelectedCell = None
+        self.highlightedCell = None
+        self.highlightedAgent = None
+        self.highlightRectangle = None
         self.activeColorOptions = {"agent": None, "environment": None}
         self.menuTrayColumns = 4
         self.menuTrayOffset = 110
@@ -29,6 +31,14 @@ class GUI:
         self.siteWidth = (self.screenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
         self.configureWindow()
         self.stopSimulation = False
+
+    def clearHighlight(self):
+        self.highlightedAgent = None
+        self.highlightedCell = None
+        if self.highlightRectangle != None:
+            self.canvas.delete(self.highlightRectangle)
+            self.highlightRectangle = None
+        self.updateHighlightedCellStats()
 
     def configureAgentColorNames(self):
         return ["Disease", "Sex", "Tribes", "Decision Models"]
@@ -81,18 +91,23 @@ class GUI:
         canvas = tkinter.Canvas(self.window, width=self.screenWidth, height=self.screenHeight, bg="white")
         canvas.grid(row=3, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
         canvas.bind("<Button-1>", self.doClick)
+        canvas.bind("<Double-Button-1>", self.doDoubleClick)
+        canvas.bind("<Control-Button-1>", self.doControlClick)
+        self.doubleClick = False
         self.canvas = canvas
 
     def configureEnvironment(self):
-        for i in range(self.sugarscape.environmentHeight):
-            for j in range(self.sugarscape.environmentWidth):
+        for i in range(self.sugarscape.environmentWidth):
+            for j in range(self.sugarscape.environmentHeight):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
-                x1 = self.borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth - (0.50 * self.siteWidth) # Upper right x coordinate
-                y1 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight - (0.50 * self.siteHeight) # Upper right y coordinate
-                x2 = self.borderEdge + (0.50 * self.siteWidth) + i * self.siteWidth + (0.50 * self.siteWidth) # Lower left x coordinate
-                y2 = self.borderEdge + (0.50 * self.siteHeight) + j * self.siteHeight + (0.50 * self.siteHeight) # Lower left y coordinate
-                self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0"), "color": fillColor}
+                x1 = self.borderEdge + i * self.siteWidth # Upper right x coordinate
+                y1 = self.borderEdge + j * self.siteHeight # Upper right y coordinate
+                x2 = self.borderEdge + (i + 1) * self.siteWidth # Lower left x coordinate
+                y2 = self.borderEdge + (j + 1) * self.siteHeight # Lower left y coordinate
+                self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0", activestipple="gray50"), "color": fillColor}
+        if self.highlightedCell != None:
+            self.highlightCell(self.highlightedCell)
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
@@ -125,7 +140,6 @@ class GUI:
         self.window.bind("<space>", self.doPlayButton)
         self.window.bind("<Right>", self.doStepForwardButton)
         self.window.bind("<Configure>", self.resizeInterface)
-        self.canvas.bind("<Button-1>", self.doClick)
 
         # Adjust for slight deviations from initially configured window size
         self.resizeInterface()
@@ -138,25 +152,41 @@ class GUI:
         self.activeColorOptions["agent"] = self.lastSelectedAgentColor.get()
         self.doTimestep()
 
-    def doClick(self, event):
-        # Account for padding in GUI cells
-        eventX = event.x - self.borderEdge
-        eventY = event.y - self.borderEdge
-        gridX = math.floor(eventX / self.siteWidth)
-        gridY = math.floor(eventY / self.siteHeight)
-        # Handle clicking just outside edge cells
-        if gridX < 0:
-            gridX = 0
-        elif gridX > self.sugarscape.environmentWidth - 1:
-            gridX = self.sugarscape.environmentWidth - 1
-        if gridY < 0:
-            gridY = 0
-        elif gridY > self.sugarscape.environmentHeight - 1:
-            gridY = self.sugarscape.environmentHeight - 1
+    def doControlClick(self, event):
+        self.doubleClick = False
+        cell = self.findClickedCell(event)
+        if cell == self.highlightedCell or cell.agent == None:
+            self.clearHighlight()
+        else:
+            self.highlightedCell = cell
+            self.highlightedAgent = cell.agent
+            self.highlightCell(cell)
+        self.doTimestep()
 
-        cellString = self.findCellStats(gridX, gridY)
-        label = self.widgets["cellLabel"]
-        label.config(text=cellString)
+    def doClick(self, event):
+        self.canvas.after(300, self.doClickAction, event)
+
+    def doDoubleClick(self, event):
+        self.doubleClick = True
+
+    def doClickAction(self, event):
+        if self.doubleClick == True:
+            cell = self.findClickedCell(event)
+            if cell == self.highlightedCell or cell.agent == None:
+                self.clearHighlight()
+            else:
+                self.highlightedCell = cell
+                self.highlightedAgent = cell.agent
+                self.highlightCell(cell)
+            self.doubleClick = False
+        else:
+            cell = self.findClickedCell(event)
+            if cell == self.highlightedCell and self.highlightedAgent == None:
+                self.clearHighlight()
+            else:
+                self.highlightedCell = cell
+                self.highlightedAgent = None
+                self.highlightCell(cell)
         self.doTimestep()
 
     def doEnvironmentColorMenu(self):
@@ -183,13 +213,21 @@ class GUI:
             return
         if self.screenHeight != self.window.winfo_height() or self.screenWidth != self.window.winfo_width():
             self.resizeInterface()
-        for i in range(self.sugarscape.environmentHeight):
-            for j in range(self.sugarscape.environmentWidth):
+        for i in range(self.sugarscape.environmentWidth):
+            for j in range(self.sugarscape.environmentHeight):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
                 if self.grid[i][j]["color"] != fillColor:
                     self.canvas.itemconfig(self.grid[i][j]["rectangle"], fill=fillColor, outline="#C0C0C0")
                     self.grid[i][j] = {"rectangle": self.grid[i][j]["rectangle"], "color": fillColor}
+
+        if self.highlightedAgent != None:
+            if self.highlightedAgent.isAlive() == True:
+                self.highlightedCell = self.highlightedAgent.cell
+                self.highlightCell(self.highlightedCell)
+            else:
+                self.clearHighlight()
+
         self.updateLabels()
         self.window.update()
 
@@ -199,19 +237,41 @@ class GUI:
         self.window.destroy()
         self.sugarscape.toggleEnd()
 
-    def findCellStats(self, cellX, cellY):
-        cell = self.sugarscape.environment.findCell(cellX, cellY)
-        cellSeason = cell.season
-        if cell.season == None:
-            cellSeason = '-'
-        cellStats = f"Cell: ({cellX},{cellY}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
-        agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: -"
-        agent = cell.agent
-        if agent != None:
-            agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.vision, 2)} | Movement: {round(agent.movement, 2)} | Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | Metabolism: {round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2)}"
-        cellStats += f"\n  {agentStats}"
-        self.lastSelectedCell = {'x': cellX, 'y': cellY}
-        return cellStats
+    def findClickedCell(self, event):
+        # Account for padding in GUI cells
+        eventX = event.x - self.borderEdge
+        eventY = event.y - self.borderEdge
+        gridX = math.floor(eventX / self.siteWidth)
+        gridY = math.floor(eventY / self.siteHeight)
+        # Handle clicking just outside edge cells
+        if gridX < 0:
+            gridX = 0
+        elif gridX > self.sugarscape.environmentWidth - 1:
+            gridX = self.sugarscape.environmentWidth - 1
+        if gridY < 0:
+            gridY = 0
+        elif gridY > self.sugarscape.environmentHeight - 1:
+            gridY = self.sugarscape.environmentHeight - 1
+        cell = self.sugarscape.environment.findCell(gridX, gridY)
+        return cell
+
+    def updateHighlightedCellStats(self):
+        cell = self.highlightedCell
+        if cell != None:
+            cellSeason = cell.season if cell.season != None else '-'
+            cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
+            agent = cell.agent
+            if agent != None:
+                agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.vision, 2)} | Movement: {round(agent.movement, 2)} | "
+                agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | Metabolism: {round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2)}"
+            else:
+                agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: -"
+            cellStats += f"\n  {agentStats}"
+        else:
+            cellStats = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - "
+        
+        label = self.widgets["cellLabel"]
+        label.config(text=cellStats)
 
     def hexToInt(self, hexval):
         intvals = []
@@ -220,6 +280,18 @@ class GUI:
             subval = hexval[i:i + 2]
             intvals.append(int(subval, 16))
         return intvals
+    
+    def highlightCell(self, cell):
+        x = cell.x
+        y = cell.y
+        x1 = self.borderEdge + x * self.siteWidth
+        y1 = self.borderEdge + y * self.siteHeight
+        x2 = self.borderEdge + (x + 1) * self.siteWidth
+        y2 = self.borderEdge + (y + 1) * self.siteHeight
+
+        if self.highlightRectangle != None:
+            self.canvas.delete(self.highlightRectangle)
+        self.highlightRectangle = self.canvas.create_rectangle(x1, y1, x2, y2, fill="", activefill="#88cafc", outline="black", width=5)
 
     def intToHex(self, intvals):
         hexval = "#"
@@ -291,11 +363,13 @@ class GUI:
 
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats
-        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats["population"]} | Metabolism: {stats["meanMetabolism"]} | Movement: {stats["meanMovement"]} | Vision: {stats["meanVision"]} | Gini: {stats["giniCoefficient"]} | Trade Price: {stats["meanTradePrice"]} | Trade Volume: {stats["tradeVolume"]}"
+        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats['population']} | Metabolism: {stats['meanMetabolism']:.2f} | "
+        statsString += f"Movement: {stats['meanMovement']:.2f} | Vision: {stats['meanVision']:.2f} | Gini: {stats['giniCoefficient']:.2f} | "
+        statsString += f"Trade Price: {stats['meanTradePrice']:.2f} | Trade Volume: {stats['tradeVolume']:.2f}"
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
-        if self.lastSelectedCell != None:
-            cellString = self.findCellStats(self.lastSelectedCell['x'], self.lastSelectedCell['y'])
+        if self.highlightedCell != None:
+            cellString = self.updateHighlightedCellStats()
             label = self.widgets["cellLabel"]
             label.config(text=cellString)
 

@@ -5,7 +5,7 @@ Python implementation of the Sugarscape agent-based computational model introduc
 Inspired by previous work from Herve Lange (https://github.com/langerv/sugarscape) and Joshua Palicka (https://github.com/joshuapalicka/sugarscape).
 
 Requirements:
-Bash
+Bash 4.3 (or newer)
 Python 3
 TkInter
 
@@ -51,7 +51,7 @@ agent_replacement.json:
     Agent replacement with constant sugar growback (pgs. 32-33).
 
 seasonal_migration.json:
-    Agent migration with seasonal sugar growback (pgs. 43-45).
+    Agent migration with seasonal sugar growback (pgs. 44-46).
 
 pollution_formation.json:
     Agent sugar collection with constant sugar growback and pollution (pgs. 45-50).
@@ -214,6 +214,11 @@ agentStartingQuadrants: [int (,int, int, int)]
 agentSugarMetabolism: [float, float]
     Set agent metabolism for sugar per timestep.
     Default: [1, 4]
+
+agentTagPreferences: bool
+    Set whether agents calculate welfare based on cultural tag preferences.
+    Note: Requires agents have a cultural tag string length greater than zero.
+    Default: false
 
 agentTagStringLength: int
     Set agent cultural tags string length.

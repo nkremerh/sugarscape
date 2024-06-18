@@ -1,5 +1,5 @@
 {
-    "__README__": "Agent migration with seasonal sugar growback (pgs. 43-45 of Growing Artificial Societies).",
+    "__README__": "Agent migration with seasonal sugar growback (pgs. 44-46 of Growing Artificial Societies).",
     "agentAggressionFactor": [0, 0],
     "agentBaseInterestRate": [0, 0],
     "agentFemaleInfertilityAge": [0, 0],
@@ -13,10 +13,10 @@
     "agentMaleInfertilityAge": [0, 0],
     "agentMaleFertilityAge": [0, 0],
     "agentMaleToFemaleRatio": 1,
-    "agentMaxAge": [60, 100],
+    "agentMaxAge": [-1, -1],
     "agentMaxFriends": [0, 0],
-    "agentMovement": [1, 6],
-    "agentReplacements": 250,
+    "agentMovement": [1000, 1000],
+    "agentReplacements": 0,
     "agentSpiceMetabolism": [0, 0],
     "agentStartingSpice": [0, 0],
     "agentStartingSugar": [3, 10],
@@ -49,7 +49,7 @@
     "environmentWidth": 50,
     "headlessMode": false,
     "seed": 12345,
-    "startingAgents": 250,
+    "startingAgents": 400,
     "startingDiseases": 0,
     "timesteps": 500
 }

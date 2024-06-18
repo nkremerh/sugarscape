@@ -21,7 +21,7 @@ def parseDataset(path, dataset, totalTimesteps):
         rawJson = json.loads(log.read())
         dataset[model]["runs"] += 1
         i = 1
-        print("Reading log {0}".format(filePath))
+        print(f"Reading log {filePath}")
         for item in rawJson:
             if item["timestep"] > totalTimesteps:
                 break
@@ -44,7 +44,7 @@ def parseDataset(path, dataset, totalTimesteps):
     return dataset
 
 def findMeans(dataset):
-    print("Finding mean values across {0} timesteps".format(totalTimesteps))
+    print(f"Finding mean values across {totalTimesteps} timesteps")
     for model in dataset:
         for column in datacols:
             for i in range(len(dataset[model]["meanMetrics"][column])):
@@ -98,26 +98,24 @@ def printHelp():
     exit(0)
 
 def printSummaryStats(dataset):
-    print("Model population performance:\n{0:^30} {1:^5} {2:^5} {3:^5}".format("Decision Model", "Extinct", "Worse", "Better"))
+    print(f"Model population performance:\n{"Decision Model":^30} {"Extinct":^5} {"Worse":^5} {"Better":^5}")
     for model in dataset:
         better = dataset[model]["runs"] - (dataset[model]["died"] + dataset[model]["worse"])
-        print("{0:^30}: {1:^5} {2:^5} {3:^5}".format(model, dataset[model]["died"], dataset[model]["worse"], better))
+        print(f"{model:^30}: {dataset[model]["died"]:^5} {dataset[model]["worse"]:^5} {better:^5}")
 
 def printRawData(dataset, totalTimesteps, outfile):
     file = open(outfile, 'w')
     columnHeads = "timestep"
     for model in dataset:
         for metric in ["pop", "mttl", "strv", "comd", "welt", "maad"]:
-            columnHeads += " {0}_{1}".format(model, metric)
+            columnHeads += f" {model}_{metric}"
     columnHeads += '\n'
     file.write(columnHeads)
 
     for i in range(totalTimesteps + 1):
         line = str(i)
         for model in dataset:
-            line += " {0} {1} {2} {3} {4} {5}".format(dataset[model]["meanMetrics"]["population"][i], dataset[model]["meanMetrics"]["agentMeanTimeToLive"][i],
-                                                  dataset[model]["meanMetrics"]["agentStarvationDeaths"][i], dataset[model]["meanMetrics"]["agentCombatDeaths"][i],
-                                                  dataset[model]["meanMetrics"]["agentWealthTotal"][i], dataset[model]["meanMetrics"]["meanAgeAtDeath"][i])
+            line += f" {dataset[model]["meanMetrics"]["population"][i]} {dataset[model]["meanMetrics"]["agentMeanTimeToLive"][i]} {dataset[model]["meanMetrics"]["agentStarvationDeaths"][i]} {dataset[model]["meanMetrics"]["agentCombatDeaths"][i]} {dataset[model]["meanMetrics"]["agentWealthTotal"][i]} {dataset[model]["meanMetrics"]["meanAgeAtDeath"][i]}"
         line += '\n'
         file.write(line)
     file.close()
@@ -147,16 +145,16 @@ def generatePopulationPlot(models, outfile):
     lines = ""
     for model in dataset:
         if i == 0:
-            lines += "plot ARGV[1] using 'timestep':'{0}_pop' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
+            lines += f"plot ARGV[1] using 'timestep':'{model}_pop' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {j} title 'Utilitarian', \\\n"
         elif i < len(models) - 1:
-            lines += "\t'' u 'timestep':'{0}_pop' with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {1} title 'Egoist', \\\n".format(model, j)
+            lines += f"\t'' u 'timestep':'{model}_pop' with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {j} title 'Egoist', \\\n"
         else:
-            lines += "\t'' u 'timestep':'{0}_pop' with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {1} title 'Raw Sugarscape'".format(model, j)
+            lines += f"\t'' u 'timestep':'{model}_pop' with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {j} title 'Raw Sugarscape'"
         i += 1
         j -= 1
     plot.write(lines)
     plot.close()
-    os.system("gnuplot -c population.plg {0}".format(outfile))
+    os.system(f"gnuplot -c population.plg {outfile}")
 
 def generateMeanAgeAtDeathPlot(models, outfile):
     print("Generating mean age at death plot script")
@@ -169,16 +167,16 @@ def generateMeanAgeAtDeathPlot(models, outfile):
     lines = ""
     for model in dataset:
         if i == 0:
-            lines += "plot ARGV[1] using 'timestep':'{0}_maad' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
+            lines += f"plot ARGV[1] using 'timestep':'{model}_maad' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {j} title 'Utilitarian', \\\n"
         elif i < len(models) - 1:
-            lines += "\t'' u 'timestep':'{0}_maad' with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {1} title 'Egoist', \\\n".format(model, j)
+            lines += f"\t'' u 'timestep':'{model}_maad' with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {j} title 'Egoist', \\\n"
         else:
-            lines += "\t'' u 'timestep':'{0}_maad' with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {1} title 'Raw Sugarscape'".format(model, j)
+            lines += f"\t'' u 'timestep':'{model}_maad' with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {j} title 'Raw Sugarscape'"
         i += 1
         j -= 1
     plot.write(lines)
     plot.close()
-    os.system("gnuplot -c mean_age_at_death.plg {0}".format(outfile))
+    os.system(f"gnuplot -c mean_age_at_death.plg {outfile}")
 
 
 
@@ -193,16 +191,16 @@ def generateMeanTimeToLivePlot(models, outfile):
     lines = ""
     for model in dataset:
         if i == 0:
-            lines += "plot ARGV[1] using 'timestep':'{0}_mttl' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
+            lines += f"plot ARGV[1] using 'timestep':'{model}_mttl' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {j} title 'Utilitarian', \\\n"
         elif i < len(models) - 1:
-            lines += "\t'' u 'timestep':'{0}_mttl' with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {1} title 'Egoist', \\\n".format(model, j)
+            lines += f"\t'' u 'timestep':'{model}_mttl' with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {j} title 'Egoist', \\\n"
         else:
-            lines += "\t'' u 'timestep':'{0}_mttl' with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {1} title 'Raw Sugarscape'".format(model, j)
+            lines += f"\t'' u 'timestep':'{model}_mttl' with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {j} title 'Raw Sugarscape'"
         i += 1
         j -= 1
     plot.write(lines)
     plot.close()
-    os.system("gnuplot -c meanttl.plg {0}".format(outfile))
+    os.system(f"gnuplot -c meanttl.plg {outfile}")
 
 def generateTotalWealthPlot(models, outfile):
     print("Generating total wealth plot script")
@@ -215,16 +213,16 @@ def generateTotalWealthPlot(models, outfile):
     lines = ""
     for model in dataset:
         if i == 0:
-            lines += "plot ARGV[1] using 'timestep':'{0}_welt' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
+            lines += f"plot ARGV[1] using 'timestep':'{model}_welt' with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {j} title 'Utilitarian', \\\n"
         elif i < len(models) - 1:
-            lines += "\t'' u 'timestep':'{0}_welt' with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {1} title 'Egoist', \\\n".format(model, j)
+            lines += f"\t'' u 'timestep':'{model}_welt' with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {j} title 'Egoist', \\\n"
         else:
-            lines += "\t'' u 'timestep':'{0}_welt' with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {1} title 'Raw Sugarscape'".format(model, j)
+            lines += f"\t'' u 'timestep':'{model}_welt' with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {j} title 'Raw Sugarscape'"
         i += 1
         j -= 1
     plot.write(lines)
     plot.close()
-    os.system("gnuplot -c wealth.plg {0}".format(outfile))
+    os.system(f"gnuplot -c wealth.plg {outfile}")
 
 def generateTotalWealthNormalizedPlot(models, outfile):
     print("Generating total wealth normalized plot script")
@@ -237,16 +235,16 @@ def generateTotalWealthNormalizedPlot(models, outfile):
     lines = ""
     for model in dataset:
         if i == 0:
-            lines += "plot ARGV[1] using 'timestep':(column('{0}_welt')/column('{0}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
+            lines += f"plot ARGV[1] using 'timestep':(column('{model}_welt')/column('{model}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {j} title 'Utilitarian', \\\n"
         elif i < len(models) - 1:
-            lines += "\t'' u 'timestep':(column('{0}_welt')/column('{0}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {1} title 'Egoist', \\\n".format(model, j)
+            lines += f"\t'' u 'timestep':(column('{model}_welt')/column('{model}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {j} title 'Egoist', \\\n"
         else:
-            lines += "\t'' u 'timestep':(column('{0}_welt')/column('{0}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {1} title 'Raw Sugarscape'".format(model, j)
+            lines += f"\t'' u 'timestep':(column('{model}_welt')/column('{model}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {j} title 'Raw Sugarscape'"
         i += 1
         j -= 1
     plot.write(lines)
     plot.close()
-    os.system("gnuplot -c wealth_normalized.plg {0}".format(outfile))
+    os.system("gnuplot -c wealth_normalized.plg {outfile}")
 
 def generateStarvationAndCombatPlot(models, outfile):
     print("Generating starvation and combat deaths plot script")
@@ -259,16 +257,16 @@ def generateStarvationAndCombatPlot(models, outfile):
     lines = ""
     for model in dataset:
         if i == 0:
-            lines += "plot ARGV[1] using 'timestep':((column('{0}_strv') + column('{0}_comd'))/column('{0}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {1} title 'Utilitarian', \\\n".format(model, j)
+            lines += f"plot ARGV[1] using 'timestep':((column('{model}_strv') + column('{model}_comd'))/column('{model}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'magenta' lt 1 dt 1 pt {j} title 'Utilitarian', \\\n"
         elif i < len(models) - 1:
-            lines += "\t'' u 'timestep':((column('{0}_strv') + column('{0}_comd'))/column('{0}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {1} title 'Egoist', \\\n".format(model, j)
+            lines += f"\t'' u 'timestep':((column('{model}_strv') + column('{model}_comd'))/column('{model}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'cyan' lt 1 dt 1 pt {j} title 'Egoist', \\\n"
         else:
-            lines += "\t'' u 'timestep':((column('{0}_strv') + column('{0}_comd'))/column('{0}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {1} title 'Raw Sugarscape'".format(model, j)
+            lines += f"\t'' u 'timestep':((column('{model}_strv') + column('{model}_comd'))/column('{model}_pop')) with linespoints pointinterval 100 pointsize 0.75  lc 'gold' lt 1 dt 1 pt {j} title 'Raw Sugarscape'"
         i += 1
         j -= 1
     plot.write(lines)
     plot.close()
-    os.system("gnuplot -c deaths.plg {0}".format(outfile))
+    os.system(f"gnuplot -c deaths.plg {outfile}")
 
 if __name__ == "__main__":
     options = parseOptions()
@@ -288,7 +286,7 @@ if __name__ == "__main__":
         dataset[modelString] = {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "meanMetrics": {}, "distributionMetrics": {}}
 
     if not os.path.exists(path):
-        print("Path {0} not recognized.".format(path))
+        print(f"Path {path} not recognized.")
         printHelp()
 
     dataset = parseDataset(path, dataset, totalTimesteps)

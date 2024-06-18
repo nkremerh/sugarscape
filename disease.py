@@ -12,7 +12,6 @@ class Disease:
         self.aggressionPenalty = configuration["aggressionPenalty"]
         self.tags = configuration["tags"]
         self.configuration = configuration
-        self.agent = None
 
     def __str__(self):
         return f"{self.ID}"

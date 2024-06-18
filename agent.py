@@ -27,6 +27,7 @@ class Agent:
         self.fertilityAge = configuration["fertilityAge"]
         self.infertilityAge = configuration["infertilityAge"]
         self.tags = configuration["tags"]
+        self.tagPreferences = configuration["tagPreferences"]
         self.aggressionFactor = configuration["aggressionFactor"]
         self.tradeFactor = configuration["tradeFactor"]
         self.lookaheadFactor = configuration["lookaheadFactor"]
@@ -151,7 +152,7 @@ class Agent:
         elif neighbor.marginalRateOfSubstitution == self.marginalRateOfSubstitution:
             return False
 
-    def catchDisease(self, disease):
+    def catchDisease(self, disease, infector=None):
         diseaseID = disease.ID
         for currDisease in self.diseases:
             currDiseaseID = currDisease["disease"].ID
@@ -166,9 +167,10 @@ class Agent:
         startIndex = diseaseInImmuneSystem["start"]
         endIndex = diseaseInImmuneSystem["end"]
         caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex}
+        if infector != None:
+            caughtDisease["infector"] = infector
         self.diseases.append(caughtDisease)
         self.updateDiseaseEffects(disease)
-        disease.agent = self
 
     def collectResourcesAtCell(self):
         sugarCollected = self.cell.sugar
@@ -223,6 +225,7 @@ class Agent:
         self.neighborhood = []
         self.vonNeumannNeighbors = {}
         self.mooreNeighbors = {}
+        self.diseases = []
 
     def doDisease(self):
         diseases = self.diseases
@@ -253,7 +256,7 @@ class Agent:
                 neighbors.append(neighbor)
         random.shuffle(neighbors)
         for neighbor in neighbors:
-            self.spreadDisease(neighbor, self.diseases[random.randrange(diseaseCount)]["disease"])
+            neighbor.catchDisease(self.diseases[random.randrange(diseaseCount)]["disease"], self)
 
     def doInheritance(self):
         if self.inheritancePolicy == "none":
@@ -764,6 +767,7 @@ class Agent:
                 else:
                     childTags.append(mismatchBits[random.randrange(2)])
         childEndowment["tags"] = childTags
+        childEndowment["tagPreferences"] = self.tagPreferences
 
         hashed = hashlib.md5("immuneSystem".encode())
         hashNum = int(hashed.hexdigest(), 16)
@@ -1029,15 +1033,13 @@ class Agent:
             totalSpice = 0
 
         welfare = (totalSugar ** sugarMetabolismProportion) * (totalSpice ** spiceMetabolismProportion)
-        if self.tags != None and len(self.tags) > 0:
+        if self.tagPreferences == True and self.tags != None and len(self.tags) > 0:
             # Tribe could have changed since last timestep, so recheck
             self.tribe = self.findTribe()
             fractionZeroesInTags = self.tagZeroes / len(self.tags)
             fractionOnesInTags = 1 - fractionZeroesInTags
-            spiceMetabolism = spiceMetabolism if spiceMetabolism > 0 else 1
-            sugarMetabolism = sugarMetabolism if sugarMetabolism > 0 else 1
             tagPreferences = (sugarMetabolism * fractionZeroesInTags) + (spiceMetabolism * fractionOnesInTags)
-            if tagPreferences == 0:
+            if tagPreferences <= 0:
                 tagPreferences = 1
             tagPreferencesSugar = (sugarMetabolism / tagPreferences) * fractionZeroesInTags
             tagPreferencesSpice = (spiceMetabolism / tagPreferences) * fractionOnesInTags
@@ -1216,10 +1218,6 @@ class Agent:
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Agent(childID, birthday, cell, configuration)
-
-    def spreadDisease(self, agent, disease):
-        sugarscape = self.cell.environment.sugarscape
-        sugarscape.addDisease(disease, agent)
 
     def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
