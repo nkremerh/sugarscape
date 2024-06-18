@@ -289,7 +289,7 @@ class GUI:
         lineCoordinates = set()
         if self.activeNetwork.get() == "Neighbors":
             for agent in self.sugarscape.agents:
-                for neighbor in agent.socialNeighbors:
+                for neighbor in agent.neighbors:
                     if neighbor != None and neighbor.isAlive() == True:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
