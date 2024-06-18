@@ -94,7 +94,8 @@ class Sugarscape:
         if self.environment == None:
             return
 
-        activeCells = self.findActiveQuadrants()
+        activeQuadrants = self.findActiveQuadrants()
+        activeCells = [cell for quadrant in activeQuadrants for cell in quadrant]
         totalCells = len(activeCells)
         if totalCells == 0:
             return
@@ -106,11 +107,10 @@ class Sugarscape:
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
-        randCoords = activeCells
-        random.shuffle(randCoords)
+        random.shuffle(activeCells)
 
         for i in range(numAgents):
-            randCoord = randCoords.pop()
+            randCoord = activeCells.pop()
             randCellX = randCoord[0]
             randCellY = randCoord[1]
             c = self.environment.findCell(randCellX, randCellY)
@@ -254,29 +254,21 @@ class Sugarscape:
     def findActiveQuadrants(self):
         quadrants = self.configuration["agentStartingQuadrants"]
         cellRange = []
-        halfWidth = math.floor(self.environmentWidth / 2 * self.configuration["environmentQuadrantSizeFactor"])
-        halfHeight = math.floor(self.environmentHeight / 2 * self.configuration["environmentQuadrantSizeFactor"])
+        quadrantWidth = math.floor(self.environmentWidth / 2 * self.configuration["environmentQuadrantSizeFactor"])
+        quadrantHeight = math.floor(self.environmentHeight / 2 * self.configuration["environmentQuadrantSizeFactor"])
         # Quadrant I at origin in top left corner, other quadrants in clockwise order
         if 1 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth)]
-            for i in range(halfWidth):
-                for j in range(halfHeight):
-                    cellRange.append([i, j])
+            quadrantOne = [(i, j) for j in range(quadrantHeight) for i in range(quadrantWidth)]
+            cellRange.append(quadrantOne)
         if 2 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth, self.environmentWidth)]
-            for i in range(halfWidth, self.environmentWidth):
-                for j in range(halfHeight):
-                    cellRange.append([i, j])
+            quadrantTwo = [(i, j) for j in range(quadrantHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.append(quadrantTwo)
         if 3 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight, self.environmentHeight)] for i in range(halfWidth, self.environmentWidth)]
-            for i in range(halfWidth, self.environmentWidth):
-                for j in range(halfHeight, self.environmentHeight):
-                    cellRange.append([i, j])
+            quadrantThree = [(i, j) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.append(quadrantThree)
         if 4 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight, self.environmentHeight)] for i in range(halfWidth)]
-            for i in range(halfWidth):
-                for j in range(halfHeight, self.environmentHeight):
-                    cellRange.append([i, j])
+            quadrantFour = [(i, j) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
+            cellRange.append(quadrantFour)
         return cellRange
 
     def generateAgentID(self):
