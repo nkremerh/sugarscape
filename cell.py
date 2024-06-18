@@ -72,18 +72,26 @@ class Cell:
         return neighborWealth
 
     def findEastNeighbor(self):
+        if self.environment.wraparound == False and self.x + 1 > self.environment.width - 1:
+            return None
         eastNeighbor = self.environment.findCell((self.x + 1 + self.environment.width) % self.environment.width, self.y)
         return eastNeighbor
 
     def findNorthNeighbor(self):
+        if self.environment.wraparound == False and self.y - 1 < 0:
+            return None
         northNeighbor = self.environment.findCell(self.x, (self.y - 1 + self.environment.height) % self.environment.height)
         return northNeighbor
 
     def findSouthNeighbor(self):
+        if self.environment.wraparound == False and self.y + 1 < self.environment.height - 1:
+            return None
         southNeighbor = self.environment.findCell(self.x, (self.y + 1 + self.environment.height) % self.environment.height)
         return southNeighbor
 
     def findWestNeighbor(self):
+        if self.environment.wraparound == False and self.x - 1 < 0:
+            return None
         westNeighbor = self.environment.findCell((self.x - 1 + self.environment.width) % self.environment.width, self.y)
         return westNeighbor
 

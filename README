@@ -374,6 +374,10 @@ environmentWidth: int
     Set the width in cells of the Sugarscape environment.
     Default: 50
 
+environmentWraparound: bool
+    Set whether the environment is a torus (wraparound) or a plane (no wraparound).
+    Default: true
+
 headlessMode: bool
     Set whether the GUI is enabled.
     Default: false

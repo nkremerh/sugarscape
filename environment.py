@@ -29,6 +29,7 @@ class Environment:
         self.universalSugarIncomeInterval = configuration["universalSugarIncomeInterval"]
         self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
         self.neighborhoodMode = configuration["neighborhoodMode"]
+        self.wraparound = configuration["wraparound"]
         # Populate grid with NoneType objects
         self.grid = [[None for j in range(height)]for i in range(width)]
 
@@ -86,15 +87,30 @@ class Environment:
 
     def findCellsInCardinalRange(self, startX, startY, gridRange):
         cellsInRange = []
-        for i in range(1, gridRange + 1):
-            deltaNorth = (startY - i + self.height) % self.height
-            deltaSouth = (startY + i + self.height) % self.height
-            deltaEast = (startX + i + self.width) % self.width
-            deltaWest = (startX - i + self.width) % self.width
-            cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
-            cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
-            cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
-            cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
+        if self.wraparound == True:
+            for i in range(1, gridRange + 1):
+                deltaNorth = startY - i
+                deltaSouth = (startY + i + self.height) % self.height
+                deltaEast = (startX + i + self.width) % self.width
+                deltaWest = startX - i
+                cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
+                cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
+                cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
+                cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
+        else:
+            for i in range(1, gridRange + 1):
+                deltaNorth = startY - i
+                deltaSouth = startY + i
+                deltaEast = startX + i
+                deltaWest = startX - i
+                if deltaNorth >= 0:
+                    cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
+                if deltaSouth <= self.height - 1:
+                    cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
+                if deltaEast <= self.width - 1:
+                    cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
+                if deltaWest >= 0:
+                    cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
         return cellsInRange
 
     def findCellsInRadialRange(self, startX, startY, gridRange):
