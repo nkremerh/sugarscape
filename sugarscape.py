@@ -100,7 +100,6 @@ class Sugarscape:
         totalCells = len([cell for quadrant in activeQuadrants for cell in quadrant])
         if totalCells == 0:
             return
-
         if len(self.agents) + numAgents > totalCells:
             if "all" in self.debug or "sugarscape" in self.debug:
                 print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
@@ -112,7 +111,6 @@ class Sugarscape:
             random.shuffle(quadrant)
         if self.tribalStartingQuadrants == True:
             tribes = []
-        
         # Assign agents a placeholder cell before its tribe is found
         c = cell.Cell(0, 0, self.environment)
 
