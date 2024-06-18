@@ -51,6 +51,7 @@ class Agent:
         self.cellsInRange = []
         self.lastMoved = -1
         self.neighborhood = []
+        self.socialNeighbors = []
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
         self.diseases = []
         self.fertile = False
@@ -220,6 +221,7 @@ class Agent:
 
         # Keep only debtors and children in social network to handle outstanding loans
         self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
+        self.socialNeighbors = []
         self.neighborhood = []
         self.diseases = []
 
@@ -431,7 +433,7 @@ class Agent:
             self.lastSpice = self.spice
             self.lastMoved = self.timestep
             self.moveToBestCell()
-            self.updateSocialNetwork()
+            self.updateNeighbors()
             self.collectResourcesAtCell()
             self.doUniversalIncome()
             self.doMetabolism()
@@ -1297,10 +1299,16 @@ class Agent:
         self.sugarMeanIncome = (alpha * sugarIncome) + ((1 - alpha) * self.sugarMeanIncome)
         self.spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome)
 
-    def updateSocialNetwork(self):
-        neighborCells = self.cell.neighbors
-        for neighborCell in neighborCells.values():
+    def updateNeighbors(self):
+        self.socialNeighbors = []
+        for neighborCell in self.cell.neighbors.values():
             neighbor = neighborCell.agent
+            if neighbor != None:
+                self.socialNeighbors.append(neighbor)
+        self.updateSocialNetwork()
+
+    def updateSocialNetwork(self):
+        for neighbor in self.socialNeighbors:
             if neighbor == None:
                 continue
             neighborID = neighbor.ID
