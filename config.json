@@ -41,6 +41,7 @@
         "agentTagPreferences": false,
         "agentTagStringLength": 11,
         "agentTradeFactor": [1, 1],
+        "agentTribalStartingQuadrants": false,
         "agentUniversalSpice": [0, 0],
         "agentUniversalSugar": [0, 0],
         "agentVision": [1, 6],

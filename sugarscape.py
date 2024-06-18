@@ -39,6 +39,7 @@ class Sugarscape:
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
         self.activeQuadrants = self.findActiveQuadrants()
+        self.tribalStartingQuadrants = configuration["agentTribalStartingQuadrants"]
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
         self.agents = []
@@ -982,6 +983,7 @@ if __name__ == "__main__":
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
                      "agentTradeFactor": [0, 0],
+                     "agentTribalStartingQuadrants": False,
                      "agentUniversalSpice": [0,0],
                      "agentUniversalSugar": [0,0],
                      "agentVision": [1, 6],

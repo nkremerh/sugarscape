@@ -229,6 +229,11 @@ agentTradeFactor: [float, float]
     Note: The more aggressive in trading an agent, the more resources they will attempt to trade.
     Default: [0, 0]
 
+agentTribalStartingQuadrants: bool
+    Set whether starting quadrants are separated by tribe.
+    Note: This will overwrite the number of tribes with the number of quadrants.
+    Default: false
+
 agentUniversalSpice: [float, float]
     Set the amount agents recieve for universal basic spice income.
     Default: [0, 0]
