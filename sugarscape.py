@@ -95,10 +95,10 @@ class Sugarscape:
             return
 
         activeCells = self.findActiveQuadrants()
-        if len(activeCells) == 0:
+        totalCells = len(activeCells)
+        if totalCells == 0:
             return
 
-        totalCells = len(activeCells)
         if len(self.agents) + numAgents > totalCells:
             if "all" in self.debug or "sugarscape" in self.debug:
                 print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
@@ -254,8 +254,8 @@ class Sugarscape:
     def findActiveQuadrants(self):
         quadrants = self.configuration["agentStartingQuadrants"]
         cellRange = []
-        halfWidth = math.floor(self.environmentWidth / 2)
-        halfHeight = math.floor(self.environmentHeight / 2)
+        halfWidth = math.floor(self.environmentWidth / 2 * self.configuration["environmentQuadrantSizeFactor"])
+        halfHeight = math.floor(self.environmentHeight / 2 * self.configuration["environmentQuadrantSizeFactor"])
         # Quadrant I at origin in top left corner, other quadrants in clockwise order
         if 1 in quadrants:
             quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth)]
@@ -894,8 +894,12 @@ def printHelp():
     exit(0)
 
 def verifyConfiguration(configuration):
+    if len(configuration["agentStartingQuadrants"]) == 0:
+        configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
+
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
+    totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["agentStartingQuadrants"]) / 4
     if configuration["startingAgents"] > totalCells:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
             print("Could not allocate {0} agents. Allocating maximum of {1}.".format(configuration["startingAgents"], totalCells))
@@ -911,9 +915,6 @@ def verifyConfiguration(configuration):
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
     if configuration["environmentMaxTribes"] > 11:
         configuration["environmentMaxTribes"] = 11
-
-    if len(configuration["agentStartingQuadrants"]) == 0:
-        configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
 
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
@@ -1003,6 +1004,7 @@ if __name__ == "__main__":
                      "environmentMaxSugar": 4,
                      "environmentMaxTribes": 0,
                      "environmentPollutionDiffusionDelay": 0,
+                     "environmentQuadrantSizeFactor": 1,
                      "environmentSeasonalGrowbackDelay": 0,
                      "environmentSeasonInterval": 0,
                      "environmentSpiceConsumptionPollutionFactor": 0,

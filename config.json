@@ -60,6 +60,7 @@
         "environmentMaxSugar": 4,
         "environmentMaxTribes": 3,
         "environmentPollutionDiffusionDelay": 0,
+        "environmentQuadrantSizeFactor": 1,
         "environmentSeasonalGrowbackDelay": 0,
         "environmentSeasonInterval": 0,
         "environmentSpiceConsumptionPollutionFactor": 0,
