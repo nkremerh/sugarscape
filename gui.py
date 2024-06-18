@@ -292,13 +292,13 @@ class GUI:
             if self.sugarscape.environment.neighborhoodMode == "vonNeumann":
                 for agent in self.sugarscape.agents:
                     for direction, neighbor in agent.vonNeumannNeighbors.items():
-                        if neighbor != None and neighbor != agent and neighbor.isAlive() == True:
+                        if neighbor != None and neighbor.isAlive() == True:
                             lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
                             lineCoordinates.add(lineEndpointsPair)
             else: # Moore neighborhoods
                 for agent in self.sugarscape.agents:
                     for direction, neighbor in agent.mooreNeighbors.items():
-                        if neighbor != None and neighbor != agent and neighbor.isAlive() == True:
+                        if neighbor != None and neighbor.isAlive() == True:
                             lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
                             lineCoordinates.add(lineEndpointsPair)
 
