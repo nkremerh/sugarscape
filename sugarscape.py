@@ -38,6 +38,7 @@ class Sugarscape:
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
+        self.activeQuadrants = self.findActiveQuadrants()
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
         self.agents = []
@@ -94,11 +95,11 @@ class Sugarscape:
         if self.environment == None:
             return
 
-        activeCells = self.findActiveQuadrants()
-        if len(activeCells) == 0:
+        activeCells = [cell for quadrant in self.activeQuadrants for cell in quadrant]
+        totalCells = len(activeCells)
+        if totalCells == 0:
             return
 
-        totalCells = len(activeCells)
         if len(self.agents) + numAgents > totalCells:
             if "all" in self.debug or "sugarscape" in self.debug:
                 print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
@@ -106,11 +107,10 @@ class Sugarscape:
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
-        randCoords = activeCells
-        random.shuffle(randCoords)
+        random.shuffle(activeCells)
 
         for i in range(numAgents):
-            randCoord = randCoords.pop()
+            randCoord = activeCells.pop()
             randCellX = randCoord[0]
             randCellY = randCoord[1]
             c = self.environment.findCell(randCellX, randCellY)
@@ -254,29 +254,21 @@ class Sugarscape:
     def findActiveQuadrants(self):
         quadrants = self.configuration["agentStartingQuadrants"]
         cellRange = []
-        halfWidth = math.floor(self.environmentWidth / 2)
-        halfHeight = math.floor(self.environmentHeight / 2)
+        quadrantWidth = math.floor(self.environmentWidth / 2 * self.configuration["environmentQuadrantSizeFactor"])
+        quadrantHeight = math.floor(self.environmentHeight / 2 * self.configuration["environmentQuadrantSizeFactor"])
         # Quadrant I at origin in top left corner, other quadrants in clockwise order
         if 1 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth)]
-            for i in range(halfWidth):
-                for j in range(halfHeight):
-                    cellRange.append([i, j])
+            quadrantOne = [(i, j) for j in range(quadrantHeight) for i in range(quadrantWidth)]
+            cellRange.append(quadrantOne)
         if 2 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth, self.environmentWidth)]
-            for i in range(halfWidth, self.environmentWidth):
-                for j in range(halfHeight):
-                    cellRange.append([i, j])
+            quadrantTwo = [(i, j) for j in range(quadrantHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.append(quadrantTwo)
         if 3 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight, self.environmentHeight)] for i in range(halfWidth, self.environmentWidth)]
-            for i in range(halfWidth, self.environmentWidth):
-                for j in range(halfHeight, self.environmentHeight):
-                    cellRange.append([i, j])
+            quadrantThree = [(i, j) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.append(quadrantThree)
         if 4 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight, self.environmentHeight)] for i in range(halfWidth)]
-            for i in range(halfWidth):
-                for j in range(halfHeight, self.environmentHeight):
-                    cellRange.append([i, j])
+            quadrantFour = [(i, j) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
+            cellRange.append(quadrantFour)
         return cellRange
 
     def generateAgentID(self):
@@ -894,8 +886,17 @@ def printHelp():
     exit(0)
 
 def verifyConfiguration(configuration):
+    if len(configuration["agentStartingQuadrants"]) == 0:
+        configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
+
+    if configuration["environmentQuadrantSizeFactor"] > 1:
+        configuration["environmentQuadrantSizeFactor"] = 1
+    elif configuration["environmentQuadrantSizeFactor"] < 0:
+        configuration["environmentQuadrantSizeFactor"] = 1
+
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
+    totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["agentStartingQuadrants"]) / 4
     if configuration["startingAgents"] > totalCells:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
             print("Could not allocate {0} agents. Allocating maximum of {1}.".format(configuration["startingAgents"], totalCells))
@@ -911,9 +912,6 @@ def verifyConfiguration(configuration):
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
     if configuration["environmentMaxTribes"] > 11:
         configuration["environmentMaxTribes"] = 11
-
-    if len(configuration["agentStartingQuadrants"]) == 0:
-        configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
 
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
@@ -1003,6 +1001,7 @@ if __name__ == "__main__":
                      "environmentMaxSugar": 4,
                      "environmentMaxTribes": 0,
                      "environmentPollutionDiffusionDelay": 0,
+                     "environmentQuadrantSizeFactor": 1,
                      "environmentSeasonalGrowbackDelay": 0,
                      "environmentSeasonInterval": 0,
                      "environmentSpiceConsumptionPollutionFactor": 0,

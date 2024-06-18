@@ -319,6 +319,10 @@ environmentPollutionDiffusionDelay: int
     Set the delay interval in timesteps when pollution is diffused across the environment.
     Default: 0
 
+environmentQuadrantSizeFactor: float
+    Set the proportion of each corner of the screen taken up by the agents' starting quadrants.
+    Default: 1
+
 environmentSeasonalGrowbackDelay: int
     Set the delay interval in timesteps when resources are regrown when cell is in a dry season.
     Default: 0
