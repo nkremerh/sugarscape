@@ -96,7 +96,8 @@ class Sugarscape:
         if self.environment == None:
             return
 
-        totalCells = len([cell for quadrant in self.activeQuadrants for cell in quadrant])
+        activeQuadrants = [quadrant[:] for quadrant in self.activeQuadrants]
+        totalCells = len([cell for quadrant in activeQuadrants for cell in quadrant])
         if totalCells == 0:
             return
 
@@ -107,40 +108,52 @@ class Sugarscape:
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
-        for quadrant in self.activeQuadrants:
+        for quadrant in activeQuadrants:
             random.shuffle(quadrant)
         if self.tribalStartingQuadrants == True:
             tribes = []
+        
+        # Assign agents a placeholder cell before its tribe is found
+        c = cell.Cell(0, 0, self.environment)
+
         for i in range(numAgents):
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
-            a = agent.Agent(agentID, self.timestep, None, agentConfiguration)
+            a = agent.Agent(agentID, self.timestep, c, agentConfiguration)
             # If using a different decision model, replace new agent with instance of child class
             if "altruisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
                 a.selfishnessFactor = 0
             elif "altruisticNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 a.selfishnessFactor = 0
             elif "benthamHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
             elif "benthamNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
             elif "egoisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
                 a.selfishnessFactor = 1
             elif "egoisticNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 a.selfishnessFactor = 1
-            tribe = a.findTribe()
-            if tribe not in tribes:
-                    tribes.append(tribe)
-            randomCell = self.activeQuadrants[tribes.index(tribe)].pop()
-        
+            
+            if self.tribalStartingQuadrants == True:
+                tribe = a.findTribe()
+                if tribe not in tribes:
+                        tribes.append(tribe)
+                # TODO: what if the quadrant runs out of cells?
+                randomCoords = activeQuadrants[tribes.index(tribe)].pop()
+            else:
+                randomCoords = activeQuadrants[random.randrange(len(activeQuadrants))].pop()
+            randomCellX = randomCoords[0]
+            randomCellY = randomCoords[1]
+            randomCell = self.environment.findCell(randomCellX, randomCellY)
+            a.cell = randomCell
             randomCell.agent = a
             self.agents.append(a)
 
@@ -896,6 +909,9 @@ def verifyConfiguration(configuration):
         configuration["environmentQuadrantSizeFactor"] = 1
     elif configuration["environmentQuadrantSizeFactor"] < 0:
         configuration["environmentQuadrantSizeFactor"] = 1
+
+    if configuration["agentTribalStartingQuadrants"] == True:
+        configuration["environmentMaxTribes"] = len(configuration["agentStartingQuadrants"])
 
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
