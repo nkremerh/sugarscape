@@ -38,6 +38,7 @@ class Sugarscape:
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
+        self.activeQuadrants = self.findActiveQuadrants()
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
         self.agents = []
@@ -94,8 +95,7 @@ class Sugarscape:
         if self.environment == None:
             return
 
-        activeQuadrants = self.findActiveQuadrants()
-        activeCells = [cell for quadrant in activeQuadrants for cell in quadrant]
+        activeCells = [cell for quadrant in self.activeQuadrants for cell in quadrant]
         totalCells = len(activeCells)
         if totalCells == 0:
             return
