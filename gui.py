@@ -115,10 +115,10 @@ class GUI:
                 for j in range(self.sugarscape.environmentHeight):
                     cell = self.sugarscape.environment.findCell(i, j)
                     fillColor = self.lookupFillColor(cell)
-                    x1 = self.borderEdge + (i + 0.2) * self.siteWidth # Upper right x coordinate
-                    y1 = self.borderEdge + (j + 0.2) * self.siteHeight # Upper right y coordinate
-                    x2 = self.borderEdge + (i + 0.8) * self.siteWidth # Lower left x coordinate
-                    y2 = self.borderEdge + (j + 0.8) * self.siteHeight # Lower left y coordinate
+                    x1 = self.borderEdge + (i + 0.2) * self.siteWidth # Upper left x coordinate
+                    y1 = self.borderEdge + (j + 0.2) * self.siteHeight # Upper left y coordinate
+                    x2 = self.borderEdge + (i + 0.8) * self.siteWidth # Lower right x coordinate
+                    y2 = self.borderEdge + (j + 0.8) * self.siteHeight # Lower right y coordinate
                     self.grid[i][j] = {"object": self.canvas.create_oval(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
             self.drawLines()
         else:
@@ -126,10 +126,10 @@ class GUI:
                 for j in range(self.sugarscape.environmentHeight):
                     cell = self.sugarscape.environment.findCell(i, j)
                     fillColor = self.lookupFillColor(cell)
-                    x1 = self.borderEdge + i * self.siteWidth # Upper right x coordinate
-                    y1 = self.borderEdge + j * self.siteHeight # Upper right y coordinate
-                    x2 = self.borderEdge + (i + 1) * self.siteWidth # Lower left x coordinate
-                    y2 = self.borderEdge + (j + 1) * self.siteHeight # Lower left y coordinate
+                    x1 = self.borderEdge + i * self.siteWidth # Upper left x coordinate
+                    y1 = self.borderEdge + j * self.siteHeight # Upper left y coordinate
+                    x2 = self.borderEdge + (i + 1) * self.siteWidth # Lower right x coordinate
+                    y2 = self.borderEdge + (j + 1) * self.siteHeight # Lower right y coordinate
                     self.grid[i][j] = {"object": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0", activestipple="gray50"), "color": fillColor}
 
         if self.highlightedCell != None:
