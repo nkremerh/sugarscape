@@ -139,7 +139,7 @@ class GUI:
         return ["Pollution"]
     
     def configureNetworkNames(self):
-        return ["Neighbors (Von Neumann)", "Family", "Friends", "Trade", "Loans", "Disease"]
+        return ["Adjacent Neighbors", "Family", "Friends", "Trade", "Loans", "Disease"]
 
     def configureWindow(self):
         window = tkinter.Tk()
@@ -288,12 +288,19 @@ class GUI:
 
     def drawLines(self):
         lineCoordinates = set()
-        if self.activeNetwork.get() == "Neighbors (Von Neumann)":
-            for agent in self.sugarscape.agents:
-                for direction, neighbor in agent.vonNeumannNeighbors.items():
-                    if neighbor != None and neighbor != agent and neighbor.isAlive() == True:
-                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
-                        lineCoordinates.add(lineEndpointsPair)
+        if self.activeNetwork.get() == "Adjacent Neighbors":
+            if self.sugarscape.environment.neighborhoodMode == "vonNeumann":
+                for agent in self.sugarscape.agents:
+                    for direction, neighbor in agent.vonNeumannNeighbors.items():
+                        if neighbor != None and neighbor != agent and neighbor.isAlive() == True:
+                            lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
+                            lineCoordinates.add(lineEndpointsPair)
+            else: # Moore neighborhoods
+                for agent in self.sugarscape.agents:
+                    for direction, neighbor in agent.mooreNeighbors.items():
+                        if neighbor != None and neighbor != agent and neighbor.isAlive() == True:
+                            lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
+                            lineCoordinates.add(lineEndpointsPair)
 
         elif self.activeNetwork.get() == "Family":
             for agent in self.sugarscape.agents:
@@ -449,7 +456,7 @@ class GUI:
         agent = cell.agent
         if agent == None:
             return "white"
-        elif self.activeNetwork.get() in ["Neighbors (Von Neumann)", "Friends", "Trade"]:
+        elif self.activeNetwork.get() in ["Adjacent Neighbors", "Friends", "Trade"]:
             return "black"
         elif self.activeNetwork.get() == "Family":
             isChild = agent.socialNetwork["father"] != None or agent.socialNetwork["mother"] != None
