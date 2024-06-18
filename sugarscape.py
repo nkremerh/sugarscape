@@ -44,6 +44,7 @@ class Sugarscape:
         self.debug = configuration["debugMode"]
         self.agents = []
         self.deadAgents = []
+        self.tribes = []
         self.diseases = []
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
@@ -109,8 +110,6 @@ class Sugarscape:
         agentEndowments = self.randomizeAgentEndowments(numAgents)
         for quadrant in activeQuadrants:
             random.shuffle(quadrant)
-        if self.tribalStartingQuadrants == True:
-            tribes = []
         # Assign agents a placeholder cell before its tribe is found
         c = cell.Cell(0, 0, self.environment)
 
@@ -142,10 +141,10 @@ class Sugarscape:
             
             if self.tribalStartingQuadrants == True:
                 tribe = a.findTribe()
-                if tribe not in tribes:
-                        tribes.append(tribe)
+                if tribe not in self.tribes:
+                        self.tribes.append(tribe)
                 # TODO: what if the quadrant runs out of cells?
-                randomCoords = activeQuadrants[tribes.index(tribe)].pop()
+                randomCoords = activeQuadrants[self.tribes.index(tribe)].pop()
             else:
                 randomCoords = activeQuadrants[random.randrange(len(activeQuadrants))].pop()
             randomCellX = randomCoords[0]
