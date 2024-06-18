@@ -472,9 +472,9 @@ class GUI:
         elif self.activeNetwork.get() == "Loans":
             isLender = len(agent.socialNetwork["debtors"]) > 0
             isBorrower = len(agent.socialNetwork["creditors"]) > 0
-            if isLender:
-                return "yellow" if isBorrower else "green"
-            elif isBorrower:
+            if isLender == True:
+                return "yellow" if isBorrower == True else "green"
+            elif isBorrower == True:
                 return "red"
             else:
                 return "black"
