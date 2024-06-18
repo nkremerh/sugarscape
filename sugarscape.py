@@ -96,8 +96,7 @@ class Sugarscape:
         if self.environment == None:
             return
 
-        activeCells = [cell for quadrant in self.activeQuadrants for cell in quadrant]
-        totalCells = len(activeCells)
+        totalCells = len([cell for quadrant in self.activeQuadrants for cell in quadrant])
         if totalCells == 0:
             return
 
@@ -108,38 +107,41 @@ class Sugarscape:
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
-        random.shuffle(activeCells)
-
+        for quadrant in self.activeQuadrants:
+            random.shuffle(quadrant)
+        if self.tribalStartingQuadrants == True:
+            tribes = []
         for i in range(numAgents):
-            randCoord = activeCells.pop()
-            randCellX = randCoord[0]
-            randCellY = randCoord[1]
-            c = self.environment.findCell(randCellX, randCellY)
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
-            a = agent.Agent(agentID, self.timestep, c, agentConfiguration)
+            a = agent.Agent(agentID, self.timestep, None, agentConfiguration)
             # If using a different decision model, replace new agent with instance of child class
             if "altruisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration, "halfLookahead")
                 a.selfishnessFactor = 0
             elif "altruisticNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration)
                 a.selfishnessFactor = 0
             elif "benthamHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration, "halfLookahead")
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
             elif "benthamNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration)
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
             elif "egoisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration, "halfLookahead")
                 a.selfishnessFactor = 1
             elif "egoisticNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, None, agentConfiguration)
                 a.selfishnessFactor = 1
-            c.agent = a
+            tribe = a.findTribe()
+            if tribe not in tribes:
+                    tribes.append(tribe)
+            randomCell = self.activeQuadrants[tribes.index(tribe)].pop()
+        
+            randomCell.agent = a
             self.agents.append(a)
 
         for a in self.agents:
