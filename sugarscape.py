@@ -66,8 +66,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        for i in range(height):
-            for j in range(width):
+        for i in range(width):
+            for j in range(height):
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSpice * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSpice)
@@ -80,8 +80,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        for i in range(height):
-            for j in range(width):
+        for i in range(width):
+            for j in range(height):
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSugar * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSugar)
@@ -176,24 +176,16 @@ class Sugarscape:
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
         width = self.environment.width
-        for i in range(height):
-            for j in range(width):
+        for i in range(width):
+            for j in range(height):
                 newCell = cell.Cell(i, j, self.environment)
                 self.environment.setCell(newCell, i, j)
 
-        startX1 = math.ceil(height * 0.7)
-        startX2 = math.ceil(height * 0.3)
-        startY1 = math.ceil(width * 0.3)
-        startY2 = math.ceil(width * 0.7)
         sugarRadiusScale = 2
         radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
         for peak in sugarPeaks:
             self.addSugarPeak(peak[0], peak[1], radius, maxSugar)
 
-        startX1 = math.ceil(height * 0.7)
-        startX2 = math.ceil(height * 0.3)
-        startY1 = math.ceil(width * 0.7)
-        startY2 = math.ceil(width * 0.3)
         spiceRadiusScale = 2
         radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
         for peak in spicePeaks:
@@ -232,8 +224,8 @@ class Sugarscape:
             self.runtimeStats["totalMetabolismCost"] += agent.sugarMetabolism + agent.spiceMetabolism
         environmentWealthCreated = 0
         environmentWealthTotal = 0
-        for i in range(self.environment.height):
-            for j in range(self.environment.width):
+        for i in range(self.environment.width):
+            for j in range(self.environment.height):
                 environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
                 environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
         self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
@@ -426,6 +418,7 @@ class Sugarscape:
         maleFertilityAge = configs["agentMaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         maleInfertilityAge = configs["agentMaleInfertilityAge"]
+        tagPreferences = configs["agentTagPreferences"]
         tagStringLength = configs["agentTagStringLength"]
         immuneSystemLength = configs["agentImmuneSystemLength"]
         aggressionFactor = configs["agentAggressionFactor"]
@@ -546,7 +539,7 @@ class Sugarscape:
         random.setstate(randomNumberReset)
         random.shuffle(sexes)
         for i in range(numAgents):
-            agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(),
+            agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(), "tagPreferences": tagPreferences,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "movementMode": movementMode,
                               "neighborhoodMode": neighborhoodMode, "visionMode": visionMode}
@@ -681,8 +674,8 @@ class Sugarscape:
 
         environmentWealthCreated = 0
         environmentWealthTotal = 0
-        for i in range(self.environment.height):
-            for j in range(self.environment.width):
+        for i in range(self.environment.width):
+            for j in range(self.environment.height):
                 environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
                 environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
                 if self.timestep == 1:
@@ -988,6 +981,7 @@ if __name__ == "__main__":
                      "agentStartingSugar": [10, 40],
                      "agentStartingQuadrants": [1, 2, 3, 4],
                      "agentSugarMetabolism": [1, 4],
+                     "agentTagPreferences": False,
                      "agentTagStringLength": 0,
                      "agentTradeFactor": [0, 0],
                      "agentUniversalSpice": [0,0],

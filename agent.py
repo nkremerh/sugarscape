@@ -27,6 +27,7 @@ class Agent:
         self.fertilityAge = configuration["fertilityAge"]
         self.infertilityAge = configuration["infertilityAge"]
         self.tags = configuration["tags"]
+        self.tagPreferences = configuration["tagPreferences"]
         self.aggressionFactor = configuration["aggressionFactor"]
         self.tradeFactor = configuration["tradeFactor"]
         self.lookaheadFactor = configuration["lookaheadFactor"]
@@ -766,6 +767,7 @@ class Agent:
                 else:
                     childTags.append(mismatchBits[random.randrange(2)])
         childEndowment["tags"] = childTags
+        childEndowment["tagPreferences"] = self.tagPreferences
 
         hashed = hashlib.md5("immuneSystem".encode())
         hashNum = int(hashed.hexdigest(), 16)
@@ -1031,15 +1033,13 @@ class Agent:
             totalSpice = 0
 
         welfare = (totalSugar ** sugarMetabolismProportion) * (totalSpice ** spiceMetabolismProportion)
-        if self.tags != None and len(self.tags) > 0:
+        if self.tagPreferences == True and self.tags != None and len(self.tags) > 0:
             # Tribe could have changed since last timestep, so recheck
             self.tribe = self.findTribe()
             fractionZeroesInTags = self.tagZeroes / len(self.tags)
             fractionOnesInTags = 1 - fractionZeroesInTags
-            spiceMetabolism = spiceMetabolism if spiceMetabolism > 0 else 1
-            sugarMetabolism = sugarMetabolism if sugarMetabolism > 0 else 1
             tagPreferences = (sugarMetabolism * fractionZeroesInTags) + (spiceMetabolism * fractionOnesInTags)
-            if tagPreferences == 0:
+            if tagPreferences <= 0:
                 tagPreferences = 1
             tagPreferencesSugar = (sugarMetabolism / tagPreferences) * fractionZeroesInTags
             tagPreferencesSpice = (spiceMetabolism / tagPreferences) * fractionOnesInTags
@@ -1166,7 +1166,8 @@ class Agent:
         creditorChildren = creditor.socialNetwork["children"]
         livingCreditorChildren = []
         for child in creditorChildren:
-            if child.isAlive() == True:
+            # Children who took loans out with their parents should not owe themselves
+            if child != self and child.isAlive() == True:
                 livingCreditorChildren.append(child)
         numLivingChildren = len(livingCreditorChildren)
         if numLivingChildren > 0:

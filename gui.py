@@ -8,7 +8,7 @@ class GUI:
         self.screenWidth = screenWidth
         self.window = None
         self.canvas = None
-        self.grid = [[None for j in range(self.sugarscape.environmentWidth)]for i in range(self.sugarscape.environmentHeight)]
+        self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
         # TODO: Add a simplified way to have a bunch of colors programatically chosen during runtime
         self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
                        "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "pink": "#FA32FA", "yellow": "#FAFA32", "teal": "#32FAFA", "purple": "#6432FA", "orange": "#FA6432",
@@ -244,8 +244,8 @@ class GUI:
             return
         if self.screenHeight != self.window.winfo_height() or self.screenWidth != self.window.winfo_width():
             self.resizeInterface()
-        for i in range(self.sugarscape.environmentHeight):
-            for j in range(self.sugarscape.environmentWidth):
+        for i in range(self.sugarscape.environmentWidth):
+            for j in range(self.sugarscape.environmentHeight):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
                 if self.activeNetwork.get() == "None":
