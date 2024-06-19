@@ -43,7 +43,6 @@ class Sugarscape:
         self.debug = configuration["debugMode"]
         self.agents = []
         self.deadAgents = []
-        self.tribes = []
         self.diseases = []
         self.activeCells = self.findActiveCells()
         self.configureAgents(configuration["startingAgents"])
