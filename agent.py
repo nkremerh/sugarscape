@@ -40,6 +40,7 @@ class Agent:
         self.wealth = configuration["sugar"] + configuration["spice"]
         self.seed = configuration["seed"]
         self.inheritancePolicy = configuration["inheritancePolicy"]
+        self.startingDiseases = configuration.get("startingDiseases", None)
         self.startingImmuneSystem = configuration["immuneSystem"]
         self.immuneSystem = configuration["immuneSystem"]
         self.decisionModelFactor = configuration["decisionModelFactor"]
@@ -229,19 +230,17 @@ class Agent:
 
     def doDisease(self):
         diseases = self.diseases
+        random.shuffle(diseases)
         for diseaseRecord in diseases:
             diseaseTags = diseaseRecord["disease"].tags
             start = diseaseRecord["startIndex"]
-            end = diseaseRecord["endIndex"] + 1
             immuneResponse = [self.immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
             i = start
-            j = 0
             for i in range(len(diseaseTags)):
                 if immuneResponse[i] != diseaseTags[i]:
                     self.immuneSystem[start + i] = diseaseTags[i]
                     break
-            immuneResponseCheck = [self.immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
-            if diseaseTags == immuneResponseCheck:
+            if diseaseTags == immuneResponse:
                 self.diseases.remove(diseaseRecord)
                 self.updateDiseaseEffects(diseaseRecord["disease"])
 

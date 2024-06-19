@@ -160,16 +160,12 @@ class Sugarscape:
             diseaseConfiguration = diseaseEndowments[i]
             newDisease = disease.Disease(diseaseID, diseaseConfiguration)
             diseases.append(newDisease)
+        self.diseases = diseases
 
-        unplacedDisease = 0
         for agent in self.agents:
-            for newDisease in diseases:
-                hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
-                if hammingDistance != 0:
-                    agent.catchDisease(newDisease)
-                    self.diseases.append(newDisease)
-                    diseases.remove(newDisease)
-                    break
+            agentDiseases = random.sample(diseases, agent.startingDiseases)
+            for newDisease in agentDiseases:
+                agent.catchDisease(newDisease)
         if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
             print(f"Could not place {len(diseases)} diseases.")
 
@@ -404,6 +400,7 @@ class Sugarscape:
         vision = configs["agentVision"]
         startingSugar = configs["agentStartingSugar"]
         startingSpice = configs["agentStartingSpice"]
+        startingDiseases = configs["agentStartingDiseases"]
         maxAge = configs["agentMaxAge"]
         maleToFemaleRatio = configs["agentMaleToFemaleRatio"]
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
@@ -434,6 +431,7 @@ class Sugarscape:
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
                           "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
+                          "startingDiseases": {"endowments": [], "curr": startingDiseases[0], "min": startingDiseases[0], "max": startingDiseases[1]},
                           "selfishnessFactor": {"endowments": [], "curr": selfishnessFactor[0], "min": selfishnessFactor[0], "max": selfishnessFactor[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
@@ -978,6 +976,7 @@ if __name__ == "__main__":
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],
                      "agentSpiceMetabolism": [0, 0],
+                     "agentStartingDiseases":[0, 0],
                      "agentStartingSpice": [0, 0],
                      "agentStartingSugar": [10, 40],
                      "agentStartingQuadrants": [1, 2, 3, 4],
