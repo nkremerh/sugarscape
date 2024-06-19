@@ -1,6 +1,6 @@
 {
     "__README__": "Agent sugar and spice collection with lending and constant sugar and spice growback (pgs. 131-133 of Growing Artificial Societies).",
-    "agentBaseInterestRate": [0.1, 0.1],
+    "agentBaseInterestRate": [0.10, 0.10],
     "agentFemaleInfertilityAge": [40, 50],
     "agentFemaleFertilityAge": [12, 15],
     "agentFertilityFactor": [1, 1],
