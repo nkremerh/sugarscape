@@ -115,9 +115,9 @@ def printRawData(dataset, totalTimesteps, outfile):
     for i in range(totalTimesteps + 1):
         line = str(i)
         for model in dataset:
-            line += " {0} {1} {2} {3} {4} {5}".format(dataset[model]["meanMetrics"]["population"][i], dataset[model]["meanMetrics"]["agentMeanTimeToLive"][i],
-                                                  dataset[model]["meanMetrics"]["agentStarvationDeaths"][i], dataset[model]["meanMetrics"]["agentCombatDeaths"][i],
-                                                  dataset[model]["meanMetrics"]["agentWealthTotal"][i], dataset[model]["meanMetrics"]["meanAgeAtDeath"][i])
+            line += f" {dataset[model]["meanMetrics"]["population"][i]} {dataset[model]["meanMetrics"]["agentMeanTimeToLive"][i]}"
+            line += f" {dataset[model]["meanMetrics"]["agentStarvationDeaths"][i]} {dataset[model]["meanMetrics"]["agentCombatDeaths"][i]}" 
+            line += f" {dataset[model]["meanMetrics"]["agentWealthTotal"][i]} {dataset[model]["meanMetrics"]["meanAgeAtDeath"][i]}"
         line += '\n'
         file.write(line)
     file.close()

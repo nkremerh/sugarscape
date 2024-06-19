@@ -518,9 +518,7 @@ class GUI:
 
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats
-        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats['population']} | Metabolism: {stats['meanMetabolism']:.2f} | "
-        statsString += f"Movement: {stats['meanMovement']:.2f} | Vision: {stats['meanVision']:.2f} | Gini: {stats['giniCoefficient']:.2f} | "
-        statsString += f"Trade Price: {stats['meanTradePrice']:.2f} | Trade Volume: {stats['tradeVolume']:.2f}"
+        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats["population"]} | Metabolism: {stats["meanMetabolism"]} | Movement: {stats["meanMovement"]} | Vision: {stats["meanVision"]} | Gini: {stats["giniCoefficient"]} | Trade Price: {stats["meanTradePrice"]} | Trade Volume: {stats["tradeVolume"]}"
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
         if self.highlightedCell != None:
