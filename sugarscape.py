@@ -96,7 +96,7 @@ class Sugarscape:
         if self.environment == None:
             return
 
-        emptyCells = [cellRecord for cellRecord in self.activeCells if cellRecord[0].agent == None]
+        emptyCells = [cellRecord for cellRecord in self.activeCells if cellRecord["cell"].agent == None]
         totalCells = len(emptyCells)
         if totalCells == 0:
             return
@@ -109,7 +109,9 @@ class Sugarscape:
         random.shuffle(emptyCells)
 
         for i in range(numAgents):
-            randomCell, quadrantIndex = emptyCells.pop()
+            cellRecord = emptyCells.pop()
+            randomCell = cellRecord["cell"]
+            quadrantIndex = cellRecord["quadrantIndex"]
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
@@ -260,19 +262,19 @@ class Sugarscape:
         quadrantIndex = 0
         # Quadrant I at origin in top left corner, other quadrants in clockwise order
         if 1 in quadrants:
-            quadrantOne = [(self.environment.grid[i][j], quadrantIndex) for j in range(quadrantHeight) for i in range(quadrantWidth)]
+            quadrantOne = [{"cell": self.environment.grid[i][j], "quadrantIndex": quadrantIndex} for j in range(quadrantHeight) for i in range(quadrantWidth)]
             cellRange.extend(quadrantOne)
             quadrantIndex += 1
         if 2 in quadrants:
-            quadrantTwo = [(self.environment.grid[i][j], quadrantIndex) for j in range(quadrantHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            quadrantTwo = [{"cell": self.environment.grid[i][j], "quadrantIndex": quadrantIndex} for j in range(quadrantHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
             cellRange.extend(quadrantTwo)
             quadrantIndex += 1
         if 3 in quadrants:
-            quadrantThree = [(self.environment.grid[i][j], quadrantIndex) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            quadrantThree = [{"cell": self.environment.grid[i][j], "quadrantIndex": quadrantIndex} for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
             cellRange.extend(quadrantThree)
             quadrantIndex += 1
         if 4 in quadrants:
-            quadrantFour = [(self.environment.grid[i][j], quadrantIndex) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
+            quadrantFour = [{"cell": self.environment.grid[i][j], "quadrantIndex": quadrantIndex} for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
             cellRange.extend(quadrantFour)
         return cellRange
 
