@@ -56,7 +56,8 @@ class GUI:
         networkNames = self.configureNetworkNames()
         networkNames.insert(0, "None")
         self.activeNetwork = tkinter.StringVar(window)
-        self.activeNetwork.set(networkNames[0])  # Default
+        # Use first item as default name
+        self.activeNetwork.set(networkNames[0])
         for network in networkNames:
             networkMenu.add_checkbutton(label=network, onvalue=network, offvalue=network, variable=self.activeNetwork, command=self.doNetworkMenu, indicatoron=True)
         networkButton.grid(row=0, column=2, sticky="nsew") 
@@ -68,7 +69,8 @@ class GUI:
         agentColorNames.sort()
         agentColorNames.insert(0, "Default")
         self.lastSelectedAgentColor = tkinter.StringVar(window)
-        self.lastSelectedAgentColor.set(agentColorNames[0])  # Default
+        # Use first item as default name
+        self.lastSelectedAgentColor.set(agentColorNames[0])
         for name in agentColorNames:
             agentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedAgentColor, command=self.doAgentColorMenu, indicatoron=True)
         agentColorButton.grid(row=0, column=3, sticky="nsew")
@@ -80,7 +82,8 @@ class GUI:
         environmentColorNames.sort()
         environmentColorNames.insert(0, "Default")
         self.lastSelectedEnvironmentColor = tkinter.StringVar(window)
-        self.lastSelectedEnvironmentColor.set(environmentColorNames[0])  # Default
+        # Use first item as default name
+        self.lastSelectedEnvironmentColor.set(environmentColorNames[0])
         for name in environmentColorNames:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
         environmentColorButton.grid(row=0, column=4, sticky="nsew")
@@ -115,10 +118,12 @@ class GUI:
                 for j in range(self.sugarscape.environmentHeight):
                     cell = self.sugarscape.environment.findCell(i, j)
                     fillColor = self.lookupFillColor(cell)
-                    x1 = self.borderEdge + (i + 0.2) * self.siteWidth # Upper left x coordinate
-                    y1 = self.borderEdge + (j + 0.2) * self.siteHeight # Upper left y coordinate
-                    x2 = self.borderEdge + (i + 0.8) * self.siteWidth # Lower right x coordinate
-                    y2 = self.borderEdge + (j + 0.8) * self.siteHeight # Lower right y coordinate
+                    # Determine upper left x and y coordinates
+                    x1 = self.borderEdge + (i + 0.2) * self.siteWidth
+                    y1 = self.borderEdge + (j + 0.2) * self.siteHeight
+                    # Determine lower rightt x and y coordinates
+                    x2 = self.borderEdge + (i + 0.8) * self.siteWidth
+                    y2 = self.borderEdge + (j + 0.8) * self.siteHeight
                     self.grid[i][j] = {"object": self.canvas.create_oval(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
             self.drawLines()
         else:
@@ -126,10 +131,12 @@ class GUI:
                 for j in range(self.sugarscape.environmentHeight):
                     cell = self.sugarscape.environment.findCell(i, j)
                     fillColor = self.lookupFillColor(cell)
-                    x1 = self.borderEdge + i * self.siteWidth # Upper left x coordinate
-                    y1 = self.borderEdge + j * self.siteHeight # Upper left y coordinate
-                    x2 = self.borderEdge + (i + 1) * self.siteWidth # Lower right x coordinate
-                    y2 = self.borderEdge + (j + 1) * self.siteHeight # Lower right y coordinate
+                    # Determine upper left x and y coordinates
+                    x1 = self.borderEdge + i * self.siteWidth
+                    y1 = self.borderEdge + j * self.siteHeight
+                    # Determine lower rightt x and y coordinates
+                    x2 = self.borderEdge + (i + 1) * self.siteWidth
+                    y2 = self.borderEdge + (j + 1) * self.siteHeight
                     self.grid[i][j] = {"object": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0", activestipple="gray50"), "color": fillColor}
 
         if self.highlightedCell != None:
