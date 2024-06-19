@@ -149,7 +149,8 @@ agentLoanDuration: [int, int]
     Default: [0, 0]
 
 agentLookaheadDiscount: [float, float]
-    Set the agent's discount when considering possible rewards in future timesteps.
+    Set the agent's discount applied to considering possible rewards in future timesteps.
+    Note: This feature is used in agent decision models besides the "none" and "rawSugarscape" models.
     Default: [0, 0]
 
 agentLookaheadFactor: [int, int]
