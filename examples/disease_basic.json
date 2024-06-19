@@ -18,7 +18,6 @@
     "agentMovement": [1000, 1000],
     "agentReplacements": 0,
     "agentSpiceMetabolism": [0, 0],
-    "agentStartingDiseases":[10, 10],
     "agentStartingSpice": [0, 0],
     "agentStartingSugar": [10, 40],
     "agentStartingQuadrants": [1, 2, 3, 4],
@@ -53,5 +52,6 @@
     "seed": 12345,
     "startingAgents": 400,
     "startingDiseases": 25,
+    "startingDiseasesPerAgent": [10, 10],
     "timesteps": 1000
 }

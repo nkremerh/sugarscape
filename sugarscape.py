@@ -159,7 +159,7 @@ class Sugarscape:
             diseaseConfiguration = diseaseEndowments[i]
             newDisease = disease.Disease(diseaseID, diseaseConfiguration)
             self.diseases.append(newDisease)
-        startingDiseases = self.configuration["agentStartingDiseases"]
+        startingDiseases = self.configuration["startingDiseasesPerAgent"]
         minStartingDiseases = startingDiseases[0]
         maxStartingDiseases = startingDiseases[1]
         currStartingDiseases = minStartingDiseases
@@ -1031,6 +1031,7 @@ if __name__ == "__main__":
                      "seed": -1,
                      "startingAgents": 250,
                      "startingDiseases": 0,
+                     "startingDiseasesPerAgent": [0, 0],
                      "timesteps": 200
                      }
     configuration = parseOptions(configuration)
