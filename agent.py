@@ -644,7 +644,7 @@ class Agent:
                     break
         else:
             # Negative utilitarian model uses positive and negative utility to find minimum harm
-            cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]))
+            cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]), reverse = True)
             bestCell = cells[0]["cell"]
 
         # If additional ordering consideration, select new best cell
