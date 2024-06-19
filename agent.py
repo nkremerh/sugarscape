@@ -695,7 +695,6 @@ class Agent:
         "inheritancePolicy": [self.inheritancePolicy, mate.inheritancePolicy],
         "lendingFactor": [self.lendingFactor, mate.lendingFactor],
         "loanDuration": [self.loanDuration, mate.loanDuration],
-        "lookaheadDiscount": [self.lookaheadDiscount, mate.lookaheadDiscount],
         "lookaheadFactor": [self.lookaheadFactor, mate.lookaheadFactor],
         "maxAge": [self.maxAge, mate.maxAge],
         "maxFriends": [self.maxFriends, mate.maxFriends],
@@ -716,7 +715,8 @@ class Agent:
         pairedEndowments = {
         "decisionModel": [self.decisionModel, mate.decisionModel],
         "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
-        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
+        "lookaheadDiscount": [self.lookaheadDiscount, mate.lookaheadDiscount],
+        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
         }
         childEndowment = {"seed": self.seed}
         randomNumberReset = random.getstate()
