@@ -429,8 +429,12 @@ startingAgents: int
     Default: 500
 
 startingDiseases: int
-    Set the number of diseases placed in the initial population.
+    Set the total number of distinct diseases.
     Default: 0
+
+startingDiseasesPerAgent: [int, int]
+    Set the number of diseases given to each starting agent.
+    Default: [0, 0]
 
 timesteps: int
     Set the number of timesteps the simulation runs.
