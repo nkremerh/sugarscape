@@ -405,7 +405,6 @@ class Sugarscape:
         vision = configs["agentVision"]
         startingSugar = configs["agentStartingSugar"]
         startingSpice = configs["agentStartingSpice"]
-        startingDiseases = configs["agentStartingDiseases"]
         maxAge = configs["agentMaxAge"]
         maleToFemaleRatio = configs["agentMaleToFemaleRatio"]
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
@@ -467,7 +466,6 @@ class Sugarscape:
                 hashNum = int(hashed.hexdigest(), 16)
                 self.agentConfigHashes[config] = hashNum
 
-        configurations = self.findConfigurationIncrements(configurations)
         for config in configurations:
             configMin = configurations[config]["min"]
             configMax = configurations[config]["max"]
