@@ -987,7 +987,7 @@ class Agent:
         sugarscape = self.cell.environment.sugarscape
         numTribes = sugarscape.configuration["environmentMaxTribes"]
         zeroes = 0
-        tribeCutoff = math.floor(len(self.tags) / numTribes)
+        tribeCutoff = round(len(self.tags) / numTribes)
         # Up to 11 tribes possible without significant color conflicts
         colors = ["red", "blue", "green", "orange", "purple", "teal", "pink", "mint", "blue2", "yellow", "salmon"]
         for tag in self.tags:

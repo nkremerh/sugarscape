@@ -38,7 +38,6 @@ class Sugarscape:
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
-        self.activeQuadrants = self.findActiveQuadrants()
         self.tribalStartingQuadrants = configuration["agentTribalStartingQuadrants"]
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
@@ -46,6 +45,7 @@ class Sugarscape:
         self.deadAgents = []
         self.tribes = []
         self.diseases = []
+        self.activeCells = self.findActiveCells()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
         self.gui = gui.GUI(self, self.configuration["interfaceHeight"], self.configuration["interfaceWidth"]) if configuration["headlessMode"] == False else None
@@ -97,60 +97,49 @@ class Sugarscape:
         if self.environment == None:
             return
 
-        activeQuadrants = [quadrant[:] for quadrant in self.activeQuadrants]
-        totalCells = len([cell for quadrant in activeQuadrants for cell in quadrant])
+        emptyCells = [cellRecord for cellRecord in self.activeCells if cellRecord[0].agent == None]
+        totalCells = len(emptyCells)
         if totalCells == 0:
             return
         if len(self.agents) + numAgents > totalCells:
             if "all" in self.debug or "sugarscape" in self.debug:
                 print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
             numAgents = totalCells
-
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
-        for quadrant in activeQuadrants:
-            random.shuffle(quadrant)
-        # Assign agents a placeholder cell before its tribe is found
-        c = cell.Cell(0, 0, self.environment)
+        random.shuffle(emptyCells)
 
         for i in range(numAgents):
+            randomCell, quadrantIndex = emptyCells.pop()
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
-            a = agent.Agent(agentID, self.timestep, c, agentConfiguration)
+            a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
             # If using a different decision model, replace new agent with instance of child class
             if "altruisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration, "halfLookahead")
                 a.selfishnessFactor = 0
             elif "altruisticNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 a.selfishnessFactor = 0
             elif "benthamHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration, "halfLookahead")
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
             elif "benthamNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
             elif "egoisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration, "halfLookahead")
                 a.selfishnessFactor = 1
             elif "egoisticNoLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 a.selfishnessFactor = 1
             
             if self.tribalStartingQuadrants == True:
-                tribe = a.findTribe()
-                if tribe not in self.tribes:
-                        self.tribes.append(tribe)
-                # TODO: what if the quadrant runs out of cells?
-                randomCoords = activeQuadrants[self.tribes.index(tribe)].pop()
-            else:
-                randomCoords = activeQuadrants[random.randrange(len(activeQuadrants))].pop()
-            randomCellX = randomCoords[0]
-            randomCellY = randomCoords[1]
-            randomCell = self.environment.findCell(randomCellX, randomCellY)
-            a.cell = randomCell
+                tags = self.generateAgentTags(quadrantIndex)
+                a.tags = tags
+                a.tribe = a.findTribe()
             randomCell.agent = a
             self.agents.append(a)
 
@@ -264,30 +253,50 @@ class Sugarscape:
             print(str(self))
         exit(0)
 
-    def findActiveQuadrants(self):
+    def findActiveCells(self):
         quadrants = self.configuration["agentStartingQuadrants"]
         cellRange = []
         quadrantWidth = math.floor(self.environmentWidth / 2 * self.configuration["environmentQuadrantSizeFactor"])
         quadrantHeight = math.floor(self.environmentHeight / 2 * self.configuration["environmentQuadrantSizeFactor"])
+        quadrantIndex = 0
         # Quadrant I at origin in top left corner, other quadrants in clockwise order
         if 1 in quadrants:
-            quadrantOne = [(i, j) for j in range(quadrantHeight) for i in range(quadrantWidth)]
-            cellRange.append(quadrantOne)
+            quadrantOne = [(self.environment.grid[i][j], quadrantIndex) for j in range(quadrantHeight) for i in range(quadrantWidth)]
+            cellRange.extend(quadrantOne)
+            quadrantIndex += 1
         if 2 in quadrants:
-            quadrantTwo = [(i, j) for j in range(quadrantHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
-            cellRange.append(quadrantTwo)
+            quadrantTwo = [(self.environment.grid[i][j], quadrantIndex) for j in range(quadrantHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.extend(quadrantTwo)
+            quadrantIndex += 1
         if 3 in quadrants:
-            quadrantThree = [(i, j) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
-            cellRange.append(quadrantThree)
+            quadrantThree = [(self.environment.grid[i][j], quadrantIndex) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.extend(quadrantThree)
+            quadrantIndex += 1
         if 4 in quadrants:
-            quadrantFour = [(i, j) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
-            cellRange.append(quadrantFour)
+            quadrantFour = [(self.environment.grid[i][j], quadrantIndex) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
+            cellRange.extend(quadrantFour)
         return cellRange
 
     def generateAgentID(self):
         agentID = self.nextAgentID
         self.nextAgentID += 1
         return agentID
+
+    def generateAgentTags(self, quadrantIndex):
+        tagLength = self.configuration["agentTagStringLength"]
+        numTribes = self.configuration["environmentMaxTribes"]
+        tribeCutoff = round(tagLength / numTribes)
+        minZeroes = quadrantIndex * tribeCutoff
+        maxZeroes = min((quadrantIndex + 1) * tribeCutoff - 1, tagLength)
+        zeroes = (minZeroes + maxZeroes) / 2
+        if random.random() < 0.5:
+            zeroes = math.floor(zeroes)
+        else:
+            zeroes = math.ceil(zeroes)
+        ones = tagLength - zeroes
+        tags = [0] * zeroes + [1] * ones
+        random.shuffle(tags)
+        return tags
 
     def generateDiseaseID(self):
         diseaseID = self.nextDiseaseID
@@ -513,7 +522,7 @@ class Sugarscape:
                 if configurations[config]["curr"] > configurations[config]["max"]:
                     configurations[config]["curr"] = configurations[config]["min"]
 
-            if tagStringLength > 0:
+            if tagStringLength > 0 and self.tribalStartingQuadrants == False:
                 tags.append([random.randrange(2) for i in range(tagStringLength)])
             else:
                 tags.append(None)
