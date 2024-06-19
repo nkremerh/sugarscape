@@ -30,6 +30,7 @@ class Agent:
         self.tagPreferences = configuration["tagPreferences"]
         self.aggressionFactor = configuration["aggressionFactor"]
         self.tradeFactor = configuration["tradeFactor"]
+        self.lookaheadDiscount = configuration["lookaheadDiscount"]
         self.lookaheadFactor = configuration["lookaheadFactor"]
         self.lendingFactor = configuration["lendingFactor"]
         self.fertilityFactor = configuration["fertilityFactor"]
@@ -170,6 +171,7 @@ class Agent:
             caughtDisease["infector"] = infector
         self.diseases.append(caughtDisease)
         self.updateDiseaseEffects(disease)
+        self.findCellsInRange()
 
     def collectResourcesAtCell(self):
         sugarCollected = self.cell.sugar
@@ -713,7 +715,8 @@ class Agent:
         pairedEndowments = {
         "decisionModel": [self.decisionModel, mate.decisionModel],
         "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
-        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
+        "lookaheadDiscount": [self.lookaheadDiscount, mate.lookaheadDiscount],
+        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
         }
         childEndowment = {"seed": self.seed}
         randomNumberReset = random.getstate()
