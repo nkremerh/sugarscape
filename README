@@ -148,6 +148,11 @@ agentLoanDuration: [int, int]
     Set the agent's provided loan duration in timesteps.
     Default: [0, 0]
 
+agentLookaheadDiscount: [float, float]
+    Set the agent's discount applied to considering possible rewards in future timesteps.
+    Note: This feature is used in agent decision models besides the "none" and "rawSugarscape" models.
+    Default: [0, 0]
+
 agentLookaheadFactor: [int, int]
     Set the agent's consideration of metabolic costs in timesteps ahead.
     Default: [0, 0]
@@ -319,6 +324,10 @@ environmentPollutionDiffusionDelay: int
     Set the delay interval in timesteps when pollution is diffused across the environment.
     Default: 0
 
+environmentQuadrantSizeFactor: float
+    Set the proportion of each corner of the screen taken up by the agents' starting quadrants.
+    Default: 1
+
 environmentSeasonalGrowbackDelay: int
     Set the delay interval in timesteps when resources are regrown when cell is in a dry season.
     Default: 0
@@ -373,6 +382,10 @@ environmentUniversalSugarIncomeInterval: int
 environmentWidth: int
     Set the width in cells of the Sugarscape environment.
     Default: 50
+
+environmentWraparound: bool
+    Set whether the environment is a torus (wraparound) or a plane (no wraparound).
+    Default: true
 
 headlessMode: bool
     Set whether the GUI is enabled.

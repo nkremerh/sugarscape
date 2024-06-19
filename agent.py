@@ -30,6 +30,7 @@ class Agent:
         self.tagPreferences = configuration["tagPreferences"]
         self.aggressionFactor = configuration["aggressionFactor"]
         self.tradeFactor = configuration["tradeFactor"]
+        self.lookaheadDiscount = configuration["lookaheadDiscount"]
         self.lookaheadFactor = configuration["lookaheadFactor"]
         self.lendingFactor = configuration["lendingFactor"]
         self.fertilityFactor = configuration["fertilityFactor"]
@@ -51,8 +52,7 @@ class Agent:
         self.cellsInRange = []
         self.lastMoved = -1
         self.neighborhood = []
-        self.vonNeumannNeighbors = {"north": None, "south": None, "east": None, "west": None}
-        self.mooreNeighbors = {"north": None, "northeast": None, "northwest": None, "south": None, "southeast": None, "southwest": None, "east": None, "west": None}
+        self.neighbors = []
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
         self.diseases = []
         self.fertile = False
@@ -171,6 +171,7 @@ class Agent:
             caughtDisease["infector"] = infector
         self.diseases.append(caughtDisease)
         self.updateDiseaseEffects(disease)
+        self.findCellsInRange()
 
     def collectResourcesAtCell(self):
         sugarCollected = self.cell.sugar
@@ -223,9 +224,8 @@ class Agent:
 
         # Keep only debtors and children in social network to handle outstanding loans
         self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
+        self.neighbors = []
         self.neighborhood = []
-        self.vonNeumannNeighbors = {}
-        self.mooreNeighbors = {}
         self.diseases = []
 
     def doDisease(self):
@@ -249,7 +249,7 @@ class Agent:
         diseaseCount = len(self.diseases)
         if diseaseCount == 0:
             return
-        neighborCells = self.cell.neighbors
+        neighborCells = self.cell.neighbors.values()
         neighbors = []
         for neighborCell in neighborCells:
             neighbor = neighborCell.agent
@@ -353,7 +353,7 @@ class Agent:
                 continue
             elif borrower.isCreditWorthy(sugarLoanAmount, spiceLoanAmount, self.loanDuration) == True:
                 if "all" in self.debug or "agent" in self.debug:
-                    print("Agent {0} lending [{1},{2}]".format(self.ID, sugarLoanAmount, spiceLoanAmount))
+                    print(f"Agent {self.ID} lending [{sugarLoanAmount},{spiceLoanAmount}]")
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
 
     def doMetabolism(self):
@@ -375,7 +375,7 @@ class Agent:
         # Agent marked for removal or not interested in reproduction should not reproduce
         if self.isAlive() == False or self.isFertile() == False:
             return
-        neighborCells = self.cell.neighbors
+        neighborCells = list(self.cell.neighbors.values())
         random.shuffle(neighborCells)
         emptyCells = self.findEmptyNeighborCells()
         for neighborCell in neighborCells:
@@ -415,12 +415,12 @@ class Agent:
                     neighbor.spice = neighbor.spice - mateSpiceCost
                     self.lastReproduced = self.cell.environment.sugarscape.timestep
                     if "all" in self.debug or "agent" in self.debug:
-                        print("Agent {0} reproduced with agent {1} at cell ({2},{3})".format(self.ID, str(neighbor), emptyCell.x, emptyCell.y))
+                        print(f"Agent {self.ID} reproduced with agent {str(neighbor)} at cell ({emptyCell.x},{emptyCell.y})")
 
     def doTagging(self):
         if self.tags == None or self.isAlive() == False:
             return
-        neighborCells = self.cell.neighbors
+        neighborCells = list(self.cell.neighbors.values())
         random.shuffle(neighborCells)
         for neighborCell in neighborCells:
             neighbor = neighborCell.agent
@@ -453,6 +453,7 @@ class Agent:
             # If dead from aging, skip remainder of timestep
             if self.alive == False:
                 return
+            self.findCellsInRange()
             self.updateHappiness()
 
     def doUniversalIncome(self):
@@ -471,7 +472,7 @@ class Agent:
         self.sugarPrice = 0
         self.spicePrice = 0
         self.findMarginalRateOfSubstitution()
-        neighborCells = self.cell.neighbors
+        neighborCells = self.cell.neighbors.values()
         traders = []
         for neighborCell in neighborCells:
             neighbor = neighborCell.agent
@@ -542,7 +543,7 @@ class Agent:
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller == True and betterForSugarSeller == True and checkForMRSCrossing == False:
                     if "all" in self.debug or "agent" in self.debug:
-                        print("Agent {0} trading [{1}, {2}]".format(self.ID, sugarPrice, spicePrice))
+                        print(f"Agent {self.ID} trading [{sugarPrice}, {spicePrice}]")
                     spiceSeller.sugar += sugarPrice
                     spiceSeller.spice -= spicePrice
                     sugarSeller.sugar -= sugarPrice
@@ -656,7 +657,7 @@ class Agent:
             else:
                 bestCell = greedyBestCell
             if "all" in self.debug or "agent" in self.debug:
-                print("Agent {0} could not find an ethical cell".format(self.ID))
+                print(f"Agent {self.ID} could not find an ethical cell")
         return bestCell
 
     def findBestFriend(self):
@@ -716,7 +717,8 @@ class Agent:
         pairedEndowments = {
         "decisionModel": [self.decisionModel, mate.decisionModel],
         "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
-        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
+        "lookaheadDiscount": [self.lookaheadDiscount, mate.lookaheadDiscount],
+        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
         }
         childEndowment = {"seed": self.seed}
         randomNumberReset = random.getstate()
@@ -734,8 +736,8 @@ class Agent:
                 self.childEndowmentHashes[config] = hashNum
 
         for endowment in parentEndowments:
-            index = random.randrange(2)
             random.seed(self.childEndowmentHashes[endowment] + self.timestep)
+            index = random.randrange(2)
             endowmentValue = parentEndowments[endowment][index]
             childEndowment[endowment] = endowmentValue
 
@@ -819,7 +821,7 @@ class Agent:
 
     def findEmptyNeighborCells(self):
         emptyCells = []
-        neighborCells = self.cell.neighbors
+        neighborCells = self.cell.neighbors.values()
         for neighborCell in neighborCells:
             if neighborCell.agent == None:
                 emptyCells.append(neighborCell)
@@ -888,7 +890,10 @@ class Agent:
         return diseaseStats
 
     def findNeighborhood(self, newCell=None):
-        newNeighborhood = self.findCellsInRange(newCell)
+        if newCell == None:
+            newNeighborhood = self.cellsInRange
+        else:
+            newNeighborhood = self.findCellsInRange(newCell)
         neighborhood = []
         for neighborCell in newNeighborhood:
             neighbor = neighborCell["cell"].agent
@@ -1123,7 +1128,7 @@ class Agent:
     def moveToBestCell(self):
         bestCell = self.findBestCell()
         if "all" in self.debug or "agent" in self.debug:
-            print("Agent {0} moving to ({1},{2})".format(self.ID, bestCell.x, bestCell.y))
+            print(f"Agent {self.ID} moving to ({bestCell.x},{bestCell.y})")
         if self.findAggression() > 0:
             self.doCombat(bestCell)
         else:
@@ -1184,16 +1189,16 @@ class Agent:
         i = 0
         while i < len(cells):
             cell = cells[i]
-            cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
-            print("Cell {0}/{1}: ".format(i + 1, len(cells)) + cellString)
+            cellString = f"({cell["cell"].x},{cell["cell"].y}) [{cell["wealth"]},{cell["range"]}]"
+            print(f"Cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 
     def printEthicalCellScores(self, cells):
         i = 0
         while i < len(cells):
             cell = cells[i]
-            cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
-            print("Ethical cell {0}/{1}: ".format(i + 1, len(cells)) + cellString)
+            cellString = f"({cell["cell"].x},{cell["cell"].y}) [{cell["wealth"]},{cell["range"]}]"
+            print(f"Ethical cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 
     def removeDebt(self, loan):
@@ -1291,23 +1296,6 @@ class Agent:
             if timeRemaining == 0:
                 self.payDebt(creditor)
 
-    def updateMooreNeighbors(self):
-        # Necessitates finding von Neumann neighbors before invoking this method
-        for direction, neighbor in self.vonNeumannNeighbors.items():
-            self.mooreNeighbors[direction] = neighbor
-        north = self.mooreNeighbors["north"]
-        south = self.mooreNeighbors["south"]
-        east = self.mooreNeighbors["east"]
-        west = self.mooreNeighbors["west"]
-        self.mooreNeighbors["northeast"] = north.cell.findEastNeighbor().agent if north != None else None
-        self.mooreNeighbors["northeast"] = east.cell.findNorthNeighbor().agent if east != None and self.mooreNeighbors["northeast"] == None else None
-        self.mooreNeighbors["northwest"] = north.cell.findWestNeighbor().agent if north != None else None
-        self.mooreNeighbors["northwest"] = west.cell.findNorthNeighbor().agent if west != None and self.mooreNeighbors["northwest"] == None else None
-        self.mooreNeighbors["southeast"] = south.cell.findEastNeighbor().agent if south != None else None
-        self.mooreNeighbors["southeast"] = east.cell.findSouthNeighbor().agent if east != None and self.mooreNeighbors["southeast"] == None else None
-        self.mooreNeighbors["southwest"] = south.cell.findWestNeighbor().agent if south != None else None
-        self.mooreNeighbors["southwest"] = west.cell.findSouthNeighbor().agent if west != None and self.mooreNeighbors["southwest"] == None else None
-
     def updateMarginalRateOfSubstitutionForAgent(self, agent):
         agentID = agent.ID
         if agentID not in self.socialNetwork:
@@ -1321,13 +1309,11 @@ class Agent:
         self.spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome)
 
     def updateNeighbors(self):
-        self.updateVonNeumannNeighbors()
-        self.updateMooreNeighbors()
+        self.neighbors = [neighborCell.agent for neighborCell in self.cell.neighbors.values() if neighborCell.agent != None]
         self.updateSocialNetwork()
 
     def updateSocialNetwork(self):
-        neighborhood = self.vonNeumannNeighbors if self.neighborhoodMode == "vonNeumann" else self.mooreNeighbors
-        for direction, neighbor in neighborhood.items():
+        for neighbor in self.neighbors:
             if neighbor == None:
                 continue
             neighborID = neighbor.ID
@@ -1360,12 +1346,6 @@ class Agent:
             self.socialNetwork[agentID]["timesVisited"] += 1
             self.socialNetwork[agentID]["lastSeen"] = timestep
 
-    def updateVonNeumannNeighbors(self):
-        self.vonNeumannNeighbors["north"] = self.cell.findNorthNeighbor().agent
-        self.vonNeumannNeighbors["south"] = self.cell.findSouthNeighbor().agent
-        self.vonNeumannNeighbors["east"] = self.cell.findEastNeighbor().agent
-        self.vonNeumannNeighbors["west"] = self.cell.findWestNeighbor().agent
-
     def updateHappiness(self):
         if self.isAlive() == False:
             return
@@ -1377,4 +1357,4 @@ class Agent:
         self.happiness = self.findHappiness()
 
     def __str__(self):
-        return "{0}".format(self.ID)
+        return f"{self.ID}"

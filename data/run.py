@@ -23,11 +23,11 @@ def createConfigurations(config, path):
                 simOpts = config["sugarscapeOptions"]
                 simOpts["agentDecisionModels"] = model
                 simOpts["seed"] = seed
-                simOpts["logfile"] = "{0}{1}{2}.json".format(path, modelString, seed)
+                simOpts["logfile"] = f"{path}{modelString}{seed}.json"
                 # Enforce noninteractive, no-output mode
                 simOpts["headlessMode"] = True
                 simOpts["debugMode"] = ["none"]
-                confFilePath = "{0}{1}{2}.config".format(path, modelString, seed)
+                confFilePath = f"{path}{modelString}{seed}.config"
                 confFiles.append(confFilePath)
                 conf = open(confFilePath, 'w')
                 conf.write(json.dumps(simOpts))
@@ -73,15 +73,15 @@ def getJobsToDo(config, path):
             if lastEntry["timestep"] == simOpts["timesteps"] or lastEntry["population"] == 0:
                 completedRuns.append(config)
             else:
-                print("Existing log {0} is incomplete. Adding it to be rerun.".format(log))
+                print(f"Existing log {log} is incomplete. Adding it to be rerun.")
             logFile.close()
         except:
-            print("Existing log {0} is incomplete. Adding it to be rerun.".format(log))
+            print(f"Existing log {log} is incomplete. Adding it to be rerun.")
             continue
     for run in completedRuns:
         configs.remove(run)
     for config in configs:
-        print("Configuration file {0} has no matching log. Adding it to be rerun".format(config))
+        print(f"Configuration file {config} has no matching log. Adding it to be rerun")
     if len(configs) == 0:
         print("No incomplete logs found.")
     return configs
@@ -125,22 +125,22 @@ def runSimulations(config, configFiles, path):
 
     shell = "files=("
     for conf in configFiles:
-        shell += " {0}".format(conf)
+        shell += f" {conf}"
     shell += " )\n\n"
-    shell += "# Number of parallel processes to run\nN={0}\n\n".format(dataOpts["numParallelSimJobs"])
+    shell += f"# Number of parallel processes to run\nN={dataOpts["numParallelSimJobs"]}\n\n"
     shell += "i=1\nj=${#files[@]}\nfor f in \"${files[@]}\"\ndo\n"
     shell += "echo \"Running decision model $f ($i/$j)\"\n# Run simulation for config\n"
-    shell += "{0} ../sugarscape.py --conf $f &\n\n".format(dataOpts["pythonAlias"])
+    shell += f"{dataOpts["pythonAlias"]} ../sugarscape.py --conf $f &\n\n"
     shell += "if [[ $(jobs -r -p | wc -l) -ge $N ]]; then\nwait -n\nfi\ni=$((i+1))\ndone\n\n"
     shell += "sem=0\necho \"Waiting for jobs to finish up.\"\nwhile [[ $(jobs -r -p | wc -l) -gt 0 ]];\ndo\n"
-    shell += "sem=$(((sem+1)%{0}))\nif [[ $sem -eq 0 ]]; then\n".format(dataOpts["jobUpdateFrequency"])
+    shell += f"sem=$(((sem+1)%{dataOpts["jobUpdateFrequency"]}))\nif [[ $sem -eq 0 ]]; then\n"
     shell += "status=$( ps -AF | grep 'sugarscape' | wc -l )\nstatus=$((status-1))\n"
     shell += "echo -n $status\necho ' jobs remaining.'\nfi\nwait -n\ndone\n"
 
     sh = open("temp.sh", 'w')
     sh.write(shell)
     sh.close()
-    os.system("{0} temp.sh".format(dataOpts["bashAlias"]))
+    os.system(f"{dataOpts["bashAlias"]} temp.sh")
     os.remove("temp.sh")
 
 if __name__ == "__main__":
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     if path == None:
         path = "./"
     if not os.path.exists(path):
-        print("Path {0} not recognized.".format(path))
+        print(f"Path {path} not recognized.")
         printHelp()
 
     config = options["config"]

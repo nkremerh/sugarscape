@@ -20,6 +20,7 @@ class Bentham(agent.Agent):
         neighborhoodSize = len(self.neighborhood)
         futureNeighborhoodSize = len(self.findNeighborhood(cell))
         for neighbor in self.neighborhood:
+            neighborReach = min(neighbor.findVision(), neighbor.findMovement())
             # Timesteps to reach cell, currently 1 since agents only plan for the current timestep
             timestepDistance = 1
             neighborMetabolism = neighbor.sugarMetabolism + neighbor.spiceMetabolism
@@ -30,14 +31,18 @@ class Bentham(agent.Agent):
             intensity = (1 / (1 + neighbor.findTimeToLive()) / (1 + cell.pollution))
             duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
             # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
-            discount = 0.5
+            discount = neighbor.lookaheadDiscount
             futureDuration = (cellSiteWealth - neighborMetabolism) / neighborMetabolism if neighborMetabolism > 0 else cellSiteWealth
             futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
-            futureIntensity = cellNeighborWealth / (globalMaxWealth * 4)
-            # Assuming agent can only see in four cardinal directions
-            extent = neighborhoodSize / (neighbor.vision * 4) if neighbor.vision > 0 else 1
-            futureExtent = futureNeighborhoodSize / (neighbor.vision * 4) if neighbor.vision > 0 and self.lookahead != None else 1
+            # Normalize future intensity by number of adjacent cells
+            cellNeighbors = len(neighbor.cell.neighbors)
+            futureIntensity = cellNeighborWealth / (globalMaxWealth * cellNeighbors)
+            # Normalize extent by total cells in range
+            cellsInRange = len(neighbor.cellsInRange) if neighborReach > 0 else 0
+            extent = neighborhoodSize / cellsInRange if cellsInRange > 0 else 1
+            futureExtent = futureNeighborhoodSize / cellsInRange if cellsInRange > 0 and self.lookahead != None else 1
             neighborValueOfCell = 0
+
             # If not the agent moving, consider these as opportunity costs
             if neighbor != self and cell != neighbor.cell and self.selfishnessFactor < 1:
                 duration = -1 * duration

@@ -15,7 +15,7 @@ class Cell:
         self.hemisphere = "north" if self.x >= self.environment.equator else "south"
         self.season = None
         self.timestep = 0
-        self.neighbors = []
+        self.neighbors = {}
         self.sugarLastProduced = 0
         self.spiceLastProduced = 0
 
@@ -40,65 +40,78 @@ class Cell:
 
     def findPollutionFlux(self):
         meanPollution = 0
-        for neighbor in self.neighbors:
+        for neighbor in self.neighbors.values():
             meanPollution += neighbor.pollution
         meanPollution = meanPollution / (len(self.neighbors))
         self.pollutionFlux = meanPollution
 
     def findNeighborAgents(self):
         agents = []
-        for neighbor in self.neighbors:
+        for neighbor in self.neighbors.values():
             agent = neighbor.agent
             if agent != None:
                 agents.append(agent)
         return agents
 
     def findNeighbors(self, mode):
-        self.neighbors = []
+        self.neighbors = {}
+
         north = self.findNorthNeighbor()
         south = self.findSouthNeighbor()
-        self.neighbors.append(north)
-        self.neighbors.append(south)
-        self.neighbors.append(self.findEastNeighbor())
-        self.neighbors.append(self.findWestNeighbor())
+        east = self.findEastNeighbor()
+        west = self.findWestNeighbor()
+        if north is not None:
+            self.neighbors["north"] = north
+        if south is not None:
+            self.neighbors["south"] = south
+        if east is not None:
+            self.neighbors["east"] = east
+        if west is not None:
+            self.neighbors["west"] = west
+
         if mode == "moore":
-            self.neighbors.append(north.findEastNeighbor())
-            self.neighbors.append(north.findWestNeighbor())
-            self.neighbors.append(south.findEastNeighbor())
-            self.neighbors.append(south.findWestNeighbor())
+            northeast = north.findEastNeighbor() if north is not None else None
+            northwest = north.findWestNeighbor() if north is not None else None
+            southeast = south.findEastNeighbor() if south is not None else None
+            southwest = south.findWestNeighbor() if south is not None else None
+            if northeast is not None:
+                self.neighbors["northeast"] = northeast
+            if northwest is not None:
+                self.neighbors["northwest"] = northwest
+            if southeast is not None:
+                self.neighbors["southeast"] = southeast
+            if southwest is not None:
+                self.neighbors["southwest"] = southwest
 
     def findNeighborWealth(self):
         neighborWealth = 0
-        for neighbor in self.neighbors:
-            neighborWealth += neighbor.sugar + neighbor.spice
+        for neighbor in self.neighbors.values():
+            if neighbor != None:
+                neighborWealth += neighbor.sugar + neighbor.spice
         return neighborWealth
 
     def findEastNeighbor(self):
-        eastWrapAround = self.environment.width
-        eastIndex = self.x + 1
-        if eastIndex >= eastWrapAround:
-            eastIndex = 0
-        eastNeighbor = self.environment.findCell(eastIndex, self.y)
+        if self.environment.wraparound == False and self.x + 1 > self.environment.width - 1:
+            return None
+        eastNeighbor = self.environment.findCell((self.x + 1 + self.environment.width) % self.environment.width, self.y)
         return eastNeighbor
 
     def findNorthNeighbor(self):
-        northNeighbor = self.environment.findCell(self.x, (self.y + 1 + self.environment.height) % self.environment.height)
+        if self.environment.wraparound == False and self.y - 1 < 0:
+            return None
+        northNeighbor = self.environment.findCell(self.x, (self.y - 1 + self.environment.height) % self.environment.height)
         return northNeighbor
 
     def findSouthNeighbor(self):
-        southWrapAround = 0
-        southIndex = self.y - 1
-        if southIndex < southWrapAround:
-            southIndex = self.environment.height - 1
-        southNeighbor = self.environment.findCell(self.x, southIndex)
+        if self.environment.wraparound == False and self.y + 1 < self.environment.height - 1:
+            return None
+        southNeighbor = self.environment.findCell(self.x, (self.y + 1 + self.environment.height) % self.environment.height)
         return southNeighbor
 
     def findWestNeighbor(self):
-        westWrapAround = 0
-        westIndex = self.x - 1
-        if westIndex < westWrapAround:
-            westIndex = self.environment.width - 1
-        westNeighbor = self.environment.findCell(westIndex, self.y)
+        if self.environment.wraparound == False and self.x - 1 < 0:
+            return None
+        westNeighbor = self.environment.findCell((self.x - 1 + self.environment.width) % self.environment.width, self.y)
         return westNeighbor
 
     def isOccupied(self):
@@ -124,5 +137,5 @@ class Cell:
         if self.agent != None:
             string = "-A-"
         else:
-            string = "{0}/{1}".format(str(self.sugar), str(self.spice))
+            string = f"{str(self.sugar)}/{str(self.spice)}"
         return string

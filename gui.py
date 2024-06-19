@@ -8,7 +8,7 @@ class GUI:
         self.screenWidth = screenWidth
         self.window = None
         self.canvas = None
-        self.grid = [[None for j in range(self.sugarscape.environmentWidth)]for i in range(self.sugarscape.environmentHeight)]
+        self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
         # TODO: Add a simplified way to have a bunch of colors programatically chosen during runtime
         self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
                        "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "pink": "#FA32FA", "yellow": "#FAFA32", "teal": "#32FAFA", "purple": "#6432FA", "orange": "#FA6432",
@@ -19,11 +19,12 @@ class GUI:
         self.widgets = {}
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
+        self.activeColorOptions = {"agent": None, "environment": None}
+        self.activeNetwork = None
         self.highlightedCell = None
         self.highlightedAgent = None
         self.highlightRectangle = None
-        self.activeColorOptions = {"agent": None, "environment": None}
-        self.menuTrayColumns = 4
+        self.menuTrayColumns = 5
         self.menuTrayOffset = 110
         self.windowBorderOffset = 10
         self.borderEdge = 5
@@ -49,6 +50,18 @@ class GUI:
         stepButton = tkinter.Button(window, text="Step Forward", command=self.doStepForwardButton, relief=tkinter.RAISED)
         stepButton.grid(row=0, column=1, sticky="nsew")
 
+        networkButton = tkinter.Menubutton(window, text="Networks", relief=tkinter.RAISED)
+        networkMenu = tkinter.Menu(networkButton, tearoff=0)
+        networkButton.configure(menu=networkMenu)
+        networkNames = self.configureNetworkNames()
+        networkNames.insert(0, "None")
+        self.activeNetwork = tkinter.StringVar(window)
+        # Use first item as default name
+        self.activeNetwork.set(networkNames[0])
+        for network in networkNames:
+            networkMenu.add_checkbutton(label=network, onvalue=network, offvalue=network, variable=self.activeNetwork, command=self.doNetworkMenu, indicatoron=True)
+        networkButton.grid(row=0, column=2, sticky="nsew") 
+
         agentColorButton = tkinter.Menubutton(window, text="Agent Coloring", relief=tkinter.RAISED)
         agentColorMenu = tkinter.Menu(agentColorButton, tearoff=0)
         agentColorButton.configure(menu=agentColorMenu)
@@ -56,10 +69,11 @@ class GUI:
         agentColorNames.sort()
         agentColorNames.insert(0, "Default")
         self.lastSelectedAgentColor = tkinter.StringVar(window)
-        self.lastSelectedAgentColor.set(agentColorNames[0])  # Default
+        # Use first item as default name
+        self.lastSelectedAgentColor.set(agentColorNames[0])
         for name in agentColorNames:
             agentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedAgentColor, command=self.doAgentColorMenu, indicatoron=True)
-        agentColorButton.grid(row=0, column=2, sticky="nsew")
+        agentColorButton.grid(row=0, column=3, sticky="nsew")
 
         environmentColorButton = tkinter.Menubutton(window, text="Environment Coloring", relief=tkinter.RAISED)
         environmentColorMenu = tkinter.Menu(environmentColorButton, tearoff=0)
@@ -68,10 +82,11 @@ class GUI:
         environmentColorNames.sort()
         environmentColorNames.insert(0, "Default")
         self.lastSelectedEnvironmentColor = tkinter.StringVar(window)
-        self.lastSelectedEnvironmentColor.set(environmentColorNames[0])  # Default
+        # Use first item as default name
+        self.lastSelectedEnvironmentColor.set(environmentColorNames[0])
         for name in environmentColorNames:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
-        environmentColorButton.grid(row=0, column=3, sticky="nsew")
+        environmentColorButton.grid(row=0, column=4, sticky="nsew")
 
         statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Movement: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
@@ -80,6 +95,7 @@ class GUI:
 
         self.widgets["playButton"] = playButton
         self.widgets["stepButton"] = stepButton
+        self.widgets["networkButton"] = networkButton
         self.widgets["agentColorButton"] = agentColorButton
         self.widgets["environmentColorButton"] = environmentColorButton
         self.widgets["agentColorMenu"] = agentColorMenu
@@ -97,20 +113,40 @@ class GUI:
         self.canvas = canvas
 
     def configureEnvironment(self):
-        for i in range(self.sugarscape.environmentHeight):
-            for j in range(self.sugarscape.environmentWidth):
-                cell = self.sugarscape.environment.findCell(i, j)
-                fillColor = self.lookupFillColor(cell)
-                x1 = self.borderEdge + i * self.siteWidth # Upper right x coordinate
-                y1 = self.borderEdge + j * self.siteHeight # Upper right y coordinate
-                x2 = self.borderEdge + (i + 1) * self.siteWidth # Lower left x coordinate
-                y2 = self.borderEdge + (j + 1) * self.siteHeight # Lower left y coordinate
-                self.grid[i][j] = {"rectangle": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0", activestipple="gray50"), "color": fillColor}
+        if self.activeNetwork.get() != "None":
+            for i in range(self.sugarscape.environmentWidth):
+                for j in range(self.sugarscape.environmentHeight):
+                    cell = self.sugarscape.environment.findCell(i, j)
+                    fillColor = self.lookupFillColor(cell)
+                    # Determine upper left x and y coordinates
+                    x1 = self.borderEdge + (i + 0.2) * self.siteWidth
+                    y1 = self.borderEdge + (j + 0.2) * self.siteHeight
+                    # Determine lower rightt x and y coordinates
+                    x2 = self.borderEdge + (i + 0.8) * self.siteWidth
+                    y2 = self.borderEdge + (j + 0.8) * self.siteHeight
+                    self.grid[i][j] = {"object": self.canvas.create_oval(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
+            self.drawLines()
+        else:
+            for i in range(self.sugarscape.environmentWidth):
+                for j in range(self.sugarscape.environmentHeight):
+                    cell = self.sugarscape.environment.findCell(i, j)
+                    fillColor = self.lookupFillColor(cell)
+                    # Determine upper left x and y coordinates
+                    x1 = self.borderEdge + i * self.siteWidth
+                    y1 = self.borderEdge + j * self.siteHeight
+                    # Determine lower rightt x and y coordinates
+                    x2 = self.borderEdge + (i + 1) * self.siteWidth
+                    y2 = self.borderEdge + (j + 1) * self.siteHeight
+                    self.grid[i][j] = {"object": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0", activestipple="gray50"), "color": fillColor}
+
         if self.highlightedCell != None:
             self.highlightCell(self.highlightedCell)
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
+    
+    def configureNetworkNames(self):
+        return ["Neighbors", "Family", "Friends", "Trade", "Loans", "Disease"]
 
     def configureWindow(self):
         window = tkinter.Tk()
@@ -144,6 +180,9 @@ class GUI:
         # Adjust for slight deviations from initially configured window size
         self.resizeInterface()
         window.update()
+
+    def deleteLines(self):
+        self.canvas.delete("line")
 
     def destroyCanvas(self):
         self.canvas.destroy()
@@ -205,7 +244,6 @@ class GUI:
             self.sugarscape.toggleEnd()
         else:
             self.sugarscape.doTimestep()
-            self.doTimestep()
 
     def doTimestep(self):
         if self.stopSimulation == True:
@@ -213,13 +251,19 @@ class GUI:
             return
         if self.screenHeight != self.window.winfo_height() or self.screenWidth != self.window.winfo_width():
             self.resizeInterface()
-        for i in range(self.sugarscape.environmentHeight):
-            for j in range(self.sugarscape.environmentWidth):
+        for i in range(self.sugarscape.environmentWidth):
+            for j in range(self.sugarscape.environmentHeight):
                 cell = self.sugarscape.environment.findCell(i, j)
                 fillColor = self.lookupFillColor(cell)
-                if self.grid[i][j]["color"] != fillColor:
-                    self.canvas.itemconfig(self.grid[i][j]["rectangle"], fill=fillColor, outline="#C0C0C0")
-                    self.grid[i][j] = {"rectangle": self.grid[i][j]["rectangle"], "color": fillColor}
+                if self.activeNetwork.get() == "None" and self.grid[i][j]["color"] != fillColor:
+                    self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor, outline="#C0C0C0")
+                elif self.grid[i][j]["color"] != fillColor:
+                    self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
+                self.grid[i][j]["color"] = fillColor
+
+        if self.activeNetwork.get() != "None":
+            self.deleteLines()
+            self.drawLines()
 
         if self.highlightedAgent != None:
             if self.highlightedAgent.isAlive() == True:
@@ -231,11 +275,89 @@ class GUI:
         self.updateLabels()
         self.window.update()
 
+    def doNetworkMenu(self, *args):
+        if self.activeNetwork.get() != "None":
+            self.widgets["agentColorButton"].configure(state="disabled")
+            self.widgets["environmentColorButton"].configure(state="disabled")
+        else:
+            self.widgets["agentColorButton"].configure(state="normal")
+            self.widgets["environmentColorButton"].configure(state="normal")
+        self.destroyCanvas()
+        self.configureCanvas()
+        self.configureEnvironment()
+        self.window.update()
+
     def doWindowClose(self, *args):
-        # Indicate to per-timestep rendering to stop rendering
         self.stopSimulation = True
         self.window.destroy()
         self.sugarscape.toggleEnd()
+
+    def drawLines(self):
+        lineCoordinates = set()
+        if self.activeNetwork.get() == "Neighbors":
+            for agent in self.sugarscape.agents:
+                for neighbor in agent.neighbors:
+                    if neighbor != None and neighbor.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (neighbor.cell.x, neighbor.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+
+        elif self.activeNetwork.get() == "Family":
+            for agent in self.sugarscape.agents:
+                family = [agent.socialNetwork["mother"], agent.socialNetwork["father"]] + agent.socialNetwork["children"]
+                for familyMember in family:
+                    if familyMember != None and familyMember.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (familyMember.cell.x, familyMember.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+
+        elif self.activeNetwork.get() == "Friends":
+            for agent in self.sugarscape.agents:
+                for friendRecord in agent.socialNetwork["friends"]:
+                    friend = friendRecord["friend"]
+                    if friend.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (friend.cell.x, friend.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+
+        elif self.activeNetwork.get() == "Trade":
+            for agent in self.sugarscape.agents:
+                nonTraders = ["bestFriend", "children", "creditors", "debtors", "father", "friends", "mother"]
+                for other in agent.socialNetwork:
+                    if other in nonTraders:
+                        continue
+                    trader = agent.socialNetwork[other]
+                    if trader != None and trader["agent"].isAlive() == True and trader["lastSeen"] == self.sugarscape.timestep and trader["timesTraded"] > 0:
+                        trader = trader["agent"]
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (trader.cell.x, trader.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+
+        elif self.activeNetwork.get() == "Loans":
+            for agent in self.sugarscape.agents:
+                # Loan records are always kept on both sides, so only one side is needed
+                for loanRecord in agent.socialNetwork["creditors"]:
+                    creditor = agent.socialNetwork[loanRecord["creditor"]]["agent"]
+                    if creditor.isAlive() == True:
+                        lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (creditor.cell.x, creditor.cell.y)])
+                        lineCoordinates.add(lineEndpointsPair)
+
+        elif self.activeNetwork.get() == "Disease":
+            for agent in self.sugarscape.agents:
+                if agent.isSick() == True:
+                    for diseaseRecord in agent.diseases:
+                        # Starting diseases without an infector are not considered
+                        if "infector" not in diseaseRecord:
+                            continue
+                        infector = diseaseRecord["infector"]
+                        if infector != None and infector.isAlive() == True:
+                            lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (infector.cell.x, infector.cell.y)])
+                            lineCoordinates.add(lineEndpointsPair)
+
+        for lineEndpointsPair in lineCoordinates:
+            coordList = list(lineEndpointsPair)
+            (x1, y1), (x2, y2) = coordList[0], coordList[1]
+            x1 = (x1 + 0.5) * self.siteWidth + self.borderEdge
+            y1 = (y1 + 0.5) * self.siteHeight + self.borderEdge
+            x2 = (x2 + 0.5) * self.siteWidth + self.borderEdge
+            y2 = (y2 + 0.5) * self.siteHeight + self.borderEdge
+            self.canvas.create_line(x1, y1, x2, y2, fill="black", width="2", tag="line")
 
     def findClickedCell(self, event):
         # Account for padding in GUI cells
@@ -262,8 +384,8 @@ class GUI:
             cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
             agent = cell.agent
             if agent != None:
-                agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.vision, 2)} | Movement: {round(agent.movement, 2)} | "
-                agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | Metabolism: {round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2)}"
+                agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "
+                agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)}"
             else:
                 agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: -"
             cellStats += f"\n  {agentStats}"
@@ -301,6 +423,9 @@ class GUI:
         return hexval
 
     def lookupFillColor(self, cell):
+        if self.activeNetwork.get() != "None":
+            return self.lookupNetworkColor(cell)
+        
         agent = cell.agent
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
@@ -323,6 +448,36 @@ class GUI:
         elif len(agent.diseases) == 0 and self.activeColorOptions["agent"] == "Disease":
             return self.colors["blue"]
         return self.colors["noSex"]
+
+    def lookupNetworkColor(self, cell):
+        agent = cell.agent
+        if agent == None:
+            return "white"
+        elif self.activeNetwork.get() in ["Neighbors", "Friends", "Trade"]:
+            return "black"
+        elif self.activeNetwork.get() == "Family":
+            isChild = agent.socialNetwork["father"] != None or agent.socialNetwork["mother"] != None
+            isParent = len(agent.socialNetwork["children"]) > 0
+            if isChild == False and isParent == False:
+                return "black"
+            elif isChild == False and isParent == True:
+                return "red"
+            elif isChild == True and isParent == False:
+                return "green"
+            else: # isChild == True and isParent == True
+                return "yellow"            
+        elif self.activeNetwork.get() == "Loans":
+            isLender = len(agent.socialNetwork["debtors"]) > 0
+            isBorrower = len(agent.socialNetwork["creditors"]) > 0
+            if isLender == True:
+                return "yellow" if isBorrower == True else "green"
+            elif isBorrower == True:
+                return "red"
+            else:
+                return "black"
+        elif self.activeNetwork.get() == "Disease":
+            return self.colors["red"] if agent.isSick() == True else self.colors["blue"]
+        return "black"
 
     def recolorByResourceAmount(self, cell, fillColor):
         recolorFactor = 0
@@ -363,9 +518,7 @@ class GUI:
 
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats
-        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats['population']} | Metabolism: {stats['meanMetabolism']:.2f} | "
-        statsString += f"Movement: {stats['meanMovement']:.2f} | Vision: {stats['meanVision']:.2f} | Gini: {stats['giniCoefficient']:.2f} | "
-        statsString += f"Trade Price: {stats['meanTradePrice']:.2f} | Trade Volume: {stats['tradeVolume']:.2f}"
+        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats["population"]} | Metabolism: {stats["meanMetabolism"]} | Movement: {stats["meanMovement"]} | Vision: {stats["meanVision"]} | Gini: {stats["giniCoefficient"]} | Trade Price: {stats["meanTradePrice"]} | Trade Volume: {stats["tradeVolume"]}"
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
         if self.highlightedCell != None:

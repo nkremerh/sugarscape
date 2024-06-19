@@ -36,11 +36,12 @@ class Sugarscape:
                                     "universalSpiceIncomeInterval": configuration["environmentUniversalSpiceIncomeInterval"],
                                     "universalSugarIncomeInterval": configuration["environmentUniversalSugarIncomeInterval"],
                                     "equator": configuration["environmentEquator"], "sugarscapeSeed": configuration["seed"],
-                                    "neighborhoodMode": configuration["neighborhoodMode"]}
+                                    "neighborhoodMode": configuration["neighborhoodMode"], "wraparound": configuration["environmentWraparound"]}
         self.seed = configuration["seed"]
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
+        self.activeQuadrants = self.findActiveQuadrants()
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
         self.agents = []
@@ -69,8 +70,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        for i in range(height):
-            for j in range(width):
+        for i in range(width):
+            for j in range(height):
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSpice * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSpice)
@@ -83,8 +84,8 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        for i in range(height):
-            for j in range(width):
+        for i in range(width):
+            for j in range(height):
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxSugar * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxSugar)
@@ -97,23 +98,22 @@ class Sugarscape:
         if self.environment == None:
             return
 
-        activeCells = self.findActiveQuadrants()
-        if len(activeCells) == 0:
+        activeCells = [cell for quadrant in self.activeQuadrants for cell in quadrant]
+        totalCells = len(activeCells)
+        if totalCells == 0:
             return
 
-        totalCells = len(activeCells)
         if len(self.agents) + numAgents > totalCells:
             if "all" in self.debug or "sugarscape" in self.debug:
-                print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
+                print(f"Could not allocate {numAgents} agents. Allocating maximum of {totalCells}.")
             numAgents = totalCells
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
-        randCoords = activeCells
-        random.shuffle(randCoords)
+        random.shuffle(activeCells)
 
         for i in range(numAgents):
-            randCoord = randCoords.pop()
+            randCoord = activeCells.pop()
             randCellX = randCoord[0]
             randCellY = randCoord[1]
             c = self.environment.findCell(randCellX, randCellY)
@@ -174,29 +174,21 @@ class Sugarscape:
                     diseases.remove(newDisease)
                     break
         if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-            print("Could not place {0} diseases.".format(len(diseases)))
+            print(f"Could not place {len(diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
         width = self.environment.width
-        for i in range(height):
-            for j in range(width):
+        for i in range(width):
+            for j in range(height):
                 newCell = cell.Cell(i, j, self.environment)
                 self.environment.setCell(newCell, i, j)
 
-        startX1 = math.ceil(height * 0.7)
-        startX2 = math.ceil(height * 0.3)
-        startY1 = math.ceil(width * 0.3)
-        startY2 = math.ceil(width * 0.7)
         sugarRadiusScale = 2
         radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
         for peak in sugarPeaks:
             self.addSugarPeak(peak[0], peak[1], radius, maxSugar)
 
-        startX1 = math.ceil(height * 0.7)
-        startX2 = math.ceil(height * 0.3)
-        startY1 = math.ceil(width * 0.7)
-        startY2 = math.ceil(width * 0.3)
         spiceRadiusScale = 2
         radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
         for peak in spicePeaks:
@@ -210,7 +202,7 @@ class Sugarscape:
             self.toggleEnd()
             return
         if "all" in self.debug or "sugarscape" in self.debug:
-            print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
+            print(f"Timestep: {self.timestep}\nLiving Agents: {len(self.agents)}")
         self.timestep += 1
         if self.end == True or len(self.agents) == 0:
             self.toggleEnd()
@@ -219,10 +211,10 @@ class Sugarscape:
             random.shuffle(self.agents)
             for agent in self.agents:
                 agent.doTimestep(self.timestep)
-            if self.gui != None:
-                self.gui.doTimestep()
             self.removeDeadAgents()
             self.updateRuntimeStats()
+            if self.gui != None:
+                self.gui.doTimestep()
             # If final timestep, do not write to log to cleanly close JSON array log structure
             if self.timestep != self.maxTimestep and len(self.agents) > 0:
                 self.writeToLog()
@@ -235,8 +227,8 @@ class Sugarscape:
             self.runtimeStats["totalMetabolismCost"] += agent.sugarMetabolism + agent.spiceMetabolism
         environmentWealthCreated = 0
         environmentWealthTotal = 0
-        for i in range(self.environment.height):
-            for j in range(self.environment.width):
+        for i in range(self.environment.width):
+            for j in range(self.environment.height):
                 environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
                 environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
         self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
@@ -247,9 +239,9 @@ class Sugarscape:
             # Ensure consistent ordering for CSV format
             for stat in sorted(self.runtimeStats):
                 if logString == "":
-                    logString += "{0}".format(self.runtimeStats[stat])
+                    logString += f"{self.runtimeStats[stat]}"
                 else:
-                    logString += ",{0}".format(self.runtimeStats[stat])
+                    logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
         self.log.write(logString)
         self.log.flush()
@@ -265,29 +257,21 @@ class Sugarscape:
     def findActiveQuadrants(self):
         quadrants = self.configuration["agentStartingQuadrants"]
         cellRange = []
-        halfWidth = math.floor(self.environmentWidth / 2)
-        halfHeight = math.floor(self.environmentHeight / 2)
+        quadrantWidth = math.floor(self.environmentWidth / 2 * self.configuration["environmentQuadrantSizeFactor"])
+        quadrantHeight = math.floor(self.environmentHeight / 2 * self.configuration["environmentQuadrantSizeFactor"])
         # Quadrant I at origin in top left corner, other quadrants in clockwise order
         if 1 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth)]
-            for i in range(halfWidth):
-                for j in range(halfHeight):
-                    cellRange.append([i, j])
+            quadrantOne = [(i, j) for j in range(quadrantHeight) for i in range(quadrantWidth)]
+            cellRange.append(quadrantOne)
         if 2 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight)] for i in range(halfWidth, self.environmentWidth)]
-            for i in range(halfWidth, self.environmentWidth):
-                for j in range(halfHeight):
-                    cellRange.append([i, j])
+            quadrantTwo = [(i, j) for j in range(quadrantHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.append(quadrantTwo)
         if 3 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight, self.environmentHeight)] for i in range(halfWidth, self.environmentWidth)]
-            for i in range(halfWidth, self.environmentWidth):
-                for j in range(halfHeight, self.environmentHeight):
-                    cellRange.append([i, j])
+            quadrantThree = [(i, j) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.append(quadrantThree)
         if 4 in quadrants:
-            quadRange = [[(i, j) for j in range(halfHeight, self.environmentHeight)] for i in range(halfWidth)]
-            for i in range(halfWidth):
-                for j in range(halfHeight, self.environmentHeight):
-                    cellRange.append([i, j])
+            quadrantFour = [(i, j) for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
+            cellRange.append(quadrantFour)
         return cellRange
 
     def generateAgentID(self):
@@ -434,6 +418,7 @@ class Sugarscape:
         immuneSystemLength = configs["agentImmuneSystemLength"]
         aggressionFactor = configs["agentAggressionFactor"]
         tradeFactor = configs["agentTradeFactor"]
+        lookaheadDiscount = configs["agentLookaheadDiscount"]
         lookaheadFactor = configs["agentLookaheadFactor"]
         lendingFactor = configs["agentLendingFactor"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -458,6 +443,7 @@ class Sugarscape:
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
                           "lendingFactor": {"endowments": [], "curr": lendingFactor[0], "min": lendingFactor[0], "max": lendingFactor[1]},
                           "loanDuration": {"endowments": [], "curr": loanDuration[0], "min": loanDuration[0], "max": loanDuration[1]},
+                          "lookaheadDiscount": {"endowments": [], "curr": lookaheadDiscount[0], "min": lookaheadDiscount[0], "max": lookaheadDiscount[1]},
                           "lookaheadFactor": {"endowments": [], "curr": lookaheadFactor[0], "min": lookaheadFactor[0], "max": lookaheadFactor[1]},
                           "maleInfertilityAge": {"endowments": [], "curr": maleInfertilityAge[0], "min": maleInfertilityAge[0], "max": maleInfertilityAge[1]},
                           "maleFertilityAge": {"endowments": [], "curr": maleFertilityAge[0], "min": maleFertilityAge[0], "max": maleFertilityAge[1]},
@@ -606,7 +592,7 @@ class Sugarscape:
         screenshots = 0
         while t <= timesteps and len(self.agents) > 0:
             if self.configuration["screenshots"] == True and self.configuration["headlessMode"] == False:
-                self.gui.canvas.postscript(file="screenshot{0}.ps".format(screenshots), colormode="color")
+                self.gui.canvas.postscript(file=f"screenshot{screenshots}.ps", colormode="color")
                 screenshots += 1
             self.doTimestep()
             t += 1
@@ -622,9 +608,9 @@ class Sugarscape:
             # Ensure consistent ordering for CSV format
             for stat in sorted(self.runtimeStats):
                 if header == "":
-                    header += "{0}".format(stat)
+                    header += f"{stat}"
                 else:
-                    header += ",{0}".format(stat)
+                    header += f",{stat}"
             header += "\n"
             self.log.write(header)
         else:
@@ -685,8 +671,8 @@ class Sugarscape:
 
         environmentWealthCreated = 0
         environmentWealthTotal = 0
-        for i in range(self.environment.height):
-            for j in range(self.environment.width):
+        for i in range(self.environment.width):
+            for j in range(self.environment.height):
                 environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
                 environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
                 if self.timestep == 1:
@@ -850,14 +836,14 @@ class Sugarscape:
             # Ensure consistent ordering for CSV format
             for stat in sorted(self.runtimeStats):
                 if logString == "":
-                    logString += "{0}".format(self.runtimeStats[stat])
+                    logString += f"{self.runtimeStats[stat]}"
                 else:
-                    logString += ",{0}".format(self.runtimeStats[stat])
+                    logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
         self.log.write(logString)
 
     def __str__(self):
-        string = "{0}Seed: {1}\nTimestep: {2}\nLiving Agents: {3}".format(str(self.environment), self.seed, self.timestep, len(self.agents))
+        string = f"{str(self.environment)}Seed: {self.seed}\nTimestep: {self.timestep}\nLiving Agents: {len(self.agents)}"
         return string
 
 def parseConfiguration(configFile, configuration):
@@ -905,11 +891,20 @@ def printHelp():
     exit(0)
 
 def verifyConfiguration(configuration):
+    if len(configuration["agentStartingQuadrants"]) == 0:
+        configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
+
+    if configuration["environmentQuadrantSizeFactor"] > 1:
+        configuration["environmentQuadrantSizeFactor"] = 1
+    elif configuration["environmentQuadrantSizeFactor"] < 0:
+        configuration["environmentQuadrantSizeFactor"] = 1
+
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
+    totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["agentStartingQuadrants"]) / 4
     if configuration["startingAgents"] > totalCells:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
-            print("Could not allocate {0} agents. Allocating maximum of {1}.".format(configuration["startingAgents"], totalCells))
+            print(f"Could not allocate {configuration["startingAgents"]} agents. Allocating maximum of {totalCells}.")
         configuration["startingAgents"] = totalCells
 
     # Ensure infinitely-lived agents are properly initialized
@@ -922,9 +917,6 @@ def verifyConfiguration(configuration):
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
     if configuration["environmentMaxTribes"] > 11:
         configuration["environmentMaxTribes"] = 11
-
-    if len(configuration["agentStartingQuadrants"]) == 0:
-        configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
 
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
@@ -940,7 +932,7 @@ def verifyConfiguration(configuration):
     validModes = True
     for mode in configuration["debugMode"]:
         if mode not in recognizedDebugModes:
-            print("Debug mode {0} not recognized".format(mode))
+            print(f"Debug mode {mode} not recognized")
             validModes = False
     if validModes == False:
         printHelp()
@@ -977,6 +969,7 @@ if __name__ == "__main__":
                      "agentInheritancePolicy": "none",
                      "agentLendingFactor": [0, 0],
                      "agentLoanDuration": [0, 0],
+                     "agentLookaheadDiscount": [0, 0],
                      "agentLookaheadFactor": [0, 0],
                      "agentMaleInfertilityAge": [0, 0],
                      "agentMaleFertilityAge": [0, 0],
@@ -1016,6 +1009,7 @@ if __name__ == "__main__":
                      "environmentPollutionDiffusionDelay": 0,
                      "environmentPollutionDiffusionStart": 0,
                      "environmentPollutionStart": 0,
+                     "environmentQuadrantSizeFactor": 1,
                      "environmentSeasonalGrowbackDelay": 0,
                      "environmentSeasonInterval": 0,
                      "environmentSpiceConsumptionPollutionFactor": 0,
@@ -1029,6 +1023,7 @@ if __name__ == "__main__":
                      "environmentUniversalSpiceIncomeInterval": 0,
                      "environmentUniversalSugarIncomeInterval": 0,
                      "environmentWidth": 50,
+                     "environmentWraparound": True,
                      "headlessMode": False,
                      "interfaceHeight": 1000,
                      "interfaceWidth": 900,

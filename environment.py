@@ -2,7 +2,7 @@ import math
 import random
 
 class Environment:
-    # Assumption: grid is always indexed by [height][width]
+    # Assumption: grid is always indexed by [width][height]
     def __init__(self, height, width, sugarscape, configuration):
         self.width = width
         self.height = height
@@ -31,12 +31,13 @@ class Environment:
         self.universalSugarIncomeInterval = configuration["universalSugarIncomeInterval"]
         self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
         self.neighborhoodMode = configuration["neighborhoodMode"]
+        self.wraparound = configuration["wraparound"]
         # Populate grid with NoneType objects
-        self.grid = [[None for j in range(width)]for i in range(height)]
+        self.grid = [[None for j in range(height)]for i in range(width)]
 
     def doCellUpdate(self):
-        for i in range(self.height):
-            for j in range(self.width):
+        for i in range(self.width):
+            for j in range(self.height):
                 cellCurrSugar = self.grid[i][j].sugar
                 cellCurrSpice = self.grid[i][j].spice
                 cellMaxSugar = self.grid[i][j].maxSugar
@@ -87,39 +88,62 @@ class Environment:
         return self.grid[x][y]
 
     def findCellNeighbors(self):
-        for i in range(self.height):
-            for j in range(self.width):
+        for i in range(self.width):
+            for j in range(self.height):
                 self.grid[i][j].findNeighbors(self.neighborhoodMode)
 
     def findCellsInCardinalRange(self, startX, startY, gridRange):
         cellsInRange = []
-        for i in range(1, gridRange + 1):
-            deltaNorth = (startY + i + self.height) % self.height
-            deltaSouth = (startY - i + self.height) % self.height
-            deltaEast = (startX + i + self.width) % self.width
-            deltaWest = (startX - i + self.width) % self.width
-            cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
-            cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
-            cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
-            cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
+        if self.wraparound == True:
+            for i in range(1, gridRange + 1):
+                deltaNorth = startY - i
+                deltaSouth = (startY + i + self.height) % self.height
+                deltaEast = (startX + i + self.width) % self.width
+                deltaWest = startX - i
+                cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
+                cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
+                cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
+                cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
+        else:
+            for i in range(1, gridRange + 1):
+                deltaNorth = startY - i
+                deltaSouth = startY + i
+                deltaEast = startX + i
+                deltaWest = startX - i
+                if deltaNorth >= 0:
+                    cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": i})
+                if deltaSouth <= self.height - 1:
+                    cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": i})
+                if deltaEast <= self.width - 1:
+                    cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": i})
+                if deltaWest >= 0:
+                    cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": i})
         return cellsInRange
 
     def findCellsInRadialRange(self, startX, startY, gridRange):
-        cellsInRange = self.findCellsInCardinalRange(startX, startY, gridRange)
-        # Iterate through the upper left quadrant of the circle's bounding box
-        for i in range(startX - gridRange, startX):
-            for j in range(startY - gridRange, startY):
-                euclideanDistance = math.sqrt(pow((i - startX), 2) + pow((j - startY), 2))
-                # If agent can see at least part of a cell, they should be allowed to consider it
-                if euclideanDistance < gridRange + 1:
-                    deltaX = (i + self.height) % self.height
-                    reflectedX = (2 * startX - i + self.height) % self.height
-                    deltaY = (j + self.width) % self.width
-                    reflectedY = (2 * startY - j + self.width) % self.width
-                    cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
-                    cellsInRange.append({"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance})
-                    cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
-                    cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})
+        if self.wraparound == True:
+            cellsInRange = self.findCellsInCardinalRange(startX, startY, gridRange)
+            # Iterate through the upper left quadrant of the circle's bounding box
+            for deltaX in range(startX - gridRange, startX):
+                for deltaY in range(startY - gridRange, startY):
+                    euclideanDistance = math.sqrt(pow((deltaX - startX), 2) + pow((deltaY - startY), 2))
+                    # If agent can see at least part of a cell, they should be allowed to consider it
+                    if euclideanDistance < gridRange + 1:
+                        reflectedX = (2 * startX - deltaX + self.width) % self.width
+                        reflectedY = (2 * startY - deltaY + self.height) % self.height
+                        cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
+                        cellsInRange.append({"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance})
+                        cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
+                        cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})        
+        else:
+            cellsInRange = []
+            # Iterate through the bounding box of the circle
+            for deltaX in range(max(0, startX - gridRange), min(self.width, startX + gridRange + 1)):
+                for deltaY in range(max(0, startY - gridRange), min(self.height, startY + gridRange + 1)):
+                    # If agent can see at least part of a cell, they should be allowed to consider it
+                    euclideanDistance = math.sqrt((deltaX - startX)**2 + (deltaY - startY)**2)
+                    if euclideanDistance < gridRange + 1 and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
+                        cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
         return cellsInRange
 
     def resetCell(self, x, y):
@@ -127,7 +151,7 @@ class Environment:
 
     def setCell(self, cell, x, y):
         if self.grid[x][y] == None:
-            if y >= self.equator:
+            if y < self.equator:
                 cell.season = self.seasonNorth
             else:
                 cell.season = self.seasonSouth
@@ -156,8 +180,8 @@ class Environment:
 
     def __str__(self):
         string = ""
-        for i in range(0, self.height):
-            for j in range(0, self.width):
+        for i in range(self.width):
+            for j in range(self.height):
                 cell = self.grid[i][j]
                 if cell == None:
                     cell = '_'
