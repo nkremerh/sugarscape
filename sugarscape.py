@@ -102,7 +102,7 @@ class Sugarscape:
 
         if len(self.agents) + numAgents > totalCells:
             if "all" in self.debug or "sugarscape" in self.debug:
-                print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
+                print(f"Could not allocate {numAgents} agents. Allocating maximum of {totalCells}.")
             numAgents = totalCells
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
@@ -171,7 +171,7 @@ class Sugarscape:
                     diseases.remove(newDisease)
                     break
         if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-            print("Could not place {0} diseases.".format(len(diseases)))
+            print(f"Could not place {len(diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
@@ -199,7 +199,7 @@ class Sugarscape:
             self.toggleEnd()
             return
         if "all" in self.debug or "sugarscape" in self.debug:
-            print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
+            print(f"Timestep: {self.timestep}\nLiving Agents: {len(self.agents)}")
         self.timestep += 1
         if self.end == True or len(self.agents) == 0:
             self.toggleEnd()
@@ -236,9 +236,9 @@ class Sugarscape:
             # Ensure consistent ordering for CSV format
             for stat in sorted(self.runtimeStats):
                 if logString == "":
-                    logString += "{0}".format(self.runtimeStats[stat])
+                    logString += f"{self.runtimeStats[stat]}"
                 else:
-                    logString += ",{0}".format(self.runtimeStats[stat])
+                    logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
         self.log.write(logString)
         self.log.flush()
@@ -587,7 +587,7 @@ class Sugarscape:
         screenshots = 0
         while t <= timesteps and len(self.agents) > 0:
             if self.configuration["screenshots"] == True and self.configuration["headlessMode"] == False:
-                self.gui.canvas.postscript(file="screenshot{0}.ps".format(screenshots), colormode="color")
+                self.gui.canvas.postscript(file=f"screenshot{screenshots}.ps", colormode="color")
                 screenshots += 1
             self.doTimestep()
             t += 1
@@ -603,9 +603,9 @@ class Sugarscape:
             # Ensure consistent ordering for CSV format
             for stat in sorted(self.runtimeStats):
                 if header == "":
-                    header += "{0}".format(stat)
+                    header += f"{stat}"
                 else:
-                    header += ",{0}".format(stat)
+                    header += f",{stat}"
             header += "\n"
             self.log.write(header)
         else:
@@ -831,14 +831,14 @@ class Sugarscape:
             # Ensure consistent ordering for CSV format
             for stat in sorted(self.runtimeStats):
                 if logString == "":
-                    logString += "{0}".format(self.runtimeStats[stat])
+                    logString += f"{self.runtimeStats[stat]}"
                 else:
-                    logString += ",{0}".format(self.runtimeStats[stat])
+                    logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
         self.log.write(logString)
 
     def __str__(self):
-        string = "{0}Seed: {1}\nTimestep: {2}\nLiving Agents: {3}".format(str(self.environment), self.seed, self.timestep, len(self.agents))
+        string = f"{str(self.environment)}Seed: {self.seed}\nTimestep: {self.timestep}\nLiving Agents: {len(self.agents)}"
         return string
 
 def parseConfiguration(configFile, configuration):
@@ -899,7 +899,7 @@ def verifyConfiguration(configuration):
     totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["agentStartingQuadrants"]) / 4
     if configuration["startingAgents"] > totalCells:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
-            print("Could not allocate {0} agents. Allocating maximum of {1}.".format(configuration["startingAgents"], totalCells))
+            print(f"Could not allocate {configuration["startingAgents"]} agents. Allocating maximum of {totalCells}.")
         configuration["startingAgents"] = totalCells
 
     # Ensure infinitely-lived agents are properly initialized
@@ -927,7 +927,7 @@ def verifyConfiguration(configuration):
     validModes = True
     for mode in configuration["debugMode"]:
         if mode not in recognizedDebugModes:
-            print("Debug mode {0} not recognized".format(mode))
+            print(f"Debug mode {mode} not recognized")
             validModes = False
     if validModes == False:
         printHelp()
