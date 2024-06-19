@@ -415,6 +415,7 @@ class Sugarscape:
         immuneSystemLength = configs["agentImmuneSystemLength"]
         aggressionFactor = configs["agentAggressionFactor"]
         tradeFactor = configs["agentTradeFactor"]
+        lookaheadDiscount = configs["agentLookaheadDiscount"]
         lookaheadFactor = configs["agentLookaheadFactor"]
         lendingFactor = configs["agentLendingFactor"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -439,6 +440,7 @@ class Sugarscape:
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
                           "lendingFactor": {"endowments": [], "curr": lendingFactor[0], "min": lendingFactor[0], "max": lendingFactor[1]},
                           "loanDuration": {"endowments": [], "curr": loanDuration[0], "min": loanDuration[0], "max": loanDuration[1]},
+                          "lookaheadDiscount": {"endowments": [], "curr": lookaheadDiscount[0], "min": lookaheadDiscount[0], "max": lookaheadDiscount[1]},
                           "lookaheadFactor": {"endowments": [], "curr": lookaheadFactor[0], "min": lookaheadFactor[0], "max": lookaheadFactor[1]},
                           "maleInfertilityAge": {"endowments": [], "curr": maleInfertilityAge[0], "min": maleInfertilityAge[0], "max": maleInfertilityAge[1]},
                           "maleFertilityAge": {"endowments": [], "curr": maleFertilityAge[0], "min": maleFertilityAge[0], "max": maleFertilityAge[1]},
@@ -964,6 +966,7 @@ if __name__ == "__main__":
                      "agentInheritancePolicy": "none",
                      "agentLendingFactor": [0, 0],
                      "agentLoanDuration": [0, 0],
+                     "agentLookaheadDiscount": [0, 0],
                      "agentLookaheadFactor": [0, 0],
                      "agentMaleInfertilityAge": [0, 0],
                      "agentMaleFertilityAge": [0, 0],
