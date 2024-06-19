@@ -154,20 +154,25 @@ class Sugarscape:
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
         random.shuffle(self.agents)
-        diseases = []
         for i in range(numDiseases):
             diseaseID = self.generateDiseaseID()
             diseaseConfiguration = diseaseEndowments[i]
             newDisease = disease.Disease(diseaseID, diseaseConfiguration)
-            diseases.append(newDisease)
-        self.diseases = diseases
+            self.diseases.append(newDisease)
+        startingDiseases = self.configuration["agentStartingDiseases"]
+        minStartingDiseases = startingDiseases[0]
+        maxStartingDiseases = startingDiseases[1]
+        currStartingDiseases = minStartingDiseases
 
         for agent in self.agents:
-            agentDiseases = random.sample(diseases, agent.startingDiseases)
+            agentDiseases = random.sample(self.diseases, currStartingDiseases)
             for newDisease in agentDiseases:
                 agent.catchDisease(newDisease)
-        if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-            print(f"Could not place {len(diseases)} diseases.")
+            currStartingDiseases += 1
+            if currStartingDiseases > maxStartingDiseases:
+                currStartingDiseases = minStartingDiseases
+        if len(self.diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
+            print(f"Could not place {len(self.diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
@@ -431,7 +436,6 @@ class Sugarscape:
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
                           "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
-                          "startingDiseases": {"endowments": [], "curr": startingDiseases[0], "min": startingDiseases[0], "max": startingDiseases[1]},
                           "selfishnessFactor": {"endowments": [], "curr": selfishnessFactor[0], "min": selfishnessFactor[0], "max": selfishnessFactor[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
@@ -463,6 +467,7 @@ class Sugarscape:
                 hashNum = int(hashed.hexdigest(), 16)
                 self.agentConfigHashes[config] = hashNum
 
+        configurations = self.findConfigurationIncrements(configurations)
         for config in configurations:
             configMin = configurations[config]["min"]
             configMax = configurations[config]["max"]
@@ -976,7 +981,6 @@ if __name__ == "__main__":
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],
                      "agentSpiceMetabolism": [0, 0],
-                     "agentStartingDiseases":[0, 0],
                      "agentStartingSpice": [0, 0],
                      "agentStartingSugar": [10, 40],
                      "agentStartingQuadrants": [1, 2, 3, 4],

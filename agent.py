@@ -40,7 +40,6 @@ class Agent:
         self.wealth = configuration["sugar"] + configuration["spice"]
         self.seed = configuration["seed"]
         self.inheritancePolicy = configuration["inheritancePolicy"]
-        self.startingDiseases = configuration.get("startingDiseases", None)
         self.startingImmuneSystem = configuration["immuneSystem"]
         self.immuneSystem = configuration["immuneSystem"]
         self.decisionModelFactor = configuration["decisionModelFactor"]
