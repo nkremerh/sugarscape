@@ -229,11 +229,6 @@ agentTradeFactor: [float, float]
     Note: The more aggressive in trading an agent, the more resources they will attempt to trade.
     Default: [0, 0]
 
-agentTribalStartingQuadrants: bool
-    Set whether starting quadrants are separated by tribe.
-    Note: This will overwrite the number of tribes with the number of quadrants.
-    Default: false
-
 agentUniversalSpice: [float, float]
     Set the amount agents recieve for universal basic spice income.
     Default: [0, 0]
@@ -370,6 +365,11 @@ environmentSugarRegrowRate: int
     Set the amount of sugar regrown across the environment per timestep.
     Each cell can only grow up to their maximum sugar value.
     Default: 1
+
+environmentTribePerQuadrant: bool
+    Set whether starting quadrants are separated by tribe.
+    Note: This will overwrite the number of tribes with the number of quadrants.
+    Default: false
 
 environmentUniversalSpiceIncomeInterval: int
     Set the interval in timesteps when environment produces universal basic spice income.

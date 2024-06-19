@@ -38,7 +38,7 @@ class Sugarscape:
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
-        self.tribalStartingQuadrants = configuration["agentTribalStartingQuadrants"]
+        self.environmentTribePerQuadrant = configuration["environmentTribePerQuadrant"]
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
         self.agents = []
@@ -136,7 +136,7 @@ class Sugarscape:
                 a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 a.selfishnessFactor = 1
             
-            if self.tribalStartingQuadrants == True:
+            if self.environmentTribePerQuadrant == True:
                 tags = self.generateAgentTags(quadrantIndex)
                 a.tags = tags
                 a.tribe = a.findTribe()
@@ -522,7 +522,7 @@ class Sugarscape:
                 if configurations[config]["curr"] > configurations[config]["max"]:
                     configurations[config]["curr"] = configurations[config]["min"]
 
-            if tagStringLength > 0 and self.tribalStartingQuadrants == False:
+            if tagStringLength > 0 and self.environmentTribePerQuadrant == False:
                 tags.append([random.randrange(2) for i in range(tagStringLength)])
             else:
                 tags.append(None)
@@ -916,7 +916,7 @@ def verifyConfiguration(configuration):
     elif configuration["environmentQuadrantSizeFactor"] < 0:
         configuration["environmentQuadrantSizeFactor"] = 1
 
-    if configuration["agentTribalStartingQuadrants"] == True:
+    if configuration["environmentTribePerQuadrant"] == True:
         configuration["environmentMaxTribes"] = len(configuration["agentStartingQuadrants"])
 
     # Ensure starting agents are not larger than available cells
@@ -1007,7 +1007,6 @@ if __name__ == "__main__":
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
                      "agentTradeFactor": [0, 0],
-                     "agentTribalStartingQuadrants": False,
                      "agentUniversalSpice": [0,0],
                      "agentUniversalSugar": [0,0],
                      "agentVision": [1, 6],
@@ -1038,6 +1037,7 @@ if __name__ == "__main__":
                      "environmentSugarPeaks": [[35, 15], [15, 35]],
                      "environmentSugarProductionPollutionFactor": 0,
                      "environmentSugarRegrowRate": 1,
+                     "environmentTribePerQuadrant": False,
                      "environmentUniversalSpiceIncomeInterval": 0,
                      "environmentUniversalSugarIncomeInterval": 0,
                      "environmentWidth": 50,
