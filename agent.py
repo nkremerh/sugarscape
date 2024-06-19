@@ -734,8 +734,8 @@ class Agent:
                 self.childEndowmentHashes[config] = hashNum
 
         for endowment in parentEndowments:
-            index = random.randrange(2)
             random.seed(self.childEndowmentHashes[endowment] + self.timestep)
+            index = random.randrange(2)
             endowmentValue = parentEndowments[endowment][index]
             childEndowment[endowment] = endowmentValue
 
