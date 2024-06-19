@@ -31,7 +31,7 @@ class Bentham(agent.Agent):
             intensity = (1 / (1 + neighbor.findTimeToLive()) / (1 + cell.pollution))
             duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
             # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
-            discount = 0.5
+            discount = neighbor.lookaheadDiscount
             futureDuration = (cellSiteWealth - neighborMetabolism) / neighborMetabolism if neighborMetabolism > 0 else cellSiteWealth
             futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
             # Normalize future intensity by number of adjacent cells
