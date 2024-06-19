@@ -30,6 +30,7 @@ class Agent:
         self.tagPreferences = configuration["tagPreferences"]
         self.aggressionFactor = configuration["aggressionFactor"]
         self.tradeFactor = configuration["tradeFactor"]
+        self.lookaheadDiscount = configuration["lookaheadDiscount"]
         self.lookaheadFactor = configuration["lookaheadFactor"]
         self.lendingFactor = configuration["lendingFactor"]
         self.fertilityFactor = configuration["fertilityFactor"]
@@ -170,6 +171,7 @@ class Agent:
             caughtDisease["infector"] = infector
         self.diseases.append(caughtDisease)
         self.updateDiseaseEffects(disease)
+        self.findCellsInRange()
 
     def collectResourcesAtCell(self):
         sugarCollected = self.cell.sugar
@@ -693,6 +695,7 @@ class Agent:
         "inheritancePolicy": [self.inheritancePolicy, mate.inheritancePolicy],
         "lendingFactor": [self.lendingFactor, mate.lendingFactor],
         "loanDuration": [self.loanDuration, mate.loanDuration],
+        "lookaheadDiscount": [self.lookaheadDiscount, mate.lookaheadDiscount],
         "lookaheadFactor": [self.lookaheadFactor, mate.lookaheadFactor],
         "maxAge": [self.maxAge, mate.maxAge],
         "maxFriends": [self.maxFriends, mate.maxFriends],
