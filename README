@@ -434,6 +434,7 @@ startingDiseases: int
 
 startingDiseasesPerAgent: [int, int]
     Set the number of diseases given to each starting agent.
+    Note: [0, 0] will give each disease to a unique agent.
     Default: [0, 0]
 
 timesteps: int
