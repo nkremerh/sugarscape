@@ -184,7 +184,9 @@ class Sugarscape:
                     break
                 if len(agent.diseases) >= currStartingDiseases:
                     break
-            currStartingDiseases = min(currStartingDiseases + 1, maxStartingDiseases)
+            currStartingDiseases += 1
+            if currStartingDiseases > maxStartingDiseases:
+                currStartingDiseases = minStartingDiseases
 
         if startingDiseases == [0, 0] and len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
             print(f"Could not place {len(diseases)} diseases.")
