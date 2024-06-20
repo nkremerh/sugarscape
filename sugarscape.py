@@ -938,7 +938,7 @@ def verifyConfiguration(configuration):
         startingDiseasesPerAgent.sort()
         startingDiseasesPerAgent = [max(0, numDiseases) for numDiseases in startingDiseasesPerAgent]
         startingDiseases = configuration["startingDiseases"]
-        startingDiseasesPerAgent[1] = min(startingDiseasesPerAgent[1], startingDiseases)
+        startingDiseasesPerAgent = [min(startingDiseases, numDiseases) for numDiseases in startingDiseasesPerAgent]
         if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"] and startingDiseasesPerAgent != configuration["startingDiseasesPerAgent"]:
             print(f"Range of starting diseases per agent exceeds {startingDiseases} starting diseases. Setting range to {startingDiseasesPerAgent}.")
         configuration["startingDiseasesPerAgent"] = startingDiseasesPerAgent
