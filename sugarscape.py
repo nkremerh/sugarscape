@@ -154,16 +154,15 @@ class Sugarscape:
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
         random.shuffle(self.agents)
-        diseases = []
         for i in range(numDiseases):
             diseaseID = self.generateDiseaseID()
             diseaseConfiguration = diseaseEndowments[i]
             newDisease = disease.Disease(diseaseID, diseaseConfiguration)
-            diseases.append(newDisease)
-        self.diseases = diseases
+            self.diseases.append(newDisease)
         startingDiseases = self.configuration["startingDiseasesPerAgent"]
 
         if startingDiseases == [0, 0]:
+            diseases = self.diseases[:]
             for agent in self.agents:
                 for newDisease in diseases:
                     hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
@@ -171,6 +170,8 @@ class Sugarscape:
                         agent.catchDisease(newDisease)
                         diseases.remove(newDisease)
                         break
+            if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
+                print(f"Could not place {len(diseases)} diseases.")
         else:
             minStartingDiseases = startingDiseases[0]
             maxStartingDiseases = startingDiseases[1]
@@ -179,12 +180,9 @@ class Sugarscape:
                 agentDiseases = random.sample(self.diseases, currStartingDiseases)
                 for newDisease in agentDiseases:
                     agent.catchDisease(newDisease)
-                    diseases.remove(newDisease)
                 currStartingDiseases += 1
                 if currStartingDiseases > maxStartingDiseases:
                     currStartingDiseases = minStartingDiseases
-        if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-            print(f"Could not place {len(diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
