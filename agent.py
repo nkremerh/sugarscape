@@ -634,7 +634,7 @@ class Agent:
         for cell in cells:
             ethicalScore = self.findEthicalValueOfCell(cell["cell"])
             cell["wealth"] = ethicalScore
-        if self.selfishnessFactor > 0:
+        if self.selfishnessFactor >= 0:
             for cell in cells:
                 if cell["wealth"] > 0:
                     bestCell = cell["cell"]
@@ -993,17 +993,15 @@ class Agent:
         numTribes = sugarscape.configuration["environmentMaxTribes"]
         zeroes = 0
         tribeCutoff = math.floor(len(self.tags) / numTribes)
-        # Up to 11 tribes possible without significant color conflicts
-        colors = ["red", "blue", "green", "orange", "purple", "teal", "pink", "mint", "blue2", "yellow", "salmon"]
         for tag in self.tags:
             if tag == 0:
                 zeroes += 1
         self.tagZeroes = zeroes
-        for i in range(1, numTribes + 1):
+        for i in range(numTribes):
             if zeroes < (i * tribeCutoff) + 1 or i == numTribes:
-                return colors[i - 1]
-        # Default agent coloring
-        return "red"
+                return i
+        # Default tribe
+        return 0
 
     def findVision(self):
         return max(0, self.vision + self.visionModifier)
