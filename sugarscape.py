@@ -159,30 +159,27 @@ class Sugarscape:
             diseaseConfiguration = diseaseEndowments[i]
             newDisease = disease.Disease(diseaseID, diseaseConfiguration)
             self.diseases.append(newDisease)
-        startingDiseases = self.configuration["startingDiseasesPerAgent"]
 
-        if startingDiseases == [0, 0]:
-            diseases = self.diseases[:]
-            for agent in self.agents:
-                for newDisease in diseases:
-                    hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
-                    if hammingDistance != 0:
-                        agent.catchDisease(newDisease)
-                        diseases.remove(newDisease)
-                        break
-            if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-                print(f"Could not place {len(diseases)} diseases.")
-        else:
-            minStartingDiseases = startingDiseases[0]
-            maxStartingDiseases = startingDiseases[1]
-            currStartingDiseases = minStartingDiseases
-            for agent in self.agents:
-                agentDiseases = random.sample(self.diseases, currStartingDiseases)
-                for newDisease in agentDiseases:
-                    agent.catchDisease(newDisease)
-                currStartingDiseases += 1
-                if currStartingDiseases > maxStartingDiseases:
-                    currStartingDiseases = minStartingDiseases
+        startingDiseases = self.configuration["startingDiseasesPerAgent"]
+        diseases = self.diseases[:]
+        minStartingDiseases = startingDiseases[0]
+        maxStartingDiseases = startingDiseases[1]
+        currStartingDiseases = minStartingDiseases
+        for agent in self.agents:
+            for newDisease in diseases:
+                hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
+                if hammingDistance == 0:
+                    continue
+                agent.catchDisease(newDisease)
+                if startingDiseases == [0, 0]:
+                    diseases.remove(newDisease)
+                    break
+                if len(agent.diseases) >= currStartingDiseases:
+                    break
+            currStartingDiseases = min(currStartingDiseases + 1, maxStartingDiseases)
+
+        if startingDiseases == [0, 0] and len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
+            print(f"Could not place {len(diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
