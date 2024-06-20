@@ -95,7 +95,6 @@ class Environment:
         for i in range(self.width):
             for j in range(self.height):
                 cell = self.grid[i][j]
-                cell.ranges = {}
                 for distance in range(minDistance, maxDistance + 1):
                     cell.ranges[distance] = findCellsInModeRange(cell.x, cell.y, distance)
 
