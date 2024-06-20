@@ -907,7 +907,7 @@ def verifyConfiguration(configuration):
     totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["agentStartingQuadrants"]) / 4
     if configuration["startingAgents"] > totalCells:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
-            print(f"Could not allocate {configuration["startingAgents"]} agents. Allocating maximum of {totalCells}.")
+            print(f"Could not allocate {configuration['startingAgents']} agents. Allocating maximum of {totalCells}.")
         configuration["startingAgents"] = totalCells
 
     # Ensure infinitely-lived agents are properly initialized
