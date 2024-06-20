@@ -228,20 +228,17 @@ class Agent:
         self.diseases = []
 
     def doDisease(self):
-        diseases = self.diseases
-        for diseaseRecord in diseases:
+        random.shuffle(self.diseases)
+        for diseaseRecord in self.diseases:
             diseaseTags = diseaseRecord["disease"].tags
-            start = diseaseRecord["startIndex"]
-            end = diseaseRecord["endIndex"] + 1
-            immuneResponse = [self.immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
-            i = start
-            j = 0
-            for i in range(len(diseaseTags)):
+            immuneResponseStart = diseaseRecord["startIndex"]
+            immuneResponseEnd = min(diseaseRecord["endIndex"] + 1, len(self.immuneSystem))
+            immuneResponse = self.immuneSystem[immuneResponseStart:immuneResponseEnd]
+            for i in range(len(immuneResponse)):
                 if immuneResponse[i] != diseaseTags[i]:
-                    self.immuneSystem[start + i] = diseaseTags[i]
+                    self.immuneSystem[immuneResponseStart + i] = diseaseTags[i]
                     break
-            immuneResponseCheck = [self.immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
-            if diseaseTags == immuneResponseCheck:
+            if diseaseTags == immuneResponse:
                 self.diseases.remove(diseaseRecord)
                 self.updateDiseaseEffects(diseaseRecord["disease"])
 

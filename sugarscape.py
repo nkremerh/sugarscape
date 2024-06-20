@@ -167,16 +167,28 @@ class Sugarscape:
             newDisease = disease.Disease(diseaseID, diseaseConfiguration)
             diseases.append(newDisease)
 
-        unplacedDisease = 0
+        startingDiseases = self.configuration["startingDiseasesPerAgent"]
+        minStartingDiseases = startingDiseases[0]
+        maxStartingDiseases = startingDiseases[1]
+        currStartingDiseases = minStartingDiseases
         for agent in self.agents:
+            random.shuffle(diseases)
             for newDisease in diseases:
+                if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
+                    currStartingDiseases += 1
+                    break
                 hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
-                if hammingDistance != 0:
-                    agent.catchDisease(newDisease)
-                    self.diseases.append(newDisease)
+                if hammingDistance == 0:
+                    continue
+                agent.catchDisease(newDisease)
+                self.diseases.append(newDisease)
+                if startingDiseases == [0, 0]:
                     diseases.remove(newDisease)
                     break
-        if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
+            if currStartingDiseases > maxStartingDiseases:
+                currStartingDiseases = minStartingDiseases
+
+        if startingDiseases == [0, 0] and len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
             print(f"Could not place {len(diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
@@ -921,6 +933,16 @@ def verifyConfiguration(configuration):
     if configuration["environmentMaxTribes"] > 11:
         configuration["environmentMaxTribes"] = 11
 
+    if configuration["startingDiseasesPerAgent"] != [0, 0]:
+        startingDiseasesPerAgent = configuration["startingDiseasesPerAgent"][:]
+        startingDiseasesPerAgent.sort()
+        startingDiseasesPerAgent = [max(0, numDiseases) for numDiseases in startingDiseasesPerAgent]
+        startingDiseases = configuration["startingDiseases"]
+        startingDiseasesPerAgent = [min(startingDiseases, numDiseases) for numDiseases in startingDiseasesPerAgent]
+        if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"] and startingDiseasesPerAgent != configuration["startingDiseasesPerAgent"]:
+            print(f"Range of starting diseases per agent exceeds {startingDiseases} starting diseases. Setting range to {startingDiseasesPerAgent}.")
+        configuration["startingDiseasesPerAgent"] = startingDiseasesPerAgent
+
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
         configuration["timesteps"] = sys.maxsize
@@ -1036,6 +1058,7 @@ if __name__ == "__main__":
                      "seed": -1,
                      "startingAgents": 250,
                      "startingDiseases": 0,
+                     "startingDiseasesPerAgent": [0, 0],
                      "timesteps": 200
                      }
     configuration = parseOptions(configuration)
