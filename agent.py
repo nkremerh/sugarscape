@@ -232,12 +232,11 @@ class Agent:
         random.shuffle(diseases)
         for diseaseRecord in diseases:
             diseaseTags = diseaseRecord["disease"].tags
-            start = diseaseRecord["startIndex"]
             immuneResponse = [self.immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
-            i = start
+            i = diseaseRecord["startIndex"]
             for i in range(len(diseaseTags)):
                 if immuneResponse[i] != diseaseTags[i]:
-                    self.immuneSystem[start + i] = diseaseTags[i]
+                    self.immuneSystem[diseaseRecord["startIndex"] + i] = diseaseTags[i]
                     break
             if diseaseTags == immuneResponse:
                 self.diseases.remove(diseaseRecord)

@@ -926,6 +926,20 @@ def verifyConfiguration(configuration):
     if configuration["environmentMaxTribes"] > 11:
         configuration["environmentMaxTribes"] = 11
 
+    if configuration["startingDiseasesPerAgent"] != [0, 0]:
+        startingDiseases = configuration["startingDiseases"]
+        minStartingDiseasesPerAgent = configuration["startingDiseasesPerAgent"][0]
+        maxStartingDiseasesPerAgent = configuration["startingDiseasesPerAgent"][1]
+        if minStartingDiseasesPerAgent > startingDiseases:
+            if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"]:
+                print(f"Min starting diseases per agent {configuration["startingAgents"]} exceeds {startingDiseases} starting diseases. Allocating minimum of {startingDiseases}.")
+            minStartingDiseasesPerAgent = startingDiseases
+        if maxStartingDiseasesPerAgent > startingDiseases:
+            if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"]:
+                print(f"Max starting diseases per agent {configuration["startingAgents"]} exceeds {startingDiseases} starting diseases. Allocating maximum of {startingDiseases}.")
+            maxStartingDiseasesPerAgent = startingDiseases
+        configuration["startingDiseasesPerAgent"] = [minStartingDiseasesPerAgent, maxStartingDiseasesPerAgent]
+
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
         configuration["timesteps"] = sys.maxsize
