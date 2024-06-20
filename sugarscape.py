@@ -138,6 +138,12 @@ class Sugarscape:
             elif "egoisticNoLookahead" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 a.selfishnessFactor = 1
+            elif "negativeBenthamHalfLookahead" in agentConfiguration["decisionModel"]:
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
+                a.selfishnessFactor = -1
+            elif "negativeBenthamNoLookahead" in agentConfiguration["decisionModel"]:
+                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
+                a.selfishnessFactor = -1
             c.agent = a
             self.agents.append(a)
 

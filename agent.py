@@ -634,10 +634,15 @@ class Agent:
         for cell in cells:
             ethicalScore = self.findEthicalValueOfCell(cell["cell"])
             cell["wealth"] = ethicalScore
-        for cell in cells:
-            if cell["wealth"] > 0:
-                bestCell = cell["cell"]
-                break
+        if self.selfishnessFactor > 0:
+            for cell in cells:
+                if cell["wealth"] > 0:
+                    bestCell = cell["cell"]
+                    break
+        else:
+            # Negative utilitarian model uses positive and negative utility to find minimum harm
+            cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]), reverse = True)
+            bestCell = cells[0]["cell"]
 
         # If additional ordering consideration, select new best cell
         if "Top" in self.decisionModel:
