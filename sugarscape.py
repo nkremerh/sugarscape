@@ -174,6 +174,9 @@ class Sugarscape:
         for agent in self.agents:
             random.shuffle(diseases)
             for newDisease in diseases:
+                if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
+                    currStartingDiseases += 1
+                    break
                 hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
                 if hammingDistance == 0:
                     continue
@@ -182,9 +185,6 @@ class Sugarscape:
                 if startingDiseases == [0, 0]:
                     diseases.remove(newDisease)
                     break
-                if len(agent.diseases) >= currStartingDiseases:
-                    break
-            currStartingDiseases += 1
             if currStartingDiseases > maxStartingDiseases:
                 currStartingDiseases = minStartingDiseases
 
