@@ -154,23 +154,25 @@ class Sugarscape:
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
         random.shuffle(self.agents)
+        diseases = []
         for i in range(numDiseases):
             diseaseID = self.generateDiseaseID()
             diseaseConfiguration = diseaseEndowments[i]
             newDisease = disease.Disease(diseaseID, diseaseConfiguration)
-            self.diseases.append(newDisease)
+            diseases.append(newDisease)
 
         startingDiseases = self.configuration["startingDiseasesPerAgent"]
-        diseases = self.diseases[:]
         minStartingDiseases = startingDiseases[0]
         maxStartingDiseases = startingDiseases[1]
         currStartingDiseases = minStartingDiseases
         for agent in self.agents:
+            random.shuffle(diseases)
             for newDisease in diseases:
                 hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
                 if hammingDistance == 0:
                     continue
                 agent.catchDisease(newDisease)
+                self.diseases.append(newDisease)
                 if startingDiseases == [0, 0]:
                     diseases.remove(newDisease)
                     break
