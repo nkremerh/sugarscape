@@ -86,13 +86,13 @@ class Environment:
                 self.grid[i][j].findNeighbors(self.neighborhoodMode)
 
     def findCellRanges(self):
+        minDistance = min(self.sugarscape.configuration["agentVision"][0], self.sugarscape.configuration["agentMovement"][0])
+        maxDistance = min(self.sugarscape.configuration["agentVision"][1], self.sugarscape.configuration["agentMovement"][1])
         for i in range(self.width):
             for j in range(self.height):
                 cell = self.grid[i][j]
                 cell.cardinalRanges = {}
                 cell.radialRanges = {}
-                minDistance = min(self.sugarscape.configuration["agentVision"][0], self.sugarscape.configuration["agentMovement"][0])
-                maxDistance = max(self.sugarscape.configuration["agentVision"][1], self.sugarscape.configuration["agentMovement"][1])
                 for distance in range(minDistance, maxDistance + 1):
                     if self.sugarscape.configuration["agentVisionMode"] == "cardinal" or self.sugarscape.configuration["agentMovementMode"] == "cardinal":
                         cell.cardinalRanges[distance] = self.findCellsInCardinalRange(cell.x, cell.y, distance)

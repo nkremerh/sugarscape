@@ -676,14 +676,15 @@ class Agent:
         return bestFriend
 
     def findCellsInRange(self, newCell=None):
+        cell = self.cell if newCell == None else newCell
         vision = self.findVision()
         movement = self.findMovement()
         cellRange = min(vision, movement)
         if cellRange > 0:
             if (self.visionMode == "cardinal" and cellRange == vision) or (self.movementMode == "cardinal" and cellRange == movement):
-                allCells = self.cell.cardinalRanges[cellRange]
+                allCells = cell.cardinalRanges[cellRange]
             else:
-                allCells = self.cell.radialRanges[cellRange]
+                allCells = cell.radialRanges[cellRange]
             if newCell == None:
                 self.cellsInRange = allCells
             return allCells
