@@ -680,15 +680,12 @@ class Agent:
         vision = self.findVision()
         movement = self.findMovement()
         cellRange = min(vision, movement)
-        if cellRange > 0:
-            if (self.visionMode == "cardinal" and cellRange == vision) or (self.movementMode == "cardinal" and cellRange == movement):
-                allCells = cell.cardinalRanges[cellRange]
-            else:
-                allCells = cell.radialRanges[cellRange]
-            if newCell == None:
-                self.cellsInRange = allCells
-            return allCells
-        return []
+        if cellRange <= 0:
+            return []
+        allCells = cell.ranges[cellRange]
+        if newCell == None:
+            self.cellsInRange = allCells
+        return allCells
 
     def findChildEndowment(self, mate):
         parentEndowments = {
