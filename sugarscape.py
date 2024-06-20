@@ -934,18 +934,14 @@ def verifyConfiguration(configuration):
         configuration["environmentMaxTribes"] = 11
 
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
+        startingDiseasesPerAgent = configuration["startingDiseasesPerAgent"][:]
+        startingDiseasesPerAgent.sort()
+        startingDiseasesPerAgent = [max(0, numDiseases) for numDiseases in startingDiseasesPerAgent]
         startingDiseases = configuration["startingDiseases"]
-        minStartingDiseasesPerAgent = configuration["startingDiseasesPerAgent"][0]
-        maxStartingDiseasesPerAgent = configuration["startingDiseasesPerAgent"][1]
-        if minStartingDiseasesPerAgent > startingDiseases:
-            if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"]:
-                print(f"Min starting diseases per agent {configuration["startingAgents"]} exceeds {startingDiseases} starting diseases. Allocating minimum of {startingDiseases}.")
-            minStartingDiseasesPerAgent = startingDiseases
-        if maxStartingDiseasesPerAgent > startingDiseases:
-            if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"]:
-                print(f"Max starting diseases per agent {configuration["startingAgents"]} exceeds {startingDiseases} starting diseases. Allocating maximum of {startingDiseases}.")
-            maxStartingDiseasesPerAgent = startingDiseases
-        configuration["startingDiseasesPerAgent"] = [minStartingDiseasesPerAgent, maxStartingDiseasesPerAgent]
+        startingDiseasesPerAgent[1] = min(startingDiseasesPerAgent[1], startingDiseases)
+        if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"] and startingDiseasesPerAgent != configuration["startingDiseasesPerAgent"]:
+            print(f"Range of starting diseases per agent exceeds {startingDiseases} starting diseases. Setting range to {startingDiseasesPerAgent}.")
+        configuration["startingDiseasesPerAgent"] = startingDiseasesPerAgent
 
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
