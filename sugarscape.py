@@ -118,14 +118,14 @@ class Sugarscape:
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, c, agentConfiguration)
             # If using a different decision model, replace new agent with instance of child class
-            if "altruistic" in agentConfiguration["decisionModel"]:
+            if "altruist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 a.selfishnessFactor = 0
             elif "bentham" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
-            elif "egoistic" in agentConfiguration["decisionModel"]:
+            elif "egoist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 a.selfishnessFactor = 1
             elif "negativeBentham" in agentConfiguration["decisionModel"]:
