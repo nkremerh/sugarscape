@@ -86,9 +86,20 @@ class Environment:
                 self.grid[i][j].findNeighbors(self.neighborhoodMode)
 
     def findCellRanges(self):
-        minDistance = min(self.sugarscape.configuration["agentVision"][0], self.sugarscape.configuration["agentMovement"][0])
-        maxDistance = min(self.sugarscape.configuration["agentVision"][1], self.sugarscape.configuration["agentMovement"][1])
-        if self.sugarscape.configuration["agentVisionMode"] == "radial" and self.sugarscape.configuration["agentMovementMode"] == "radial":
+        config = self.sugarscape.configuration
+        minVisionPenalty = min(config["diseaseVisionPenalty"][0], 0)
+        minVision = config["agentVision"][0] + minVisionPenalty
+        minMovementPenalty = min(config["diseaseMovementPenalty"][0], 0)
+        minMovement = config["agentMovement"][0] + minMovementPenalty
+        minDistance = min(minVision, minMovement)
+
+        maxVisionPenalty = max(config["diseaseVisionPenalty"][1], 0)
+        maxVision = config["agentVision"][1] + maxVisionPenalty
+        maxMovementPenalty = max(config["diseaseMovementPenalty"][1], 0)
+        maxMovement = config["agentMovement"][1] + maxMovementPenalty
+        maxDistance = max(maxVision, maxMovement)
+        print(minDistance, maxDistance)
+        if config["agentVisionMode"] == "radial" and config["agentMovementMode"] == "radial":
             findCellsInModeRange = self.findCellsInRadialRange
         else:
             findCellsInModeRange = self.findCellsInCardinalRange
