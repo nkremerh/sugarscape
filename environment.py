@@ -121,23 +121,16 @@ class Environment:
         return cellsInRange
 
     def findCellsAtRadialRange(self, startX, startY, gridRange):
-        cellsInPreviousRange = self.findCellsInRadialRange(startX, startY, gridRange - 1)
-        cellsInCurrentRange = self.findCellsInRadialRange(startX, startY, gridRange)
-        previousRangeSet = {tuple(cellRecord.items()) for cellRecord in cellsInPreviousRange}
-        cellsAtRange = [cellRecord for cellRecord in cellsInCurrentRange if tuple(cellRecord.items()) not in previousRangeSet]
-        return cellsAtRange
-
-    def findCellsInRadialRange(self, startX, startY, gridRange):
+        cellsInRange = []
         if self.wraparound == True:
-            cellsInRange = []
             for i in range(1, gridRange + 1):
                 cellsInRange.extend(self.findCellsAtCardinalRange(startX, startY, i))
             # Iterate through the upper left quadrant of the circle's bounding box
             for deltaX in range(startX - gridRange, startX):
                 for deltaY in range(startY - gridRange, startY):
-                    euclideanDistance = math.sqrt(pow((deltaX - startX), 2) + pow((deltaY - startY), 2))
+                    euclideanDistance = math.hypot(deltaX - startX, deltaY - startY)
                     # If agent can see at least part of a cell, they should be allowed to consider it
-                    if euclideanDistance < gridRange + 1 and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
+                    if euclideanDistance < gridRange + 1 and euclideanDistance >= gridRange and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
                         reflectedX = (2 * startX - deltaX + self.width) % self.width
                         reflectedY = (2 * startY - deltaY + self.height) % self.height
                         cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
@@ -145,13 +138,12 @@ class Environment:
                         cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
                         cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})        
         else:
-            cellsInRange = []
             # Iterate through the bounding box of the circle
             for deltaX in range(max(0, startX - gridRange), min(self.width, startX + gridRange + 1)):
                 for deltaY in range(max(0, startY - gridRange), min(self.height, startY + gridRange + 1)):
                     # If agent can see at least part of a cell, they should be allowed to consider it
-                    euclideanDistance = math.sqrt(pow((deltaX - startX), 2) + pow((deltaY - startY), 2))
-                    if euclideanDistance < gridRange + 1 and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
+                    euclideanDistance = math.hypot(deltaX - startX, deltaY - startY)
+                    if euclideanDistance < gridRange + 1 and euclideanDistance >= gridRange and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
                         cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
         return cellsInRange
 
