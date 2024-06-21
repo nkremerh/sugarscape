@@ -1,9 +1,8 @@
 import agent
 
 class Bentham(agent.Agent):
-    def __init__(self, agentID, birthday, cell, configuration, lookahead=None):
+    def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
-        self.lookahead = lookahead
 
     def findEthicalValueOfCell(self, cell):
         happiness = 0
@@ -33,7 +32,7 @@ class Bentham(agent.Agent):
             intensity = (1 / (1 + neighbor.findTimeToLive()) / (1 + cell.pollution))
             duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
             # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
-            discount = neighbor.lookaheadDiscount
+            discount = neighbor.decisionModelLookaheadDiscount
             futureDuration = (cellSiteWealth - neighborMetabolism) / neighborMetabolism if neighborMetabolism > 0 else cellSiteWealth
             futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
             # Normalize future intensity by number of adjacent cells
@@ -42,7 +41,7 @@ class Bentham(agent.Agent):
             # Normalize extent by total cells in range
             cellsInRange = len(neighbor.cellsInRange) if neighborReach > 0 else 0
             extent = neighborhoodSize / cellsInRange if cellsInRange > 0 else 1
-            futureExtent = futureNeighborhoodSize / cellsInRange if cellsInRange > 0 and self.lookahead != None else 1
+            futureExtent = futureNeighborhoodSize / cellsInRange if cellsInRange > 0 and self.decisionModelLookaheadFactor != 0 else 1
             neighborCellValue = 0
 
             # If not the agent moving, consider these as opportunity costs
@@ -51,13 +50,13 @@ class Bentham(agent.Agent):
                 intensity = -1 * intensity
                 futureDuration = -1 * futureDuration
                 futureIntensity = -1 * futureIntensity
-                if self.lookahead == None:
+                if self.decisionModelLookaheadFactor == 0:
                     neighborCellValue = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
                     neighborCellValue = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
             # If move will kill this neighbor, consider this a penalty
             elif neighbor != self and cell == neighbor.cell and self.selfishnessFactor < 1:
-                if self.lookahead == None:
+                if self.decisionModelLookaheadFactor == 0:
                     neighborCellValue = -1 * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
                     neighborCellValue = -1 * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
@@ -65,7 +64,7 @@ class Bentham(agent.Agent):
                 if neighborCellValue > -1:
                     neighborCellValue = -1
             else:
-                if self.lookahead == None:
+                if self.decisionModelLookaheadFactor == 0:
                     neighborCellValue = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
                     neighborCellValue = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
@@ -85,4 +84,4 @@ class Bentham(agent.Agent):
         return cellValue
 
     def spawnChild(self, childID, birthday, cell, configuration):
-        return Bentham(childID, birthday, cell, configuration, self.lookahead)
+        return Bentham(childID, birthday, cell, configuration)

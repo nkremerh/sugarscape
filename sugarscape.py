@@ -118,32 +118,25 @@ class Sugarscape:
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, c, agentConfiguration)
             # If using a different decision model, replace new agent with instance of child class
-            if "altruisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
-                a.selfishnessFactor = 0
-            elif "altruisticNoLookahead" in agentConfiguration["decisionModel"]:
+            if "altruistic" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 a.selfishnessFactor = 0
-            elif "benthamHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
-                if agentConfiguration["selfishnessFactor"] < 0:
-                    a.selfishnessFactor = 0.5
-            elif "benthamNoLookahead" in agentConfiguration["decisionModel"]:
+            elif "bentham" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
-            elif "egoisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
-                a.selfishnessFactor = 1
-            elif "egoisticNoLookahead" in agentConfiguration["decisionModel"]:
+            elif "egoistic" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 a.selfishnessFactor = 1
-            elif "negativeBenthamHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration, "halfLookahead")
-                a.selfishnessFactor = -1
-            elif "negativeBenthamNoLookahead" in agentConfiguration["decisionModel"]:
+            elif "negativeBentham" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, c, agentConfiguration)
                 a.selfishnessFactor = -1
+
+            if "NoLookahead" in agentConfiguration["decisionModel"]:
+                a.decisionModelLookaheadFactor = 0
+            elif "HalfLookahead" in agentConfiguration["decisionModel"]:
+                a.decisionModelLookaheadFactor = 0.5
+
             c.agent = a
             self.agents.append(a)
 
@@ -433,7 +426,8 @@ class Sugarscape:
         immuneSystemLength = configs["agentImmuneSystemLength"]
         aggressionFactor = configs["agentAggressionFactor"]
         tradeFactor = configs["agentTradeFactor"]
-        lookaheadDiscount = configs["agentLookaheadDiscount"]
+        decisionModelLookaheadDiscount = configs["agentDecisionModelLookaheadDiscount"]
+        decisionModelLookaheadFactor = configs["agentDecisionModelLookaheadFactor"]
         lookaheadFactor = configs["agentLookaheadFactor"]
         lendingFactor = configs["agentLendingFactor"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -458,7 +452,7 @@ class Sugarscape:
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
                           "lendingFactor": {"endowments": [], "curr": lendingFactor[0], "min": lendingFactor[0], "max": lendingFactor[1]},
                           "loanDuration": {"endowments": [], "curr": loanDuration[0], "min": loanDuration[0], "max": loanDuration[1]},
-                          "lookaheadDiscount": {"endowments": [], "curr": lookaheadDiscount[0], "min": lookaheadDiscount[0], "max": lookaheadDiscount[1]},
+                          "decisionModelLookaheadDiscount": {"endowments": [], "curr": decisionModelLookaheadDiscount[0], "min": decisionModelLookaheadDiscount[0], "max": decisionModelLookaheadDiscount[1]},
                           "lookaheadFactor": {"endowments": [], "curr": lookaheadFactor[0], "min": lookaheadFactor[0], "max": lookaheadFactor[1]},
                           "maleInfertilityAge": {"endowments": [], "curr": maleInfertilityAge[0], "min": maleInfertilityAge[0], "max": maleInfertilityAge[1]},
                           "maleFertilityAge": {"endowments": [], "curr": maleFertilityAge[0], "min": maleFertilityAge[0], "max": maleFertilityAge[1]},
@@ -553,8 +547,8 @@ class Sugarscape:
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(), "tagPreferences": tagPreferences,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
-                              "decisionModel": decisionModels.pop(), "movementMode": movementMode,
-                              "neighborhoodMode": neighborhoodMode, "visionMode": visionMode}
+                              "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
+                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -987,6 +981,8 @@ if __name__ == "__main__":
                      "agentDecisionModels": ["none"],
                      "agentDecisionModel": None,
                      "agentDecisionModelFactor": [0, 0],
+                     "agentDecisionModelLookaheadDiscount": [0, 0],
+                     "agentDecisionModelLookaheadFactor": [0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
@@ -994,7 +990,6 @@ if __name__ == "__main__":
                      "agentInheritancePolicy": "none",
                      "agentLendingFactor": [0, 0],
                      "agentLoanDuration": [0, 0],
-                     "agentLookaheadDiscount": [0, 0],
                      "agentLookaheadFactor": [0, 0],
                      "agentMaleInfertilityAge": [0, 0],
                      "agentMaleFertilityAge": [0, 0],
