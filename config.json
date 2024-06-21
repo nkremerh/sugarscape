@@ -89,6 +89,7 @@
         "seed": -1,
         "startingAgents": 250,
         "startingDiseases": 50,
+        "startingDiseasesPerAgent": [0, 0],
         "timesteps": 1000
     }
 }

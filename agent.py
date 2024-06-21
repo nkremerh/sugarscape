@@ -229,20 +229,17 @@ class Agent:
         self.diseases = []
 
     def doDisease(self):
-        diseases = self.diseases
-        for diseaseRecord in diseases:
+        random.shuffle(self.diseases)
+        for diseaseRecord in self.diseases:
             diseaseTags = diseaseRecord["disease"].tags
-            start = diseaseRecord["startIndex"]
-            end = diseaseRecord["endIndex"] + 1
-            immuneResponse = [self.immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
-            i = start
-            j = 0
-            for i in range(len(diseaseTags)):
+            immuneResponseStart = diseaseRecord["startIndex"]
+            immuneResponseEnd = min(diseaseRecord["endIndex"] + 1, len(self.immuneSystem))
+            immuneResponse = self.immuneSystem[immuneResponseStart:immuneResponseEnd]
+            for i in range(len(immuneResponse)):
                 if immuneResponse[i] != diseaseTags[i]:
-                    self.immuneSystem[start + i] = diseaseTags[i]
+                    self.immuneSystem[immuneResponseStart + i] = diseaseTags[i]
                     break
-            immuneResponseCheck = [self.immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
-            if diseaseTags == immuneResponseCheck:
+            if diseaseTags == immuneResponse:
                 self.diseases.remove(diseaseRecord)
                 self.updateDiseaseEffects(diseaseRecord["disease"])
 
@@ -638,10 +635,15 @@ class Agent:
         for cell in cells:
             ethicalScore = self.findEthicalValueOfCell(cell["cell"])
             cell["wealth"] = ethicalScore
-        for cell in cells:
-            if cell["wealth"] > 0:
-                bestCell = cell["cell"]
-                break
+        if self.selfishnessFactor >= 0:
+            for cell in cells:
+                if cell["wealth"] > 0:
+                    bestCell = cell["cell"]
+                    break
+        else:
+            # Negative utilitarian model uses positive and negative utility to find minimum harm
+            cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]), reverse = True)
+            bestCell = cells[0]["cell"]
 
         # If additional ordering consideration, select new best cell
         if "Top" in self.decisionModel:
@@ -992,17 +994,15 @@ class Agent:
         numTribes = sugarscape.configuration["environmentMaxTribes"]
         zeroes = 0
         tribeCutoff = math.floor(len(self.tags) / numTribes)
-        # Up to 11 tribes possible without significant color conflicts
-        colors = ["red", "blue", "green", "orange", "purple", "teal", "pink", "mint", "blue2", "yellow", "salmon"]
         for tag in self.tags:
             if tag == 0:
                 zeroes += 1
         self.tagZeroes = zeroes
-        for i in range(1, numTribes + 1):
+        for i in range(numTribes):
             if zeroes < (i * tribeCutoff) + 1 or i == numTribes:
-                return colors[i - 1]
-        # Default agent coloring
-        return "red"
+                return i
+        # Default tribe
+        return 0
 
     def findVision(self):
         return max(0, self.vision + self.visionModifier)

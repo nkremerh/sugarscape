@@ -9,13 +9,14 @@ class GUI:
         self.window = None
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
-        # TODO: Add a simplified way to have a bunch of colors programatically chosen during runtime
-        self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
-                       "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "pink": "#FA32FA", "yellow": "#FAFA32", "teal": "#32FAFA", "purple": "#6432FA", "orange": "#FA6432",
-                       "salmon": "#FA6464", "mint": "#64FA64", "blue2": "#3264FA",
-                       "none": "#32FA32", "benthamHalfLookaheadBinary": "#3232FA", "egoisticHalfLookaheadBinary": "#FA3232", "altruisticHalfLookaheadBinary": "#FA32FA",
-                       "benthamNoLookaheadBinary": "#FAFA32", "egoisticNoLookaheadBinary": "#32FAFA", "altruisticNoLookaheadBinary": "#6432FA", "benthamHalfLookaheadTop": "#FA6432",
-                       "egoisticHalfLookaheadTop": "#FA6464", "altruisticHalfLookaheadTop": "#64FA64", "benthamNoLookaheadTop": "#3264FA"}
+        self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280", "healthy": "#3232FA", "sick": "#FA3232"}
+        self.palette = ["#FA3232", "#3232FA", "#32FA32", "#FA32FA", "#FAFA32", "#4C5454", "#04724D", "#643A71", "#505168", "#8EA604", "#6D9DC5", "#56EEF4", "#EE6123", "#EC9F05", "#EC4E20", "#EB7BC0", "#53599A", "#B24C63", "#59114D", "#003B36", "#D6D9CE", "#00916E", "#B9B8D3", "#FF715B", "#FA003F"]
+        numTribes = self.sugarscape.configuration["environmentMaxTribes"]
+        numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
+        for i in range(numTribes):
+            self.colors[str(i)] = self.palette[i]
+        for i in range(numDecisionModels):
+            self.colors[self.sugarscape.configuration["agentDecisionModels"][i]] = self.palette[i]
         self.widgets = {}
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
@@ -440,13 +441,13 @@ class GUI:
         elif agent.sex != None and self.activeColorOptions["agent"] == "Sex":
             return self.colors[agent.sex]
         elif agent.tribe != None and self.activeColorOptions["agent"] == "Tribes":
-            return self.colors[agent.tribe]
+            return self.colors[str(agent.tribe)]
         elif agent.decisionModel != None and self.activeColorOptions["agent"] == "Decision Models":
             return self.colors[agent.decisionModel]
         elif len(agent.diseases) > 0 and self.activeColorOptions["agent"] == "Disease":
-            return self.colors["red"]
+            return self.colors["sick"]
         elif len(agent.diseases) == 0 and self.activeColorOptions["agent"] == "Disease":
-            return self.colors["blue"]
+            return self.colors["healthy"]
         return self.colors["noSex"]
 
     def lookupNetworkColor(self, cell):
@@ -476,7 +477,7 @@ class GUI:
             else:
                 return "black"
         elif self.activeNetwork.get() == "Disease":
-            return self.colors["red"] if agent.isSick() == True else self.colors["blue"]
+            return self.colors["sick"] if agent.isSick() == True else self.colors["healthy"]
         return "black"
 
     def recolorByResourceAmount(self, cell, fillColor):

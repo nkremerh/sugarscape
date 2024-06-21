@@ -6,6 +6,8 @@ class Bentham(agent.Agent):
         self.lookahead = lookahead
 
     def findEthicalValueOfCell(self, cell):
+        happiness = 0
+        unhappiness = 0
         cellSiteWealth = cell.sugar + cell.spice
         # Max combat loot for sugar and spice
         globalMaxCombatLoot = cell.environment.maxCombatLoot * 2
@@ -41,7 +43,7 @@ class Bentham(agent.Agent):
             cellsInRange = len(neighbor.cellsInRange) if neighborReach > 0 else 0
             extent = neighborhoodSize / cellsInRange if cellsInRange > 0 else 1
             futureExtent = futureNeighborhoodSize / cellsInRange if cellsInRange > 0 and self.lookahead != None else 1
-            neighborValueOfCell = 0
+            neighborCellValue = 0
 
             # If not the agent moving, consider these as opportunity costs
             if neighbor != self and cell != neighbor.cell and self.selfishnessFactor < 1:
@@ -50,29 +52,36 @@ class Bentham(agent.Agent):
                 futureDuration = -1 * futureDuration
                 futureIntensity = -1 * futureIntensity
                 if self.lookahead == None:
-                    neighborValueOfCell = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
+                    neighborCellValue = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
-                    neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+                    neighborCellValue = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
             # If move will kill this neighbor, consider this a penalty
             elif neighbor != self and cell == neighbor.cell and self.selfishnessFactor < 1:
                 if self.lookahead == None:
-                    neighborValueOfCell = -1 * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
+                    neighborCellValue = -1 * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
-                    neighborValueOfCell = -1 * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+                    neighborCellValue = -1 * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
                 # If penalty is too slight, make it more severe
-                if neighborValueOfCell > -1:
-                    neighborValueOfCell = -1
+                if neighborCellValue > -1:
+                    neighborCellValue = -1
             else:
                 if self.lookahead == None:
-                    neighborValueOfCell = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
+                    neighborCellValue = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
-                    neighborValueOfCell = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
-            if selfishnessFactor != -1:
+                    neighborCellValue = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
+            if selfishnessFactor > 0:
                 if neighbor == self:
-                    neighborValueOfCell *= selfishnessFactor
+                    neighborCellValue *= selfishnessFactor
                 else:
-                    neighborValueOfCell *= 1-selfishnessFactor
-            cellValue += neighborValueOfCell
+                    neighborCellValue *= 1-selfishnessFactor
+            else:
+                if neighborCellValue > 0:
+                    happiness += neighborCellValue
+                else:
+                    unhappiness += neighborCellValue
+            cellValue += neighborCellValue
+        if selfishnessFactor < 0:
+            return {"happiness": happiness, "unhappiness": unhappiness}
         return cellValue
 
     def spawnChild(self, childID, birthday, cell, configuration):
