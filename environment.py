@@ -89,10 +89,9 @@ class Environment:
         config = self.sugarscape.configuration
         if config["agentVisionMode"] == "radial" and config["agentMovementMode"] == "radial":
             findCellsInModeRange = self.findCellsAtRadialRange
-            maxDistance = math.ceil(math.hypot(self.width, self.height))
         else:
             findCellsInModeRange = self.findCellsAtCardinalRange
-            maxDistance = max(self.width, self.height)
+        maxDistance = max(self.width, self.height)
         for i in range(self.width):
             for j in range(self.height):
                 cell = self.grid[i][j]
@@ -106,10 +105,10 @@ class Environment:
         deltaEast = startX + gridRange
         deltaWest = startX - gridRange
         if self.wraparound == True:
-            cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": gridRange})
+            cellsInRange.append({"cell": self.grid[startX][(deltaNorth + self.height) % self.height], "distance": gridRange})
             cellsInRange.append({"cell": self.grid[startX][(deltaSouth + self.height) % self.height], "distance": gridRange})
             cellsInRange.append({"cell": self.grid[(deltaEast + self.width) % self.width][startY], "distance": gridRange})
-            cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": gridRange})
+            cellsInRange.append({"cell": self.grid[(deltaWest + self.width) % self.width][startY], "distance": gridRange})
         else:
             if deltaNorth >= 0:
                 cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": gridRange})
@@ -122,8 +121,8 @@ class Environment:
         return cellsInRange
 
     def findCellsAtRadialRange(self, startX, startY, gridRange):
-        cellsInPreviousRange = self.findCellsInRadialRange(gridRange - 1)
-        cellsInCurrentRange = self.findCellsInRadialRange(gridRange)
+        cellsInPreviousRange = self.findCellsInRadialRange(startX, startY, gridRange - 1)
+        cellsInCurrentRange = self.findCellsInRadialRange(startX, startY, gridRange)
         cellsAtRange = [cellRecord for cellRecord in cellsInCurrentRange if cellRecord not in cellsInPreviousRange]
         return cellsAtRange
 
@@ -133,6 +132,8 @@ class Environment:
             # Iterate through the upper left quadrant of the circle's bounding box
             for deltaX in range(startX - gridRange, startX):
                 for deltaY in range(startY - gridRange, startY):
+                    deltaX = (deltaX + self.width) % self.width
+                    deltaY = (deltaY + self.height) % self.height 
                     euclideanDistance = math.sqrt(pow((deltaX - startX), 2) + pow((deltaY - startY), 2))
                     # If agent can see at least part of a cell, they should be allowed to consider it
                     if euclideanDistance < gridRange + 1 and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
