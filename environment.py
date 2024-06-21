@@ -126,7 +126,7 @@ class Environment:
             # Iterate through the upper left quadrant of the circle's bounding box
             for deltaX in range(startX - gridRange, startX):
                 for deltaY in range(startY - gridRange, startY):
-                    euclideanDistance = math.hypot(deltaX - startX, deltaY - startY)
+                    euclideanDistance = math.sqrt((deltaX - startX) ** 2 + (deltaY - startY) ** 2)
                     # If agent can see at least part of a cell, they should be allowed to consider it
                     if euclideanDistance < gridRange + 1 and euclideanDistance >= gridRange and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
                         reflectedX = (2 * startX - deltaX + self.width) % self.width
@@ -141,7 +141,7 @@ class Environment:
             for deltaX in range(max(0, startX - gridRange), min(self.width, startX + gridRange + 1)):
                 for deltaY in range(max(0, startY - gridRange), min(self.height, startY + gridRange + 1)):
                     # If agent can see at least part of a cell, they should be allowed to consider it
-                    euclideanDistance = math.hypot(deltaX - startX, deltaY - startY)
+                    euclideanDistance = math.sqrt((deltaX - startX) ** 2 + (deltaY - startY) ** 2)
                     if euclideanDistance < gridRange + 1 and euclideanDistance >= gridRange and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
                         cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
         return cellsInRange
