@@ -20,8 +20,10 @@ class Environment:
         self.seasonalGrowbackCountdown = configuration["seasonalGrowbackDelay"]
         self.pollutionDiffusionDelay = configuration["pollutionDiffusionDelay"]
         self.pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
-        self.pollutionDiffusionStart = configuration["pollutionDiffusionStart"]
-        self.pollutionStart = configuration["pollutionStart"]
+        self.pollutionDiffusionStart = configuration["pollutionDiffusionTimeframe"][0]
+        self.pollutionDiffusionEnd = configuration["pollutionDiffusionTimeframe"][1]
+        self.pollutionStart = configuration["pollutionTimeframe"][0]
+        self.pollutionEnd = configuration["pollutionTimeframe"][1]
         self.sugarConsumptionPollutionFactor = configuration["sugarConsumptionPollutionFactor"]
         self.spiceConsumptionPollutionFactor = configuration["spiceConsumptionPollutionFactor"]
         self.sugarProductionPollutionFactor = configuration["sugarProductionPollutionFactor"]
@@ -70,7 +72,7 @@ class Environment:
                         self.grid[i][j].spiceLastProduced = 0
                     self.grid[i][j].sugar = sugarRegrowth
                     self.grid[i][j].spice = spiceRegrowth
-        if self.timestep >= self.pollutionDiffusionStart and self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
+        if self.pollutionDiffusionStart <= self.timestep <= self.pollutionDiffusionEnd and self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
             for i in range(self.height):
                 for j in range(self.width):
                     self.grid[i][j].findPollutionFlux()
@@ -158,7 +160,7 @@ class Environment:
             self.grid[x][y] = cell
 
     def updatePollution(self):
-        if self.timestep >= self.pollutionDiffusionStart and self.pollutionDiffusionDelay > 0:
+        if self.pollutionDiffusionStart <= self.timestep <= self.pollutionDiffusionEnd and self.pollutionDiffusionDelay > 0:
             self.pollutionDiffusionCountdown -= 1
             # Pollution diffusion delay over
             if self.pollutionDiffusionCountdown == 0:

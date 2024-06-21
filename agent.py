@@ -180,7 +180,7 @@ class Agent:
         self.spice += spiceCollected
         self.wealth += sugarCollected + spiceCollected
         self.updateMeanIncome(sugarCollected, spiceCollected)
-        if self.timestep >= self.cell.environment.pollutionStart:
+        if self.cell.environment.pollutionStart <= self.timestep <= self.cell.environment.pollutionEnd:
             self.cell.doSugarProductionPollution(sugarCollected)
             self.cell.doSpiceProductionPollution(spiceCollected)
         self.cell.resetSugar()
@@ -360,7 +360,7 @@ class Agent:
         sugarMetabolism = self.findSugarMetabolism()
         self.sugar -= sugarMetabolism
         self.spice -= spiceMetabolism
-        if self.timestep >= self.cell.environment.pollutionStart:
+        if self.cell.environment.pollutionStart <= self.timestep <= self.cell.environment.pollutionEnd:
             self.cell.doSugarConsumptionPollution(sugarMetabolism)
             self.cell.doSpiceConsumptionPollution(spiceMetabolism)
         if self.sugar < 0 or self.spice < 0:
