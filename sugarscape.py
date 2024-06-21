@@ -520,7 +520,7 @@ class Sugarscape:
                 if configurations[config]["curr"] > configurations[config]["max"]:
                     configurations[config]["curr"] = configurations[config]["min"]
 
-            if tagStringLength > 0:
+            if tagStringLength > 0 and configs["environmentMaxTribes"] > 0:
                 tags.append([random.randrange(2) for i in range(tagStringLength)])
             else:
                 tags.append(None)
