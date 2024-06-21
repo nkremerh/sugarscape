@@ -123,12 +123,15 @@ class Environment:
     def findCellsAtRadialRange(self, startX, startY, gridRange):
         cellsInPreviousRange = self.findCellsInRadialRange(startX, startY, gridRange - 1)
         cellsInCurrentRange = self.findCellsInRadialRange(startX, startY, gridRange)
-        cellsAtRange = [cellRecord for cellRecord in cellsInCurrentRange if cellRecord not in cellsInPreviousRange]
+        previousRangeSet = {tuple(cellRecord.items()) for cellRecord in cellsInPreviousRange}
+        cellsAtRange = [cellRecord for cellRecord in cellsInCurrentRange if tuple(cellRecord.items()) not in previousRangeSet]
         return cellsAtRange
 
     def findCellsInRadialRange(self, startX, startY, gridRange):
         if self.wraparound == True:
-            cellsInRange = [self.findCellsAtCardinalRange(startX, startY, i) for i in range(1, gridRange + 1)]
+            cellsInRange = []
+            for i in range(1, gridRange + 1):
+                cellsInRange.extend(self.findCellsAtCardinalRange(startX, startY, i))
             # Iterate through the upper left quadrant of the circle's bounding box
             for deltaX in range(startX - gridRange, startX):
                 for deltaY in range(startY - gridRange, startY):
