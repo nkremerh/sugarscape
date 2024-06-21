@@ -88,15 +88,15 @@ class Environment:
     def findCellRanges(self):
         config = self.sugarscape.configuration
         if config["agentVisionMode"] == "radial" and config["agentMovementMode"] == "radial":
-            findCellsInModeRange = self.findCellsAtRadialRange
+            findCellsAtModeRange = self.findCellsAtRadialRange
         else:
-            findCellsInModeRange = self.findCellsAtCardinalRange
+            findCellsAtModeRange = self.findCellsAtCardinalRange
         maxDistance = max(self.width, self.height)
         for i in range(self.width):
             for j in range(self.height):
                 cell = self.grid[i][j]
                 for distance in range(1, maxDistance):
-                    cell.ranges[distance] = findCellsInModeRange(cell.x, cell.y, distance)
+                    cell.ranges[distance] = findCellsAtModeRange(cell.x, cell.y, distance)
 
     def findCellsAtCardinalRange(self, startX, startY, gridRange):
         cellsInRange = []
@@ -132,8 +132,6 @@ class Environment:
             # Iterate through the upper left quadrant of the circle's bounding box
             for deltaX in range(startX - gridRange, startX):
                 for deltaY in range(startY - gridRange, startY):
-                    deltaX = (deltaX + self.width) % self.width
-                    deltaY = (deltaY + self.height) % self.height 
                     euclideanDistance = math.sqrt(pow((deltaX - startX), 2) + pow((deltaY - startY), 2))
                     # If agent can see at least part of a cell, they should be allowed to consider it
                     if euclideanDistance < gridRange + 1 and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
