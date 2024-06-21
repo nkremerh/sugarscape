@@ -121,10 +121,8 @@ class Environment:
         return cellsInRange
 
     def findCellsAtRadialRange(self, startX, startY, gridRange):
-        cellsInRange = []
         if self.wraparound == True:
-            for i in range(1, gridRange + 1):
-                cellsInRange.extend(self.findCellsAtCardinalRange(startX, startY, i))
+            cellsInRange = self.findCellsAtCardinalRange(startX, startY, gridRange)
             # Iterate through the upper left quadrant of the circle's bounding box
             for deltaX in range(startX - gridRange, startX):
                 for deltaY in range(startY - gridRange, startY):
@@ -138,6 +136,7 @@ class Environment:
                         cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
                         cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})        
         else:
+            cellsInRange = []
             # Iterate through the bounding box of the circle
             for deltaX in range(max(0, startX - gridRange), min(self.width, startX + gridRange + 1)):
                 for deltaY in range(max(0, startY - gridRange), min(self.height, startY + gridRange + 1)):
