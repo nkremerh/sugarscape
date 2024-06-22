@@ -37,9 +37,9 @@ class Environment:
         distanceTable = {}
         for deltaX in range(maxCellRange + 1):
             for deltaY in range(maxCellRange + 1):
-                # Find distances accounting for wraparound
                 deltaX = self.findWraparoundDistance(deltaX, self.width)
                 deltaY = self.findWraparoundDistance(deltaY, self.height)
+                # Delta pair is used as a key to look up hypotenuse
                 deltaXY = tuple(sorted((deltaX, deltaY)))
                 distanceTable[deltaXY] = math.sqrt(deltaX ** 2 + deltaY ** 2)
         return distanceTable
@@ -121,7 +121,7 @@ class Environment:
 
         cellCoords = [(x, y) for x in range(self.width) for y in range(self.height)]
         numCells = self.width * self.height
-        # Initialize cell.ranges with necessary range values
+        # Initialize ranges with all possible values
         for x, y in cellCoords:
             self.grid[x][y].ranges = {gridRange: [] for gridRange in range(maxCellRange + 1)}
 
@@ -131,7 +131,7 @@ class Environment:
             self.findCardinalCellRanges(maxCellRange, cellCoords, numCells)
 
     def findRadialCellRanges(self, maxCellRange, cellCoords, numCells):
-        self.distanceTable = self.createDistanceTable(maxCellRange)
+        distanceTable = self.createDistanceTable(maxCellRange)
         for i in range(numCells):
             x1, y1 = cellCoords[i]
             for j in range(i + 1, numCells):
@@ -142,7 +142,7 @@ class Environment:
                 if deltaX > maxCellRange or deltaY > maxCellRange:
                     continue
 
-                distance = self.distanceTable[tuple(sorted((deltaX, deltaY)))]
+                distance = distanceTable[tuple(sorted((deltaX, deltaY)))]
                 gridRange = math.floor(distance)
                 if gridRange <= maxCellRange:
                     self.grid[x1][y1].ranges[gridRange].append({"cell": self.grid[x2][y2], "distance": distance})
