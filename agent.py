@@ -1189,7 +1189,7 @@ class Agent:
         i = 0
         while i < len(cells):
             cell = cells[i]
-            cellString = f"({cell["cell"].x},{cell["cell"].y}) [{cell["wealth"]},{cell["range"]}]"
+            cellString = f"({cell['cell'].x},{cell['cell'].y}) [{cell['wealth']},{cell['range']}]"
             print(f"Cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 
@@ -1197,7 +1197,7 @@ class Agent:
         i = 0
         while i < len(cells):
             cell = cells[i]
-            cellString = f"({cell["cell"].x},{cell["cell"].y}) [{cell["wealth"]},{cell["range"]}]"
+            cellString = f"({cell['cell'].x},{cell['cell'].y}) [{cell['wealth']},{cell['range']}]"
             print(f"Ethical cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 
