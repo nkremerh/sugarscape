@@ -9,13 +9,14 @@ class GUI:
         self.window = None
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
-        # TODO: Add a simplified way to have a bunch of colors programatically chosen during runtime
-        self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280",
-                       "green": "#32FA32", "blue": "#3232FA", "red": "#FA3232", "pink": "#FA32FA", "yellow": "#FAFA32", "teal": "#32FAFA", "purple": "#6432FA", "orange": "#FA6432",
-                       "salmon": "#FA6464", "mint": "#64FA64", "blue2": "#3264FA",
-                       "none": "#32FA32", "benthamHalfLookaheadBinary": "#3232FA", "egoisticHalfLookaheadBinary": "#FA3232", "altruisticHalfLookaheadBinary": "#FA32FA",
-                       "benthamNoLookaheadBinary": "#FAFA32", "egoisticNoLookaheadBinary": "#32FAFA", "altruisticNoLookaheadBinary": "#6432FA", "benthamHalfLookaheadTop": "#FA6432",
-                       "egoisticHalfLookaheadTop": "#FA6464", "altruisticHalfLookaheadTop": "#64FA64", "benthamNoLookaheadTop": "#3264FA"}
+        self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280", "healthy": "#3232FA", "sick": "#FA3232"}
+        self.palette = ["#FA3232", "#3232FA", "#32FA32", "#FA32FA", "#FAFA32", "#4C5454", "#04724D", "#643A71", "#505168", "#8EA604", "#6D9DC5", "#56EEF4", "#EE6123", "#EC9F05", "#EC4E20", "#EB7BC0", "#53599A", "#B24C63", "#59114D", "#003B36", "#D6D9CE", "#00916E", "#B9B8D3", "#FF715B", "#FA003F"]
+        numTribes = self.sugarscape.configuration["environmentMaxTribes"]
+        numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
+        for i in range(numTribes):
+            self.colors[str(i)] = self.palette[i]
+        for i in range(numDecisionModels):
+            self.colors[self.sugarscape.configuration["agentDecisionModels"][i]] = self.palette[i]
         self.widgets = {}
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
@@ -56,7 +57,8 @@ class GUI:
         networkNames = self.configureNetworkNames()
         networkNames.insert(0, "None")
         self.activeNetwork = tkinter.StringVar(window)
-        self.activeNetwork.set(networkNames[0])  # Default
+        # Use first item as default name
+        self.activeNetwork.set(networkNames[0])
         for network in networkNames:
             networkMenu.add_checkbutton(label=network, onvalue=network, offvalue=network, variable=self.activeNetwork, command=self.doNetworkMenu, indicatoron=True)
         networkButton.grid(row=0, column=2, sticky="nsew") 
@@ -68,7 +70,8 @@ class GUI:
         agentColorNames.sort()
         agentColorNames.insert(0, "Default")
         self.lastSelectedAgentColor = tkinter.StringVar(window)
-        self.lastSelectedAgentColor.set(agentColorNames[0])  # Default
+        # Use first item as default name
+        self.lastSelectedAgentColor.set(agentColorNames[0])
         for name in agentColorNames:
             agentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedAgentColor, command=self.doAgentColorMenu, indicatoron=True)
         agentColorButton.grid(row=0, column=3, sticky="nsew")
@@ -80,14 +83,15 @@ class GUI:
         environmentColorNames.sort()
         environmentColorNames.insert(0, "Default")
         self.lastSelectedEnvironmentColor = tkinter.StringVar(window)
-        self.lastSelectedEnvironmentColor.set(environmentColorNames[0])  # Default
+        # Use first item as default name
+        self.lastSelectedEnvironmentColor.set(environmentColorNames[0])
         for name in environmentColorNames:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
         environmentColorButton.grid(row=0, column=4, sticky="nsew")
 
         statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Movement: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
-        cellLabel = tkinter.Label(window, text="Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - ", font="Roboto 10", justify=tkinter.CENTER)
+        cellLabel = tkinter.Label(window, text="Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: -", font="Roboto 10", justify=tkinter.CENTER)
         cellLabel.grid(row=2, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
 
         self.widgets["playButton"] = playButton
@@ -115,10 +119,12 @@ class GUI:
                 for j in range(self.sugarscape.environmentHeight):
                     cell = self.sugarscape.environment.findCell(i, j)
                     fillColor = self.lookupFillColor(cell)
-                    x1 = self.borderEdge + (i + 0.2) * self.siteWidth # Upper left x coordinate
-                    y1 = self.borderEdge + (j + 0.2) * self.siteHeight # Upper left y coordinate
-                    x2 = self.borderEdge + (i + 0.8) * self.siteWidth # Lower right x coordinate
-                    y2 = self.borderEdge + (j + 0.8) * self.siteHeight # Lower right y coordinate
+                    # Determine upper left x and y coordinates
+                    x1 = self.borderEdge + (i + 0.2) * self.siteWidth
+                    y1 = self.borderEdge + (j + 0.2) * self.siteHeight
+                    # Determine lower rightt x and y coordinates
+                    x2 = self.borderEdge + (i + 0.8) * self.siteWidth
+                    y2 = self.borderEdge + (j + 0.8) * self.siteHeight
                     self.grid[i][j] = {"object": self.canvas.create_oval(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
             self.drawLines()
         else:
@@ -126,10 +132,12 @@ class GUI:
                 for j in range(self.sugarscape.environmentHeight):
                     cell = self.sugarscape.environment.findCell(i, j)
                     fillColor = self.lookupFillColor(cell)
-                    x1 = self.borderEdge + i * self.siteWidth # Upper left x coordinate
-                    y1 = self.borderEdge + j * self.siteHeight # Upper left y coordinate
-                    x2 = self.borderEdge + (i + 1) * self.siteWidth # Lower right x coordinate
-                    y2 = self.borderEdge + (j + 1) * self.siteHeight # Lower right y coordinate
+                    # Determine upper left x and y coordinates
+                    x1 = self.borderEdge + i * self.siteWidth
+                    y1 = self.borderEdge + j * self.siteHeight
+                    # Determine lower rightt x and y coordinates
+                    x2 = self.borderEdge + (i + 1) * self.siteWidth
+                    y2 = self.borderEdge + (j + 1) * self.siteHeight
                     self.grid[i][j] = {"object": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0", activestipple="gray50"), "color": fillColor}
 
         if self.highlightedCell != None:
@@ -377,10 +385,11 @@ class GUI:
             cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
             agent = cell.agent
             if agent != None:
-                agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.vision, 2)} | Movement: {round(agent.movement, 2)} | "
-                agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | Metabolism: {round(((agent.sugarMetabolism + agent.spiceMetabolism) / 2), 2)}"
+                agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "
+                agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | "
+                agentStats += f"Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)} | Decision Model: {agent.decisionModel}"
             else:
-                agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: -"
+                agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: -"
             cellStats += f"\n  {agentStats}"
         else:
             cellStats = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - "
@@ -433,13 +442,13 @@ class GUI:
         elif agent.sex != None and self.activeColorOptions["agent"] == "Sex":
             return self.colors[agent.sex]
         elif agent.tribe != None and self.activeColorOptions["agent"] == "Tribes":
-            return self.colors[agent.tribe]
+            return self.colors[str(agent.tribe)]
         elif agent.decisionModel != None and self.activeColorOptions["agent"] == "Decision Models":
             return self.colors[agent.decisionModel]
         elif len(agent.diseases) > 0 and self.activeColorOptions["agent"] == "Disease":
-            return self.colors["red"]
+            return self.colors["sick"]
         elif len(agent.diseases) == 0 and self.activeColorOptions["agent"] == "Disease":
-            return self.colors["blue"]
+            return self.colors["healthy"]
         return self.colors["noSex"]
 
     def lookupNetworkColor(self, cell):
@@ -469,7 +478,7 @@ class GUI:
             else:
                 return "black"
         elif self.activeNetwork.get() == "Disease":
-            return self.colors["red"] if agent.isSick() == True else self.colors["blue"]
+            return self.colors["sick"] if agent.isSick() == True else self.colors["healthy"]
         return "black"
 
     def recolorByResourceAmount(self, cell, fillColor):
@@ -511,9 +520,7 @@ class GUI:
 
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats
-        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats['population']} | Metabolism: {stats['meanMetabolism']:.2f} | "
-        statsString += f"Movement: {stats['meanMovement']:.2f} | Vision: {stats['meanVision']:.2f} | Gini: {stats['giniCoefficient']:.2f} | "
-        statsString += f"Trade Price: {stats['meanTradePrice']:.2f} | Trade Volume: {stats['tradeVolume']:.2f}"
+        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats["population"]} | Metabolism: {stats["meanMetabolism"]} | Movement: {stats["meanMovement"]} | Vision: {stats["meanVision"]} | Gini: {stats["giniCoefficient"]} | Trade Price: {stats["meanTradePrice"]} | Trade Volume: {stats["tradeVolume"]}"
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
         if self.highlightedCell != None:

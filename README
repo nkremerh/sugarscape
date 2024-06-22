@@ -108,13 +108,25 @@ agentBaseInterestRate: [float, float]
     Set the interest rate for an agent's lending as a percentage.
     Default: [0.0, 0.0]
 
+agentDecisionModelLookaheadDiscount: [float, float]
+    Set the agent's discount applied to considering possible rewards in future timesteps.
+    Note: This feature is used in agent decision models besides the "none" and "rawSugarscape" models.
+    Default: [0, 0]
+
+agentDecisionModelLookaheadFactor: float
+    Set the agent's consideration of future rewards out to the provided forecasting horizon.
+    Options: 0, 0.5
+    Note: This feature is used in agent decision models besides the "none" and "rawSugarscape" models.
+    Default: 0
+
 agentDecisionModelFactor: [float, float]
     Set the agent weight of their decision model over biological imperatives.
     Default: [0, 0]
 
 agentDecisionModels: [string, ...]
     Set the agent decision models for different decisionmaking.
-    Options: "altruisticHalfLookaheadBinary", "altruisticHalfLookaheadTop", "benthamHalfLookaheadBinary", "benthamHalfLookaheadTop", "benthamNoLookaheadBinary", "benthamNoLookaheadTop", "egoisticHalfLookaheadBinary", "egoisticHalfLookaheadTop", "none", "rawSugarscape"
+    Options: "altruistBinary", "altruistTop", "benthamBinary", "benthamTop", "egoistBinary", "egoistTop", "negativeBentham", "none", "rawSugarscape"
+    Note: Adding either "HalfLookahead" or "NoLookahead" after a decision model name will enforce a particular decision model lookahead factor.
     Default: ["none"]
 
 agentFemaleInfertilityAge: [int, int]
@@ -429,8 +441,13 @@ startingAgents: int
     Default: 500
 
 startingDiseases: int
-    Set the number of diseases placed in the initial population.
+    Set the number of distinct diseases at simulation start.
     Default: 0
+
+startingDiseasesPerAgent: [int, int]
+    Set the number of diseases given to each agent at simulation start.
+    Note: [0, 0] will give each starting disease to a unique agent.
+    Default: [0, 0]
 
 timesteps: int
     Set the number of timesteps the simulation runs.

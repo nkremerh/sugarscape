@@ -10,81 +10,83 @@ class Agent:
         self.cell = cell
         self.debug = cell.environment.sugarscape.debug
 
-        self.sugarMetabolism = configuration["sugarMetabolism"]
-        self.spiceMetabolism = configuration["spiceMetabolism"]
+        self.aggressionFactor = configuration["aggressionFactor"]
+        self.baseInterestRate = configuration["baseInterestRate"]
+        self.decisionModel = configuration["decisionModel"]
+        self.decisionModelFactor = configuration["decisionModelFactor"]
+        self.decisionModelLookaheadDiscount = configuration["decisionModelLookaheadDiscount"]
+        self.decisionModelLookaheadFactor = configuration["decisionModelLookaheadFactor"]
+        self.fertilityAge = configuration["fertilityAge"]
+        self.fertilityFactor = configuration["fertilityFactor"]
+        self.immuneSystem = configuration["immuneSystem"]
+        self.infertilityAge = configuration["infertilityAge"]
+        self.inheritancePolicy = configuration["inheritancePolicy"]
+        self.lendingFactor = configuration["lendingFactor"]
+        self.loanDuration = configuration["loanDuration"]
+        self.lookaheadFactor = configuration["lookaheadFactor"]
+        self.maxAge = configuration["maxAge"]
+        self.maxFriends = configuration["maxFriends"]
         self.movement = configuration["movement"]
         self.movementMode = configuration["movementMode"]
-        self.vision = configuration["vision"]
-        self.visionMode = configuration["visionMode"]
-        self.sugar = configuration["sugar"]
-        self.spice = configuration["spice"]
-        self.startingSugar = configuration["sugar"]
-        self.startingSpice = configuration["spice"]
-        self.universalSugar = configuration["universalSugar"]
-        self.universalSpice = configuration["universalSpice"]
-        self.maxAge = configuration["maxAge"]
+        self.neighborhoodMode = configuration["neighborhoodMode"]
+        self.seed = configuration["seed"]
+        self.selfishnessFactor = configuration["selfishnessFactor"]
         self.sex = configuration["sex"]
-        self.fertilityAge = configuration["fertilityAge"]
-        self.infertilityAge = configuration["infertilityAge"]
+        self.spice = configuration["spice"]
+        self.spiceMetabolism = configuration["spiceMetabolism"]
+        self.startingImmuneSystem = configuration["immuneSystem"]
+        self.startingSpice = configuration["spice"]
+        self.startingSugar = configuration["sugar"]
+        self.sugar = configuration["sugar"]
+        self.sugarMetabolism = configuration["sugarMetabolism"]
         self.tags = configuration["tags"]
         self.tagPreferences = configuration["tagPreferences"]
-        self.aggressionFactor = configuration["aggressionFactor"]
         self.tradeFactor = configuration["tradeFactor"]
-        self.lookaheadFactor = configuration["lookaheadFactor"]
-        self.lendingFactor = configuration["lendingFactor"]
-        self.fertilityFactor = configuration["fertilityFactor"]
-        self.baseInterestRate = configuration["baseInterestRate"]
-        self.loanDuration = configuration["loanDuration"]
-        self.maxFriends = configuration["maxFriends"]
-        self.wealth = configuration["sugar"] + configuration["spice"]
-        self.seed = configuration["seed"]
-        self.inheritancePolicy = configuration["inheritancePolicy"]
-        self.startingImmuneSystem = configuration["immuneSystem"]
-        self.immuneSystem = configuration["immuneSystem"]
-        self.decisionModelFactor = configuration["decisionModelFactor"]
-        self.selfishnessFactor = configuration["selfishnessFactor"]
-        self.decisionModel = configuration["decisionModel"]
-        self.neighborhoodMode = configuration["neighborhoodMode"]
+        self.universalSpice = configuration["universalSpice"]
+        self.universalSugar = configuration["universalSugar"]
+        self.vision = configuration["vision"]
+        self.visionMode = configuration["visionMode"]
 
         self.alive = True
         self.age = 0
-        self.cellsInRange = []
-        self.lastMoved = -1
-        self.neighborhood = []
-        self.neighbors = []
-        self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
-        self.diseases = []
-        self.fertile = False
-        self.tribe = self.findTribe()
-        self.timestep = birthday
-        self.marginalRateOfSubstitution = 1
-        self.tagZeroes = 0
-        self.sugarMeanIncome = 1
-        self.spiceMeanIncome = 1
-        self.tradeVolume = 0
-        self.spicePrice = 0
-        self.sugarPrice = 0
-        self.nice = 0
-        self.childEndowmentHashes = None
-        self.happiness = 0
-        self.wealthHappiness = 0
-        self.healthHappiness = 0
-        self.familyHappiness = 0
-        self.socialHappiness = 0
-        self.conflictHappiness = 0
-        self.lastDoneCombat = -1
-        self.lastReproduced = -1
-        self.lastSugar = 0
-        self.lastSpice = 0
+        self.aggressionFactorModifier = 0
         self.causeOfDeath = None
+        self.cellsInRange = []
+        self.childEndowmentHashes = None
+        self.conflictHappiness = 0
+        self.diseases = []
+        self.familyHappiness = 0
+        self.fertile = False
+        self.fertilityFactorModifier = 0
+        self.happiness = 0
+        self.healthHappiness = 0
+        self.lastDoneCombat = -1
+        self.lastMoved = -1
+        self.lastReproduced = -1
+        self.lastSpice = 0
+        self.lastSugar = 0
         self.lastUniversalSpiceIncomeTimestep = 0
         self.lastUniversalSugarIncomeTimestep = 0
-        self.sugarMetabolismModifier = 0
-        self.spiceMetabolismModifier = 0
+        self.marginalRateOfSubstitution = 1
         self.movementModifier = 0
+        self.neighborhood = []
+        self.neighbors = []
+        self.nice = 0
+        self.socialHappiness = 0
+        self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
+        self.spiceMeanIncome = 1
+        self.spiceMetabolismModifier = 0
+        self.spicePrice = 0
+        self.sugarMeanIncome = 1
+        self.sugarMetabolismModifier = 0
+        self.sugarPrice = 0
+        self.tribe = self.findTribe()
+        self.timestep = birthday
+        self.tagZeroes = 0
+        self.tradeVolume = 0
         self.visionModifier = 0
-        self.aggressionFactorModifier = 0
-        self.fertilityFactorModifier = 0
+        self.wealth = configuration["sugar"] + configuration["spice"]
+        self.wealthHappiness = 0
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
@@ -170,6 +172,7 @@ class Agent:
             caughtDisease["infector"] = infector
         self.diseases.append(caughtDisease)
         self.updateDiseaseEffects(disease)
+        self.findCellsInRange()
 
     def collectResourcesAtCell(self):
         sugarCollected = self.cell.sugar
@@ -226,20 +229,17 @@ class Agent:
         self.diseases = []
 
     def doDisease(self):
-        diseases = self.diseases
-        for diseaseRecord in diseases:
+        random.shuffle(self.diseases)
+        for diseaseRecord in self.diseases:
             diseaseTags = diseaseRecord["disease"].tags
-            start = diseaseRecord["startIndex"]
-            end = diseaseRecord["endIndex"] + 1
-            immuneResponse = [self.immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
-            i = start
-            j = 0
-            for i in range(len(diseaseTags)):
+            immuneResponseStart = diseaseRecord["startIndex"]
+            immuneResponseEnd = min(diseaseRecord["endIndex"] + 1, len(self.immuneSystem))
+            immuneResponse = self.immuneSystem[immuneResponseStart:immuneResponseEnd]
+            for i in range(len(immuneResponse)):
                 if immuneResponse[i] != diseaseTags[i]:
-                    self.immuneSystem[start + i] = diseaseTags[i]
+                    self.immuneSystem[immuneResponseStart + i] = diseaseTags[i]
                     break
-            immuneResponseCheck = [self.immuneSystem[i] for i in range(diseaseRecord["startIndex"], diseaseRecord["endIndex"] + 1)]
-            if diseaseTags == immuneResponseCheck:
+            if diseaseTags == immuneResponse:
                 self.diseases.remove(diseaseRecord)
                 self.updateDiseaseEffects(diseaseRecord["disease"])
 
@@ -350,7 +350,7 @@ class Agent:
                 continue
             elif borrower.isCreditWorthy(sugarLoanAmount, spiceLoanAmount, self.loanDuration) == True:
                 if "all" in self.debug or "agent" in self.debug:
-                    print("Agent {0} lending [{1},{2}]".format(self.ID, sugarLoanAmount, spiceLoanAmount))
+                    print(f"Agent {self.ID} lending [{sugarLoanAmount},{spiceLoanAmount}]")
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
 
     def doMetabolism(self):
@@ -411,7 +411,7 @@ class Agent:
                     neighbor.spice = neighbor.spice - mateSpiceCost
                     self.lastReproduced = self.cell.environment.sugarscape.timestep
                     if "all" in self.debug or "agent" in self.debug:
-                        print("Agent {0} reproduced with agent {1} at cell ({2},{3})".format(self.ID, str(neighbor), emptyCell.x, emptyCell.y))
+                        print(f"Agent {self.ID} reproduced with agent {str(neighbor)} at cell ({emptyCell.x},{emptyCell.y})")
 
     def doTagging(self):
         if self.tags == None or self.isAlive() == False:
@@ -539,7 +539,7 @@ class Agent:
                 checkForMRSCrossing = spiceSellerNewMRS < sugarSellerNewMRS
                 if betterForSpiceSeller == True and betterForSugarSeller == True and checkForMRSCrossing == False:
                     if "all" in self.debug or "agent" in self.debug:
-                        print("Agent {0} trading [{1}, {2}]".format(self.ID, sugarPrice, spicePrice))
+                        print(f"Agent {self.ID} trading [{sugarPrice}, {spicePrice}]")
                     spiceSeller.sugar += sugarPrice
                     spiceSeller.spice -= spicePrice
                     sugarSeller.sugar -= sugarPrice
@@ -635,10 +635,15 @@ class Agent:
         for cell in cells:
             ethicalScore = self.findEthicalValueOfCell(cell["cell"])
             cell["wealth"] = ethicalScore
-        for cell in cells:
-            if cell["wealth"] > 0:
-                bestCell = cell["cell"]
-                break
+        if self.selfishnessFactor >= 0:
+            for cell in cells:
+                if cell["wealth"] > 0:
+                    bestCell = cell["cell"]
+                    break
+        else:
+            # Negative utilitarian model uses positive and negative utility to find minimum harm
+            cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]), reverse = True)
+            bestCell = cells[0]["cell"]
 
         # If additional ordering consideration, select new best cell
         if "Top" in self.decisionModel:
@@ -653,7 +658,7 @@ class Agent:
             else:
                 bestCell = greedyBestCell
             if "all" in self.debug or "agent" in self.debug:
-                print("Agent {0} could not find an ethical cell".format(self.ID))
+                print(f"Agent {self.ID} could not find an ethical cell")
         return bestCell
 
     def findBestFriend(self):
@@ -713,7 +718,9 @@ class Agent:
         pairedEndowments = {
         "decisionModel": [self.decisionModel, mate.decisionModel],
         "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
-        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
+        "decisionModelLookaheadDiscount": [self.decisionModelLookaheadDiscount, mate.decisionModelLookaheadDiscount],
+        "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
+        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
         }
         childEndowment = {"seed": self.seed}
         randomNumberReset = random.getstate()
@@ -731,8 +738,8 @@ class Agent:
                 self.childEndowmentHashes[config] = hashNum
 
         for endowment in parentEndowments:
-            index = random.randrange(2)
             random.seed(self.childEndowmentHashes[endowment] + self.timestep)
+            index = random.randrange(2)
             endowmentValue = parentEndowments[endowment][index]
             childEndowment[endowment] = endowmentValue
 
@@ -988,17 +995,15 @@ class Agent:
         numTribes = sugarscape.configuration["environmentMaxTribes"]
         zeroes = 0
         tribeCutoff = round(len(self.tags) / numTribes)
-        # Up to 11 tribes possible without significant color conflicts
-        colors = ["red", "blue", "green", "orange", "purple", "teal", "pink", "mint", "blue2", "yellow", "salmon"]
         for tag in self.tags:
             if tag == 0:
                 zeroes += 1
         self.tagZeroes = zeroes
-        for i in range(1, numTribes + 1):
+        for i in range(numTribes):
             if zeroes < (i * tribeCutoff) + 1 or i == numTribes:
-                return colors[i - 1]
-        # Default agent coloring
-        return "red"
+                return i
+        # Default tribe
+        return 0
 
     def findVision(self):
         return max(0, self.vision + self.visionModifier)
@@ -1123,7 +1128,7 @@ class Agent:
     def moveToBestCell(self):
         bestCell = self.findBestCell()
         if "all" in self.debug or "agent" in self.debug:
-            print("Agent {0} moving to ({1},{2})".format(self.ID, bestCell.x, bestCell.y))
+            print(f"Agent {self.ID} moving to ({bestCell.x},{bestCell.y})")
         if self.findAggression() > 0:
             self.doCombat(bestCell)
         else:
@@ -1184,16 +1189,16 @@ class Agent:
         i = 0
         while i < len(cells):
             cell = cells[i]
-            cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
-            print("Cell {0}/{1}: ".format(i + 1, len(cells)) + cellString)
+            cellString = f"({cell["cell"].x},{cell["cell"].y}) [{cell["wealth"]},{cell["range"]}]"
+            print(f"Cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 
     def printEthicalCellScores(self, cells):
         i = 0
         while i < len(cells):
             cell = cells[i]
-            cellString = "({0},{1}) [{2},{3}]".format(cell["cell"].x, cell["cell"].y, cell["wealth"], cell["range"])
-            print("Ethical cell {0}/{1}: ".format(i + 1, len(cells)) + cellString)
+            cellString = f"({cell["cell"].x},{cell["cell"].y}) [{cell["wealth"]},{cell["range"]}]"
+            print(f"Ethical cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 
     def removeDebt(self, loan):
@@ -1352,4 +1357,4 @@ class Agent:
         self.happiness = self.findHappiness()
 
     def __str__(self):
-        return "{0}".format(self.ID)
+        return f"{self.ID}"

@@ -16,6 +16,8 @@
         "agentBaseInterestRate": [0.05, 0.10],
         "agentDecisionModels": ["none"],
         "agentDecisionModelFactor": [1, 1],
+        "agentDecisionModelLookaheadDiscount": [0.5, 0.5],
+        "agentDecisionModelLookaheadFactor": 0,
         "agentFemaleInfertilityAge": [40, 50],
         "agentFemaleFertilityAge": [12, 15],
         "agentFertilityFactor": [1, 1],
@@ -87,6 +89,7 @@
         "seed": -1,
         "startingAgents": 250,
         "startingDiseases": 50,
+        "startingDiseasesPerAgent": [0, 0],
         "timesteps": 1000
     }
 }

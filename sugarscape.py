@@ -102,7 +102,7 @@ class Sugarscape:
             return
         if len(self.agents) + numAgents > totalCells:
             if "all" in self.debug or "sugarscape" in self.debug:
-                print("Could not allocate {0} agents. Allocating maximum of {1}.".format(numAgents, totalCells))
+                print(f"Could not allocate {numAgents} agents. Allocating maximum of {totalCells}.")
             numAgents = totalCells
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
@@ -116,26 +116,24 @@ class Sugarscape:
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
             # If using a different decision model, replace new agent with instance of child class
-            if "altruisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration, "halfLookahead")
-                a.selfishnessFactor = 0
-            elif "altruisticNoLookahead" in agentConfiguration["decisionModel"]:
+            if "altruist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 a.selfishnessFactor = 0
-            elif "benthamHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration, "halfLookahead")
-                if agentConfiguration["selfishnessFactor"] < 0:
-                    a.selfishnessFactor = 0.5
-            elif "benthamNoLookahead" in agentConfiguration["decisionModel"]:
+            elif "bentham" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
-            elif "egoisticHalfLookahead" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration, "halfLookahead")
-                a.selfishnessFactor = 1
-            elif "egoisticNoLookahead" in agentConfiguration["decisionModel"]:
+            elif "egoist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 a.selfishnessFactor = 1
+            elif "negativeBentham" in agentConfiguration["decisionModel"]:
+                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
+                a.selfishnessFactor = -1
+
+            if "NoLookahead" in agentConfiguration["decisionModel"]:
+                a.decisionModelLookaheadFactor = 0
+            elif "HalfLookahead" in agentConfiguration["decisionModel"]:
+                a.decisionModelLookaheadFactor = 0.5
             
             if self.environmentTribePerQuadrant == True:
                 tags = self.generateAgentTags(quadrantIndex)
@@ -164,17 +162,29 @@ class Sugarscape:
             newDisease = disease.Disease(diseaseID, diseaseConfiguration)
             diseases.append(newDisease)
 
-        unplacedDisease = 0
+        startingDiseases = self.configuration["startingDiseasesPerAgent"]
+        minStartingDiseases = startingDiseases[0]
+        maxStartingDiseases = startingDiseases[1]
+        currStartingDiseases = minStartingDiseases
         for agent in self.agents:
+            random.shuffle(diseases)
             for newDisease in diseases:
+                if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
+                    currStartingDiseases += 1
+                    break
                 hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
-                if hammingDistance != 0:
-                    agent.catchDisease(newDisease)
-                    self.diseases.append(newDisease)
+                if hammingDistance == 0:
+                    continue
+                agent.catchDisease(newDisease)
+                self.diseases.append(newDisease)
+                if startingDiseases == [0, 0]:
                     diseases.remove(newDisease)
                     break
-        if len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-            print("Could not place {0} diseases.".format(len(diseases)))
+            if currStartingDiseases > maxStartingDiseases:
+                currStartingDiseases = minStartingDiseases
+
+        if startingDiseases == [0, 0] and len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
+            print(f"Could not place {len(diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
@@ -202,7 +212,7 @@ class Sugarscape:
             self.toggleEnd()
             return
         if "all" in self.debug or "sugarscape" in self.debug:
-            print("Timestep: {0}\nLiving Agents: {1}".format(self.timestep, len(self.agents)))
+            print(f"Timestep: {self.timestep}\nLiving Agents: {len(self.agents)}")
         self.timestep += 1
         if self.end == True or len(self.agents) == 0:
             self.toggleEnd()
@@ -239,9 +249,9 @@ class Sugarscape:
             # Ensure consistent ordering for CSV format
             for stat in sorted(self.runtimeStats):
                 if logString == "":
-                    logString += "{0}".format(self.runtimeStats[stat])
+                    logString += f"{self.runtimeStats[stat]}"
                 else:
-                    logString += ",{0}".format(self.runtimeStats[stat])
+                    logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
         self.log.write(logString)
         self.log.flush()
@@ -442,6 +452,8 @@ class Sugarscape:
         immuneSystemLength = configs["agentImmuneSystemLength"]
         aggressionFactor = configs["agentAggressionFactor"]
         tradeFactor = configs["agentTradeFactor"]
+        decisionModelLookaheadDiscount = configs["agentDecisionModelLookaheadDiscount"]
+        decisionModelLookaheadFactor = configs["agentDecisionModelLookaheadFactor"]
         lookaheadFactor = configs["agentLookaheadFactor"]
         lendingFactor = configs["agentLendingFactor"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -466,6 +478,7 @@ class Sugarscape:
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
                           "lendingFactor": {"endowments": [], "curr": lendingFactor[0], "min": lendingFactor[0], "max": lendingFactor[1]},
                           "loanDuration": {"endowments": [], "curr": loanDuration[0], "min": loanDuration[0], "max": loanDuration[1]},
+                          "decisionModelLookaheadDiscount": {"endowments": [], "curr": decisionModelLookaheadDiscount[0], "min": decisionModelLookaheadDiscount[0], "max": decisionModelLookaheadDiscount[1]},
                           "lookaheadFactor": {"endowments": [], "curr": lookaheadFactor[0], "min": lookaheadFactor[0], "max": lookaheadFactor[1]},
                           "maleInfertilityAge": {"endowments": [], "curr": maleInfertilityAge[0], "min": maleInfertilityAge[0], "max": maleInfertilityAge[1]},
                           "maleFertilityAge": {"endowments": [], "curr": maleFertilityAge[0], "min": maleFertilityAge[0], "max": maleFertilityAge[1]},
@@ -527,7 +540,7 @@ class Sugarscape:
                 if configurations[config]["curr"] > configurations[config]["max"]:
                     configurations[config]["curr"] = configurations[config]["min"]
 
-            if tagStringLength > 0 and self.environmentTribePerQuadrant == False:
+            if tagStringLength > 0 and configs["environmentMaxTribes"] > 0 and self.environmentTribePerQuadrant == False:
                 tags.append([random.randrange(2) for i in range(tagStringLength)])
             else:
                 tags.append(None)
@@ -560,8 +573,8 @@ class Sugarscape:
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(), "tagPreferences": tagPreferences,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
-                              "decisionModel": decisionModels.pop(), "movementMode": movementMode,
-                              "neighborhoodMode": neighborhoodMode, "visionMode": visionMode}
+                              "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
+                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -614,7 +627,7 @@ class Sugarscape:
         screenshots = 0
         while t <= timesteps and len(self.agents) > 0:
             if self.configuration["screenshots"] == True and self.configuration["headlessMode"] == False:
-                self.gui.canvas.postscript(file="screenshot{0}.ps".format(screenshots), colormode="color")
+                self.gui.canvas.postscript(file=f"screenshot{screenshots}.ps", colormode="color")
                 screenshots += 1
             self.doTimestep()
             t += 1
@@ -630,9 +643,9 @@ class Sugarscape:
             # Ensure consistent ordering for CSV format
             for stat in sorted(self.runtimeStats):
                 if header == "":
-                    header += "{0}".format(stat)
+                    header += f"{stat}"
                 else:
-                    header += ",{0}".format(stat)
+                    header += f",{stat}"
             header += "\n"
             self.log.write(header)
         else:
@@ -858,14 +871,14 @@ class Sugarscape:
             # Ensure consistent ordering for CSV format
             for stat in sorted(self.runtimeStats):
                 if logString == "":
-                    logString += "{0}".format(self.runtimeStats[stat])
+                    logString += f"{self.runtimeStats[stat]}"
                 else:
-                    logString += ",{0}".format(self.runtimeStats[stat])
+                    logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
         self.log.write(logString)
 
     def __str__(self):
-        string = "{0}Seed: {1}\nTimestep: {2}\nLiving Agents: {3}".format(str(self.environment), self.seed, self.timestep, len(self.agents))
+        string = f"{str(self.environment)}Seed: {self.seed}\nTimestep: {self.timestep}\nLiving Agents: {len(self.agents)}"
         return string
 
 def parseConfiguration(configFile, configuration):
@@ -929,7 +942,7 @@ def verifyConfiguration(configuration):
     totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["agentStartingQuadrants"]) / 4
     if configuration["startingAgents"] > totalCells:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
-            print("Could not allocate {0} agents. Allocating maximum of {1}.".format(configuration["startingAgents"], totalCells))
+            print(f"Could not allocate {configuration["startingAgents"]} agents. Allocating maximum of {totalCells}.")
         configuration["startingAgents"] = totalCells
 
     # Ensure infinitely-lived agents are properly initialized
@@ -942,6 +955,16 @@ def verifyConfiguration(configuration):
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
     if configuration["environmentMaxTribes"] > 11:
         configuration["environmentMaxTribes"] = 11
+
+    if configuration["startingDiseasesPerAgent"] != [0, 0]:
+        startingDiseasesPerAgent = configuration["startingDiseasesPerAgent"][:]
+        startingDiseasesPerAgent.sort()
+        startingDiseasesPerAgent = [max(0, numDiseases) for numDiseases in startingDiseasesPerAgent]
+        startingDiseases = configuration["startingDiseases"]
+        startingDiseasesPerAgent = [min(startingDiseases, numDiseases) for numDiseases in startingDiseasesPerAgent]
+        if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"] and startingDiseasesPerAgent != configuration["startingDiseasesPerAgent"]:
+            print(f"Range of starting diseases per agent exceeds {startingDiseases} starting diseases. Setting range to {startingDiseasesPerAgent}.")
+        configuration["startingDiseasesPerAgent"] = startingDiseasesPerAgent
 
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
@@ -957,7 +980,7 @@ def verifyConfiguration(configuration):
     validModes = True
     for mode in configuration["debugMode"]:
         if mode not in recognizedDebugModes:
-            print("Debug mode {0} not recognized".format(mode))
+            print(f"Debug mode {mode} not recognized")
             validModes = False
     if validModes == False:
         printHelp()
@@ -987,6 +1010,8 @@ if __name__ == "__main__":
                      "agentDecisionModels": ["none"],
                      "agentDecisionModel": None,
                      "agentDecisionModelFactor": [0, 0],
+                     "agentDecisionModelLookaheadDiscount": [0, 0],
+                     "agentDecisionModelLookaheadFactor": [0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
@@ -1058,6 +1083,7 @@ if __name__ == "__main__":
                      "seed": -1,
                      "startingAgents": 250,
                      "startingDiseases": 0,
+                     "startingDiseasesPerAgent": [0, 0],
                      "timesteps": 200
                      }
     configuration = parseOptions(configuration)
