@@ -33,15 +33,16 @@ class Environment:
         # Populate grid with NoneType objects
         self.grid = [[None for j in range(height)]for i in range(width)]
 
-    def createDistanceTable(self, maxCellRange):
+    def createDistanceTable(self, maxDeltaX, maxDeltaY):
         distanceTable = {}
-        for deltaX in range(maxCellRange + 1):
-            for deltaY in range(maxCellRange + 1):
-                deltaX = self.findWraparoundDistance(deltaX, self.width)
-                deltaY = self.findWraparoundDistance(deltaY, self.height)
+        maxOne, maxTwo = sorted([maxDeltaX, maxDeltaY])
+        for deltaOne in range(maxOne + 1):
+            for deltaTwo in range(deltaOne or 1, maxTwo + 1):
+                deltaOne = self.findWraparoundDistance(deltaOne, maxOne)
+                deltaTwo = self.findWraparoundDistance(deltaTwo, maxTwo)
                 # Delta pair is used as a key to look up hypotenuse
-                deltaXY = tuple(sorted((deltaX, deltaY)))
-                distanceTable[deltaXY] = math.sqrt(deltaX ** 2 + deltaY ** 2)
+                deltaPair = (deltaOne, deltaTwo)
+                distanceTable[deltaPair] = math.sqrt(deltaOne ** 2 + deltaTwo ** 2)
         return distanceTable
 
     def doCellUpdate(self):
@@ -88,11 +89,12 @@ class Environment:
         self.updatePollution()
         self.doCellUpdate()
 
-    def findCardinalCellRanges(self, maxCellRange, cellCoords, numCells):
+    def findCardinalCellRanges(self, maxDeltaX, maxDeltaY, cellCoords):
+        numCells = self.width * self.height
         for i in range(numCells):
             x1, y1 = cellCoords[i]
-            eastRange = min(x1 + maxCellRange, self.width - 1)
-            southRange = min(y1 + maxCellRange, self.height - 1)
+            eastRange = min(x1 + maxDeltaX, self.width - 1)
+            southRange = min(y1 + maxDeltaY, self.height - 1)
             for j in range(x1 + 1, eastRange + 1):
                 deltaX = self.findWraparoundDistance(j - x1, self.width)
                 self.grid[x1][y1].ranges[deltaX].append({"cell": self.grid[j][y1], "distance": deltaX})
@@ -115,36 +117,38 @@ class Environment:
         maxVision = config["startingDiseases"] * max(config["diseaseVisionPenalty"][1], 0) + config["agentVision"][1]
         maxMovement = config["startingDiseases"] * max(config["diseaseMovementPenalty"][1], 0) + config["agentMovement"][1]
         maxAgentRange = max(maxVision, maxMovement)
-        maxCellRange = math.ceil(max(self.width - 1, self.height - 1))
-        if maxAgentRange < maxCellRange:
-            maxCellRange = maxAgentRange
-
+        maxDeltaX = self.width - 1 if maxAgentRange > self.width - 1 else maxAgentRange
+        maxDeltaY = self.height - 1 if maxAgentRange > self.height - 1 else maxAgentRange
+        maxDeltaRadius = max(maxDeltaX, maxDeltaY)
         cellCoords = [(x, y) for x in range(self.width) for y in range(self.height)]
-        numCells = self.width * self.height
         # Initialize ranges with all possible values
         for x, y in cellCoords:
-            self.grid[x][y].ranges = {gridRange: [] for gridRange in range(maxCellRange + 1)}
+            self.grid[x][y].ranges = {gridRange: [] for gridRange in range(1, maxDeltaRadius + 1)}
 
         if config["agentVisionMode"] == "radial" and config["agentMovementMode"] == "radial":
-            self.findRadialCellRanges(maxCellRange, cellCoords, numCells)
+            self.findRadialCellRanges(maxDeltaX, maxDeltaY, maxDeltaRadius, cellCoords)
         else:
-            self.findCardinalCellRanges(maxCellRange, cellCoords, numCells)
+            self.findCardinalCellRanges(maxDeltaX, maxDeltaY, cellCoords)
 
-    def findRadialCellRanges(self, maxCellRange, cellCoords, numCells):
-        distanceTable = self.createDistanceTable(maxCellRange)
+    def findRadialCellRanges(self, maxDeltaX, maxDeltaY, maxDeltaRadius, cellCoords):
+        distanceTable = self.createDistanceTable(maxDeltaX, maxDeltaY)
+        numCells = self.width * self.height
         for i in range(numCells):
             x1, y1 = cellCoords[i]
             for j in range(i + 1, numCells):
-                x2, y2 = cellCoords[j]  
-                deltaX = self.findWraparoundDistance(x1 - x2, self.width)
-                deltaY = self.findWraparoundDistance(y1 - y2, self.height)
+                x2, y2 = cellCoords[j]
                 # Skip cells that are out of feasible range
-                if deltaX > maxCellRange or deltaY > maxCellRange:
+                deltaX = self.findWraparoundDistance(x1 - x2, self.width)
+                if deltaX > maxDeltaX:
+                    continue
+                deltaY = self.findWraparoundDistance(y1 - y2, self.height)
+                if deltaY > maxDeltaY:
                     continue
 
-                distance = distanceTable[tuple(sorted((deltaX, deltaY)))]
+                deltaPair = tuple(sorted((deltaX, deltaY)))
+                distance = distanceTable[deltaPair]
                 gridRange = math.floor(distance)
-                if gridRange <= maxCellRange:
+                if gridRange <= maxDeltaRadius:
                     self.grid[x1][y1].ranges[gridRange].append({"cell": self.grid[x2][y2], "distance": distance})
                     self.grid[x2][y2].ranges[gridRange].append({"cell": self.grid[x1][y1], "distance": distance})
 
