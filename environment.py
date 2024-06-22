@@ -38,7 +38,8 @@ class Environment:
         for deltaX in range(maxCellRange + 1):
             for deltaY in range(maxCellRange + 1):
                 # Find distances accounting for wraparound
-                deltaX, deltaY = self.findOrthogonalDistance(deltaX, deltaY)
+                deltaX = self.findWraparoundDistance(deltaX, self.width)
+                deltaY = self.findWraparoundDistance(deltaY, self.height)
                 deltaXY = tuple(sorted((deltaX, deltaY)))
                 distanceTable[deltaXY] = math.sqrt(deltaX ** 2 + deltaY ** 2)
         return distanceTable
@@ -93,11 +94,13 @@ class Environment:
             eastRange = min(x1 + maxCellRange, self.width - 1)
             southRange = min(y1 + maxCellRange, self.height - 1)
             for j in range(x1 + 1, eastRange + 1):
-                self.grid[x1][y1].ranges[j - x1].append({"cell": self.grid[j][y1], "distance": j - x1})
-                self.grid[j][y1].ranges[j - x1].append({"cell": self.grid[x1][y1], "distance": j - x1})
+                deltaX = self.findWraparoundDistance(j - x1, self.width)
+                self.grid[x1][y1].ranges[deltaX].append({"cell": self.grid[j][y1], "distance": deltaX})
+                self.grid[j][y1].ranges[deltaX].append({"cell": self.grid[x1][y1], "distance": deltaX})
             for j in range(y1 + 1, southRange + 1):
-                self.grid[x1][y1].ranges[j - y1].append({"cell": self.grid[x1][j], "distance": j - y1})
-                self.grid[x1][j].ranges[j - y1].append({"cell": self.grid[x1][y1], "distance": j - y1})
+                deltaY = self.findWraparoundDistance(j - y1, self.height)
+                self.grid[x1][y1].ranges[deltaY].append({"cell": self.grid[x1][j], "distance": deltaY})
+                self.grid[x1][j].ranges[deltaY].append({"cell": self.grid[x1][y1], "distance": deltaY})
 
     def findCell(self, x, y):
         return self.grid[x][y]
@@ -115,7 +118,7 @@ class Environment:
         maxCellRange = math.ceil(max(self.width - 1, self.height - 1))
         if maxAgentRange < maxCellRange:
             maxCellRange = maxAgentRange
-        
+
         cellCoords = [(x, y) for x in range(self.width) for y in range(self.height)]
         numCells = self.width * self.height
         # Initialize cell.ranges with necessary range values
@@ -127,25 +130,14 @@ class Environment:
         else:
             self.findCardinalCellRanges(maxCellRange, cellCoords, numCells)
 
-    def findOrthogonalDistance(self, deltaX, deltaY):
-        if self.sugarscape.configuration["environmentWraparound"] == False:
-            return deltaX, deltaY
-        # Find shortest distance accounting for wraparound
-        deltaX = abs(deltaX)
-        if deltaX > self.width / 2:
-            deltaX = self.width - deltaX
-        deltaY = abs(deltaY)
-        if deltaY > self.height / 2:
-            deltaY = self.height - deltaY
-        return deltaX, deltaY
-
     def findRadialCellRanges(self, maxCellRange, cellCoords, numCells):
         self.distanceTable = self.createDistanceTable(maxCellRange)
         for i in range(numCells):
             x1, y1 = cellCoords[i]
             for j in range(i + 1, numCells):
                 x2, y2 = cellCoords[j]  
-                deltaX, deltaY = self.findOrthogonalDistance(x1 - x2, y1 - y2)
+                deltaX = self.findWraparoundDistance(x1 - x2, self.width)
+                deltaY = self.findWraparoundDistance(y1 - y2, self.height)
                 # Skip cells that are out of feasible range
                 if deltaX > maxCellRange or deltaY > maxCellRange:
                     continue
@@ -155,6 +147,12 @@ class Environment:
                 if gridRange <= maxCellRange:
                     self.grid[x1][y1].ranges[gridRange].append({"cell": self.grid[x2][y2], "distance": distance})
                     self.grid[x2][y2].ranges[gridRange].append({"cell": self.grid[x1][y1], "distance": distance})
+
+    def findWraparoundDistance(self, delta, border):
+        delta = abs(delta)
+        if self.sugarscape.configuration["environmentWraparound"] == True and delta > border / 2:
+            delta = border - delta
+        return delta
 
     def resetCell(self, x, y):
         self.grid[x][y] = None
