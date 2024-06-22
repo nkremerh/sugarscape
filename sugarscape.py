@@ -937,8 +937,7 @@ def verifyConfiguration(configuration):
         configuration["environmentMaxTribes"] = 11
 
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
-        startingDiseasesPerAgent = configuration["startingDiseasesPerAgent"][:]
-        startingDiseasesPerAgent.sort()
+        startingDiseasesPerAgent = sorted(configuration["startingDiseasesPerAgent"])
         startingDiseasesPerAgent = [max(0, numDiseases) for numDiseases in startingDiseasesPerAgent]
         startingDiseases = configuration["startingDiseases"]
         startingDiseasesPerAgent = [min(startingDiseases, numDiseases) for numDiseases in startingDiseasesPerAgent]
@@ -949,6 +948,28 @@ def verifyConfiguration(configuration):
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
         configuration["timesteps"] = sys.maxsize
+
+    if configuration["environmentPollutionTimeframe"] != [0, 0]:
+        pollutionStart, pollutionEnd = configuration["environmentPollutionTimeframe"]
+        if not 0 <= pollutionStart <= configuration["timesteps"]:
+            pollutionStart = 0
+        if not 0 <= pollutionEnd <= configuration["timesteps"]:
+            pollutionEnd = configuration["timesteps"]
+        pollutionTimeframe = sorted([pollutionStart, pollutionEnd])
+        if pollutionTimeframe != configuration["environmentPollutionTimeframe"] and "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
+            print(f"Setting pollution timeframe to {pollutionTimeframe}.")
+        configuration["environmentPollutionTimeframe"] = pollutionTimeframe
+
+    if configuration["environmentPollutionDiffusionTimeframe"] != [0, 0]:
+        pollutionDiffusionStart, pollutionDiffusionEnd = configuration["environmentPollutionDiffusionTimeframe"]
+        if not 0 <= pollutionDiffusionStart <= configuration["timesteps"]:
+            pollutionDiffusionStart = 0
+        if not 0 <= pollutionDiffusionEnd <= configuration["timesteps"]:
+            pollutionDiffusionEnd = configuration["timesteps"]
+        pollutionDiffusionTimeframe = sorted([pollutionDiffusionStart, pollutionDiffusionEnd])
+        if pollutionDiffusionTimeframe != configuration["environmentPollutionDiffusionTimeframe"] and "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
+            print(f"Setting pollution diffusion timeframe to {pollutionDiffusionTimeframe}.")
+        configuration["environmentPollutionDiffusionTimeframe"] = pollutionDiffusionTimeframe
 
     if configuration["seed"] == -1:
         configuration["seed"] = random.randrange(sys.maxsize)
