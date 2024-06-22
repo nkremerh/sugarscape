@@ -33,6 +33,16 @@ class Environment:
         # Populate grid with NoneType objects
         self.grid = [[None for j in range(height)]for i in range(width)]
 
+    def createDistanceTable(self, maxCellRange):
+        distanceTable = {}
+        for deltaX in range(maxCellRange + 1):
+            for deltaY in range(maxCellRange + 1):
+                # Find distances accounting for wraparound
+                deltaX, deltaY = self.findOrthogonalDistance(deltaX, deltaY)
+                deltaXY = tuple(sorted((deltaX, deltaY)))
+                distanceTable[deltaXY] = math.sqrt(deltaX ** 2 + deltaY ** 2)
+        return distanceTable
+
     def doCellUpdate(self):
         for i in range(self.width):
             for j in range(self.height):
@@ -77,6 +87,18 @@ class Environment:
         self.updatePollution()
         self.doCellUpdate()
 
+    def findCardinalCellRanges(self, maxCellRange, cellCoords, numCells):
+        for i in range(numCells):
+            x1, y1 = cellCoords[i]
+            eastRange = min(x1 + maxCellRange, self.width - 1)
+            southRange = min(y1 + maxCellRange, self.height - 1)
+            for j in range(x1 + 1, eastRange + 1):
+                self.grid[x1][y1].ranges[j - x1].append({"cell": self.grid[j][y1], "distance": j - x1})
+                self.grid[j][y1].ranges[j - x1].append({"cell": self.grid[x1][y1], "distance": j - x1})
+            for j in range(y1 + 1, southRange + 1):
+                self.grid[x1][y1].ranges[j - y1].append({"cell": self.grid[x1][j], "distance": j - y1})
+                self.grid[x1][j].ranges[j - y1].append({"cell": self.grid[x1][y1], "distance": j - y1})
+
     def findCell(self, x, y):
         return self.grid[x][y]
 
@@ -87,64 +109,52 @@ class Environment:
 
     def findCellRanges(self):
         config = self.sugarscape.configuration
+        maxVision = config["startingDiseases"] * max(config["diseaseVisionPenalty"][1], 0) + config["agentVision"][1]
+        maxMovement = config["startingDiseases"] * max(config["diseaseMovementPenalty"][1], 0) + config["agentMovement"][1]
+        maxAgentRange = max(maxVision, maxMovement)
+        maxCellRange = math.ceil(max(self.width - 1, self.height - 1))
+        if maxAgentRange < maxCellRange:
+            maxCellRange = maxAgentRange
+        
+        cellCoords = [(x, y) for x in range(self.width) for y in range(self.height)]
+        numCells = self.width * self.height
+        # Initialize cell.ranges with necessary range values
+        for x, y in cellCoords:
+            self.grid[x][y].ranges = {gridRange: [] for gridRange in range(maxCellRange + 1)}
+
         if config["agentVisionMode"] == "radial" and config["agentMovementMode"] == "radial":
-            findCellsAtModeRange = self.findCellsAtRadialRange
+            self.findRadialCellRanges(maxCellRange, cellCoords, numCells)
         else:
-            findCellsAtModeRange = self.findCellsAtCardinalRange
-        maxDistance = max(self.width, self.height)
-        for i in range(self.width):
-            for j in range(self.height):
-                cell = self.grid[i][j]
-                for distance in range(1, maxDistance):
-                    cell.ranges[distance] = findCellsAtModeRange(cell.x, cell.y, distance)
+            self.findCardinalCellRanges(maxCellRange, cellCoords, numCells)
 
-    def findCellsAtCardinalRange(self, startX, startY, gridRange):
-        cellsInRange = []
-        deltaNorth = startY - gridRange
-        deltaSouth = startY + gridRange
-        deltaEast = startX + gridRange
-        deltaWest = startX - gridRange
-        if self.wraparound == True:
-            cellsInRange.append({"cell": self.grid[startX][(deltaNorth + self.height) % self.height], "distance": gridRange})
-            cellsInRange.append({"cell": self.grid[startX][(deltaSouth + self.height) % self.height], "distance": gridRange})
-            cellsInRange.append({"cell": self.grid[(deltaEast + self.width) % self.width][startY], "distance": gridRange})
-            cellsInRange.append({"cell": self.grid[(deltaWest + self.width) % self.width][startY], "distance": gridRange})
-        else:
-            if deltaNorth >= 0:
-                cellsInRange.append({"cell": self.grid[startX][deltaNorth], "distance": gridRange})
-            if deltaSouth <= self.height - 1:
-                cellsInRange.append({"cell": self.grid[startX][deltaSouth], "distance": gridRange})
-            if deltaEast <= self.width - 1:
-                cellsInRange.append({"cell": self.grid[deltaEast][startY], "distance": gridRange})
-            if deltaWest >= 0:
-                cellsInRange.append({"cell": self.grid[deltaWest][startY], "distance": gridRange})
-        return cellsInRange
+    def findOrthogonalDistance(self, deltaX, deltaY):
+        if self.sugarscape.configuration["environmentWraparound"] == False:
+            return deltaX, deltaY
+        # Find shortest distance accounting for wraparound
+        deltaX = abs(deltaX)
+        if deltaX > self.width / 2:
+            deltaX = self.width - deltaX
+        deltaY = abs(deltaY)
+        if deltaY > self.height / 2:
+            deltaY = self.height - deltaY
+        return deltaX, deltaY
 
-    def findCellsAtRadialRange(self, startX, startY, gridRange):
-        if self.wraparound == True:
-            cellsInRange = self.findCellsAtCardinalRange(startX, startY, gridRange)
-            # Iterate through the upper left quadrant of the circle's bounding box
-            for deltaX in range(startX - gridRange, startX):
-                for deltaY in range(startY - gridRange, startY):
-                    euclideanDistance = math.sqrt((deltaX - startX) ** 2 + (deltaY - startY) ** 2)
-                    # If agent can see at least part of a cell, they should be allowed to consider it
-                    if euclideanDistance < gridRange + 1 and euclideanDistance >= gridRange and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
-                        reflectedX = (2 * startX - deltaX + self.width) % self.width
-                        reflectedY = (2 * startY - deltaY + self.height) % self.height
-                        cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
-                        cellsInRange.append({"cell": self.grid[deltaX][reflectedY], "distance": euclideanDistance})
-                        cellsInRange.append({"cell": self.grid[reflectedX][deltaY], "distance": euclideanDistance})
-                        cellsInRange.append({"cell": self.grid[reflectedX][reflectedY], "distance": euclideanDistance})        
-        else:
-            cellsInRange = []
-            # Iterate through the bounding box of the circle
-            for deltaX in range(max(0, startX - gridRange), min(self.width, startX + gridRange + 1)):
-                for deltaY in range(max(0, startY - gridRange), min(self.height, startY + gridRange + 1)):
-                    # If agent can see at least part of a cell, they should be allowed to consider it
-                    euclideanDistance = math.sqrt((deltaX - startX) ** 2 + (deltaY - startY) ** 2)
-                    if euclideanDistance < gridRange + 1 and euclideanDistance >= gridRange and self.grid[deltaX][deltaY] != self.grid[startX][startY]:
-                        cellsInRange.append({"cell": self.grid[deltaX][deltaY], "distance": euclideanDistance})
-        return cellsInRange
+    def findRadialCellRanges(self, maxCellRange, cellCoords, numCells):
+        self.distanceTable = self.createDistanceTable(maxCellRange)
+        for i in range(numCells):
+            x1, y1 = cellCoords[i]
+            for j in range(i + 1, numCells):
+                x2, y2 = cellCoords[j]  
+                deltaX, deltaY = self.findOrthogonalDistance(x1 - x2, y1 - y2)
+                # Skip cells that are out of feasible range
+                if deltaX > maxCellRange or deltaY > maxCellRange:
+                    continue
+
+                distance = self.distanceTable[tuple(sorted((deltaX, deltaY)))]
+                gridRange = math.floor(distance)
+                if gridRange <= maxCellRange:
+                    self.grid[x1][y1].ranges[gridRange].append({"cell": self.grid[x2][y2], "distance": distance})
+                    self.grid[x2][y2].ranges[gridRange].append({"cell": self.grid[x1][y1], "distance": distance})
 
     def resetCell(self, x, y):
         self.grid[x][y] = None
