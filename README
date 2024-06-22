@@ -320,6 +320,10 @@ environmentMaxTribes: int
     Set the maximum number of tribes in the starting population.
     Default: 0
 
+environmentPollutionDiffusionDelay: int
+    Set the delay interval in timesteps when pollution is diffused across the environment.
+    Default: 0
+
 environmentPollutionDiffusionTimeframe: [int, int]
     Set the timeframe during which pollution diffusion is active.
     Default: [0, 0]
