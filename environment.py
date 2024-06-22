@@ -97,12 +97,12 @@ class Environment:
             southRange = min(y1 + maxDeltaY, self.height - 1)
             for j in range(x1 + 1, eastRange + 1):
                 deltaX = self.findWraparoundDistance(j - x1, self.width)
-                self.grid[x1][y1].ranges[deltaX].append({"cell": self.grid[j][y1], "distance": deltaX})
-                self.grid[j][y1].ranges[deltaX].append({"cell": self.grid[x1][y1], "distance": deltaX})
+                self.grid[x1][y1].ranges[deltaX][self.grid[j][y1]] = deltaX
+                self.grid[j][y1].ranges[deltaX][self.grid[x1][y1]] = deltaX
             for j in range(y1 + 1, southRange + 1):
                 deltaY = self.findWraparoundDistance(j - y1, self.height)
-                self.grid[x1][y1].ranges[deltaY].append({"cell": self.grid[x1][j], "distance": deltaY})
-                self.grid[x1][j].ranges[deltaY].append({"cell": self.grid[x1][y1], "distance": deltaY})
+                self.grid[x1][y1].ranges[deltaY][self.grid[x1][j]] = deltaY
+                self.grid[x1][j].ranges[deltaY][self.grid[x1][y1]] = deltaY
 
     def findCell(self, x, y):
         return self.grid[x][y]
@@ -123,7 +123,7 @@ class Environment:
         cellCoords = [(x, y) for x in range(self.width) for y in range(self.height)]
         # Initialize ranges with all possible values
         for x, y in cellCoords:
-            self.grid[x][y].ranges = {gridRange: [] for gridRange in range(1, maxDeltaRadius + 1)}
+            self.grid[x][y].ranges = {gridRange: {} for gridRange in range(1, maxDeltaRadius + 1)}
 
         if config["agentVisionMode"] == "radial" and config["agentMovementMode"] == "radial":
             self.findRadialCellRanges(maxDeltaX, maxDeltaY, maxDeltaRadius, cellCoords)
@@ -137,20 +137,14 @@ class Environment:
             x1, y1 = cellCoords[i]
             for j in range(i + 1, numCells):
                 x2, y2 = cellCoords[j]
-                # Skip cells that are out of feasible range
                 deltaX = self.findWraparoundDistance(x1 - x2, self.width)
-                if deltaX > maxDeltaX:
-                    continue
                 deltaY = self.findWraparoundDistance(y1 - y2, self.height)
-                if deltaY > maxDeltaY:
-                    continue
-
                 deltaPair = tuple(sorted((deltaX, deltaY)))
                 distance = distanceTable[deltaPair]
                 gridRange = math.floor(distance)
                 if gridRange <= maxDeltaRadius:
-                    self.grid[x1][y1].ranges[gridRange].append({"cell": self.grid[x2][y2], "distance": distance})
-                    self.grid[x2][y2].ranges[gridRange].append({"cell": self.grid[x1][y1], "distance": distance})
+                    self.grid[x1][y1].ranges[gridRange][self.grid[x2][y2]] = distance
+                    self.grid[x2][y2].ranges[gridRange][self.grid[x1][y1]] = distance
 
     def findWraparoundDistance(self, delta, border):
         delta = abs(delta)
