@@ -586,7 +586,6 @@ class Agent:
         potentialCells = []
 
         for cell, travelDistance in cellsInRange:
-
             # Avoid attacking agents ineligible to attack
             prey = cell.agent
             if cell.isOccupied() and self.isNeighborValidPrey(prey) == False:
