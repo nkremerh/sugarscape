@@ -35,7 +35,6 @@ class Environment:
 
     def createDistanceTable(self, maxDeltaX, maxDeltaY):
         distanceTable = {}
-        maxOne, maxTwo = sorted([maxDeltaX, maxDeltaY])
         lowerMax = min(maxDeltaX, maxDeltaY)
         upperMax = max(maxDeltaX, maxDeltaY)
         for lowerDelta in range(lowerMax + 1):
@@ -142,6 +141,8 @@ class Environment:
                 x2, y2 = cellCoords[j]
                 deltaX = self.findWraparoundDistance(x1 - x2, self.width)
                 deltaY = self.findWraparoundDistance(y1 - y2, self.height)
+                if deltaX > maxDeltaX or deltaY > maxDeltaY:
+                    continue
                 deltaPair = tuple(sorted((deltaX, deltaY)))
                 distance = distanceTable[deltaPair]
                 gridRange = math.floor(distance)
