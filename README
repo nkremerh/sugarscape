@@ -331,6 +331,18 @@ environmentPollutionDiffusionDelay: int
     Set the delay interval in timesteps when pollution is diffused across the environment.
     Default: 0
 
+environmentPollutionDiffusionTimeframe: [int, int]
+    Set the start and end timesteps during which pollution diffusion is active.
+    Note: Value of -1 for the start sets the start timestep to 0.
+    Note: Value of -1 for the end sets the end timestep to the end of the simulation.
+    Default: [0, 0]
+
+environmentPollutionTimeframe: [int, int]
+    Set the start and end timesteps during which consumption and production pollution are active.
+    Note: Value of -1 for the start sets the start timestep to 0.
+    Note: Value of -1 for the end sets the end timestep to the end of the simulation.
+    Default: [0, 0]
+
 environmentQuadrantSizeFactor: float
     Set the proportion of each corner of the screen taken up by the agents' starting quadrants.
     Default: 1

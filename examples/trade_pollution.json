@@ -12,6 +12,8 @@
     "agentTradeFactor": [1, 1],
     "environmentMaxSpice": 4,
     "environmentPollutionDiffusionDelay": 1,
+    "environmentPollutionDiffusionTimeframe": [150, 500],
+    "environmentPollutionTimeframe": [100, 150],
     "environmentSpiceRegrowRate": 1,
     "environmentSugarConsumptionPollutionFactor": 1,
     "environmentSugarProductionPollutionFactor": 1,

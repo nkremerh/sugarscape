@@ -180,8 +180,9 @@ class Agent:
         self.spice += spiceCollected
         self.wealth += sugarCollected + spiceCollected
         self.updateMeanIncome(sugarCollected, spiceCollected)
-        self.cell.doSugarProductionPollution(sugarCollected)
-        self.cell.doSpiceProductionPollution(spiceCollected)
+        if self.cell.environment.pollutionStart <= self.timestep <= self.cell.environment.pollutionEnd:
+            self.cell.doSugarProductionPollution(sugarCollected)
+            self.cell.doSpiceProductionPollution(spiceCollected)
         self.cell.resetSugar()
         self.cell.resetSpice()
 
@@ -359,8 +360,9 @@ class Agent:
         sugarMetabolism = self.findSugarMetabolism()
         self.sugar -= sugarMetabolism
         self.spice -= spiceMetabolism
-        self.cell.doSugarConsumptionPollution(sugarMetabolism)
-        self.cell.doSpiceConsumptionPollution(spiceMetabolism)
+        if self.cell.environment.pollutionStart <= self.timestep <= self.cell.environment.pollutionEnd:
+            self.cell.doSugarConsumptionPollution(sugarMetabolism)
+            self.cell.doSpiceConsumptionPollution(spiceMetabolism)
         if self.sugar < 0 or self.spice < 0:
             self.doDeath("starvation")
         elif (self.sugar <= 0 and sugarMetabolism > 0) or (self.spice <= 0 and spiceMetabolism > 0):
@@ -596,20 +598,19 @@ class Agent:
             welfarePreySpice = aggression * min(combatMaxLoot, preySpice)
 
             # Modify value of cell relative to the metabolism needs of the agent
-            welfare = self.findWelfare((cell.sugar + welfarePreySugar), (cell.spice + welfarePreySpice))
-            cellWealth = welfare / (1 + cell.pollution)
+            welfare = self.findWelfare(((cell.sugar + welfarePreySugar) / (1 + cell.pollution)), ((cell.spice + welfarePreySpice) / (1 + cell.pollution)))
 
             # Avoid attacking agents protected via retaliation
-            if prey != None and retaliators[preyTribe] > self.wealth + cellWealth:
+            if prey != None and retaliators[preyTribe] > self.wealth + welfare:
                 continue
 
             # Select closest cell with the most resources
-            if cellWealth > bestWealth or (cellWealth == bestWealth and travelDistance < bestRange):
+            if welfare > bestWealth or (welfare == bestWealth and travelDistance < bestRange):
                 bestCell = cell
-                bestWealth = cellWealth
+                bestWealth = welfare
                 bestRange = travelDistance
 
-            cellRecord = {"cell": cell, "wealth": cellWealth, "range": travelDistance}
+            cellRecord = {"cell": cell, "wealth": welfare, "range": travelDistance}
             potentialCells.append(cellRecord)
 
         if self.decisionModelFactor > 0:
