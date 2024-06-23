@@ -993,17 +993,10 @@ class Agent:
             return None
         sugarscape = self.cell.environment.sugarscape
         numTribes = sugarscape.configuration["environmentMaxTribes"]
-        zeroes = 0
-        tribeCutoff = round(len(self.tags) / numTribes)
-        for tag in self.tags:
-            if tag == 0:
-                zeroes += 1
-        self.tagZeroes = zeroes
-        for i in range(numTribes):
-            if zeroes < (i * tribeCutoff) + 1 or i == numTribes:
-                return i
-        # Default tribe
-        return 0
+        self.tagZeroes = self.tags.count(0)
+        tribeSize = (len(self.tags) + 1) / numTribes
+        tribe = math.floor(self.tagZeroes / tribeSize)
+        return tribe
 
     def findVision(self):
         return max(0, self.vision + self.visionModifier)
