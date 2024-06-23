@@ -37,12 +37,15 @@ class Environment:
         distanceTable = {}
         lowerMax = min(maxDeltaX, maxDeltaY)
         upperMax = max(maxDeltaX, maxDeltaY)
+        lowerBorder = self.width if lowerMax == maxDeltaX else self.height
+        upperBorder = self.width if lowerMax == maxDeltaY else self.height
         for lowerDelta in range(lowerMax + 1):
             for upperDelta in range(max(1, lowerDelta), upperMax + 1):
-                lowerDelta = self.findWraparoundDistance(lowerDelta, lowerMax)
-                upperDelta = self.findWraparoundDistance(upperDelta, upperMax)
+                lowerDelta = self.findWraparoundDistance(lowerDelta, lowerBorder)
+                upperDelta = self.findWraparoundDistance(upperDelta, upperBorder)
                 # Delta pair is used as a key to look up hypotenuse
                 deltaPair = (lowerDelta, upperDelta)
+                # print(deltaPair)
                 distanceTable[deltaPair] = math.sqrt(lowerDelta ** 2 + upperDelta ** 2)
         return distanceTable
 
