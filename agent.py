@@ -40,6 +40,7 @@ class Agent:
         self.sugar = configuration["sugar"]
         self.sugarMetabolism = configuration["sugarMetabolism"]
         self.tags = configuration["tags"]
+        self.tagging = configuration["tags"]
         self.tagPreferences = configuration["tagPreferences"]
         self.tradeFactor = configuration["tradeFactor"]
         self.universalSpice = configuration["universalSpice"]
@@ -414,7 +415,7 @@ class Agent:
                         print(f"Agent {self.ID} reproduced with agent {str(neighbor)} at cell ({emptyCell.x},{emptyCell.y})")
 
     def doTagging(self):
-        if self.tags == None or self.isAlive() == False:
+        if self.tags == None or self.isAlive() == False or self.tagging == False:
             return
         neighborCells = list(self.cell.neighbors.values())
         random.shuffle(neighborCells)
@@ -774,6 +775,7 @@ class Agent:
                     childTags.append(mismatchBits[random.randrange(2)])
         childEndowment["tags"] = childTags
         childEndowment["tagPreferences"] = self.tagPreferences
+        childEndowment["tagging"] = self.tagging
 
         hashed = hashlib.md5("immuneSystem".encode())
         hashNum = int(hashed.hexdigest(), 16)
