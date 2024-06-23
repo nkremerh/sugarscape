@@ -45,7 +45,6 @@ class Environment:
                 upperDelta = self.findWraparoundDistance(upperDelta, upperBorder)
                 # Delta pair is used as a key to look up hypotenuse
                 deltaPair = (lowerDelta, upperDelta)
-                # print(deltaPair)
                 distanceTable[deltaPair] = math.sqrt(lowerDelta ** 2 + upperDelta ** 2)
         return distanceTable
 
