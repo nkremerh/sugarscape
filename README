@@ -325,11 +325,15 @@ environmentPollutionDiffusionDelay: int
     Default: 0
 
 environmentPollutionDiffusionTimeframe: [int, int]
-    Set the timeframe during which pollution diffusion is active.
+    Set the start and end timesteps during which pollution diffusion is active.
+    Note: Value of -1 for the start sets the start timestep to 0.
+    Note: Value of -1 for the end sets the end timestep to the end of the simulation.
     Default: [0, 0]
 
 environmentPollutionTimeframe: [int, int]
-    Set the timeframe during which consumption and production pollution is active.
+    Set the start and end timesteps during which consumption and production pollution are active.
+    Note: Value of -1 for the start sets the start timestep to 0.
+    Note: Value of -1 for the end sets the end timestep to the end of the simulation.
     Default: [0, 0]
 
 environmentQuadrantSizeFactor: float
