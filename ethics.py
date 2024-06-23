@@ -23,7 +23,7 @@ class Bentham(agent.Agent):
         futureNeighborhoodSize = len(self.findNeighborhood(cell))
         for neighbor in self.neighborhood:
             certainty = 1 if neighbor.canReachCell(cell) == True else 0
-            # Skip calculations that will end up being a 0
+            # Skip if agent cannot reach cell
             if certainty == 0:
                 continue
             # Timesteps to reach cell, currently 1 since agents only plan for the current timestep

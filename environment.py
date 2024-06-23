@@ -36,13 +36,15 @@ class Environment:
     def createDistanceTable(self, maxDeltaX, maxDeltaY):
         distanceTable = {}
         maxOne, maxTwo = sorted([maxDeltaX, maxDeltaY])
-        for deltaOne in range(maxOne + 1):
-            for deltaTwo in range(deltaOne or 1, maxTwo + 1):
-                deltaOne = self.findWraparoundDistance(deltaOne, maxOne)
-                deltaTwo = self.findWraparoundDistance(deltaTwo, maxTwo)
+        lowerMax = min(maxDeltaX, maxDeltaY)
+        upperMax = max(maxDeltaX, maxDeltaY)
+        for lowerDelta in range(lowerMax + 1):
+            for upperDelta in range(max(1, lowerDelta), upperMax + 1):
+                lowerDelta = self.findWraparoundDistance(lowerDelta, lowerMax)
+                upperDelta = self.findWraparoundDistance(upperDelta, upperMax)
                 # Delta pair is used as a key to look up hypotenuse
-                deltaPair = (deltaOne, deltaTwo)
-                distanceTable[deltaPair] = math.sqrt(deltaOne ** 2 + deltaTwo ** 2)
+                deltaPair = (lowerDelta, upperDelta)
+                distanceTable[deltaPair] = math.sqrt(lowerDelta ** 2 + upperDelta ** 2)
         return distanceTable
 
     def doCellUpdate(self):
@@ -114,6 +116,7 @@ class Environment:
 
     def findCellRanges(self):
         config = self.sugarscape.configuration
+        # Determine maximum range to memoize based on the maximum possible agent vision and movement from bonuses
         maxVision = config["startingDiseases"] * max(config["diseaseVisionPenalty"][1], 0) + config["agentVision"][1]
         maxMovement = config["startingDiseases"] * max(config["diseaseMovementPenalty"][1], 0) + config["agentMovement"][1]
         maxAgentRange = max(maxVision, maxMovement)
