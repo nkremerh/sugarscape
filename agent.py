@@ -991,10 +991,11 @@ class Agent:
     def findTribe(self):
         if self.tags == None:
             return None
-        sugarscape = self.cell.environment.sugarscape
-        numTribes = sugarscape.configuration["environmentMaxTribes"]
+        config = self.cell.environment.sugarscape.configuration
+        numTribes = config["environmentMaxTribes"]
+        possibleZeroes = config["agentTagStringLength"] + 1
         self.tagZeroes = self.tags.count(0)
-        tribeSize = (len(self.tags) + 1) / numTribes
+        tribeSize = (possibleZeroes / numTribes)
         tribe = math.floor(self.tagZeroes / tribeSize)
         return tribe
 

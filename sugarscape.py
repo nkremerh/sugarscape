@@ -300,14 +300,13 @@ class Sugarscape:
     def generateAgentTags(self, quadrantIndex):
         tagLength = self.configuration["agentTagStringLength"]
         numTribes = self.configuration["environmentMaxTribes"]
-        tribeCutoff = round(tagLength / numTribes)
-        minZeroes = quadrantIndex * tribeCutoff
-        maxZeroes = min((quadrantIndex + 1) * tribeCutoff - 1, tagLength)
+        tribeSize = (tagLength + 1) / numTribes
+        minZeroes = math.floor(quadrantIndex * tribeSize)
+        maxZeroes = math.floor((quadrantIndex + 1) * tribeSize) - 1
+        maxZeroes = min(maxZeroes, tagLength)
+        # Use tribe's median number of zeroes to maximize initial solidarity with tribe
         zeroes = (minZeroes + maxZeroes) / 2
-        if random.random() < 0.5:
-            zeroes = math.floor(zeroes)
-        else:
-            zeroes = math.ceil(zeroes)
+        zeroes = math.floor(zeroes) if random.random() < 0.5 else math.ceil(zeroes)
         ones = tagLength - zeroes
         tags = [0] * zeroes + [1] * ones
         random.shuffle(tags)
