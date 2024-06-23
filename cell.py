@@ -15,6 +15,7 @@ class Cell:
         self.season = None
         self.timestep = 0
         self.neighbors = {}
+        self.ranges = {}
         self.sugarLastProduced = 0
         self.spiceLastProduced = 0
 

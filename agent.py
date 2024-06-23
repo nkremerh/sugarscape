@@ -139,9 +139,8 @@ class Agent:
         self.socialNetwork["creditors"].append(loan)
 
     def canReachCell(self, cell):
-        for seenCell in self.cellsInRange:
-            if seenCell["cell"] == cell:
-                return True
+        if cell == self.cell or cell in self.cellsInRange:
+            return True
         return False
 
     def canTradeWithNeighbor(self, neighbor):
@@ -572,7 +571,8 @@ class Agent:
         self.findNeighborhood()
         if len(self.cellsInRange) == 0:
             return self.cell
-        random.shuffle(self.cellsInRange)
+        cellsInRange = list(self.cellsInRange.items())
+        random.shuffle(cellsInRange)
 
         retaliators = self.findRetaliatorsInVision()
         combatMaxLoot = self.cell.environment.maxCombatLoot
@@ -583,10 +583,7 @@ class Agent:
         bestRange = max(self.cell.environment.height, self.cell.environment.width)
         potentialCells = []
 
-        for currCell in self.cellsInRange:
-            cell = currCell["cell"]
-            travelDistance = currCell["distance"]
-
+        for cell, travelDistance in cellsInRange:
             # Avoid attacking agents ineligible to attack
             prey = cell.agent
             if cell.isOccupied() and self.isNeighborValidPrey(prey) == False:
@@ -678,15 +675,14 @@ class Agent:
         vision = self.findVision()
         movement = self.findMovement()
         cellRange = min(vision, movement)
-        if cellRange > 0:
-            if (self.visionMode == "cardinal" and cellRange == vision) or (self.movementMode == "cardinal" and cellRange == movement):
-                allCells = self.cell.environment.findCellsInCardinalRange(cell.x, cell.y, cellRange)
-            else:
-                allCells = self.cell.environment.findCellsInRadialRange(cell.x, cell.y, cellRange)
-            if newCell == None:
-                self.cellsInRange = allCells
+        allCells = {}
+        if cellRange <= 0:
             return allCells
-        return []
+        for i in range(1, cellRange + 1):
+            allCells.update(cell.ranges[i])
+        if newCell == None:
+            self.cellsInRange = allCells
+        return allCells
 
     def findChildEndowment(self, mate):
         parentEndowments = {
@@ -897,8 +893,8 @@ class Agent:
         else:
             newNeighborhood = self.findCellsInRange(newCell)
         neighborhood = []
-        for neighborCell in newNeighborhood:
-            neighbor = neighborCell["cell"].agent
+        for neighborCell in newNeighborhood.keys():
+            neighbor = neighborCell.agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighborhood.append(neighbor)
         neighborhood.append(self)
@@ -956,8 +952,8 @@ class Agent:
 
     def findRetaliatorsInVision(self):
         retaliators = {}
-        for cell in self.cellsInRange:
-            agent = cell["cell"].agent
+        for cell in self.cellsInRange.keys():
+            agent = cell.agent
             if agent != None:
                 if agent.tribe not in retaliators:
                     retaliators[agent.tribe] = agent.wealth

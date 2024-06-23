@@ -202,6 +202,7 @@ class Sugarscape:
         for peak in spicePeaks:
             self.addSpicePeak(peak[0], peak[1], radius, maxSpice)
         self.environment.findCellNeighbors()
+        self.environment.findCellRanges()
 
     def doTimestep(self):
         self.removeDeadAgents()
