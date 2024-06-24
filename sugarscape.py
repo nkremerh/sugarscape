@@ -428,6 +428,7 @@ class Sugarscape:
         maleInfertilityAge = configs["agentMaleInfertilityAge"]
         tagPreferences = configs["agentTagPreferences"]
         tagStringLength = configs["agentTagStringLength"]
+        tagging = configs["agentTagging"]
         immuneSystemLength = configs["agentImmuneSystemLength"]
         aggressionFactor = configs["agentAggressionFactor"]
         tradeFactor = configs["agentTradeFactor"]
@@ -550,7 +551,7 @@ class Sugarscape:
         random.setstate(randomNumberReset)
         random.shuffle(sexes)
         for i in range(numAgents):
-            agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(), "tagPreferences": tagPreferences,
+            agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
                               "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode}
@@ -1060,6 +1061,7 @@ if __name__ == "__main__":
                      "agentSugarMetabolism": [1, 4],
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
+                     "agentTagging": False,
                      "agentTradeFactor": [0, 0],
                      "agentUniversalSpice": [0,0],
                      "agentUniversalSugar": [0,0],

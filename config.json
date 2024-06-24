@@ -42,6 +42,7 @@
         "agentSugarMetabolism": [1, 4],
         "agentTagPreferences": false,
         "agentTagStringLength": 11,
+        "agentTagging": true,
         "agentTradeFactor": [1, 1],
         "agentUniversalSpice": [0, 0],
         "agentUniversalSugar": [0, 0],
