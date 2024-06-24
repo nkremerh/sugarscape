@@ -113,10 +113,12 @@ class Sugarscape:
         agentEndowments = self.randomizeAgentEndowments(numAgents)
         for quadrant in emptyCells:
             random.shuffle(quadrant)
-        random.shuffle(emptyCells)
+        quadrantIndices = [i for i in range(quadrants)]
+        random.shuffle(quadrantIndices)
 
         for i in range(numAgents):
-            randomCell = emptyCells[i % quadrants].pop()
+            quadrantIndex = quadrantIndices[i % quadrants]
+            randomCell = emptyCells[quadrantIndex].pop()
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
@@ -140,7 +142,7 @@ class Sugarscape:
             elif "HalfLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0.5
             if self.environmentTribePerQuadrant == True:
-                tribe = i % quadrants
+                tribe = quadrantIndex
                 tags = self.generateTribeTags(tribe)
                 a.tags = tags
                 a.tribe = a.findTribe()
