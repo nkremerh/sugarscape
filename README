@@ -237,7 +237,7 @@ agentTagStringLength: int
     Default: 0
 
 agentTagging: boolean
-    Set agent ability to change neighbor's cultural tag.
+    Set whether agents will exert cultural pressure by flipping neighboring agent cultural tags.
     Default: true
 
 agentTradeFactor: [float, float]

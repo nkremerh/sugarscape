@@ -1008,7 +1008,7 @@ if __name__ == "__main__":
                      "agentSugarMetabolism": [1, 4],
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
-                     "agentTagging": True,
+                     "agentTagging": False,
                      "agentTradeFactor": [0, 0],
                      "agentUniversalSpice": [0,0],
                      "agentUniversalSugar": [0,0],
