@@ -44,7 +44,7 @@ class Sugarscape:
         self.agents = []
         self.deadAgents = []
         self.diseases = []
-        self.activeCells = self.findActiveCells()
+        self.activeQuadrants = self.findActiveQuadrants()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
         self.gui = gui.GUI(self, self.configuration["interfaceHeight"], self.configuration["interfaceWidth"]) if configuration["headlessMode"] == False else None
@@ -96,8 +96,9 @@ class Sugarscape:
         if self.environment == None:
             return
 
-        emptyCells = [cellRecord for cellRecord in self.activeCells if cellRecord["cell"].agent == None]
-        totalCells = len(emptyCells)
+        emptyCells = [[cell for cell in quadrant if cell.agent == None] for quadrant in self.activeQuadrants]
+        totalCells = sum(len(quadrant) for quadrant in emptyCells)
+        quadrants = len(emptyCells)
         if totalCells == 0:
             return
         if len(self.agents) + numAgents > totalCells:
@@ -106,12 +107,12 @@ class Sugarscape:
             numAgents = totalCells
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
+        for quadrant in emptyCells:
+            random.shuffle(quadrant)
         random.shuffle(emptyCells)
 
         for i in range(numAgents):
-            cellRecord = emptyCells.pop()
-            randomCell = cellRecord["cell"]
-            quadrantIndex = cellRecord["quadrantIndex"]
+            randomCell = emptyCells[i % quadrants].pop()
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
@@ -134,9 +135,9 @@ class Sugarscape:
                 a.decisionModelLookaheadFactor = 0
             elif "HalfLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0.5
-            
             if self.environmentTribePerQuadrant == True:
-                tags = self.generateAgentTags(quadrantIndex)
+                tribe = i % quadrants
+                tags = self.generateTribeTags(tribe)
                 a.tags = tags
                 a.tribe = a.findTribe()
             randomCell.agent = a
@@ -264,7 +265,7 @@ class Sugarscape:
             print(str(self))
         exit(0)
 
-    def findActiveCells(self):
+    def findActiveQuadrants(self):
         quadrants = self.configuration["agentStartingQuadrants"]
         cellRange = []
         quadrantWidth = math.floor(self.environmentWidth / 2 * self.configuration["environmentQuadrantSizeFactor"])
@@ -272,24 +273,20 @@ class Sugarscape:
         quadrantIndex = 0
         # Quadrant I at origin in top left corner, other quadrants in clockwise order
         if 1 in quadrants:
-            quadrantOne = [{"cell": self.environment.grid[i][j], "quadrantIndex": quadrantIndex}
-                            for j in range(quadrantHeight) for i in range(quadrantWidth)]
-            cellRange.extend(quadrantOne)
+            quadrantOne = [self.environment.grid[i][j] for j in range(quadrantHeight) for i in range(quadrantWidth)]
+            cellRange.append(quadrantOne)
             quadrantIndex += 1
         if 2 in quadrants:
-            quadrantTwo = [{"cell": self.environment.grid[i][j], "quadrantIndex": quadrantIndex}
-                            for j in range(quadrantHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
-            cellRange.extend(quadrantTwo)
+            quadrantTwo = [self.environment.grid[i][j] for j in range(quadrantHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.append(quadrantTwo)
             quadrantIndex += 1
         if 3 in quadrants:
-            quadrantThree = [{"cell": self.environment.grid[i][j], "quadrantIndex": quadrantIndex}
-                              for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
-            cellRange.extend(quadrantThree)
+            quadrantThree = [self.environment.grid[i][j] for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(self.environmentWidth - quadrantWidth, self.environmentWidth)]
+            cellRange.append(quadrantThree)
             quadrantIndex += 1
         if 4 in quadrants:
-            quadrantFour = [{"cell": self.environment.grid[i][j], "quadrantIndex": quadrantIndex}
-                             for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
-            cellRange.extend(quadrantFour)
+            quadrantFour = [self.environment.grid[i][j] for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
+            cellRange.append(quadrantFour)
         return cellRange
 
     def generateAgentID(self):
@@ -297,25 +294,38 @@ class Sugarscape:
         self.nextAgentID += 1
         return agentID
 
-    def generateAgentTags(self, quadrantIndex):
-        tagLength = self.configuration["agentTagStringLength"]
-        numTribes = self.configuration["environmentMaxTribes"]
-        tribeSize = (tagLength + 1) / numTribes
-        minZeroes = math.floor(quadrantIndex * tribeSize)
-        maxZeroes = math.floor((quadrantIndex + 1) * tribeSize) - 1
-        maxZeroes = min(maxZeroes, tagLength)
-        # Use tribe's median number of zeroes to maximize initial solidarity with tribe
-        zeroes = (minZeroes + maxZeroes) / 2
-        zeroes = math.floor(zeroes) if random.random() < 0.5 else math.ceil(zeroes)
-        ones = tagLength - zeroes
-        tags = [0] * zeroes + [1] * ones
-        random.shuffle(tags)
-        return tags
+    def generateAgentTags(self, numAgents):
+        configs = self.configuration
+        if configs["agentTagStringLength"] <= 0 or configs["environmentMaxTribes"] <= 0 or self.environmentTribePerQuadrant == True:
+            return [None] * numAgents
+        numTribes = configs["environmentMaxTribes"]
+        tagsEndowments = []
+        for i in range(numAgents):
+            currTribe = i % numTribes
+            tags = self.generateTribeTags(currTribe)
+            tagsEndowments.append(tags)
+        random.shuffle(tagsEndowments)
+        return tagsEndowments
 
     def generateDiseaseID(self):
         diseaseID = self.nextDiseaseID
         self.nextDiseaseID += 1
         return diseaseID
+
+    def generateTribeTags(self, tribe):
+        tagStringLength = self.configuration["agentTagStringLength"]
+        numTribes = self.configuration["environmentMaxTribes"]
+        tribeSize = (tagStringLength + 1) / numTribes
+        minZeroes = math.floor(tribe * tribeSize)
+        maxZeroes = math.floor((tribe + 1) * tribeSize) - 1
+        maxZeroes = min(maxZeroes, tagStringLength)
+        # Use tribe's median number of zeroes to maximize initial solidarity with tribe
+        zeroes = (minZeroes + maxZeroes) / 2
+        zeroes = math.floor(zeroes) if random.random() < 0.5 else math.ceil(zeroes)
+        ones = tagStringLength - zeroes
+        tags = [0] * zeroes + [1] * ones
+        random.shuffle(tags)
+        return tags
 
     def pauseSimulation(self):
         while self.run == False:
@@ -447,7 +457,6 @@ class Sugarscape:
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         maleInfertilityAge = configs["agentMaleInfertilityAge"]
         tagPreferences = configs["agentTagPreferences"]
-        tagStringLength = configs["agentTagStringLength"]
         immuneSystemLength = configs["agentImmuneSystemLength"]
         aggressionFactor = configs["agentAggressionFactor"]
         tradeFactor = configs["agentTradeFactor"]
@@ -522,7 +531,7 @@ class Sugarscape:
 
         endowments = []
         sexes = []
-        tags = []
+        tags = self.generateAgentTags(numAgents)
         immuneSystems = []
         decisionModels = []
 
@@ -539,10 +548,6 @@ class Sugarscape:
                 if configurations[config]["curr"] > configurations[config]["max"]:
                     configurations[config]["curr"] = configurations[config]["min"]
 
-            if tagStringLength > 0 and configs["environmentMaxTribes"] > 0 and self.environmentTribePerQuadrant == False:
-                tags.append([random.randrange(2) for i in range(tagStringLength)])
-            else:
-                tags.append(None)
             if immuneSystemLength > 0:
                 immuneSystems.append([random.randrange(2) for i in range(immuneSystemLength)])
             else:
