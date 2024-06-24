@@ -236,6 +236,10 @@ agentTagStringLength: int
     Set agent cultural tags string length.
     Default: 0
 
+agentTagging: boolean
+    Set agent ability to change neighbor's cultural tag.
+    Default: true
+
 agentTradeFactor: [float, float]
     Set agent trade aggressiveness.
     Note: The more aggressive in trading an agent, the more resources they will attempt to trade.

@@ -40,7 +40,7 @@ class Agent:
         self.sugar = configuration["sugar"]
         self.sugarMetabolism = configuration["sugarMetabolism"]
         self.tags = configuration["tags"]
-        self.tagging = configuration["tags"]
+        self.tagging = configuration["tagging"]
         self.tagPreferences = configuration["tagPreferences"]
         self.tradeFactor = configuration["tradeFactor"]
         self.universalSpice = configuration["universalSpice"]
