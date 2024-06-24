@@ -40,6 +40,7 @@ class Agent:
         self.sugar = configuration["sugar"]
         self.sugarMetabolism = configuration["sugarMetabolism"]
         self.tags = configuration["tags"]
+        self.tagging = configuration["tagging"]
         self.tagPreferences = configuration["tagPreferences"]
         self.tradeFactor = configuration["tradeFactor"]
         self.universalSpice = configuration["universalSpice"]
@@ -139,9 +140,8 @@ class Agent:
         self.socialNetwork["creditors"].append(loan)
 
     def canReachCell(self, cell):
-        for seenCell in self.cellsInRange:
-            if seenCell["cell"] == cell:
-                return True
+        if cell == self.cell or cell in self.cellsInRange:
+            return True
         return False
 
     def canTradeWithNeighbor(self, neighbor):
@@ -181,8 +181,9 @@ class Agent:
         self.spice += spiceCollected
         self.wealth += sugarCollected + spiceCollected
         self.updateMeanIncome(sugarCollected, spiceCollected)
-        self.cell.doSugarProductionPollution(sugarCollected)
-        self.cell.doSpiceProductionPollution(spiceCollected)
+        if self.cell.environment.pollutionStart <= self.timestep <= self.cell.environment.pollutionEnd:
+            self.cell.doSugarProductionPollution(sugarCollected)
+            self.cell.doSpiceProductionPollution(spiceCollected)
         self.cell.resetSugar()
         self.cell.resetSpice()
 
@@ -360,8 +361,9 @@ class Agent:
         sugarMetabolism = self.findSugarMetabolism()
         self.sugar -= sugarMetabolism
         self.spice -= spiceMetabolism
-        self.cell.doSugarConsumptionPollution(sugarMetabolism)
-        self.cell.doSpiceConsumptionPollution(spiceMetabolism)
+        if self.cell.environment.pollutionStart <= self.timestep <= self.cell.environment.pollutionEnd:
+            self.cell.doSugarConsumptionPollution(sugarMetabolism)
+            self.cell.doSpiceConsumptionPollution(spiceMetabolism)
         if self.sugar < 0 or self.spice < 0:
             self.doDeath("starvation")
         elif (self.sugar <= 0 and sugarMetabolism > 0) or (self.spice <= 0 and spiceMetabolism > 0):
@@ -414,7 +416,7 @@ class Agent:
                         print(f"Agent {self.ID} reproduced with agent {str(neighbor)} at cell ({emptyCell.x},{emptyCell.y})")
 
     def doTagging(self):
-        if self.tags == None or self.isAlive() == False:
+        if self.tags == None or self.isAlive() == False or self.tagging == False:
             return
         neighborCells = list(self.cell.neighbors.values())
         random.shuffle(neighborCells)
@@ -572,7 +574,8 @@ class Agent:
         self.findNeighborhood()
         if len(self.cellsInRange) == 0:
             return self.cell
-        random.shuffle(self.cellsInRange)
+        cellsInRange = list(self.cellsInRange.items())
+        random.shuffle(cellsInRange)
 
         retaliators = self.findRetaliatorsInVision()
         combatMaxLoot = self.cell.environment.maxCombatLoot
@@ -583,10 +586,7 @@ class Agent:
         bestRange = max(self.cell.environment.height, self.cell.environment.width)
         potentialCells = []
 
-        for currCell in self.cellsInRange:
-            cell = currCell["cell"]
-            travelDistance = currCell["distance"]
-
+        for cell, travelDistance in cellsInRange:
             # Avoid attacking agents ineligible to attack
             prey = cell.agent
             if cell.isOccupied() and self.isNeighborValidPrey(prey) == False:
@@ -599,20 +599,19 @@ class Agent:
             welfarePreySpice = aggression * min(combatMaxLoot, preySpice)
 
             # Modify value of cell relative to the metabolism needs of the agent
-            welfare = self.findWelfare((cell.sugar + welfarePreySugar), (cell.spice + welfarePreySpice))
-            cellWealth = welfare / (1 + cell.pollution)
+            welfare = self.findWelfare(((cell.sugar + welfarePreySugar) / (1 + cell.pollution)), ((cell.spice + welfarePreySpice) / (1 + cell.pollution)))
 
             # Avoid attacking agents protected via retaliation
-            if prey != None and retaliators[preyTribe] > self.wealth + cellWealth:
+            if prey != None and retaliators[preyTribe] > self.wealth + welfare:
                 continue
 
             # Select closest cell with the most resources
-            if cellWealth > bestWealth or (cellWealth == bestWealth and travelDistance < bestRange):
+            if welfare > bestWealth or (welfare == bestWealth and travelDistance < bestRange):
                 bestCell = cell
-                bestWealth = cellWealth
+                bestWealth = welfare
                 bestRange = travelDistance
 
-            cellRecord = {"cell": cell, "wealth": cellWealth, "range": travelDistance}
+            cellRecord = {"cell": cell, "wealth": welfare, "range": travelDistance}
             potentialCells.append(cellRecord)
 
         if self.decisionModelFactor > 0:
@@ -678,15 +677,14 @@ class Agent:
         vision = self.findVision()
         movement = self.findMovement()
         cellRange = min(vision, movement)
-        if cellRange > 0:
-            if (self.visionMode == "cardinal" and cellRange == vision) or (self.movementMode == "cardinal" and cellRange == movement):
-                allCells = self.cell.environment.findCellsInCardinalRange(cell.x, cell.y, cellRange)
-            else:
-                allCells = self.cell.environment.findCellsInRadialRange(cell.x, cell.y, cellRange)
-            if newCell == None:
-                self.cellsInRange = allCells
+        allCells = {}
+        if cellRange <= 0:
             return allCells
-        return []
+        for i in range(1, cellRange + 1):
+            allCells.update(cell.ranges[i])
+        if newCell == None:
+            self.cellsInRange = allCells
+        return allCells
 
     def findChildEndowment(self, mate):
         parentEndowments = {
@@ -774,6 +772,7 @@ class Agent:
                     childTags.append(mismatchBits[random.randrange(2)])
         childEndowment["tags"] = childTags
         childEndowment["tagPreferences"] = self.tagPreferences
+        childEndowment["tagging"] = self.tagging
 
         hashed = hashlib.md5("immuneSystem".encode())
         hashNum = int(hashed.hexdigest(), 16)
@@ -897,8 +896,8 @@ class Agent:
         else:
             newNeighborhood = self.findCellsInRange(newCell)
         neighborhood = []
-        for neighborCell in newNeighborhood:
-            neighbor = neighborCell["cell"].agent
+        for neighborCell in newNeighborhood.keys():
+            neighbor = neighborCell.agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighborhood.append(neighbor)
         neighborhood.append(self)
@@ -956,8 +955,8 @@ class Agent:
 
     def findRetaliatorsInVision(self):
         retaliators = {}
-        for cell in self.cellsInRange:
-            agent = cell["cell"].agent
+        for cell in self.cellsInRange.keys():
+            agent = cell.agent
             if agent != None:
                 if agent.tribe not in retaliators:
                     retaliators[agent.tribe] = agent.wealth
@@ -1183,7 +1182,7 @@ class Agent:
         i = 0
         while i < len(cells):
             cell = cells[i]
-            cellString = f"({cell["cell"].x},{cell["cell"].y}) [{cell["wealth"]},{cell["range"]}]"
+            cellString = f"({cell['cell'].x},{cell['cell'].y}) [{cell['wealth']},{cell['range']}]"
             print(f"Cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 
@@ -1191,7 +1190,7 @@ class Agent:
         i = 0
         while i < len(cells):
             cell = cells[i]
-            cellString = f"({cell["cell"].x},{cell["cell"].y}) [{cell["wealth"]},{cell["range"]}]"
+            cellString = f"({cell['cell'].x},{cell['cell'].y}) [{cell['wealth']},{cell['range']}]"
             print(f"Ethical cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 

@@ -10,11 +10,13 @@ class Cell:
         self.maxSpice = maxSpice
         self.spice = maxSpice
         self.pollution = 0
+        self.pollutionFlux = 0
         self.agent = None
         self.hemisphere = "north" if self.x >= self.environment.equator else "south"
         self.season = None
         self.timestep = 0
         self.neighbors = {}
+        self.ranges = {}
         self.sugarLastProduced = 0
         self.spiceLastProduced = 0
 
@@ -27,13 +29,7 @@ class Cell:
         self.pollution += consumptionPollutionFactor * sugarConsumed
 
     def doPollutionDiffusion(self):
-        meanPollution = self.pollution
-        for neighbor in self.neighbors.values():
-            meanPollution += neighbor.pollution
-        meanPollution = meanPollution / (len(self.neighbors) + 1)
-        for neighbor in self.neighbors.values():
-            neighbor.pollution = meanPollution
-        self.pollution = meanPollution
+        self.pollution = self.pollutionFlux
 
     def doSpiceProductionPollution(self, spiceProduced):
         productionPollutionFactor = self.environment.spiceProductionPollutionFactor
@@ -42,6 +38,13 @@ class Cell:
     def doSugarProductionPollution(self, sugarProduced):
         productionPollutionFactor = self.environment.sugarProductionPollutionFactor
         self.pollution += productionPollutionFactor * sugarProduced
+
+    def findPollutionFlux(self):
+        meanPollution = 0
+        for neighbor in self.neighbors.values():
+            meanPollution += neighbor.pollution
+        meanPollution = meanPollution / (len(self.neighbors))
+        self.pollutionFlux = meanPollution
 
     def findNeighborAgents(self):
         agents = []

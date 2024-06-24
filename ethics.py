@@ -21,13 +21,15 @@ class Bentham(agent.Agent):
         neighborhoodSize = len(self.neighborhood)
         futureNeighborhoodSize = len(self.findNeighborhood(cell))
         for neighbor in self.neighborhood:
-            neighborReach = min(neighbor.findVision(), neighbor.findMovement())
+            certainty = 1 if neighbor.canReachCell(cell) == True else 0
+            # Skip if agent cannot reach cell
+            if certainty == 0:
+                continue
             # Timesteps to reach cell, currently 1 since agents only plan for the current timestep
             timestepDistance = 1
             neighborMetabolism = neighbor.sugarMetabolism + neighbor.spiceMetabolism
             # If agent does not have metabolism, set duration to seemingly infinite
             cellDuration = cellSiteWealth / neighborMetabolism if neighborMetabolism > 0 else 0
-            certainty = 1 if neighbor.canReachCell(cell) == True else 0
             proximity = 1 / timestepDistance
             intensity = (1 / (1 + neighbor.findTimeToLive()) / (1 + cell.pollution))
             duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
@@ -39,7 +41,7 @@ class Bentham(agent.Agent):
             cellNeighbors = len(neighbor.cell.neighbors)
             futureIntensity = cellNeighborWealth / (globalMaxWealth * cellNeighbors)
             # Normalize extent by total cells in range
-            cellsInRange = len(neighbor.cellsInRange) if neighborReach > 0 else 0
+            cellsInRange = len(neighbor.cellsInRange)
             extent = neighborhoodSize / cellsInRange if cellsInRange > 0 else 1
             futureExtent = futureNeighborhoodSize / cellsInRange if cellsInRange > 0 and self.decisionModelLookaheadFactor != 0 else 1
             neighborCellValue = 0
