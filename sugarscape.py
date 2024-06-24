@@ -44,6 +44,7 @@ class Sugarscape:
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
+        self.keepAlive = configuration["keepAlivePostExtinction"]
         self.agents = []
         self.deadAgents = []
         self.diseases = []
@@ -216,7 +217,7 @@ class Sugarscape:
         if "all" in self.debug or "sugarscape" in self.debug:
             print(f"Timestep: {self.timestep}\nLiving Agents: {len(self.agents)}")
         self.timestep += 1
-        if self.end == True or len(self.agents) == 0:
+        if self.end == True or (len(self.agents) == 0 and self.keepAlive == False):
             self.toggleEnd()
         else:
             self.environment.doTimestep(self.timestep)
@@ -603,7 +604,9 @@ class Sugarscape:
         t = 1
         timesteps = timesteps - self.timestep
         screenshots = 0
-        while t <= timesteps and len(self.agents) > 0:
+        while t <= timesteps:
+            if len(self.agents) == 0 and self.keepAlive == False:
+                break
             if self.configuration["screenshots"] == True and self.configuration["headlessMode"] == False:
                 self.gui.canvas.postscript(file=f"screenshot{screenshots}.ps", colormode="color")
                 screenshots += 1
@@ -1097,6 +1100,7 @@ if __name__ == "__main__":
                      "headlessMode": False,
                      "interfaceHeight": 1000,
                      "interfaceWidth": 900,
+                     "keepAlivePostExtinction": False,
                      "logfile": None,
                      "logfileFormat": "json",
                      "neighborhoodMode": "vonNeumann",

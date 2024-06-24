@@ -82,6 +82,7 @@
         "headlessMode": false,
         "interfaceHeight": 1000,
         "interfaceWidth": 900,
+        "keepAlivePostExtinction": false,
         "logfile": "log.json",
         "logfileFormat": "json",
         "neighborhoodMode": "vonNeumann",

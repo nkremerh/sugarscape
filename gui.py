@@ -241,7 +241,7 @@ class GUI:
     def doStepForwardButton(self, *args):
         if self.sugarscape.end == True:
             self.sugarscape.endSimulation()
-        elif len(self.sugarscape.agents) == 0:
+        elif len(self.sugarscape.agents) == 0 and self.sugarscape.keepAlive == False:
             self.sugarscape.toggleEnd()
         else:
             self.sugarscape.doTimestep()
