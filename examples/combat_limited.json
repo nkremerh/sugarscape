@@ -9,6 +9,7 @@
     "environmentMaxCombatLoot": 2,
     "environmentMaxTribes": 2,
     "environmentQuadrantSizeFactor": 0.8,
+    "environmentTribePerQuadrant": true,
     "seed": 12345,
     "startingAgents": 400,
     "timesteps": 500
