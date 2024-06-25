@@ -663,6 +663,7 @@ class Sugarscape:
         meanWealth = 0
         meanAge = 0
         meanTradePrice = 0
+        meanTribeTags = [0] * self.configuration["agentTagStringLength"]
         tradeVolume = 0
         maxWealth = 0
         minWealth = sys.maxsize
@@ -725,6 +726,7 @@ class Sugarscape:
                 meanTradePrice += max(agent.spicePrice, agent.sugarPrice)
                 tradeVolume += agent.tradeVolume
                 numTraders += 1
+            meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
             agentWealthTotal += agent.wealth
             agentWealthCollected += agent.wealth - (agent.lastSugar + agent.lastSpice)
             agentWealthBurnRate += agentTimeToLive
@@ -747,6 +749,9 @@ class Sugarscape:
                 timesToLiveAgeLimited.append(agentTimeToLiveAgeLimited)
                 sugarMetabolisms.append(agent.sugarMetabolism)
                 spiceMetabolisms.append(agent.spiceMetabolism)
+
+        meanTribeTags = [round(tag / numAgents, 2) for tag in meanTribeTags]
+        print(meanTribeTags)
 
         if numAgents > 0:
             combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism
