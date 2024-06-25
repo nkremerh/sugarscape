@@ -10,7 +10,7 @@ class GUI:
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
         self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280", "healthy": "#3232FA", "sick": "#FA3232"}
-        self.palette = ["#FA3232", "#3232FA", "#32FA32", "#FA32FA", "#FAFA32", "#4C5454", "#04724D", "#643A71", "#505168", "#8EA604", "#6D9DC5", "#56EEF4", "#EE6123", "#EC9F05", "#EC4E20", "#EB7BC0", "#53599A", "#B24C63", "#59114D", "#003B36", "#D6D9CE", "#00916E", "#B9B8D3", "#FF715B", "#FA003F"]
+        self.palette = ["#FA3232", "#3232FA", "#32FA32", "#32FAFA", "#FA32FA", "#AA3232", "#3232AA", "#32AA32", "#32AAAA", "#AA32AA", "#FA8800", "#00FA88", "#8800FA", "#FA8888", "#8888FA", "#88FA88", "#FA3288", "#3288FA", "#88FA32", "#AA66AA", "#66AAAA", "#3ED06E", "#6E3ED0", "#D06E3E", "#000000"]
         numTribes = self.sugarscape.configuration["environmentMaxTribes"]
         numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
         for i in range(numTribes):
