@@ -1,7 +1,7 @@
 import getopt
 import json
+import multiprocessing
 import os
-import os.path
 import random
 import re
 import sys
@@ -34,6 +34,9 @@ def createConfigurations(config, path):
                 conf.close()
         return confFiles
     return configs
+
+def finishRuns():
+    print("Waiting for jobs to finish up.")
 
 def generateSeeds(config):
     seeds = []
@@ -122,26 +125,21 @@ def printHelp():
 
 def runSimulations(config, configFiles, path):
     dataOpts = config["dataCollectionOptions"]
+    pythonAlias = dataOpts["pythonAlias"]
+    totalSimJobs = len(configFiles)
+    jobUpdateFrequency = dataOpts["jobUpdateFrequency"]
 
-    shell = "files=("
-    for conf in configFiles:
-        shell += f" {conf}"
-    shell += " )\n\n"
-    shell += f"# Number of parallel processes to run\nN={dataOpts["numParallelSimJobs"]}\n\n"
-    shell += "i=1\nj=${#files[@]}\nfor f in \"${files[@]}\"\ndo\n"
-    shell += "echo \"Running decision model $f ($i/$j)\"\n# Run simulation for config\n"
-    shell += f"{dataOpts["pythonAlias"]} ../sugarscape.py --conf $f &\n\n"
-    shell += "if [[ $(jobs -r -p | wc -l) -ge $N ]]; then\nwait -n\nfi\ni=$((i+1))\ndone\n\n"
-    shell += "sem=0\necho \"Waiting for jobs to finish up.\"\nwhile [[ $(jobs -r -p | wc -l) -gt 0 ]];\ndo\n"
-    shell += f"sem=$(((sem+1)%{dataOpts["jobUpdateFrequency"]}))\nif [[ $sem -eq 0 ]]; then\n"
-    shell += "status=$( ps -AF | grep 'sugarscape' | wc -l )\nstatus=$((status-1))\n"
-    shell += "echo -n $status\necho ' jobs remaining.'\nfi\nwait -n\ndone\n"
+    with multiprocessing.Pool(processes = dataOpts["numParallelSimJobs"]) as pool:
+        for i, configFile in enumerate(configFiles):
+            pool.apply_async(runSimulation, args = (configFile, pythonAlias, i + 1, totalSimJobs, jobUpdateFrequency))
+        pool.apply(finishRuns)
+        pool.close()
+        pool.join()
 
-    sh = open("temp.sh", 'w')
-    sh.write(shell)
-    sh.close()
-    os.system(f"{dataOpts["bashAlias"]} temp.sh")
-    os.remove("temp.sh")
+def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, updateFrequency):
+    if jobNumber == 1 or jobNumber % updateFrequency == 0 or jobNumber == totalJobs:
+        print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
+    os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile}")
 
 if __name__ == "__main__":
     options = parseOptions()
