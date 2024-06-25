@@ -579,6 +579,7 @@ class Sugarscape:
             random.shuffle(configurations[config]["endowments"])
         random.setstate(randomNumberReset)
         random.shuffle(sexes)
+        random.shuffle(decisionModels)
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
