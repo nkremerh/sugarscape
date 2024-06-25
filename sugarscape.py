@@ -41,7 +41,6 @@ class Sugarscape:
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
-        self.environmentTribePerQuadrant = configuration["environmentTribePerQuadrant"]
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
         self.keepAlive = configuration["keepAlivePostExtinction"]
@@ -141,7 +140,7 @@ class Sugarscape:
                 a.decisionModelLookaheadFactor = 0
             elif "HalfLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0.5
-            if self.environmentTribePerQuadrant == True:
+            if self.configuration["environmentTribePerQuadrant"] == True:
                 tribe = quadrantIndex
                 tags = self.generateTribeTags(tribe)
                 a.tags = tags
@@ -273,7 +272,7 @@ class Sugarscape:
         exit(0)
 
     def findActiveQuadrants(self):
-        quadrants = self.configuration["agentStartingQuadrants"]
+        quadrants = self.configuration["environmentStartingQuadrants"]
         cellRange = []
         quadrantWidth = math.floor(self.environmentWidth / 2 * self.configuration["environmentQuadrantSizeFactor"])
         quadrantHeight = math.floor(self.environmentHeight / 2 * self.configuration["environmentQuadrantSizeFactor"])
@@ -303,8 +302,8 @@ class Sugarscape:
 
     def generateAgentTags(self, numAgents):
         configs = self.configuration
-        if configs["agentTagStringLength"] <= 0 or configs["environmentMaxTribes"] <= 0 or self.environmentTribePerQuadrant == True:
-            return [None] * numAgents
+        if configs["agentTagStringLength"] == 0 or configs["environmentMaxTribes"] == 0 or self.configuration["environmentTribePerQuadrant"] == True:
+            return [None for i in range(numAgents)]
         numTribes = configs["environmentMaxTribes"]
         tagsEndowments = []
         for i in range(numAgents):
@@ -326,11 +325,9 @@ class Sugarscape:
         minZeroes = math.floor(tribe * tribeSize)
         maxZeroes = math.floor((tribe + 1) * tribeSize) - 1
         maxZeroes = min(maxZeroes, tagStringLength)
-        # Use tribe's median number of zeroes to maximize initial solidarity with tribe
-        zeroes = (minZeroes + maxZeroes) / 2
-        zeroes = math.floor(zeroes) if random.random() < 0.5 else math.ceil(zeroes)
+        zeroes = random.randint(minZeroes, maxZeroes)
         ones = tagStringLength - zeroes
-        tags = [0] * zeroes + [1] * ones
+        tags = [0 for i in range(zeroes)] + [1 for i in range(ones)]
         random.shuffle(tags)
         return tags
 
@@ -940,8 +937,8 @@ def printHelp():
     exit(0)
 
 def verifyConfiguration(configuration):
-    if len(configuration["agentStartingQuadrants"]) == 0:
-        configuration["agentStartingQuadrants"] = [1, 2, 3, 4]
+    if len(configuration["environmentStartingQuadrants"]) == 0:
+        configuration["environmentStartingQuadrants"] = [1, 2, 3, 4]
 
     if configuration["environmentQuadrantSizeFactor"] > 1:
         configuration["environmentQuadrantSizeFactor"] = 1
@@ -949,11 +946,11 @@ def verifyConfiguration(configuration):
         configuration["environmentQuadrantSizeFactor"] = 1
 
     if configuration["environmentTribePerQuadrant"] == True:
-        configuration["environmentMaxTribes"] = len(configuration["agentStartingQuadrants"])
+        configuration["environmentMaxTribes"] = len(configuration["environmentStartingQuadrants"])
 
     # Ensure starting agents are not larger than available cells
     totalCells = configuration["environmentHeight"] * configuration["environmentWidth"]
-    totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["agentStartingQuadrants"]) / 4
+    totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["environmentStartingQuadrants"]) / 4
     if configuration["startingAgents"] > totalCells:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
             print(f"Could not allocate {configuration['startingAgents']} agents. Allocating maximum of {totalCells}.")
@@ -964,6 +961,10 @@ def verifyConfiguration(configuration):
         configuration["agentMaxAge"][0] = -1
         configuration["agentMaxAge"][1] = -1
 
+    if configuration["agentTagStringLength"] < 0:
+        configuration["agentTagStringLength"] = 0
+    if configuration["environmentMaxTribes"] < 0:
+        configuration["environmentMaxTribes"] = 0
     # Ensure at most number of tribes is equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
@@ -1092,7 +1093,6 @@ if __name__ == "__main__":
                      "agentSpiceMetabolism": [0, 0],
                      "agentStartingSpice": [0, 0],
                      "agentStartingSugar": [10, 40],
-                     "agentStartingQuadrants": [1, 2, 3, 4],
                      "agentSugarMetabolism": [1, 4],
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
@@ -1126,6 +1126,7 @@ if __name__ == "__main__":
                      "environmentSpicePeaks": [[35, 35], [15, 15]],
                      "environmentSpiceProductionPollutionFactor": 0,
                      "environmentSpiceRegrowRate": 0,
+                     "environmentStartingQuadrants": [1, 2, 3, 4],
                      "environmentSugarConsumptionPollutionFactor": 0,
                      "environmentSugarPeaks": [[35, 15], [15, 35]],
                      "environmentSugarProductionPollutionFactor": 0,
