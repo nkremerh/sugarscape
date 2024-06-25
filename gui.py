@@ -22,10 +22,11 @@ class GUI:
         self.lastSelectedEnvironmentColor = None
         self.activeColorOptions = {"agent": None, "environment": None}
         self.activeNetwork = None
+        self.graphs = {}
         self.highlightedCell = None
         self.highlightedAgent = None
         self.highlightRectangle = None
-        self.menuTrayColumns = 5
+        self.menuTrayColumns = 6
         self.menuTrayOffset = 110
         self.windowBorderOffset = 10
         self.borderEdge = 5
@@ -89,6 +90,16 @@ class GUI:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
         environmentColorButton.grid(row=0, column=4, sticky="nsew")
 
+        graphButton = tkinter.Menubutton(window, text="Graphs", relief=tkinter.RAISED)
+        graphMenu = tkinter.Menu(graphButton, tearoff=0)
+        graphButton.configure(menu=graphMenu)
+        graphNames = self.configureGraphNames()
+        for graph in graphNames:
+            graphToggle = tkinter.IntVar(window, 0)
+            self.graphs[graph] = {"window": None, "toggle": graphToggle}
+            graphMenu.add_checkbutton(label=graph, variable=graphToggle, command=lambda: self.doGraphMenu(graph), indicatoron=True)
+        graphButton.grid(row=0, column=5, sticky="nsew")
+
         statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Movement: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan = self.menuTrayColumns, sticky="nsew")
         cellLabel = tkinter.Label(window, text="Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: -", font="Roboto 10", justify=tkinter.CENTER)
@@ -145,6 +156,9 @@ class GUI:
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
+
+    def configureGraphNames(self):
+        return ["Tag Histogram"]
     
     def configureNetworkNames(self):
         return ["Neighbors", "Family", "Friends", "Trade", "Loans", "Disease"]
@@ -232,6 +246,23 @@ class GUI:
     def doEnvironmentColorMenu(self):
         self.activeColorOptions["environment"] = self.lastSelectedEnvironmentColor.get()
         self.doTimestep()
+
+    def doGraphMenu(self, graph):
+        if self.graphs[graph]["toggle"].get() == 1:
+            if self.graphs[graph]["window"] == None:
+                graphWindow = tkinter.Toplevel(self.window)
+                graphWindow.title(graph)
+                graphWindow.protocol("WM_DELETE_WINDOW", lambda: self.closeGraph(graph))
+                tkinter.Label(graphWindow, text=f"This is the {graph} window").pack(padx=20, pady=20)
+                self.graphs[graph]["window"] = graphWindow
+        else:
+            self.closeGraph(graph)
+
+    def closeGraph(self, graph):
+        if self.graphs[graph]["window"] != None:
+            self.graphs[graph]["window"].destroy()
+            self.graphs[graph]["window"] = None
+            self.graphs[graph]["toggle"].set(0)
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
