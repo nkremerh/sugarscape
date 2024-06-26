@@ -36,9 +36,6 @@ def createConfigurations(config, path):
         return confFiles
     return configs
 
-def finishRuns():
-    print("Waiting for jobs to finish up.")
-
 def generateSeeds(config):
     seeds = []
     for i in range(config["numSeeds"]):
@@ -90,8 +87,11 @@ def getJobsToDo(config, path):
         print("No incomplete logs found.")
     return configs
 
-def initializer():
+def initializer(jobsStartedCounter, jobsFinishedCounter):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+    global jobsStarted, jobsFinished
+    jobsStarted = jobsStartedCounter
+    jobsFinished = jobsFinishedCounter
 
 def parseOptions():
     commandLineArgs = sys.argv[1:]
@@ -131,20 +131,40 @@ def runSimulations(config, configFiles, path):
     dataOpts = config["dataCollectionOptions"]
     pythonAlias = dataOpts["pythonAlias"]
     totalSimJobs = len(configFiles)
+    jobUpdateFrequency = dataOpts["jobUpdateFrequency"]
 
-    pool = multiprocessing.Pool(initializer = initializer, processes = dataOpts["numParallelSimJobs"])
+    initialJobsStarted = multiprocessing.Value('i', 0)
+    initialJobsFinished = multiprocessing.Value('i', totalSimJobs)
+    pool = multiprocessing.Pool(initializer=initializer, initargs=(initialJobsStarted, initialJobsFinished), processes=dataOpts["numParallelSimJobs"])
     try:
+        results = []
         for i, configFile in enumerate(configFiles):
-            pool.apply_async(runSimulation, args = (configFile, pythonAlias, i + 1, totalSimJobs))
-        pool.apply(finishRuns)
+            result = pool.apply_async(runSimulation, args=(configFile, pythonAlias, i + 1, totalSimJobs, jobUpdateFrequency))
+            results.append(result)
+        # Wait for all simulations to complete
+        for result in results:
+            result.get()
+
     except KeyboardInterrupt:
         print("\nSimulations interrupted.")
     finally:
         pool.terminate()
 
-def runSimulation(configFile, pythonAlias, jobNumber, totalJobs):
+def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, jobUpdateFrequency):
+    with jobsStarted.get_lock():
+        jobsStarted.value += 1
+
     print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
+    if jobNumber == totalJobs:
+        print("Waiting for jobs to finish up.")
     os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile}")
+
+    with jobsFinished.get_lock():
+        jobsFinished.value -= 1
+        if jobsStarted.value == totalJobs:
+            jobsRemaining = jobsFinished.value
+            if jobsFinished.value % jobUpdateFrequency == 0:
+                print(f"{jobsRemaining} jobs remaining.")
 
 if __name__ == "__main__":
     options = parseOptions()
