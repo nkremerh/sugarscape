@@ -147,8 +147,9 @@ def runSimulations(config, configFiles, path):
 
     except KeyboardInterrupt:
         print("\nSimulations interrupted.")
-    finally:
         pool.terminate()
+    finally:
+        pool.join()
 
 def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, jobUpdateFrequency):
     with jobsStarted.get_lock():
