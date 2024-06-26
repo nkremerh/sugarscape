@@ -4,6 +4,7 @@ import multiprocessing
 import os
 import random
 import re
+import signal
 import sys
 
 def createConfigurations(config, path):
@@ -89,6 +90,9 @@ def getJobsToDo(config, path):
         print("No incomplete logs found.")
     return configs
 
+def initializer():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
 def parseOptions():
     commandLineArgs = sys.argv[1:]
     shortOptions = "c:p:s:t:h"
@@ -127,18 +131,19 @@ def runSimulations(config, configFiles, path):
     dataOpts = config["dataCollectionOptions"]
     pythonAlias = dataOpts["pythonAlias"]
     totalSimJobs = len(configFiles)
-    jobUpdateFrequency = dataOpts["jobUpdateFrequency"]
 
-    with multiprocessing.Pool(processes = dataOpts["numParallelSimJobs"]) as pool:
+    pool = multiprocessing.Pool(initializer = initializer, processes = dataOpts["numParallelSimJobs"])
+    try:
         for i, configFile in enumerate(configFiles):
-            pool.apply_async(runSimulation, args = (configFile, pythonAlias, i + 1, totalSimJobs, jobUpdateFrequency))
+            pool.apply_async(runSimulation, args = (configFile, pythonAlias, i + 1, totalSimJobs))
         pool.apply(finishRuns)
-        pool.close()
-        pool.join()
+    except KeyboardInterrupt:
+        print("\nSimulations interrupted.")
+    finally:
+        pool.terminate()
 
-def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, updateFrequency):
-    if jobNumber == 1 or jobNumber % updateFrequency == 0 or jobNumber == totalJobs:
-        print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
+def runSimulation(configFile, pythonAlias, jobNumber, totalJobs):
+    print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
     os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile}")
 
 if __name__ == "__main__":
