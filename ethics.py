@@ -17,7 +17,6 @@ class Bentham(agent.Agent):
         cellNeighborWealth = cell.findNeighborWealth()
         globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
         cellValue = 0
-        selfishnessFactor = self.selfishnessFactor
         neighborhoodSize = len(self.neighborhood)
         futureNeighborhoodSize = len(self.findNeighborhood(cell))
         for neighbor in self.neighborhood:
@@ -70,18 +69,25 @@ class Bentham(agent.Agent):
                     neighborCellValue = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
                 else:
                     neighborCellValue = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
-            if selfishnessFactor > 0:
-                if neighbor == self:
-                    neighborCellValue *= selfishnessFactor
+
+            if self.decisionModelTribalFactor >= 0:
+                if neighbor.findTribe() == self.findTribe():
+                    neighborCellValue *= self.decisionModelTribalFactor
                 else:
-                    neighborCellValue *= 1-selfishnessFactor
+                    neighborCellValue *= 1 - self.decisionModelTribalFactor
+            if self.selfishnessFactor > 0:
+                if neighbor == self:
+                    neighborCellValue *= self.selfishnessFactor
+                else:
+                    neighborCellValue *= 1 - self.selfishnessFactor
             else:
                 if neighborCellValue > 0:
                     happiness += neighborCellValue
                 else:
                     unhappiness += neighborCellValue
             cellValue += neighborCellValue
-        if selfishnessFactor < 0:
+
+        if self.selfishnessFactor < 0:
             return {"happiness": happiness, "unhappiness": unhappiness}
         return cellValue
 

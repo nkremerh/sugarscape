@@ -129,6 +129,11 @@ agentDecisionModels: [string, ...]
     Note: Adding either "HalfLookahead" or "NoLookahead" after a decision model name will enforce a particular decision model lookahead factor.
     Default: ["none"]
 
+agentDecisionModelTribalFactor: [float, float]
+    Set how much agents prioritize their tribe over others in ethical calculations.
+    Note: Valid range is [0.0, 1.0], use -1 to disable
+    Default: [-1, -1]
+
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
     Default: [0, 0]

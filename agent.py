@@ -16,6 +16,7 @@ class Agent:
         self.decisionModelFactor = configuration["decisionModelFactor"]
         self.decisionModelLookaheadDiscount = configuration["decisionModelLookaheadDiscount"]
         self.decisionModelLookaheadFactor = configuration["decisionModelLookaheadFactor"]
+        self.decisionModelTribalFactor = configuration["decisionModelTribalFactor"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
         self.immuneSystem = configuration["immuneSystem"]
@@ -718,6 +719,7 @@ class Agent:
         "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
         "decisionModelLookaheadDiscount": [self.decisionModelLookaheadDiscount, mate.decisionModelLookaheadDiscount],
         "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
+        "decisionModelTribalFactor": [self.decisionModelTribalFactor, mate.decisionModelTribalFactor],
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
         }
         childEndowment = {"seed": self.seed}
