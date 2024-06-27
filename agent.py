@@ -247,10 +247,9 @@ class Agent:
         diseaseCount = len(self.diseases)
         if diseaseCount == 0:
             return
-        neighborCells = self.cell.neighbors.values()
         neighbors = []
-        for neighborCell in neighborCells:
-            neighbor = neighborCell.agent
+        for cell in self.cell.neighbors.values():
+            neighbor = cell.agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighbors.append(neighbor)
         random.shuffle(neighbors)
@@ -470,10 +469,9 @@ class Agent:
         self.sugarPrice = 0
         self.spicePrice = 0
         self.findMarginalRateOfSubstitution()
-        neighborCells = self.cell.neighbors.values()
         traders = []
-        for neighborCell in neighborCells:
-            neighbor = neighborCell.agent
+        for cell in self.cell.neighbors.values():
+            neighbor = cell.agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighborMRS = neighbor.marginalRateOfSubstitution
                 if neighborMRS != self.marginalRateOfSubstitution:
@@ -822,10 +820,9 @@ class Agent:
 
     def findEmptyNeighborCells(self):
         emptyCells = []
-        neighborCells = self.cell.neighbors.values()
-        for neighborCell in neighborCells:
-            if neighborCell.agent == None:
-                emptyCells.append(neighborCell)
+        for cell in  self.cell.neighbors.values():
+            if cell.agent == None:
+                emptyCells.append(cell)
         return emptyCells
 
     def findFamilyHappiness(self):
