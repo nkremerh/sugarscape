@@ -253,8 +253,14 @@ class GUI:
                 graphWindow = tkinter.Toplevel(self.window)
                 graphWindow.title(graph)
                 graphWindow.protocol("WM_DELETE_WINDOW", lambda: self.closeGraph(graph))
-                tkinter.Label(graphWindow, text=f"This is the {graph} window").pack(padx=20, pady=20)
                 self.graphs[graph]["window"] = graphWindow
+                graphHeight = 300
+                graphWidth = 600
+                canvas = tkinter.Canvas(graphWindow, width=graphWidth, height=graphHeight, bg='white')
+                canvas.create_line(0, graphHeight, graphWidth, graphHeight, fill='black', width=1)
+                canvas.create_line(0, 0, 0, graphHeight, fill='black', width=1)
+                self.graphs[graph]["image"] = canvas # tkinter.Label(graphWindow, text=f"This is the {graph} window")
+                self.graphs[graph]["image"].pack(padx=20, pady=20)
         else:
             self.closeGraph(graph)
 
@@ -263,6 +269,25 @@ class GUI:
             self.graphs[graph]["window"].destroy()
             self.graphs[graph]["window"] = None
             self.graphs[graph]["toggle"].set(0)
+
+    def doGraphTimesteps(self):
+        if not any(self.graphs[graph]["toggle"].get() == 1 for graph in self.graphs):
+            return
+        
+        dotSize = 5
+        
+        if self.graphs["Tag Histogram"]["toggle"].get() == 1:
+            # self.graphs["Tag Histogram"]["image"].config(text=f"{self.sugarscape.runtimeStats["meanTribeTags"]}") 
+            graphBorder = 20
+            x1 = 40 + self.sugarscape.timestep + graphBorder
+            y1 = 300 - 20 * self.sugarscape.runtimeStats["meanVision"]
+            self.graphs["Tag Histogram"]["image"].create_oval(x1, y1, x1 + dotSize, y1 + dotSize, fill="black", outline="")
+
+    # X coordinate: just (some constant * timestep) + x distance to y axis
+    # Y coordinate: just screenHeight - ((some constant * value) + y distance to x axis)
+    # Keep track of maximum x and y values
+    # max x value will be timestep for the easy graphs I'm doing
+    # max y value will be whatever the maximum value is (population, etc)
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
@@ -306,6 +331,7 @@ class GUI:
 
         self.updateLabels()
         self.window.update()
+        self.doGraphTimesteps()
 
     def doNetworkMenu(self, *args):
         if self.activeNetwork.get() != "None":
@@ -321,6 +347,8 @@ class GUI:
 
     def doWindowClose(self, *args):
         self.stopSimulation = True
+        for graph in self.graphs:
+            self.closeGraph(graph)
         self.window.destroy()
         self.sugarscape.toggleEnd()
 

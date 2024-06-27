@@ -780,10 +780,10 @@ class Sugarscape:
                 sugarMetabolisms.append(agent.sugarMetabolism)
                 spiceMetabolisms.append(agent.spiceMetabolism)
 
-        meanTribeTags = [round(tag / numAgents, 2) for tag in meanTribeTags]
-        print(meanTribeTags)
+        
 
         if numAgents > 0:
+            meanTribeTags = [round(tag / numAgents, 2) for tag in meanTribeTags]
             combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism
             if meanSugarMetabolism > 0 and meanSpiceMetabolism > 0:
                 combinedMetabolism = round(combinedMetabolism / 2, 2)
@@ -843,6 +843,7 @@ class Sugarscape:
         self.runtimeStats["meanMovement"] = meanMovement
         self.runtimeStats["meanVision"] = meanVision
         self.runtimeStats["meanAge"] = meanAge
+        self.runtimeStats["meanTribeTags"] = meanTribeTags
 
         # TODO: make clear whether agent or environment calculation
         self.runtimeStats["meanWealth"] = meanWealth
