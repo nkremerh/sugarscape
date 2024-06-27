@@ -75,7 +75,7 @@ class Bentham(agent.Agent):
                     neighborCellValue *= self.decisionModelTribalFactor
                 else:
                     neighborCellValue *= 1 - self.decisionModelTribalFactor
-            if self.selfishnessFactor > 0:
+            if self.selfishnessFactor >= 0:
                 if neighbor == self:
                     neighborCellValue *= self.selfishnessFactor
                 else:
