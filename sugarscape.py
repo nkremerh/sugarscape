@@ -61,6 +61,7 @@ class Sugarscape:
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
                              "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
+        self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "wealthBins": [], "meanTribeTags": []}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
 
@@ -230,6 +231,7 @@ class Sugarscape:
                 agent.doTimestep(self.timestep)
             self.removeDeadAgents()
             self.updateRuntimeStats()
+            self.updateGraphStats()
             if self.gui != None:
                 self.gui.doTimestep()
             # If final timestep, do not write to log to cleanly close JSON array log structure
@@ -682,6 +684,44 @@ class Sugarscape:
         lineOfEquality = (height * len(agentWealths)) / 2
         giniCoefficient = round((lineOfEquality - area) / max(1, lineOfEquality), 2)
         return giniCoefficient
+    
+    def updateGraphStats(self):
+        histogramBins = 10
+
+        maxAge = 0
+        maxSugar = 0
+        maxSpice = 0
+        maxWealth = 0
+        for agent in self.agents:
+            if agent.age > maxAge:
+                maxAge = agent.age
+            if agent.sugar > maxSugar:
+                maxSugar = agent.sugar
+            if agent.spice > maxSpice:
+                maxSpice = agent.spice
+            if agent.sugar + agent.spice > maxWealth:
+                maxWealth = agent.sugar + agent.spice
+
+        ageBins = [0] * histogramBins
+        sugarBins = [0] * histogramBins
+        spiceBins = [0] * histogramBins
+        wealthBins = [0] * histogramBins   
+        meanTribeTags = [0] * self.configuration["agentTagStringLength"]
+        for agent in self.agents:
+            ageBins[round(agent.age / maxAge * histogramBins) - 1] += 1
+            sugarBins[round(agent.sugar / maxSugar * histogramBins) - 1] += 1
+            spiceBins[round(agent.spice / maxSpice * histogramBins) - 1] += 1
+            wealthBins[round((agent.sugar + agent.spice) / maxWealth * histogramBins) - 1] += 1
+            meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
+        numAgents = len(self.agents)
+        if numAgents > 0:
+            meanTribeTags = [round(tag / numAgents, 2) for tag in meanTribeTags]
+
+        self.graphStats["ageBins"] = ageBins
+        self.graphStats["sugarBins"] = sugarBins
+        self.graphStats["spiceBins"] = spiceBins
+        self.graphStats["wealthBins"] = wealthBins
+        self.graphStats["meanTribeTags"] = meanTribeTags
 
     def updateRuntimeStats(self):
         numAgents = len(self.agents)
@@ -693,7 +733,6 @@ class Sugarscape:
         meanWealth = 0
         meanAge = 0
         meanTradePrice = 0
-        meanTribeTags = [0] * self.configuration["agentTagStringLength"]
         tradeVolume = 0
         maxWealth = 0
         minWealth = sys.maxsize
@@ -756,7 +795,6 @@ class Sugarscape:
                 meanTradePrice += max(agent.spicePrice, agent.sugarPrice)
                 tradeVolume += agent.tradeVolume
                 numTraders += 1
-            meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
             agentWealthTotal += agent.wealth
             agentWealthCollected += agent.wealth - (agent.lastSugar + agent.lastSpice)
             agentWealthBurnRate += agentTimeToLive
@@ -780,10 +818,7 @@ class Sugarscape:
                 sugarMetabolisms.append(agent.sugarMetabolism)
                 spiceMetabolisms.append(agent.spiceMetabolism)
 
-        
-
         if numAgents > 0:
-            meanTribeTags = [round(tag / numAgents, 2) for tag in meanTribeTags]
             combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism
             if meanSugarMetabolism > 0 and meanSpiceMetabolism > 0:
                 combinedMetabolism = round(combinedMetabolism / 2, 2)
@@ -843,7 +878,6 @@ class Sugarscape:
         self.runtimeStats["meanMovement"] = meanMovement
         self.runtimeStats["meanVision"] = meanVision
         self.runtimeStats["meanAge"] = meanAge
-        self.runtimeStats["meanTribeTags"] = meanTribeTags
 
         # TODO: make clear whether agent or environment calculation
         self.runtimeStats["meanWealth"] = meanWealth

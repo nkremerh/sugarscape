@@ -96,7 +96,7 @@ class GUI:
         graphNames = self.configureGraphNames()
         for graph in graphNames:
             graphToggle = tkinter.IntVar(window, 0)
-            self.graphs[graph] = {"window": None, "toggle": graphToggle}
+            self.graphs[graph] = {"window": None, "canvas": None, "bins": [], "toggle": graphToggle}
             graphMenu.add_checkbutton(label=graph, variable=graphToggle, command=lambda g=graph: self.doGraphMenu(g), indicatoron=True)
         graphButton.grid(row=0, column=5, sticky="nsew")
 
@@ -250,17 +250,22 @@ class GUI:
     def doGraphMenu(self, graph):
         if self.graphs[graph]["toggle"].get() == 1 and self.graphs[graph]["window"] == None:
             graphWindow = tkinter.Toplevel(self.window)
+            graphWidth = 720
+            graphHeight = 360
+            graphWindow.geometry(f"{graphWidth}x{graphHeight}")
+            graphWindow.resizable(False, False)
             graphWindow.title(graph)
             graphWindow.protocol("WM_DELETE_WINDOW", lambda: self.closeGraph(graph))
             self.graphs[graph]["window"] = graphWindow
-
-            graphHeight = 300
-            graphWidth = 600
-            canvas = tkinter.Canvas(graphWindow, width=graphWidth, height=graphHeight, bg='white')
-            canvas.create_line(20, graphHeight - 20, graphWidth - 20, graphHeight - 20, fill='black', width=1)
-            canvas.create_line(20, 20, 20, graphHeight - 20, fill='black', width=1)
-            self.graphs[graph]["image"] = canvas # tkinter.Label(graphWindow, text=f"This is the {graph} window")
-            self.graphs[graph]["image"].pack(padx=20, pady=20)
+            graphWindow.update()
+            canvas = tkinter.Canvas(graphWindow, width=graphWidth, height=graphHeight, bg="white")
+            canvas.pack(padx=self.borderEdge, pady=self.borderEdge)
+            self.graphs[graph]["canvas"] = canvas
+            histogramBins = 10
+            self.graphs[graph]["bins"] = [0] * histogramBins
+            for i in range(histogramBins):
+                self.graphs[graph]["bins"][i] = canvas.create_rectangle(i * graphWidth / 10, graphHeight - 40, (i + 1) * graphWidth / 10, graphHeight, fill="magenta", outline="black", width=2)
+            graphWindow.update()
         else:
             self.closeGraph(graph)
 
@@ -272,13 +277,58 @@ class GUI:
 
     def doGraphTimesteps(self):
         if self.graphs["Tag Histogram"]["toggle"].get() == 1:
-            self.graphs["Tag Histogram"]["image"].config(text=f"{self.sugarscape.runtimeStats["meanTribeTags"]}") 
-
-        if self.graphs["Tag Histogram"]["toggle"].get() == 1:
-            self.graphs["Tag Histogram"]["image"].config(text=f"{self.sugarscape.runtimeStats["meanTribeTags"]}") 
+            tagBinValues = self.sugarscape.graphStats["meanTribeTags"]
+            histogramBins = 10
+            window = self.graphs["Tag Histogram"]["window"]
+            canvas = self.graphs["Tag Histogram"]["canvas"]
+            bins = self.graphs["Tag Histogram"]["bins"]
+            for i in range(histogramBins):
+                x0, y0, x1, y1 = canvas.coords(bins[i])
+                y0 = canvas.winfo_height() - (canvas.winfo_height() * tagBinValues[i])
+                canvas.coords(self.graphs["Tag Histogram"]["bins"][i], x0, y0, x1, y1)
+            window.update()
         
-        if self.graphs["Tag Histogram"]["toggle"].get() == 1:
-            self.graphs["Tag Histogram"]["image"].config(text=f"{self.sugarscape.runtimeStats["meanTribeTags"]}") 
+        if self.graphs["Age Histogram"]["toggle"].get() == 1:
+            ageBinValues = self.sugarscape.graphStats["ageBins"]
+            maxBinHeight = max(ageBinValues + [0])
+            histogramBins = 10
+            window = self.graphs["Age Histogram"]["window"]
+            canvas = self.graphs["Age Histogram"]["canvas"]
+            bins = self.graphs["Age Histogram"]["bins"]
+            if maxBinHeight != 0:
+                for i in range(histogramBins):
+                    x0, y0, x1, y1 = canvas.coords(bins[i])
+                    y0 = canvas.winfo_height() - (canvas.winfo_height() * (ageBinValues[i] / maxBinHeight))
+                    canvas.coords(self.graphs["Age Histogram"]["bins"][i], x0, y0, x1, y1)
+            window.update()
+
+        if self.graphs["Sugar Histogram"]["toggle"].get() == 1:
+            sugarBinHeights = self.sugarscape.graphStats["sugarBins"]
+            maxBinHeight = max(sugarBinHeights + [0])
+            histogramBins = 10
+            window = self.graphs["Sugar Histogram"]["window"]
+            canvas = self.graphs["Sugar Histogram"]["canvas"]
+            bins = self.graphs["Sugar Histogram"]["bins"]
+            if maxBinHeight != 0:
+                for i in range(histogramBins):
+                    x0, y0, x1, y1 = canvas.coords(bins[i])
+                    y0 = canvas.winfo_height() - (canvas.winfo_height() * (sugarBinHeights[i] / maxBinHeight))
+                    canvas.coords(self.graphs["Sugar Histogram"]["bins"][i], x0, y0, x1, y1)
+            window.update()
+        
+        if self.graphs["Spice Histogram"]["toggle"].get() == 1:
+            spiceBinHeights = self.sugarscape.graphStats["spiceBins"]
+            maxBinHeight = max(spiceBinHeights + [0])
+            histogramBins = 10
+            window = self.graphs["Spice Histogram"]["window"]
+            canvas = self.graphs["Spice Histogram"]["canvas"]
+            bins = self.graphs["Spice Histogram"]["bins"]
+            if maxBinHeight != 0:
+                for i in range(histogramBins):
+                    x0, y0, x1, y1 = canvas.coords(bins[i])
+                    y0 = canvas.winfo_height() - (canvas.winfo_height() * (spiceBinHeights[i] / maxBinHeight))
+                    canvas.coords(self.graphs["Spice Histogram"]["bins"][i], x0, y0, x1, y1)
+            window.update()
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
