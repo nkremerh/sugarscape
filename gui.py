@@ -248,18 +248,12 @@ class GUI:
         self.doTimestep()
 
     def doGraphMenu(self, graph):
-        print(graph)
         if self.graphs[graph]["toggle"].get() == 1 and self.graphs[graph]["window"] == None:
-            if graph == "Tag Histogram":
-                print("Tag Histogram")
-            elif graph == "Age Histogram":
-                print("Age Histogram")
-
-
             graphWindow = tkinter.Toplevel(self.window)
             graphWindow.title(graph)
             graphWindow.protocol("WM_DELETE_WINDOW", lambda: self.closeGraph(graph))
             self.graphs[graph]["window"] = graphWindow
+
             graphHeight = 300
             graphWidth = 600
             canvas = tkinter.Canvas(graphWindow, width=graphWidth, height=graphHeight, bg='white')
