@@ -133,7 +133,7 @@ class GUI:
                     # Determine upper left x and y coordinates
                     x1 = self.borderEdge + (i + 0.2) * self.siteWidth
                     y1 = self.borderEdge + (j + 0.2) * self.siteHeight
-                    # Determine lower rightt x and y coordinates
+                    # Determine lower right x and y coordinates
                     x2 = self.borderEdge + (i + 0.8) * self.siteWidth
                     y2 = self.borderEdge + (j + 0.8) * self.siteHeight
                     self.grid[i][j] = {"object": self.canvas.create_oval(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
@@ -146,7 +146,7 @@ class GUI:
                     # Determine upper left x and y coordinates
                     x1 = self.borderEdge + i * self.siteWidth
                     y1 = self.borderEdge + j * self.siteHeight
-                    # Determine lower rightt x and y coordinates
+                    # Determine lower right x and y coordinates
                     x2 = self.borderEdge + (i + 1) * self.siteWidth
                     y2 = self.borderEdge + (j + 1) * self.siteHeight
                     self.grid[i][j] = {"object": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0", activestipple="gray50"), "color": fillColor}
@@ -264,7 +264,7 @@ class GUI:
             histogramBins = 10
             self.graphs[graph]["bins"] = [0] * histogramBins
             for i in range(histogramBins):
-                self.graphs[graph]["bins"][i] = canvas.create_rectangle(i * graphWidth / 10, graphHeight - 40, (i + 1) * graphWidth / 10, graphHeight, fill="magenta", outline="black", width=2)
+                self.graphs[graph]["bins"][i] = canvas.create_rectangle(i * graphWidth / 10, graphHeight, (i + 1) * graphWidth / 10, graphHeight, fill="magenta", outline="black", width=2)
             graphWindow.update()
         else:
             self.closeGraph(graph)
