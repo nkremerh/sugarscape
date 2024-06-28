@@ -972,10 +972,11 @@ def verifyConfiguration(configuration):
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
 
-    if configuration["agentDecisionModelTribalFactor"] > 1:
-        configuration["agentDecisionModelTribalFactor"] = 1
-    elif configuration["agentDecisionModelTribalFactor"] < 0:
-        configuration["agentDecisionModelTribalFactor"] = -1
+    configuration["agentDecisionModelTribalFactor"].sort()
+    if configuration["agentDecisionModelTribalFactor"][1] > 1:
+        configuration["agentDecisionModelTribalFactor"][1] = 1
+    elif configuration["agentDecisionModelTribalFactor"][0] < 0:
+        configuration["agentDecisionModelTribalFactor"][0] = -1
 
     # Ensure at most number of tribes is equal to the number of colors in the GUI
     maxTribes = 25
