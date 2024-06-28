@@ -97,7 +97,7 @@ class GUI:
         for graph in graphNames:
             graphToggle = tkinter.IntVar(window, 0)
             self.graphs[graph] = {"window": None, "toggle": graphToggle}
-            graphMenu.add_checkbutton(label=graph, variable=graphToggle, command=lambda: self.doGraphMenu(graph), indicatoron=True)
+            graphMenu.add_checkbutton(label=graph, variable=graphToggle, command=lambda g=graph: self.doGraphMenu(g), indicatoron=True)
         graphButton.grid(row=0, column=5, sticky="nsew")
 
         statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Movement: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
@@ -158,7 +158,7 @@ class GUI:
         return ["Pollution"]
 
     def configureGraphNames(self):
-        return ["Tag Histogram"]
+        return ["Sugar Histogram", "Spice Histogram", "Tag Histogram", "Age Histogram", "Lorenz Curve"]
     
     def configureNetworkNames(self):
         return ["Neighbors", "Family", "Friends", "Trade", "Loans", "Disease"]
@@ -248,19 +248,25 @@ class GUI:
         self.doTimestep()
 
     def doGraphMenu(self, graph):
-        if self.graphs[graph]["toggle"].get() == 1:
-            if self.graphs[graph]["window"] == None:
-                graphWindow = tkinter.Toplevel(self.window)
-                graphWindow.title(graph)
-                graphWindow.protocol("WM_DELETE_WINDOW", lambda: self.closeGraph(graph))
-                self.graphs[graph]["window"] = graphWindow
-                graphHeight = 300
-                graphWidth = 600
-                canvas = tkinter.Canvas(graphWindow, width=graphWidth, height=graphHeight, bg='white')
-                canvas.create_line(0, graphHeight, graphWidth, graphHeight, fill='black', width=1)
-                canvas.create_line(0, 0, 0, graphHeight, fill='black', width=1)
-                self.graphs[graph]["image"] = canvas # tkinter.Label(graphWindow, text=f"This is the {graph} window")
-                self.graphs[graph]["image"].pack(padx=20, pady=20)
+        print(graph)
+        if self.graphs[graph]["toggle"].get() == 1 and self.graphs[graph]["window"] == None:
+            if graph == "Tag Histogram":
+                print("Tag Histogram")
+            elif graph == "Age Histogram":
+                print("Age Histogram")
+
+
+            graphWindow = tkinter.Toplevel(self.window)
+            graphWindow.title(graph)
+            graphWindow.protocol("WM_DELETE_WINDOW", lambda: self.closeGraph(graph))
+            self.graphs[graph]["window"] = graphWindow
+            graphHeight = 300
+            graphWidth = 600
+            canvas = tkinter.Canvas(graphWindow, width=graphWidth, height=graphHeight, bg='white')
+            canvas.create_line(20, graphHeight - 20, graphWidth - 20, graphHeight - 20, fill='black', width=1)
+            canvas.create_line(20, 20, 20, graphHeight - 20, fill='black', width=1)
+            self.graphs[graph]["image"] = canvas # tkinter.Label(graphWindow, text=f"This is the {graph} window")
+            self.graphs[graph]["image"].pack(padx=20, pady=20)
         else:
             self.closeGraph(graph)
 
@@ -271,23 +277,14 @@ class GUI:
             self.graphs[graph]["toggle"].set(0)
 
     def doGraphTimesteps(self):
-        if not any(self.graphs[graph]["toggle"].get() == 1 for graph in self.graphs):
-            return
-        
-        dotSize = 5
+        if self.graphs["Tag Histogram"]["toggle"].get() == 1:
+            self.graphs["Tag Histogram"]["image"].config(text=f"{self.sugarscape.runtimeStats["meanTribeTags"]}") 
+
+        if self.graphs["Tag Histogram"]["toggle"].get() == 1:
+            self.graphs["Tag Histogram"]["image"].config(text=f"{self.sugarscape.runtimeStats["meanTribeTags"]}") 
         
         if self.graphs["Tag Histogram"]["toggle"].get() == 1:
-            # self.graphs["Tag Histogram"]["image"].config(text=f"{self.sugarscape.runtimeStats["meanTribeTags"]}") 
-            graphBorder = 20
-            x1 = 40 + self.sugarscape.timestep + graphBorder
-            y1 = 300 - 20 * self.sugarscape.runtimeStats["meanVision"]
-            self.graphs["Tag Histogram"]["image"].create_oval(x1, y1, x1 + dotSize, y1 + dotSize, fill="black", outline="")
-
-    # X coordinate: just (some constant * timestep) + x distance to y axis
-    # Y coordinate: just screenHeight - ((some constant * value) + y distance to x axis)
-    # Keep track of maximum x and y values
-    # max x value will be timestep for the easy graphs I'm doing
-    # max y value will be whatever the maximum value is (population, etc)
+            self.graphs["Tag Histogram"]["image"].config(text=f"{self.sugarscape.runtimeStats["meanTribeTags"]}") 
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
