@@ -1082,7 +1082,7 @@ if __name__ == "__main__":
                      "agentDecisionModelFactor": [0, 0],
                      "agentDecisionModelLookaheadDiscount": [0, 0],
                      "agentDecisionModelLookaheadFactor": [0],
-                     "agentDecisionModelTribalFactor": [0, 0],
+                     "agentDecisionModelTribalFactor": [-1, -1],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
