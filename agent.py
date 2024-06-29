@@ -261,6 +261,11 @@ class Agent:
     def doInheritance(self):
         if self.inheritancePolicy == "none":
             return
+        # Prevent negative inheritance
+        if self.sugar < 0:
+            self.sugar = 0
+        if self.spice < 0:
+            self.spice = 0
         # Provide inheritance for living children/sons/daughters/friends
         livingChildren = []
         livingSons = []
