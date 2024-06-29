@@ -548,12 +548,12 @@ class Sugarscape:
             sexDistributionCountdown = math.floor(sexDistributionCountdown / (maleToFemaleRatio + 1)) * maleToFemaleRatio
 
         for i in range(numAgents):
-            for config in configurations:
-                configurations[config]["endowments"].append(configurations[config]["curr"])
-                configurations[config]["curr"] += configurations[config]["inc"]
-                configurations[config]["curr"] = round(configurations[config]["curr"], configurations[config]["decimals"])
-                if configurations[config]["curr"] > configurations[config]["max"]:
-                    configurations[config]["curr"] = configurations[config]["min"]
+            for config in configurations.values():
+                config["endowments"].append(config["curr"])
+                config["curr"] += config["inc"]
+                config["curr"] = round(config["curr"], config["decimals"])
+                if config["curr"] > config["max"]:
+                    config["curr"] = config["min"]
 
             if immuneSystemLength > 0:
                 immuneSystems.append([random.randrange(2) for i in range(immuneSystemLength)])
