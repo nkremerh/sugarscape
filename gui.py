@@ -268,39 +268,75 @@ class GUI:
         self.window.update()
 
     def configureGraph(self):
-        self.activeGraph.get()
-        histogramBins = 10
+        self.graphObjects = {"bins": {}, "labels": {}, "axes": {}, "xTicks": {}, "xTickLabels": {}, "yTicks": {}, "yTickLabels": {}}
+        activeGraph = self.activeGraph.get()
+        histogramBins = 10 if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
         graphHeight = 360
         graphWidth = 720
         graphStartX = 100
         graphStartY = 100
+        self.graphObjects["axes"]["y"] = self.canvas.create_line(graphStartX, graphStartY, graphStartX, graphStartY + graphHeight,  fill="black", width=2)
+        xTicks = histogramBins
+        xTickOffset = 0 if activeGraph != "Tag Histogram" else -1 * graphWidth / histogramBins / 2
+        yTicks = 2
+        for i in range(1, xTicks + 1):
+            x0 = x1 = graphStartX + (graphWidth * i / xTicks) + xTickOffset
+            y0 = graphStartY + graphHeight
+            y1 = y0 + 10
+            self.graphObjects["xTicks"][i / xTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
+            y0 = y1 + 10
+            self.graphObjects["xTickLabels"][i / xTicks] = self.canvas.create_text(x0, y0, fill="black")
+        for i in range(1, yTicks + 1):
+            x0 = graphStartX - 10
+            x1 = graphStartX + 10
+            y0 = y1 = graphStartY + (graphHeight * (yTicks - i) / yTicks)
+            self.graphObjects["yTicks"][i / yTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
+            x0 = graphStartX - 20
+            self.graphObjects["yTickLabels"][i / yTicks] = self.canvas.create_text(x0, y0, fill="black")
         for i in range(histogramBins):
-            x0, y0 = graphStartX + i * graphWidth / 10, graphStartY + graphHeight
-            x1, y1 = graphStartX + (i + 1) * graphWidth / 10, graphStartY + graphHeight
-            self.graphObjects[i] = self.canvas.create_rectangle(x0, y0, x1, y1, fill="magenta", outline="black", width=2)
+            x0, y0 = graphStartX + i * graphWidth / histogramBins, graphStartY + graphHeight
+            x1, y1 = graphStartX + (i + 1) * graphWidth / histogramBins, graphStartY + graphHeight
+            self.graphObjects["bins"][i] = self.canvas.create_rectangle(x0, y0, x1, y1, fill="magenta", outline="black", width=2)
+            x0, y0 = graphStartX + (i + 0.5) * graphWidth / histogramBins, graphStartY + graphHeight - 10
+            self.graphObjects["labels"][i] = self.canvas.create_text(x0, y0, fill="black")
         if self.sugarscape.timestep != 0:
             self.doGraphTimestep()
 
     def doGraphTimestep(self):
         graphHeight = 360
-        bins = self.graphObjects
+        bins = self.graphObjects["bins"]
+        labels = self.graphObjects["labels"]
         graphStats = {
             "Tag Histogram": self.sugarscape.graphStats["meanTribeTags"],
             "Age Histogram": self.sugarscape.graphStats["ageBins"],
             "Sugar Histogram": self.sugarscape.graphStats["sugarBins"],
             "Spice Histogram": self.sugarscape.graphStats["spiceBins"]
         }
+        graphMaxX = {
+            "Tag Histogram": self.sugarscape.configuration["agentTagStringLength"],
+            "Age Histogram": self.sugarscape.configuration["agentMaxAge"],
+            "Sugar Histogram": self.sugarscape.graphStats["maxSugar"],
+            "Spice Histogram": self.sugarscape.graphStats["maxSpice"]
+        }
         activeGraph = self.activeGraph.get()
         binValues = graphStats[activeGraph]
-        maxBinHeight = max(binValues + [0]) if activeGraph != "Tag Histogram" else 1
+        maxX = graphMaxX[activeGraph]
+        maxBinHeight = max(binValues + [0]) if activeGraph != "Tag Histogram" else 100
         if maxBinHeight != 0:
             for i in range(len(bins)):
                 x0, y0, x1, y1 = self.canvas.coords(bins[i])
-                if activeGraph == "Tag Histogram":
-                    y0 = y1 - binValues[i] * graphHeight
-                else:
-                    y0 = y1 - (binValues[i] / maxBinHeight) * graphHeight
+                y0 = y1 - (binValues[i] / maxBinHeight) * graphHeight
                 self.canvas.coords(bins[i], x0, y0, x1, y1)
+                x2, y2 = self.canvas.coords(labels[i])
+                y2 = y0 - 10
+                self.canvas.itemconfigure(labels[i], text=round(binValues[i]))
+                self.canvas.coords(labels[i], x2, y2)
+            xTicks = len(self.graphObjects["xTickLabels"])
+            for i in range(1, xTicks + 1):
+                self.canvas.itemconfigure(self.graphObjects["xTickLabels"][i / xTicks], text=round(i / xTicks * maxX))
+            yTicks = len(self.graphObjects["yTickLabels"])
+            for i in range(1, yTicks + 1):
+                self.canvas.itemconfigure(self.graphObjects["yTickLabels"][i / yTicks], text=round(i / yTicks * maxBinHeight))
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
