@@ -5,7 +5,6 @@ Python implementation of the Sugarscape agent-based computational model introduc
 Inspired by previous work from Herve Lange (https://github.com/langerv/sugarscape) and Joshua Palicka (https://github.com/joshuapalicka/sugarscape).
 
 Requirements:
-Bash 4.3 (or newer)
 Python 3
 TkInter
 
@@ -30,7 +29,7 @@ make seeds
     Note: Results will be saved in the data subdirectory.
 
 make setup
-    Change preconfigured settings for Bash and Python aliases.
+    Change preconfigured settings for the system Python alias.
     Note: Changed settings may alter Makefile and configuration file in-place.
 
 make test
@@ -471,11 +470,6 @@ timesteps: int
     Default: 200
 
 Other JSON Configurable Options:
-bashAlias: string
-    Set the alias to the local Bash installation.
-    Note: Bash is required to run the data collection.
-    Default: "bash"
-
 decisionModels: [[string, ...], ...]
     Set the agent decision models to be tested in data collection.
     Default: [["none"]]
