@@ -76,12 +76,10 @@ def getJobsToDo(config, path):
                 completedRuns.append(config)
             else:
                 print(f"Existing log {log} is incomplete. Adding it to be rerun.")
-                # Erase the previous log
-                open(log, 'w').close()
+                os.remove(log)
         except:
             print(f"Existing log {log} is incomplete. Adding it to be rerun.")
-            # Erase the previous log
-            open(log, 'w').close()
+            os.remove(log)
             continue
     for run in completedRuns:
         configs.remove(run)
