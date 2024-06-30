@@ -963,9 +963,7 @@ def verifyConfiguration(configuration):
         configuration["startingAgents"] = totalCells
 
     # Ensure infinitely-lived agents are properly initialized
-    if configuration["agentMaxAge"][0] < 0 and configuration["agentMaxAge"][1] >= 0:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have agent age range of {configuration['agentMaxAge'][0]}-{configuration['agentMaxAge'][1]}. Agent will now live infinitely.")
+    if configuration["agentMaxAge"][0] < 0:
         configuration["agentMaxAge"] = [-1, -1]
 
     if configuration["agentSelfishnessFactor"][0] < 0 and configuration["agentSelfishnessFactor"][1] >= 0:
