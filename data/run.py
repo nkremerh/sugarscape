@@ -130,7 +130,7 @@ def runSimulation(configFile, pythonAlias, jobNumber, totalJobs):
     print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
     os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
 
-def runSimulations(config, configFiles, path):
+def runSimulations(config, configFiles):
     dataOpts = config["dataCollectionOptions"]
     pythonAlias = dataOpts["pythonAlias"]
     totalSimJobs = len(configFiles)
@@ -179,6 +179,6 @@ if __name__ == "__main__":
 
     configFiles = createConfigurations(config, path)
     if seedsOnly == False:
-        runSimulations(config, configFiles, path)
+        runSimulations(config, configFiles)
 
     exit(0)
