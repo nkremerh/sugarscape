@@ -20,10 +20,10 @@ def parseDataset(path, dataset, totalTimesteps):
         if model not in dataset:
             continue
         log = open(filePath)
+        print("Reading log {0}".format(filePath))
         rawJson = json.loads(log.read())
         dataset[model]["runs"] += 1
         i = 1
-        print("Reading log {0}".format(filePath))
         for item in rawJson:
             if item["timestep"] > totalTimesteps:
                 break
@@ -39,6 +39,7 @@ def parseDataset(path, dataset, totalTimesteps):
                     dataset[model]["metrics"][entry] = [0 for j in range(totalTimesteps + 1)]
                 dataset[model]["metrics"][entry][i-1] += item[entry]
             i += 1
+
         if rawJson[-1]["population"] == 0:
             dataset[model]["died"] += 1
         elif rawJson[-1]["population"] < rawJson[0]["population"]:
@@ -50,20 +51,22 @@ def findMeans(dataset):
     for model in dataset:
         for column in datacols:
             for i in range(len(dataset[model]["metrics"][column])):
-                dataset[model]["metrics"][column][i] = dataset[model]["metrics"][column][i] / dataset[model]["runs"]
-        dataset[model]["metrics"]["meanWealth"] = []
-        dataset[model]["metrics"]["meanDeaths"] = []
+                if column not in dataset[model]["means"]:
+                    dataset[model]["means"][column] = [0 for j in range(totalTimesteps + 1)]
+                dataset[model]["means"][column][i] = dataset[model]["metrics"][column][i] / dataset[model]["runs"]
+        dataset[model]["means"]["meanWealth"] = []
+        dataset[model]["means"]["meanDeaths"] = []
         for i in range(len(dataset[model]["metrics"]["population"])):
             deaths = dataset[model]["metrics"]["agentStarvationDeaths"][i] + dataset[model]["metrics"]["agentCombatDeaths"][i] + dataset[model]["metrics"]["agentAgingDeaths"][i]
-            dataset[model]["metrics"]["meanWealth"].append(dataset[model]["metrics"]["agentWealthTotal"][i] / dataset[model]["metrics"]["population"][i])
-            dataset[model]["metrics"]["meanDeaths"].append((deaths / dataset[model]["metrics"]["population"][i]) * 100)
+            dataset[model]["means"]["meanWealth"].append(dataset[model]["metrics"]["agentWealthTotal"][i] / dataset[model]["metrics"]["population"][i])
+            dataset[model]["means"]["meanDeaths"].append((deaths / dataset[model]["metrics"]["population"][i]) * 100)
     return dataset
 
 def parseOptions():
     commandLineArgs = sys.argv[1:]
-    shortOptions = "c:p:t:o:h"
-    longOptions = ("conf=", "outf=", "path=", "help")
-    options = {"config": None, "path": None, "outfile": None}
+    shortOptions = "c:p:t:h"
+    longOptions = ("conf=", "path=", "help")
+    options = {"config": None, "path": None}
     try:
         args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
     except getopt.GetoptError as err:
@@ -75,11 +78,6 @@ def parseOptions():
                 print("No config file provided.")
                 printHelp()
             options["config"] = currVal
-        elif currArg in ("-o", "--outf"):
-            options["outfile"] = currVal
-            if currVal == "":
-                print("No data output file path provided.")
-                printHelp()
         elif currArg in ("-p", "--path"):
             options["path"] = currVal
             if currVal == "":
@@ -93,9 +91,6 @@ def parseOptions():
         flag = 1
     if options["config"] == None:
         print("Configuration file path required.")
-        flag = 1
-    if options["outfile"] == None:
-        print("Data output file path required.")
         flag = 1
     if flag == 1:
         printHelp()
@@ -111,27 +106,27 @@ def printSummaryStats(dataset):
         better = dataset[model]["runs"] - (dataset[model]["died"] + dataset[model]["worse"])
         print("{0:^30}: {1:^5} {2:^5} {3:^5}".format(model, dataset[model]["died"], dataset[model]["worse"], better))
 
-def generatePlots(config, models, outfile, totalTimesteps, dataset):
+def generatePlots(config, models, totalTimesteps, dataset):
     if "deaths" in config["plots"]:
         print("Generating deaths plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, "deaths.pdf", "meanDeaths", "Mean Deaths", True)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "deaths.pdf", "meanDeaths", "Mean Deaths", "center right", True)
     if "meanAgeAtDeath" in config["plots"]:
         print("Generating mean age at death plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, "mean_age_at_death.pdf", "meanAgeAtDeath", "Mean Age at Death")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "mean_age_at_death.pdf", "meanAgeAtDeath", "Mean Age at Death", "center right")
     if "meanttl" in config["plots"]:
         print("Generating mean time to live plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, "meanttl.pdf", "agentMeanTimeToLive", "Mean Time to Live")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "meanttl.pdf", "agentMeanTimeToLive", "Mean Time to Live", "center right")
     if "meanWealth" in config["plots"]:
         print("Generating mean wealth plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, "mean_wealth.pdf", "meanWealth", "Mean Wealth")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "mean_wealth.pdf", "meanWealth", "Mean Wealth", "center right")
     if "population" in config["plots"]:
         print("Generating population plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, "population.pdf", "population", "Population")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "population.pdf", "population", "Population", "center right")
     if "wealth" in config["plots"]:
         print("Generating total wealth plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, "wealth.pdf", "agentWealthTotal", "Total Wealth")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "wealth.pdf", "agentWealthTotal", "Total Wealth", "center right")
 
-def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, label, percentage=False):
+def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, label, positioning, percentage=False):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.serif"] = ["Times New Roman"]
     matplotlib.pyplot.rcParams["font.size"] = 20
@@ -141,21 +136,20 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, lab
     lines = []
     colors = ["magenta", "cyan", "gold", "black"]
     c = 0
-    modelStrings = {"bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape"}
+    modelStrings = {"bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape"}
     for model in dataset:
-        y = [dataset[model]["metrics"][column][i] for i in range(totalTimesteps + 1)]
-        axes.plot(x, y, color = colors[c], label = modelStrings[model])
-        axes.legend(loc = "center right", labelspacing = 0.1, frameon = False, fontsize = 16)
+        y = [dataset[model]["means"][column][i] for i in range(totalTimesteps + 1)]
+        axes.plot(x, y, color=colors[c], label=modelStrings[model])
+        axes.legend(loc=positioning, labelspacing=0.1, frameon=False, fontsize=16)
         c += 1
     if percentage == True:
         axes.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter())
-    figure.savefig(outfile, format = "pdf", bbox_inches = "tight")
+    figure.savefig(outfile, format="pdf", bbox_inches="tight")
 
 if __name__ == "__main__":
     options = parseOptions()
     path = options["path"]
     config = options["config"]
-    outfile = options["outfile"]
     configFile = open(config)
     config = json.loads(configFile.read())["dataCollectionOptions"]
     configFile.close()
@@ -166,7 +160,7 @@ if __name__ == "__main__":
         modelString = model
         if type(model) == list:
             modelString = '_'.join(model)
-        dataset[modelString] = {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "metrics": {}}
+        dataset[modelString] = {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "means": {}, "metrics": {}}
 
     if not os.path.exists(path):
         print("Path {0} not recognized.".format(path))
@@ -174,6 +168,6 @@ if __name__ == "__main__":
 
     dataset = parseDataset(path, dataset, totalTimesteps)
     dataset = findMeans(dataset)
-    generatePlots(config, models, outfile, totalTimesteps, dataset)
+    generatePlots(config, models, totalTimesteps, dataset)
     printSummaryStats(dataset)
     exit(0)
