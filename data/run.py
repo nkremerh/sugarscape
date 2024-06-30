@@ -3,7 +3,6 @@ import json
 import multiprocessing
 import os
 import random
-import re
 import sys
 import time
 
@@ -53,7 +52,6 @@ def generateSeeds(config):
 def getJobsToDo(config, path):
     print("Searching for incomplete logs from previously created seeds.")
     encodedDir = os.fsencode(path)
-    dataOpts = config["dataCollectionOptions"]
     simOpts = config["sugarscapeOptions"]
     configs = []
     for file in os.listdir(encodedDir):
@@ -61,7 +59,6 @@ def getJobsToDo(config, path):
         if not filename.endswith('.config'):
             continue
         filePath = path + filename
-        fileDecisionModel = re.compile(r"([A-z]*)\d*\.config")
         configs.append(filePath)
     completedRuns = []
     for config in configs:
