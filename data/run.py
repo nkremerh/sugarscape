@@ -62,7 +62,6 @@ def getJobsToDo(config, path):
             continue
         filePath = path + filename
         fileDecisionModel = re.compile(r"([A-z]*)\d*\.config")
-        model = re.search(fileDecisionModel, filename).group(1)
         configs.append(filePath)
     completedRuns = []
     for config in configs:
@@ -160,7 +159,7 @@ def runSimulations(config, configFiles):
 def verifyConfiguration(configuration):
     # Check if number of parallel jobs is greater than number of CPU cores
     cores = os.cpu_count()
-    if configuration["dataCollectionOptions"]["numParallelSimJobs"] > cores :
+    if configuration["dataCollectionOptions"]["numParallelSimJobs"] > cores:
         configuration["dataCollectionOptions"]["numParallelSimJobs"] = cores
     return configuration
 
