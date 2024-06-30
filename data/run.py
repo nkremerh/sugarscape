@@ -66,22 +66,25 @@ def getJobsToDo(config, path):
         log = json.loads(configFile.read())["logfile"]
         configFile.close()
         if os.path.exists(log) == False:
+            print(f"Configuration file {config} has no matching log. Adding it to be rerun.")
             continue
         try:
             logFile = open(log)
             lastEntry = json.loads(logFile.read())[-1]
+            logFile.close()
             if lastEntry["timestep"] == simOpts["timesteps"] or lastEntry["population"] == 0:
                 completedRuns.append(config)
             else:
                 print(f"Existing log {log} is incomplete. Adding it to be rerun.")
-            logFile.close()
+                # Erase the previous log
+                open(log, 'w').close()
         except:
             print(f"Existing log {log} is incomplete. Adding it to be rerun.")
+            # Erase the previous log
+            open(log, 'w').close()
             continue
     for run in completedRuns:
         configs.remove(run)
-    for config in configs:
-        print(f"Configuration file {config} has no matching log. Adding it to be rerun")
     if len(configs) == 0:
         print("No incomplete logs found.")
     return configs
