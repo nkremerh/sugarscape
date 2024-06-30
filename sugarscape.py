@@ -940,15 +940,15 @@ def printHelp():
     exit(0)
 
 def verifyConfiguration(configuration):
-    for config in configuration.items():
-        if isinstance(config[1], list):
-            if config[0] != "environmentPollutionDiffusionTimeFrame" or config[0] != "environmentPollutionTimeFrame":
-                config[1].sort()
+    for configName, configValue in configuration.items():
+        if isinstance(configValue, list):
+            if configName != "environmentPollutionDiffusionTimeFrame" or configName != "environmentPollutionTimeFrame":
+                configValue.sort()
 
     if len(configuration["environmentStartingQuadrants"]) == 0:
         configuration["environmentStartingQuadrants"] = [1, 2, 3, 4]
 
-    if configuration["environmentQuadrantSizeFactor"] > 1 or  configuration["environmentQuadrantSizeFactor"] < 0:
+    if configuration["environmentQuadrantSizeFactor"] > 1 or configuration["environmentQuadrantSizeFactor"] < 0:
         configuration["environmentQuadrantSizeFactor"] = 1
 
     if configuration["environmentTribePerQuadrant"] == True:
@@ -966,16 +966,12 @@ def verifyConfiguration(configuration):
     if configuration["agentMaxAge"][0] < 0:
         configuration["agentMaxAge"] = [-1, -1]
 
-    if configuration["agentSelfishnessFactor"][0] < 0 and configuration["agentSelfishnessFactor"][1] >= 0:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have agent selfishness factor range of {configuration['agentSelfishnessFactor']}-{configuration['agentSelfishnessFactor'][1]}. Disabling 'agentSelfishnessFactor'.")
+    if configuration["agentSelfishnessFactor"][0] < 0:  
         configuration["agentSelfishnessFactor"] = [-1, -1]
     elif configuration["agentSelfishnessFactor"][1] > 1:
         configuration["agentSelfishnessFactor"][1] = 1
    
-    if configuration["agentDecisionModelTribalFactor"][0] < 0 and configuration["agentDecisionModelTribalFactor"][1] >= 0:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have tribal factor range of {configuration['agentDecisionModelTribalFactor'][0]}-{configuration['agentDecisionModelTribalFactor'][1]}. Disabling 'agentDecisionModelTribalFactor'.")
+    if configuration["agentDecisionModelTribalFactor"][0] < 0:
         configuration["agentDecisionModelTribalFactor"] = [-1, -1]
     elif configuration["agentDecisionModelTribalFactor"][1] > 1:
         configuration["agentDecisionModelTribalFactor"][1] = 1
@@ -984,25 +980,24 @@ def verifyConfiguration(configuration):
         configuration["agentTagStringLength"] = 0
     if configuration["environmentMaxTribes"] < 0:
         configuration["environmentMaxTribes"] = 0
+    
     # Ensure at most number of tribes is equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
 
-
-    # Ensure at most number of tribes is equal to the number of colors in the GUI
-    maxTribes = 25
-    if configuration["environmentMaxTribes"] > maxTribes:
+    # Ensure at most number of tribes and ethical decisions are equal to the number of colors in the GUI
+    maxColors = 25
+    if configuration["environmentMaxTribes"] > maxColors:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-            print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxTribes}.")
-        configuration["environmentMaxTribes"] = maxTribes
+            print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
+        configuration["environmentMaxTribes"] = maxColors
 
-    maxEthicalDecisionModels = 25
     uniqueAgentDecisionModels = set(configuration["agentDecisionModels"])
     numUniqueAgentDecisionModels = len(uniqueAgentDecisionModels)
-    if numUniqueAgentDecisionModels > maxEthicalDecisionModels:
+    if numUniqueAgentDecisionModels > maxColors:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot provide {len(configuration['agentDecisionModels'])} ethical models. Allocating maximum of {maxEthicalDecisions}.")
-        removeDecisionModels = uniqueAgentDecisionModels[maxEthicalDecisionModels:]
+            print(f"Cannot provide {len(configuration['agentDecisionModels'])} ethical models. Allocating maximum of {maxColors}.")
+        removeDecisionModels = uniqueAgentDecisionModels[maxColors:]
         configuration["agentDecisionModels"] = [i for i in configuration["agentDecisionModels"] if i not in removeDecisionModels]
 
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
