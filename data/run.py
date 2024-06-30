@@ -63,8 +63,6 @@ def getJobsToDo(config, path):
         filePath = path + filename
         fileDecisionModel = re.compile(r"([A-z]*)\d*\.config")
         model = re.search(fileDecisionModel, filename).group(1)
-        if model not in dataOpts["decisionModels"]:
-            continue
         configs.append(filePath)
     completedRuns = []
     for config in configs:
@@ -159,6 +157,13 @@ def runSimulations(config, configFiles):
     pool.close()
     pool.join()
 
+def verifyConfiguration(configuration):
+    # Check if number of parallel jobs is greater than number of CPU cores
+    cores = os.cpu_count()
+    if configuration["dataCollectionOptions"]["numParallelSimJobs"] > cores :
+        configuration["dataCollectionOptions"]["numParallelSimJobs"] = cores
+    return configuration
+
 if __name__ == "__main__":
     options = parseOptions()
     seedsOnly = options["seeds"]
@@ -177,6 +182,7 @@ if __name__ == "__main__":
         print("Configuration file must have specific data collection options in order to run automated data collection.")
         exit(1)
 
+    config = verifyConfiguration(config)
     configFiles = createConfigurations(config, path)
     if seedsOnly == False:
         runSimulations(config, configFiles)
