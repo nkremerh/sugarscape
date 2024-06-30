@@ -297,9 +297,9 @@ class GUI:
             for i in range(len(bins)):
                 x0, y0, x1, y1 = self.canvas.coords(bins[i])
                 if activeGraph == "Tag Histogram":
-                    y0 = y1 - (1 - binValues[i]) * graphHeight
+                    y0 = y1 - binValues[i] * graphHeight
                 else:
-                    y0 = y1 - (1 - (binValues[i] / maxBinHeight)) * graphHeight
+                    y0 = y1 - (binValues[i] / maxBinHeight) * graphHeight
                 self.canvas.coords(bins[i], x0, y0, x1, y1)
 
     def doPlayButton(self, *args):

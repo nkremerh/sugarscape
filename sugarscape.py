@@ -688,13 +688,11 @@ class Sugarscape:
     def updateGraphStats(self):
         histogramBins = 10
 
-        maxAge = 0
+        maxAge = self.configuration["agentMaxAge"][1]
         maxSugar = 0
         maxSpice = 0
         maxWealth = 0
         for agent in self.agents:
-            if agent.age > maxAge:
-                maxAge = agent.age
             if agent.sugar > maxSugar:
                 maxSugar = agent.sugar
             if agent.spice > maxSpice:
@@ -708,10 +706,10 @@ class Sugarscape:
         wealthBins = [0] * histogramBins   
         meanTribeTags = [0] * self.configuration["agentTagStringLength"]
         for agent in self.agents:
-            ageBins[round(agent.age / maxAge * histogramBins) - 1] += 1
-            sugarBins[round(agent.sugar / maxSugar * histogramBins) - 1] += 1
-            spiceBins[round(agent.spice / maxSpice * histogramBins) - 1] += 1
-            wealthBins[round((agent.sugar + agent.spice) / maxWealth * histogramBins) - 1] += 1
+            ageBins[math.floor(agent.age / (maxAge + 1) * histogramBins)] += 1
+            sugarBins[math.floor(agent.sugar / (maxSugar + 1) * histogramBins)] += 1
+            spiceBins[math.floor(agent.spice / (maxSpice + 1) * histogramBins)] += 1
+            wealthBins[math.floor((agent.sugar + agent.spice) / (maxWealth + 1) * histogramBins)] += 1
             meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
         numAgents = len(self.agents)
         if numAgents > 0:
