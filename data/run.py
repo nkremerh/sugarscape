@@ -4,8 +4,8 @@ import multiprocessing
 import os
 import random
 import re
-import signal
 import sys
+import time
 
 def createConfigurations(config, path):
     configs = getJobsToDo(config, path)
@@ -35,6 +35,11 @@ def createConfigurations(config, path):
                 conf.close()
         return confFiles
     return configs
+
+def finishSimulations():
+    # Sleep to prevent printing from occurring out of order with final job submission
+    time.sleep(1)
+    print("Waiting for jobs to finish up.")
 
 def generateSeeds(config):
     seeds = []
@@ -87,12 +92,6 @@ def getJobsToDo(config, path):
         print("No incomplete logs found.")
     return configs
 
-def initializer(jobsStartedCounter, jobsFinishedCounter):
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    global jobsStarted, jobsFinished
-    jobsStarted = jobsStartedCounter
-    jobsFinished = jobsFinishedCounter
-
 def parseOptions():
     commandLineArgs = sys.argv[1:]
     shortOptions = "c:p:s:t:h"
@@ -127,45 +126,38 @@ def printHelp():
     print("Usage:\n\tpython run.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-p,--path\tUse the specified directory path to store dataset JSON files.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
+def runSimulation(configFile, pythonAlias, jobNumber, totalJobs):
+    print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
+    os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
+
 def runSimulations(config, configFiles, path):
     dataOpts = config["dataCollectionOptions"]
     pythonAlias = dataOpts["pythonAlias"]
     totalSimJobs = len(configFiles)
     jobUpdateFrequency = dataOpts["jobUpdateFrequency"]
 
-    initialJobsStarted = multiprocessing.Value('i', 0)
-    initialJobsFinished = multiprocessing.Value('i', totalSimJobs)
-    pool = multiprocessing.Pool(initializer=initializer, initargs=(initialJobsStarted, initialJobsFinished), processes=dataOpts["numParallelSimJobs"])
-    try:
-        results = []
-        for i, configFile in enumerate(configFiles):
-            result = pool.apply_async(runSimulation, args=(configFile, pythonAlias, i + 1, totalSimJobs, jobUpdateFrequency))
-            results.append(result)
-        # Wait for all simulations to complete
+    # Submit simulation jobs to local worker pool
+    pool = multiprocessing.Pool(processes = dataOpts["numParallelSimJobs"])
+    results = [pool.apply_async(runSimulation, args = (configFile, pythonAlias, i + 1, totalSimJobs)) for i, configFile in enumerate(configFiles)]
+
+    # Wait for jobs to finish
+    pool.apply(finishSimulations)
+    lastUpdate = 0
+    while len(results) > 0:
+        waitingResults = []
         for result in results:
-            result.get()
+            ready = result.ready()
+            if ready == False:
+                waitingResults.append(result)
+        outstanding = len(waitingResults)
+        if outstanding != 0 and outstanding != lastUpdate and outstanding % jobUpdateFrequency == 0:
+            print(f"{outstanding} jobs remaining.")
+            lastUpdate = outstanding
+        results = waitingResults
 
-    except KeyboardInterrupt:
-        print("\nSimulations interrupted.")
-    finally:
-        pool.terminate()
-        pool.join()
-
-def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, jobUpdateFrequency):
-    with jobsStarted.get_lock():
-        jobsStarted.value += 1
-
-    print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
-    if jobNumber == totalJobs:
-        print("Waiting for jobs to finish up.")
-    os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile}")
-
-    with jobsFinished.get_lock():
-        jobsFinished.value -= 1
-        if jobsStarted.value == totalJobs:
-            jobsRemaining = jobsFinished.value
-            if jobsFinished.value % jobUpdateFrequency == 0:
-                print(f"{jobsRemaining} jobs remaining.")
+    # Clean up job pool
+    pool.close()
+    pool.join()
 
 if __name__ == "__main__":
     options = parseOptions()
