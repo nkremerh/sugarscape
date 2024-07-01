@@ -134,14 +134,16 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, lab
     axes.set(xlabel = "Timestep", ylabel = label, xlim = [0, totalTimesteps])
     x = [i for i in range(totalTimesteps + 1)]
     lines = []
-    colors = ["magenta", "cyan", "gold", "black"]
-    c = 0
-    modelStrings = {"bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape"}
+    modelStrings = {"bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape", "multiple": "Multiple", "unknown": "Unknown"}
+    colors = {"bentham": "magenta", "egoist": "cyan", "altruist": "gold", "none": "black", "rawSugarscape": "black ", "multiple": "red", "unknown": "green"}
     for model in dataset:
         y = [dataset[model]["means"][column][i] for i in range(totalTimesteps + 1)]
-        axes.plot(x, y, color=colors[c], label=modelStrings[model])
+        if '_' in model:
+            model = "multiple"
+        elif model not in modelStrings:
+            model = "unknown"
+        axes.plot(x, y, color=colors[model], label=modelStrings[model])
         axes.legend(loc=positioning, labelspacing=0.1, frameon=False, fontsize=16)
-        c += 1
     if percentage == True:
         axes.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter())
     figure.savefig(outfile, format="pdf", bbox_inches="tight")
