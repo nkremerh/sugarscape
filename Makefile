@@ -11,9 +11,7 @@ DATASET = $(DATACHECK) \
 		data/*.sh
 
 PLOTS = $(PLOTCHECK) \
-		plots/*.dat \
-		plots/*.pdf \
-		plots/*.plg
+		plots/*.pdf
 
 CLEAN = $(DATASET) \
 		$(LOGS) \
@@ -33,7 +31,7 @@ $(DATACHECK):
 	touch $(DATACHECK)
 
 $(PLOTCHECK): $(DATACHECK)
-	cd plots && $(PYTHON) plot.py --path ../data/ --conf ../$(CONFIG) --outf data.dat
+	cd plots && $(PYTHON) plot.py --path ../data/ --conf ../$(CONFIG)
 	touch $(PLOTCHECK)
 
 all: $(DATACHECK) $(PLOTCHECK)

@@ -6,6 +6,9 @@ Inspired by previous work from Herve Lange (https://github.com/langerv/sugarscap
 
 Requirements:
 Python 3
+
+Optional Dependencies:
+Matplotlib
 TkInter
 
 Usage:
@@ -493,7 +496,7 @@ numSeeds: int
 
 plots: [string, ...]
     Set the plots to be created once data has been collected.
-    Default: ["population", "meanttl", "starvationCombat", "wealth", "wealthNormalized"]
+    Default: ["deaths", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "wealth"]
 
 plotTimesteps: int
     Set the number of timesteps to plot in graphs as the X axis.
