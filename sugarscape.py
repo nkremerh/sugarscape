@@ -949,6 +949,8 @@ def verifyConfiguration(configuration):
         configuration["environmentStartingQuadrants"] = [1, 2, 3, 4]
 
     if configuration["environmentQuadrantSizeFactor"] > 1 or configuration["environmentQuadrantSizeFactor"] < 0:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+            print(f"Cannot have a quadrant size factor of {configuration['environmentQuadrantSizeFactor']}. Setting size factor to 1.")
         configuration["environmentQuadrantSizeFactor"] = 1
 
     if configuration["environmentTribePerQuadrant"] == True:
@@ -964,25 +966,44 @@ def verifyConfiguration(configuration):
 
     # Ensure infinitely-lived agents are properly initialized
     if configuration["agentMaxAge"][0] < 0:
+        if configuration["agentMaxAge"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(f"Agent cannot have maximum age range of {configuration['agentMaxAge']}. Agents will live infinitely.")
         configuration["agentMaxAge"] = [-1, -1]
 
-    if configuration["agentSelfishnessFactor"][0] < 0:  
+    if configuration["agentSelfishnessFactor"][0] < 0:
+        if configuration["agentSelfishnessFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(f"Cannot have selfishness factor range of {configuration['agentSelfishnessFactor']}. Disabling agent selfishness.")
         configuration["agentSelfishnessFactor"] = [-1, -1]
     elif configuration["agentSelfishnessFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have selfishness factor range of {configuration['agentSelfishnessFactor']}. Capping maximum at 1.0.")
         configuration["agentSelfishnessFactor"][1] = 1
    
     if configuration["agentDecisionModelTribalFactor"][0] < 0:
+        if configuration["agentDecisionModelTribalFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(f"Cannot have selfishness factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent selfishness.")
         configuration["agentDecisionModelTribalFactor"] = [-1, -1]
     elif configuration["agentDecisionModelTribalFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have selfishness factor range of {configuration['agentDecisionModelTribalFactor']}. Capping maximum at 1.0.")
         configuration["agentDecisionModelTribalFactor"][1] = 1
 
     if configuration["agentTagStringLength"] < 0:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have a negative tag string length. Setting tag string length to 0.")
         configuration["agentTagStringLength"] = 0
     if configuration["environmentMaxTribes"] < 0:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+            print(f"Cannot have a negative number of tribes. Setting tag string length to 0.")
         configuration["environmentMaxTribes"] = 0
     
     # Ensure at most number of tribes is equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have a longer tag string length than maximum number of tribes. Setting \"environmentMaxTribes\" equal to \"agentTagStringLength\".")
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
 
     # Ensure at most number of tribes and decision models are equal to the number of colors in the GUI
@@ -1012,6 +1033,8 @@ def verifyConfiguration(configuration):
 
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print("Cannot have a negative amount of timesteps. Setting timesetup to unlimited runtime.")
         configuration["timesteps"] = sys.maxsize
 
     # Ensure the pollution start and end timesteps are in the proper order
