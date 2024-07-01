@@ -18,14 +18,16 @@ class GUI:
         for i in range(numDecisionModels):
             self.colors[self.sugarscape.configuration["agentDecisionModels"][i]] = self.palette[i]
         self.widgets = {}
+        self.activeNetwork = None
+        self.activeGraph = None
+        self.graphObjects = {}
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
         self.activeColorOptions = {"agent": None, "environment": None}
-        self.activeNetwork = None
         self.highlightedCell = None
         self.highlightedAgent = None
         self.highlightRectangle = None
-        self.menuTrayColumns = 5
+        self.menuTrayColumns = 6
         self.menuTrayOffset = 110
         self.windowBorderOffset = 10
         self.borderEdge = 5
@@ -63,6 +65,18 @@ class GUI:
             networkMenu.add_checkbutton(label=network, onvalue=network, offvalue=network, variable=self.activeNetwork, command=self.doNetworkMenu, indicatoron=True)
         networkButton.grid(row=0, column=2, sticky="nsew") 
 
+        graphButton = tkinter.Menubutton(window, text="Graphs", relief=tkinter.RAISED)
+        graphMenu = tkinter.Menu(graphButton, tearoff=0)
+        graphButton.configure(menu=graphMenu)
+        graphNames = self.configureGraphNames()
+        graphNames.insert(0, "None")
+        self.activeGraph = tkinter.StringVar(window)
+        # Use first item as default name
+        self.activeGraph.set(graphNames[0])
+        for graph in graphNames:
+            graphMenu.add_checkbutton(label=graph, onvalue=graph, offvalue=graph, variable=self.activeGraph, command=self.doGraphMenu, indicatoron=True)
+        graphButton.grid(row=0, column=3, sticky="nsew") 
+
         agentColorButton = tkinter.Menubutton(window, text="Agent Coloring", relief=tkinter.RAISED)
         agentColorMenu = tkinter.Menu(agentColorButton, tearoff=0)
         agentColorButton.configure(menu=agentColorMenu)
@@ -74,7 +88,7 @@ class GUI:
         self.lastSelectedAgentColor.set(agentColorNames[0])
         for name in agentColorNames:
             agentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedAgentColor, command=self.doAgentColorMenu, indicatoron=True)
-        agentColorButton.grid(row=0, column=3, sticky="nsew")
+        agentColorButton.grid(row=0, column=4, sticky="nsew")
 
         environmentColorButton = tkinter.Menubutton(window, text="Environment Coloring", relief=tkinter.RAISED)
         environmentColorMenu = tkinter.Menu(environmentColorButton, tearoff=0)
@@ -87,7 +101,7 @@ class GUI:
         self.lastSelectedEnvironmentColor.set(environmentColorNames[0])
         for name in environmentColorNames:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
-        environmentColorButton.grid(row=0, column=4, sticky="nsew")
+        environmentColorButton.grid(row=0, column=5, sticky="nsew")
 
         statsLabel = tkinter.Label(window, text="Timestep: - | Population: - | Metabolism: - | Movement: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -", font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
@@ -97,6 +111,7 @@ class GUI:
         self.widgets["playButton"] = playButton
         self.widgets["stepButton"] = stepButton
         self.widgets["networkButton"] = networkButton
+        self.widgets["graphButton"] = graphButton
         self.widgets["agentColorButton"] = agentColorButton
         self.widgets["environmentColorButton"] = environmentColorButton
         self.widgets["agentColorMenu"] = agentColorMenu
@@ -107,10 +122,11 @@ class GUI:
     def configureCanvas(self):
         canvas = tkinter.Canvas(self.window, width=self.screenWidth, height=self.screenHeight, bg="white")
         canvas.grid(row=3, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
-        canvas.bind("<Button-1>", self.doClick)
-        canvas.bind("<Double-Button-1>", self.doDoubleClick)
-        canvas.bind("<Control-Button-1>", self.doControlClick)
-        self.doubleClick = False
+        if self.activeGraph.get() == "None":
+            canvas.bind("<Button-1>", self.doClick)
+            canvas.bind("<Double-Button-1>", self.doDoubleClick)
+            canvas.bind("<Control-Button-1>", self.doControlClick)
+            self.doubleClick = False
         self.canvas = canvas
 
     def configureEnvironment(self):
@@ -122,7 +138,7 @@ class GUI:
                     # Determine upper left x and y coordinates
                     x1 = self.borderEdge + (i + 0.2) * self.siteWidth
                     y1 = self.borderEdge + (j + 0.2) * self.siteHeight
-                    # Determine lower rightt x and y coordinates
+                    # Determine lower right x and y coordinates
                     x2 = self.borderEdge + (i + 0.8) * self.siteWidth
                     y2 = self.borderEdge + (j + 0.8) * self.siteHeight
                     self.grid[i][j] = {"object": self.canvas.create_oval(x1, y1, x2, y2, fill=fillColor, outline=""), "color": fillColor}
@@ -135,7 +151,7 @@ class GUI:
                     # Determine upper left x and y coordinates
                     x1 = self.borderEdge + i * self.siteWidth
                     y1 = self.borderEdge + j * self.siteHeight
-                    # Determine lower rightt x and y coordinates
+                    # Determine lower right x and y coordinates
                     x2 = self.borderEdge + (i + 1) * self.siteWidth
                     y2 = self.borderEdge + (j + 1) * self.siteHeight
                     self.grid[i][j] = {"object": self.canvas.create_rectangle(x1, y1, x2, y2, fill=fillColor, outline="#c0c0c0", activestipple="gray50"), "color": fillColor}
@@ -145,6 +161,9 @@ class GUI:
 
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
+
+    def configureGraphNames(self):
+        return ["Sugar Histogram", "Spice Histogram", "Tag Histogram", "Age Histogram", "Lorenz Curve"]
     
     def configureNetworkNames(self):
         return ["Neighbors", "Family", "Friends", "Trade", "Loans", "Disease"]
@@ -233,6 +252,92 @@ class GUI:
         self.activeColorOptions["environment"] = self.lastSelectedEnvironmentColor.get()
         self.doTimestep()
 
+    def doGraphMenu(self):
+        self.destroyCanvas()
+        self.configureCanvas()
+        if self.activeGraph.get() != "None":
+            self.widgets["networkButton"].configure(state="disabled")
+            self.widgets["agentColorButton"].configure(state="disabled")
+            self.widgets["environmentColorButton"].configure(state="disabled")
+            self.configureGraph()
+        else:
+            self.widgets["networkButton"].configure(state="normal")
+            self.widgets["agentColorButton"].configure(state="normal")
+            self.widgets["environmentColorButton"].configure(state="normal")
+            self.configureEnvironment()
+        self.window.update()
+
+    def configureGraph(self):
+        self.graphObjects = {"bins": {}, "labels": {}, "axes": {}, "xTicks": {}, "xTickLabels": {}, "yTicks": {}, "yTickLabels": {}}
+        activeGraph = self.activeGraph.get()
+        histogramBins = 10 if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
+        graphHeight = 360
+        graphWidth = 720
+        graphStartX = 100
+        graphStartY = 100
+        self.graphObjects["axes"]["y"] = self.canvas.create_line(graphStartX, graphStartY, graphStartX, graphStartY + graphHeight,  fill="black", width=2)
+        xTicks = histogramBins
+        xTickOffset = 0 if activeGraph != "Tag Histogram" else -1 * graphWidth / histogramBins / 2
+        yTicks = 2
+        for i in range(1, xTicks + 1):
+            x0 = x1 = graphStartX + (graphWidth * i / xTicks) + xTickOffset
+            y0 = graphStartY + graphHeight
+            y1 = y0 + 10
+            self.graphObjects["xTicks"][i / xTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
+            y0 = y1 + 10
+            self.graphObjects["xTickLabels"][i / xTicks] = self.canvas.create_text(x0, y0, fill="black")
+        for i in range(1, yTicks + 1):
+            x0 = graphStartX - 10
+            x1 = graphStartX + 10
+            y0 = y1 = graphStartY + (graphHeight * (yTicks - i) / yTicks)
+            self.graphObjects["yTicks"][i / yTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
+            x0 = graphStartX - 20
+            self.graphObjects["yTickLabels"][i / yTicks] = self.canvas.create_text(x0, y0, fill="black")
+        for i in range(histogramBins):
+            x0, y0 = graphStartX + i * graphWidth / histogramBins, graphStartY + graphHeight
+            x1, y1 = graphStartX + (i + 1) * graphWidth / histogramBins, graphStartY + graphHeight
+            self.graphObjects["bins"][i] = self.canvas.create_rectangle(x0, y0, x1, y1, fill="magenta", outline="black", width=2)
+            x0, y0 = graphStartX + (i + 0.5) * graphWidth / histogramBins, graphStartY + graphHeight - 10
+            self.graphObjects["labels"][i] = self.canvas.create_text(x0, y0, fill="black")
+        if self.sugarscape.timestep != 0:
+            self.doGraphTimestep()
+
+    def doGraphTimestep(self):
+        graphHeight = 360
+        bins = self.graphObjects["bins"]
+        labels = self.graphObjects["labels"]
+        graphStats = {
+            "Tag Histogram": self.sugarscape.graphStats["meanTribeTags"],
+            "Age Histogram": self.sugarscape.graphStats["ageBins"],
+            "Sugar Histogram": self.sugarscape.graphStats["sugarBins"],
+            "Spice Histogram": self.sugarscape.graphStats["spiceBins"]
+        }
+        graphMaxX = {
+            "Tag Histogram": self.sugarscape.configuration["agentTagStringLength"],
+            "Age Histogram": self.sugarscape.configuration["agentMaxAge"],
+            "Sugar Histogram": self.sugarscape.graphStats["maxSugar"],
+            "Spice Histogram": self.sugarscape.graphStats["maxSpice"]
+        }
+        activeGraph = self.activeGraph.get()
+        binValues = graphStats[activeGraph]
+        maxX = graphMaxX[activeGraph]
+        maxBinHeight = max(binValues + [0]) if activeGraph != "Tag Histogram" else 100
+        if maxBinHeight != 0:
+            for i in range(len(bins)):
+                x0, y0, x1, y1 = self.canvas.coords(bins[i])
+                y0 = y1 - (binValues[i] / maxBinHeight) * graphHeight
+                self.canvas.coords(bins[i], x0, y0, x1, y1)
+                x2, y2 = self.canvas.coords(labels[i])
+                y2 = y0 - 10
+                self.canvas.itemconfigure(labels[i], text=round(binValues[i]))
+                self.canvas.coords(labels[i], x2, y2)
+            xTicks = len(self.graphObjects["xTickLabels"])
+            for i in range(1, xTicks + 1):
+                self.canvas.itemconfigure(self.graphObjects["xTickLabels"][i / xTicks], text=round(i / xTicks * maxX))
+            yTicks = len(self.graphObjects["yTickLabels"])
+            for i in range(1, yTicks + 1):
+                self.canvas.itemconfigure(self.graphObjects["yTickLabels"][i / yTicks], text=round(i / yTicks * maxBinHeight))
+
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
         self.widgets["playButton"].config(text="  Play Simulation  " if self.sugarscape.run == False else "Pause Simulation")
@@ -252,35 +357,52 @@ class GUI:
             return
         if self.screenHeight != self.window.winfo_height() or self.screenWidth != self.window.winfo_width():
             self.resizeInterface()
-        for i in range(self.sugarscape.environmentWidth):
-            for j in range(self.sugarscape.environmentHeight):
-                cell = self.sugarscape.environment.findCell(i, j)
-                fillColor = self.lookupFillColor(cell)
-                if self.activeNetwork.get() == "None" and self.grid[i][j]["color"] != fillColor:
-                    self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor, outline="#C0C0C0")
-                elif self.grid[i][j]["color"] != fillColor:
-                    self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
-                self.grid[i][j]["color"] = fillColor
 
-        if self.activeNetwork.get() != "None":
-            self.deleteLines()
-            self.drawLines()
+        if self.activeGraph.get() != "None" and self.widgets["graphButton"].cget("state") != "disabled":
+            self.doGraphTimestep()
+        else:
+            for i in range(self.sugarscape.environmentWidth):
+                for j in range(self.sugarscape.environmentHeight):
+                    cell = self.sugarscape.environment.findCell(i, j)
+                    fillColor = self.lookupFillColor(cell)
+                    if self.activeNetwork.get() == "None" and self.grid[i][j]["color"] != fillColor:
+                        self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor, outline="#C0C0C0")
+                    elif self.grid[i][j]["color"] != fillColor:
+                        self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
+                    self.grid[i][j]["color"] = fillColor
 
-        if self.highlightedAgent != None:
-            if self.highlightedAgent.isAlive() == True:
-                self.highlightedCell = self.highlightedAgent.cell
-                self.highlightCell(self.highlightedCell)
-            else:
-                self.clearHighlight()
+            if self.activeNetwork.get() != "None":
+                self.deleteLines()
+                self.drawLines()
+            if self.highlightedAgent != None:
+                if self.highlightedAgent.isAlive() == True:
+                    self.highlightedCell = self.highlightedAgent.cell
+                    self.highlightCell(self.highlightedCell)
+                else:
+                    self.clearHighlight()
 
         self.updateLabels()
         self.window.update()
 
-    def doNetworkMenu(self, *args):
+    def doNetworkTimestep(self):
+        for i in range(self.sugarscape.environmentWidth):
+            for j in range(self.sugarscape.environmentHeight):
+                cell = self.sugarscape.environment.findCell(i, j)
+                fillColor = self.lookupFillColor(cell)
+                if self.grid[i][j]["color"] != fillColor:
+                    self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
+                self.grid[i][j]["color"] = fillColor
+
+            self.deleteLines()
+            self.drawLines()
+
+    def doNetworkMenu(self):
         if self.activeNetwork.get() != "None":
+            self.widgets["graphButton"].configure(state="disabled")
             self.widgets["agentColorButton"].configure(state="disabled")
             self.widgets["environmentColorButton"].configure(state="disabled")
         else:
+            self.widgets["graphButton"].configure(state="normal")
             self.widgets["agentColorButton"].configure(state="normal")
             self.widgets["environmentColorButton"].configure(state="normal")
         self.destroyCanvas()
@@ -516,7 +638,10 @@ class GUI:
         self.updateSiteDimensions()
         self.destroyCanvas()
         self.configureCanvas()
-        self.configureEnvironment()
+        if self.activeGraph.get() != "None" and self.widgets["graphButton"].cget("state") != "disabled":
+            self.configureGraph()
+        else:
+            self.configureEnvironment()
 
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats

@@ -61,6 +61,7 @@ class Sugarscape:
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
                              "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
+        self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "wealthBins": [], "meanTribeTags": []}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
 
@@ -230,6 +231,7 @@ class Sugarscape:
                 agent.doTimestep(self.timestep)
             self.removeDeadAgents()
             self.updateRuntimeStats()
+            self.updateGraphStats()
             if self.gui != None:
                 self.gui.doTimestep()
             # If final timestep, do not write to log to cleanly close JSON array log structure
@@ -684,6 +686,46 @@ class Sugarscape:
         lineOfEquality = (height * len(agentWealths)) / 2
         giniCoefficient = round((lineOfEquality - area) / max(1, lineOfEquality), 2)
         return giniCoefficient
+    
+    def updateGraphStats(self):
+        histogramBins = 10
+
+        maxAge = self.configuration["agentMaxAge"][1]
+        maxSugar = 0
+        maxSpice = 0
+        maxWealth = 0
+        for agent in self.agents:
+            if agent.sugar > maxSugar:
+                maxSugar = agent.sugar
+            if agent.spice > maxSpice:
+                maxSpice = agent.spice
+            if agent.sugar + agent.spice > maxWealth:
+                maxWealth = agent.sugar + agent.spice
+
+        self.graphStats["maxSugar"] = maxSugar
+        self.graphStats["maxSpice"] = maxSpice
+        self.graphStats["maxWealth"] = maxWealth
+
+        ageBins = [0] * histogramBins
+        sugarBins = [0] * histogramBins
+        spiceBins = [0] * histogramBins
+        wealthBins = [0] * histogramBins   
+        meanTribeTags = [0] * self.configuration["agentTagStringLength"]
+        for agent in self.agents:
+            ageBins[math.floor(agent.age / (maxAge + 1) * histogramBins)] += 1
+            sugarBins[math.floor(agent.sugar / (maxSugar + 1) * histogramBins)] += 1
+            spiceBins[math.floor(agent.spice / (maxSpice + 1) * histogramBins)] += 1
+            wealthBins[math.floor((agent.sugar + agent.spice) / (maxWealth + 1) * histogramBins)] += 1
+            meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
+        numAgents = len(self.agents)
+        if numAgents > 0:
+            meanTribeTags = [round(tag / numAgents, 2) * 100 for tag in meanTribeTags]
+
+        self.graphStats["ageBins"] = ageBins
+        self.graphStats["sugarBins"] = sugarBins
+        self.graphStats["spiceBins"] = spiceBins
+        self.graphStats["wealthBins"] = wealthBins
+        self.graphStats["meanTribeTags"] = meanTribeTags
 
     def updateRuntimeStats(self):
         numAgents = len(self.agents)
