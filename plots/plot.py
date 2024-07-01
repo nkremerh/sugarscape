@@ -8,7 +8,7 @@ import sys
 
 datacols = []
 
-def parseDataset(path, dataset, totalTimesteps):
+def parseDataset(path, dataset, totalTimesteps, skipExtinct=False):
     encodedDir = os.fsencode(path) 
     for file in os.listdir(encodedDir):
         filename = os.fsdecode(file)
@@ -22,6 +22,16 @@ def parseDataset(path, dataset, totalTimesteps):
         log = open(filePath)
         print("Reading log {0}".format(filePath))
         rawJson = json.loads(log.read())
+
+        if rawJson[-1]["population"] == 0:
+            dataset[model]["died"] += 1
+            if skipExtinct == True:
+                continue
+        elif rawJson[-1]["population"] <= rawJson[0]["population"]:
+            dataset[model]["worse"] += 1
+        else:
+            dataset[model]["better"] += 1
+
         dataset[model]["runs"] += 1
         i = 1
         for item in rawJson:
@@ -39,11 +49,9 @@ def parseDataset(path, dataset, totalTimesteps):
                     dataset[model]["metrics"][entry] = [0 for j in range(totalTimesteps + 1)]
                 dataset[model]["metrics"][entry][i-1] += item[entry]
             i += 1
-
-        if rawJson[-1]["population"] == 0:
-            dataset[model]["died"] += 1
-        elif rawJson[-1]["population"] < rawJson[0]["population"]:
-            dataset[model]["worse"] += 1
+    for model in dataset:
+        if dataset[model]["runs"] == 0:
+            print(f"No simulation runs found for the {model} decision model")
     return dataset
 
 def findMeans(dataset):
@@ -64,9 +72,9 @@ def findMeans(dataset):
 
 def parseOptions():
     commandLineArgs = sys.argv[1:]
-    shortOptions = "c:p:t:h"
-    longOptions = ("conf=", "path=", "help")
-    options = {"config": None, "path": None}
+    shortOptions = "c:p:s:t:h"
+    longOptions = ("conf=", "path=", "help", "skip")
+    options = {"config": None, "path": None, "skip": False}
     try:
         args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
     except getopt.GetoptError as err:
@@ -85,6 +93,8 @@ def parseOptions():
                 printHelp()
         elif currArg in ("-h", "--help"):
             printHelp()
+        elif currArg in ("-s", "--skip"):
+            options["skip"] = True
     flag = 0
     if options["path"] == None:
         print("Dataset path required.")
@@ -97,14 +107,13 @@ def parseOptions():
     return options
 
 def printHelp():
-    print("Usage:\n\tpython parselogs.py --path /path/to/data --conf /path/to/config > results.dat\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-o,--outf\tUse the specified path to data output file.\n\t-p,--path\tUse the specified path to find dataset JSON files.\n\t-h,--help\tDisplay this message.")
+    print("Usage:\n\tpython parselogs.py --path /path/to/data --conf /path/to/config > results.dat\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-p,--path\tUse the specified path to find dataset JSON files.\n\t-s,--skip\tSkip including extinct societies in produced graphs.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
 def printSummaryStats(dataset):
     print("Model population performance:\n{0:^30} {1:^5} {2:^5} {3:^5}".format("Decision Model", "Extinct", "Worse", "Better"))
     for model in dataset:
-        better = dataset[model]["runs"] - (dataset[model]["died"] + dataset[model]["worse"])
-        print("{0:^30}: {1:^5} {2:^5} {3:^5}".format(model, dataset[model]["died"], dataset[model]["worse"], better))
+        print("{0:^30}: {1:^5} {2:^5} {3:^5}".format(model, dataset[model]["died"], dataset[model]["worse"], dataset[model]["better"]))
 
 def generatePlots(config, models, totalTimesteps, dataset):
     if "deaths" in config["plots"]:
@@ -152,6 +161,7 @@ if __name__ == "__main__":
     options = parseOptions()
     path = options["path"]
     config = options["config"]
+    skipExtinct = options["skip"]
     configFile = open(config)
     config = json.loads(configFile.read())["dataCollectionOptions"]
     configFile.close()
@@ -162,13 +172,13 @@ if __name__ == "__main__":
         modelString = model
         if type(model) == list:
             modelString = '_'.join(model)
-        dataset[modelString] = {"runs": 0, "died": 0, "worse": 0, "timesteps": 0, "means": {}, "metrics": {}}
+        dataset[modelString] = {"runs": 0, "died": 0, "worse": 0, "better": 0, "timesteps": 0, "means": {}, "metrics": {}}
 
     if not os.path.exists(path):
         print("Path {0} not recognized.".format(path))
         printHelp()
 
-    dataset = parseDataset(path, dataset, totalTimesteps)
+    dataset = parseDataset(path, dataset, totalTimesteps, skipExtinct)
     dataset = findMeans(dataset)
     generatePlots(config, models, totalTimesteps, dataset)
     printSummaryStats(dataset)
