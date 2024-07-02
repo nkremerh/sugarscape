@@ -1,3 +1,4 @@
+import csv
 import getopt
 import json
 import matplotlib.pyplot
@@ -12,32 +13,36 @@ def parseDataset(path, dataset, totalTimesteps, skipExtinct=False):
     encodedDir = os.fsencode(path) 
     for file in os.listdir(encodedDir):
         filename = os.fsdecode(file)
-        if not filename.endswith('.json'):
+        if not (filename.endswith(".json") or filename.endswith(".csv")):
             continue
         filePath = path + filename
-        fileDecisionModel = re.compile(r"([A-z]*)\d*\.json")
+        fileDecisionModel = re.compile(r"([A-z]*)\d*\.(json|csv)")
         model = re.search(fileDecisionModel, filename).group(1)
         if model not in dataset:
             continue
         log = open(filePath)
         print("Reading log {0}".format(filePath))
-        rawJson = json.loads(log.read())
+        rawData = None
+        if filename.endswith(".json"):
+            rawData = json.loads(log.read())
+        else:
+            rawData = list(csv.DictReader(log))
 
-        if rawJson[-1]["population"] == 0:
+        if rawData[-1]["population"] == 0:
             dataset[model]["died"] += 1
             if skipExtinct == True:
                 continue
-        elif rawJson[-1]["population"] <= rawJson[0]["population"]:
+        elif rawData[-1]["population"] <= rawData[0]["population"]:
             dataset[model]["worse"] += 1
         else:
             dataset[model]["better"] += 1
 
         dataset[model]["runs"] += 1
         i = 1
-        for item in rawJson:
-            if item["timestep"] > totalTimesteps:
+        for item in rawData:
+            if int(item["timestep"]) > totalTimesteps:
                 break
-            if item["timestep"] > dataset[model]["timesteps"]:
+            if int(item["timestep"]) > dataset[model]["timesteps"]:
                 dataset[model]["timesteps"] += 1
 
             for entry in item:
@@ -47,7 +52,7 @@ def parseDataset(path, dataset, totalTimesteps, skipExtinct=False):
                     datacols.append(entry)
                 if entry not in dataset[model]["metrics"]:
                     dataset[model]["metrics"][entry] = [0 for j in range(totalTimesteps + 1)]
-                dataset[model]["metrics"][entry][i-1] += item[entry]
+                dataset[model]["metrics"][entry][i-1] += float(item[entry])
             i += 1
     for model in dataset:
         if dataset[model]["runs"] == 0:

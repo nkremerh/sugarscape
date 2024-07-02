@@ -59,8 +59,8 @@ class Sugarscape:
                              "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "totalWealthLost": 0,
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
-                             "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
-                             "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
+                             "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0,
+                             "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
 
@@ -709,15 +709,6 @@ class Sugarscape:
         totalMetabolismCost = 0
         totalSickAgents = 0
 
-        # Log per-agent stats every quarter of the total runtime
-        perAgentStatsInterval = self.maxTimestep / 4
-        perAgentStatsCheck = self.timestep % perAgentStatsInterval
-        wealths = []
-        timesToLive = []
-        timesToLiveAgeLimited = []
-        sugarMetabolisms = []
-        spiceMetabolisms = []
-
         environmentWealthCreated = 0
         environmentWealthTotal = 0
         for i in range(self.environment.width):
@@ -772,13 +763,6 @@ class Sugarscape:
             if agent.wealth > maxWealth:
                 maxWealth = agent.wealth
             totalMetabolismCost += agent.sugarMetabolism + agent.spiceMetabolism
-
-            if perAgentStatsCheck == 0 and self.timestep != 0:
-                wealths.append(agent.wealth)
-                timesToLive.append(agentTimeToLive)
-                timesToLiveAgeLimited.append(agentTimeToLiveAgeLimited)
-                sugarMetabolisms.append(agent.sugarMetabolism)
-                spiceMetabolisms.append(agent.spiceMetabolism)
 
         if numAgents > 0:
             combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism
@@ -870,9 +854,6 @@ class Sugarscape:
         self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
         self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
 
-        self.runtimeStats["agentWealths"] = wealths
-        self.runtimeStats["agentTimesToLive"] = timesToLive
-        self.runtimeStats["agentTimesToLiveAgeLimited"] = timesToLiveAgeLimited
         self.runtimeStats["agentTotalMetabolism"] = agentTotalMetabolism
         self.runtimeStats["totalSickAgents"] = totalSickAgents
 
