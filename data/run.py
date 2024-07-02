@@ -6,7 +6,7 @@ import random
 import sys
 import time
 
-def createConfigurations(config, path):
+def createConfigurations(config, path, mode="json"):
     configs = getJobsToDo(config, path)
     if len(configs) == 0:
         print("Generating new configurations for random seeds.")
@@ -23,7 +23,12 @@ def createConfigurations(config, path):
                 simOpts = config["sugarscapeOptions"]
                 simOpts["agentDecisionModels"] = model
                 simOpts["seed"] = seed
-                simOpts["logfile"] = f"{path}{modelString}{seed}.json"
+                if mode == "json":
+                    simOpts["logfile"] = f"{path}{modelString}{seed}.json"
+                    simOpts["logfileformat"] = "json"
+                else:
+                    simOpts["logfile"] = f"{path}{modelString}{seed}.csv"
+                    simOpts["logfileFormat"] = "csv"
                 # Enforce noninteractive, no-output mode
                 simOpts["headlessMode"] = True
                 simOpts["debugMode"] = ["none"]
@@ -89,9 +94,9 @@ def getJobsToDo(config, path):
 
 def parseOptions():
     commandLineArgs = sys.argv[1:]
-    shortOptions = "c:p:s:t:h"
-    longOptions = ("conf=", "path=", "seeds", "help")
-    options = {"config": None, "path": None, "seeds": False}
+    shortOptions = "c:m:p:s:t:h"
+    longOptions = ("conf=", "mode=", "path=", "seeds", "help")
+    options = {"config": None, "mode": "json", "path": None, "seeds": False}
     try:
         args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
     except getopt.GetoptError as err:
@@ -103,6 +108,11 @@ def parseOptions():
                 print("No configuration file provided.")
                 printHelp()
             options["config"] = currVal
+        elif currArg in ("-m", "--mode"):
+            options["mode"] = currVal
+            if currVal == "":
+                print("No log mode provided.")
+                printHelp()
         elif currArg in ("-p", "--path"):
             options["path"] = currVal
             if currVal == "":
@@ -118,7 +128,7 @@ def parseOptions():
     return options
 
 def printHelp():
-    print("Usage:\n\tpython run.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-p,--path\tUse the specified directory path to store dataset JSON files.\n\t-h,--help\tDisplay this message.")
+    print("Usage:\n\tpython run.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-m,--mode\tUse the specified file format for simulation logs.\n\t-p,--path\tUse the specified directory path to store dataset JSON files.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
 def runSimulation(configFile, pythonAlias, jobNumber, totalJobs):
@@ -164,6 +174,7 @@ def verifyConfiguration(configuration):
 if __name__ == "__main__":
     options = parseOptions()
     seedsOnly = options["seeds"]
+    mode = options["mode"]
     path = options["path"]
     if path == None:
         path = "./"
@@ -180,7 +191,7 @@ if __name__ == "__main__":
         exit(1)
 
     config = verifyConfiguration(config)
-    configFiles = createConfigurations(config, path)
+    configFiles = createConfigurations(config, path, mode)
     if seedsOnly == False:
         runSimulations(config, configFiles)
 
