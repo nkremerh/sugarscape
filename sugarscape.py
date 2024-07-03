@@ -61,7 +61,8 @@ class Sugarscape:
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
                              "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
-        self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "wealthBins": [], "meanTribeTags": []}
+        self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "wealthBins": [], "meanTribeTags": [],
+                           "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
 

@@ -292,7 +292,7 @@ class GUI:
             y0 = y1 = graphStartY + (graphHeight * (yTicks - i) / yTicks)
             self.graphObjects["yTicks"][i / yTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
             x0 = graphStartX - 20
-            self.graphObjects["yTickLabels"][i / yTicks] = self.canvas.create_text(x0, y0, fill="black")
+            self.graphObjects["yTickLabels"][i / yTicks] = self.canvas.create_text(x0, y0, fill="black", anchor="e")
         for i in range(histogramBins):
             x0, y0 = graphStartX + i * graphWidth / histogramBins, graphStartY + graphHeight
             x1, y1 = graphStartX + (i + 1) * graphWidth / histogramBins, graphStartY + graphHeight
@@ -337,6 +337,19 @@ class GUI:
             yTicks = len(self.graphObjects["yTickLabels"])
             for i in range(1, yTicks + 1):
                 self.canvas.itemconfigure(self.graphObjects["yTickLabels"][i / yTicks], text=round(i / yTicks * maxBinHeight))
+
+        # Lorenz curve timestep
+        # destroy polygon
+        # create polygon: top right point to bottom right point to bottom left point
+        # then add all agent points
+            # agent percentile: agent position in wealth list / max position (len - 1)
+            # point x = (percentile * graphwidth) + graph start x
+            # point y = graph start y + graph height - (agent wealth / max wealth)
+            # make sure to handle divisions by 0.
+        # then add top right point again?
+
+        # what happens with 1000s of agents?
+        # if more than 100 agents (percentiles), sample every x
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
