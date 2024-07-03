@@ -11,9 +11,7 @@ DATASET = $(DATACHECK) \
 		data/*.sh
 
 PLOTS = $(PLOTCHECK) \
-		plots/*.dat \
-		plots/*.pdf \
-		plots/*.plg
+		plots/*.pdf
 
 CLEAN = $(DATASET) \
 		$(LOGS) \
@@ -24,8 +22,7 @@ CLEAN = $(DATASET) \
 PYTHON = python
 SUGARSCAPE = sugarscape.py
 
-# Check for local Bash and Python aliases
-BASHCHECK = $(shell which bash > /dev/null; echo $$?)
+# Check for local Python aliases
 PYCHECK = $(shell which python > /dev/null; echo $$?)
 PY3CHECK = $(shell which python3 > /dev/null; echo $$?)
 
@@ -34,7 +31,7 @@ $(DATACHECK):
 	touch $(DATACHECK)
 
 $(PLOTCHECK): $(DATACHECK)
-	cd plots && $(PYTHON) plot.py --path ../data/ --conf ../$(CONFIG) --outf data.dat
+	cd plots && $(PYTHON) plot.py --path ../data/ --conf ../$(CONFIG)
 	touch $(PLOTCHECK)
 
 all: $(DATACHECK) $(PLOTCHECK)
@@ -47,13 +44,7 @@ seeds:
 	cd data && $(PYTHON) run.py --conf ../$(CONFIG) --seeds
 
 setup:
-	@echo "Checking for local Bash and Python installations."
-ifneq ($(BASHCHECK), 0)
-	@echo "Could not find a local Bash installation."
-	@echo "Please update the Makefile and configuration file manually."
-else
-	@echo "Found alias for Bash."
-endif
+	@echo "Checking for local Python installation."
 ifeq ($(PY3CHECK), 0)
 	@echo "Found alias for Python."
 	sed -i 's/PYTHON = python$$/PYTHON = python3/g' Makefile
