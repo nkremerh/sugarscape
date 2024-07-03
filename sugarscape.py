@@ -997,7 +997,7 @@ def verifyConfiguration(configuration):
         configuration["agentTagStringLength"] = 0
     if configuration["environmentMaxTribes"] < 0:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-            print(f"Cannot have a negative number of tribes. Setting tag string length to 0.")
+            print(f"Cannot have a negative number of tribes. Setting number of tribes to 0.")
         configuration["environmentMaxTribes"] = 0
     
     # Ensure at most number of tribes is equal to agent tag string length
