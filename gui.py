@@ -314,7 +314,7 @@ class GUI:
         }
         graphMaxX = {
             "Tag Histogram": self.sugarscape.configuration["agentTagStringLength"],
-            "Age Histogram": self.sugarscape.configuration["agentMaxAge"],
+            "Age Histogram": self.sugarscape.configuration["agentMaxAge"][1],
             "Sugar Histogram": self.sugarscape.graphStats["maxSugar"],
             "Spice Histogram": self.sugarscape.graphStats["maxSpice"]
         }
