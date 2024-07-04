@@ -27,7 +27,7 @@ PYCHECK = $(shell which python > /dev/null; echo $$?)
 PY3CHECK = $(shell which python3 > /dev/null; echo $$?)
 
 $(DATACHECK):
-	cd data && $(PYTHON) run.py --conf ../$(CONFIG)
+	cd data && $(PYTHON) run.py --conf ../$(CONFIG) --mode csv
 	touch $(DATACHECK)
 
 $(PLOTCHECK): $(DATACHECK)
