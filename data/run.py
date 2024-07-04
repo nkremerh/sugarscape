@@ -25,7 +25,7 @@ def createConfigurations(config, path, mode="json"):
                 simOpts["seed"] = seed
                 if mode == "json":
                     simOpts["logfile"] = f"{path}{modelString}{seed}.json"
-                    simOpts["logfileformat"] = "json"
+                    simOpts["logfileFormat"] = "json"
                 else:
                     simOpts["logfile"] = f"{path}{modelString}{seed}.csv"
                     simOpts["logfileFormat"] = "csv"

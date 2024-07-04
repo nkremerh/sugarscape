@@ -41,7 +41,7 @@ data: $(DATACHECK)
 plots: $(PLOTCHECK)
 
 seeds:
-	cd data && $(PYTHON) run.py --conf ../$(CONFIG) --seeds
+	cd data && $(PYTHON) run.py --conf ../$(CONFIG) --mode csv --seeds
 
 setup:
 	@echo "Checking for local Python installation."
