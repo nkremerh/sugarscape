@@ -28,11 +28,11 @@ def parseDataset(path, dataset, totalTimesteps, skipExtinct=False):
         else:
             rawData = list(csv.DictReader(log))
 
-        if rawData[-1]["population"] == 0:
+        if int(rawData[-1]["population"]) == 0:
             dataset[model]["died"] += 1
             if skipExtinct == True:
                 continue
-        elif rawData[-1]["population"] <= rawData[0]["population"]:
+        elif int(rawData[-1]["population"]) <= int(rawData[0]["population"]):
             dataset[model]["worse"] += 1
         else:
             dataset[model]["better"] += 1

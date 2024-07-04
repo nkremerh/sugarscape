@@ -1,3 +1,4 @@
+import csv
 import getopt
 import json
 import multiprocessing
@@ -61,23 +62,28 @@ def getJobsToDo(config, path):
     configs = []
     for file in os.listdir(encodedDir):
         filename = os.fsdecode(file)
-        if not filename.endswith('.config'):
+        if not filename.endswith(".config"):
             continue
         filePath = path + filename
         configs.append(filePath)
     completedRuns = []
     for config in configs:
         configFile = open(config)
-        log = json.loads(configFile.read())["logfile"]
+        rawConf = json.loads(configFile.read())
+        log = rawConf["logfile"]
         configFile.close()
         if os.path.exists(log) == False:
             print(f"Configuration file {config} has no matching log. Adding it to be rerun.")
             continue
         try:
             logFile = open(log)
-            lastEntry = json.loads(logFile.read())[-1]
+            lastEntry = None
+            if log.endswith(".json"):
+                lastEntry = json.loads(logFile.read())[-1]
+            else:
+                lastEntry = list(csv.DictReader(logFile))[-1]
             logFile.close()
-            if lastEntry["timestep"] == simOpts["timesteps"] or lastEntry["population"] == 0:
+            if int(lastEntry["timestep"]) == int(rawConf["timesteps"]) or int(lastEntry["population"]) == 0:
                 completedRuns.append(config)
             else:
                 print(f"Existing log {log} is incomplete. Adding it to be rerun.")
