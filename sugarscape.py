@@ -942,7 +942,7 @@ def printHelp():
 def verifyConfiguration(configuration):
     for configName, configValue in configuration.items():
         if isinstance(configValue, list):
-            if configName != "environmentPollutionDiffusionTimeFrame" or configName != "environmentPollutionTimeFrame":
+            if configName != "environmentPollutionDiffusionTimeFrame" and configName != "environmentPollutionTimeFrame":
                 configValue.sort()
 
     if len(configuration["environmentStartingQuadrants"]) == 0:
@@ -984,7 +984,7 @@ def verifyConfiguration(configuration):
     if configuration["agentDecisionModelTribalFactor"][0] < 0:
         if configuration["agentDecisionModelTribalFactor"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(f"Cannot have selfishness factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent selfishness.")
+                print(f"Cannot have selfishness factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent tribal factor.")
         configuration["agentDecisionModelTribalFactor"] = [-1, -1]
     elif configuration["agentDecisionModelTribalFactor"][1] > 1:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
