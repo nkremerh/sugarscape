@@ -950,7 +950,7 @@ def verifyConfiguration(configuration):
 
     if configuration["environmentQuadrantSizeFactor"] > 1 or configuration["environmentQuadrantSizeFactor"] < 0:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-            print(f"Cannot have a quadrant size factor of {configuration['environmentQuadrantSizeFactor']}. Setting size factor to 1.")
+            print(f"Cannot have a quadrant size factor of {configuration['environmentQuadrantSizeFactor']}. Setting quadrant size factor to 1.")
         configuration["environmentQuadrantSizeFactor"] = 1
 
     if configuration["environmentTribePerQuadrant"] == True:
@@ -961,39 +961,39 @@ def verifyConfiguration(configuration):
     totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["environmentStartingQuadrants"]) / 4
     if configuration["startingAgents"] > totalCells:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
-            print(f"Could not allocate {configuration['startingAgents']} agents. Allocating maximum of {totalCells}.")
+            print(f"Could not allocate {configuration['startingAgents']} agents. Allocating maximum of {totalCells} agents.")
         configuration["startingAgents"] = totalCells
 
     # Ensure infinitely-lived agents are properly initialized
     if configuration["agentMaxAge"][0] < 0:
         if configuration["agentMaxAge"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(f"Agent cannot have maximum age range of {configuration['agentMaxAge']}. Agents will live infinitely.")
+                print(f"Agent cannot have agent maximum age range of {configuration['agentMaxAge']}. Setting agents to live infinitely.")
         configuration["agentMaxAge"] = [-1, -1]
 
     if configuration["agentSelfishnessFactor"][0] < 0:
         if configuration["agentSelfishnessFactor"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(f"Cannot have selfishness factor range of {configuration['agentSelfishnessFactor']}. Disabling agent selfishness.")
+                print(f"Cannot have agent selfishness factor range of {configuration['agentSelfishnessFactor']}. Disabling agent selfishness.")
         configuration["agentSelfishnessFactor"] = [-1, -1]
     elif configuration["agentSelfishnessFactor"][1] > 1:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have selfishness factor range of {configuration['agentSelfishnessFactor']}. Capping maximum at 1.0.")
+            print(f"Cannot have agent maximum selfishness factor of {configuration['agentSelfishnessFactor'][1]}. Setting agent maximum selfishness factor to 1.0.")
         configuration["agentSelfishnessFactor"][1] = 1
    
     if configuration["agentDecisionModelTribalFactor"][0] < 0:
         if configuration["agentDecisionModelTribalFactor"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(f"Cannot have selfishness factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent tribal factor.")
+                print(f"Cannot have age tribal factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent tribal factor.")
         configuration["agentDecisionModelTribalFactor"] = [-1, -1]
     elif configuration["agentDecisionModelTribalFactor"][1] > 1:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have selfishness factor range of {configuration['agentDecisionModelTribalFactor']}. Capping maximum at 1.0.")
+            print(f"Cannot have agent maximum tribal factor of {configuration['agentDecisionModelTribalFactor'][1]}. Setting agent maximum tribal factor to 1.0.")
         configuration["agentDecisionModelTribalFactor"][1] = 1
 
     if configuration["agentTagStringLength"] < 0:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have a negative tag string length. Setting tag string length to 0.")
+            print(f"Cannot have a negative agent tag string length. Setting agent tag string length to 0.")
         configuration["agentTagStringLength"] = 0
     if configuration["environmentMaxTribes"] < 0:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
@@ -1003,7 +1003,7 @@ def verifyConfiguration(configuration):
     # Ensure at most number of tribes is equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have a longer tag string length than maximum number of tribes. Setting \"environmentMaxTribes\" equal to \"agentTagStringLength\".")
+            print(f"Cannot have a longer agent tag string length than maximum number of tribes. Setting the number of tribes to {configuration['agentTagStringLength']}.")
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
 
     # Ensure at most number of tribes and decision models are equal to the number of colors in the GUI
@@ -1049,12 +1049,12 @@ def verifyConfiguration(configuration):
         # If provided a negative value, assume the start timestep is the very first of the simulation
         if pollutionStart < 0:
             if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution start timestep {pollutionStart} is invalid. Setting start timestep to 0.")
+                print(f"Pollution start timestep {pollutionStart} is invalid. Setting pollution start timestep to 0.")
             pollutionStart = 0
         # If provided a negative value, assume the end timestep is the very end of the simulation
         if pollutionEnd < 0:
             if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution end timestep {pollutionEnd} is invalid. Setting end timestep to {configuration['timesteps']}.")
+                print(f"Pollution end timestep {pollutionEnd} is invalid. Setting pollution end timestep to {configuration['timesteps']}.")
             pollutionEnd = configuration["timesteps"]
         configuration["environmentPollutionTimeframe"] = [pollutionStart, pollutionEnd]
 
@@ -1070,12 +1070,12 @@ def verifyConfiguration(configuration):
         # If provided a negative value, assume the start timestep is the very first of the simulation
         if pollutionDiffusionStart < 0:
             if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion start timestep {pollutionDiffusionStart} is invalid. Setting start timestep to 0.")
+                print(f"Pollution diffusion start timestep {pollutionDiffusionStart} is invalid. Setting pollution diffusion start timestep to 0.")
             pollutionDiffusionStart = 0
         # If provided a negative value, assume the end timestep is the very end of the simulation
         if pollutionDiffusionEnd < 0:
             if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion end timestep {pollutionDiffusionEnd} is invalid. Setting end timestep to {configuration['timesteps']}.")
+                print(f"Pollution diffusion end timestep {pollutionDiffusionEnd} is invalid. Setting pollution diffusion end timestep to {configuration['timesteps']}.")
             pollutionDiffusionEnd = configuration["timesteps"]
         configuration["environmentPollutionDiffusionTimeframe"] = [pollutionDiffusionStart, pollutionDiffusionEnd]
 
