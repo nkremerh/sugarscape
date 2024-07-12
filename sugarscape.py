@@ -683,8 +683,9 @@ class Sugarscape:
             cumulativeWealth += wealth
             lorenzCurveArea += cumulativeWealth / totalWealth
         lorenzCurveArea /= len(agentWealths)
-
-        giniCoefficient = round((0.5 - lorenzCurveArea) / 0.5, 2)
+        # When normalized, the triangle under the equality line has base and height 1
+        equalityLineArea = 0.5
+        giniCoefficient = round((equalityLineArea - lorenzCurveArea) / equalityLineArea, 3)
         return giniCoefficient
 
     def updateRuntimeStats(self):
