@@ -5,8 +5,10 @@ Python implementation of the Sugarscape agent-based computational model introduc
 Inspired by previous work from Herve Lange (https://github.com/langerv/sugarscape) and Joshua Palicka (https://github.com/joshuapalicka/sugarscape).
 
 Requirements:
-Bash 4.3 (or newer)
 Python 3
+
+Optional Dependencies:
+Matplotlib
 TkInter
 
 Usage:
@@ -30,7 +32,7 @@ make seeds
     Note: Results will be saved in the data subdirectory.
 
 make setup
-    Change preconfigured settings for Bash and Python aliases.
+    Change preconfigured settings for the system Python alias.
     Note: Changed settings may alter Makefile and configuration file in-place.
 
 make test
@@ -129,6 +131,11 @@ agentDecisionModels: [string, ...]
     Note: Adding either "HalfLookahead" or "NoLookahead" after a decision model name will enforce a particular decision model lookahead factor.
     Default: ["none"]
 
+agentDecisionModelTribalFactor: [float, float]
+    Set how much agents prioritize the welfare of their own tribe members over others.
+    Note: Valid range is [0.0, 1.0], use -1 to disable.
+    Default: [-1, -1]
+
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
     Default: [0, 0]
@@ -199,8 +206,8 @@ agentReplacements: int
     Default: 0
 
 agentSelfishnessFactor: [float, float]
-    Set the agent weight of how egoistic ethical decisions are
-    Note: Valid range is [0.0, 1.0], use -1 to disable
+    Set the weight agents provide to their own welfare and to other agents.
+    Note: Valid range is [0.0, 1.0], use -1 to disable.
     Default: [-1, -1]
 
 agentSpiceMetabolism: [float, float]
@@ -471,11 +478,6 @@ timesteps: int
     Default: 200
 
 Other JSON Configurable Options:
-bashAlias: string
-    Set the alias to the local Bash installation.
-    Note: Bash is required to run the data collection.
-    Default: "bash"
-
 decisionModels: [[string, ...], ...]
     Set the agent decision models to be tested in data collection.
     Default: [["none"]]
@@ -494,7 +496,7 @@ numSeeds: int
 
 plots: [string, ...]
     Set the plots to be created once data has been collected.
-    Default: ["population", "meanttl", "starvationCombat", "wealth", "wealthNormalized"]
+    Default: ["deaths", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "wealth"]
 
 plotTimesteps: int
     Set the number of timesteps to plot in graphs as the X axis.

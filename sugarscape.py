@@ -59,8 +59,8 @@ class Sugarscape:
                              "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "totalWealthLost": 0,
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
-                             "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
-                             "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
+                             "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0,
+                             "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -478,6 +478,7 @@ class Sugarscape:
         maxFriends = configs["agentMaxFriends"]
         inheritancePolicy = configs["agentInheritancePolicy"]
         decisionModelFactor = configs["agentDecisionModelFactor"]
+        decisionModelTribalFactor = configs["agentDecisionModelTribalFactor"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
         universalSpice = configs["agentUniversalSpice"]
         universalSugar = configs["agentUniversalSugar"]
@@ -488,6 +489,7 @@ class Sugarscape:
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
                           "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
+                          "decisionModelTribalFactor": {"endowments": [], "curr": decisionModelTribalFactor[0], "min": decisionModelTribalFactor[0], "max": decisionModelTribalFactor[1]},
                           "selfishnessFactor": {"endowments": [], "curr": selfishnessFactor[0], "min": selfishnessFactor[0], "max": selfishnessFactor[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
@@ -549,12 +551,12 @@ class Sugarscape:
             sexDistributionCountdown = math.floor(sexDistributionCountdown / (maleToFemaleRatio + 1)) * maleToFemaleRatio
 
         for i in range(numAgents):
-            for config in configurations:
-                configurations[config]["endowments"].append(configurations[config]["curr"])
-                configurations[config]["curr"] += configurations[config]["inc"]
-                configurations[config]["curr"] = round(configurations[config]["curr"], configurations[config]["decimals"])
-                if configurations[config]["curr"] > configurations[config]["max"]:
-                    configurations[config]["curr"] = configurations[config]["min"]
+            for config in configurations.values():
+                config["endowments"].append(config["curr"])
+                config["curr"] += config["inc"]
+                config["curr"] = round(config["curr"], config["decimals"])
+                if config["curr"] > config["max"]:
+                    config["curr"] = config["min"]
 
             if immuneSystemLength > 0:
                 immuneSystems.append([random.randrange(2) for i in range(immuneSystemLength)])
@@ -762,15 +764,6 @@ class Sugarscape:
         totalMetabolismCost = 0
         totalSickAgents = 0
 
-        # Log per-agent stats every quarter of the total runtime
-        perAgentStatsInterval = self.maxTimestep / 4
-        perAgentStatsCheck = self.timestep % perAgentStatsInterval
-        wealths = []
-        timesToLive = []
-        timesToLiveAgeLimited = []
-        sugarMetabolisms = []
-        spiceMetabolisms = []
-
         environmentWealthCreated = 0
         environmentWealthTotal = 0
         for i in range(self.environment.width):
@@ -825,13 +818,6 @@ class Sugarscape:
             if agent.wealth > maxWealth:
                 maxWealth = agent.wealth
             totalMetabolismCost += agent.sugarMetabolism + agent.spiceMetabolism
-
-            if perAgentStatsCheck == 0 and self.timestep != 0:
-                wealths.append(agent.wealth)
-                timesToLive.append(agentTimeToLive)
-                timesToLiveAgeLimited.append(agentTimeToLiveAgeLimited)
-                sugarMetabolisms.append(agent.sugarMetabolism)
-                spiceMetabolisms.append(agent.spiceMetabolism)
 
         if numAgents > 0:
             combinedMetabolism = meanSugarMetabolism + meanSpiceMetabolism
@@ -923,9 +909,6 @@ class Sugarscape:
         self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
         self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
 
-        self.runtimeStats["agentWealths"] = wealths
-        self.runtimeStats["agentTimesToLive"] = timesToLive
-        self.runtimeStats["agentTimesToLiveAgeLimited"] = timesToLiveAgeLimited
         self.runtimeStats["agentTotalMetabolism"] = agentTotalMetabolism
         self.runtimeStats["totalSickAgents"] = totalSickAgents
 
@@ -993,12 +976,17 @@ def printHelp():
     exit(0)
 
 def verifyConfiguration(configuration):
+    for configName, configValue in configuration.items():
+        if isinstance(configValue, list):
+            if configName != "environmentPollutionDiffusionTimeFrame" and configName != "environmentPollutionTimeFrame":
+                configValue.sort()
+
     if len(configuration["environmentStartingQuadrants"]) == 0:
         configuration["environmentStartingQuadrants"] = [1, 2, 3, 4]
 
-    if configuration["environmentQuadrantSizeFactor"] > 1:
-        configuration["environmentQuadrantSizeFactor"] = 1
-    elif configuration["environmentQuadrantSizeFactor"] < 0:
+    if configuration["environmentQuadrantSizeFactor"] > 1 or configuration["environmentQuadrantSizeFactor"] < 0:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+            print(f"Cannot have a quadrant size factor of {configuration['environmentQuadrantSizeFactor']}. Setting quadrant size factor to 1.")
         configuration["environmentQuadrantSizeFactor"] = 1
 
     if configuration["environmentTribePerQuadrant"] == True:
@@ -1009,28 +997,65 @@ def verifyConfiguration(configuration):
     totalCells = totalCells * (configuration["environmentQuadrantSizeFactor"] ** 2) * len(configuration["environmentStartingQuadrants"]) / 4
     if configuration["startingAgents"] > totalCells:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
-            print(f"Could not allocate {configuration['startingAgents']} agents. Allocating maximum of {totalCells}.")
+            print(f"Could not allocate {configuration['startingAgents']} agents. Allocating maximum of {totalCells} agents.")
         configuration["startingAgents"] = totalCells
 
     # Ensure infinitely-lived agents are properly initialized
-    if configuration["agentMaxAge"][0] < 0 or configuration["agentMaxAge"][1] < 0:
-        configuration["agentMaxAge"][0] = -1
-        configuration["agentMaxAge"][1] = -1
+    if configuration["agentMaxAge"][0] < 0:
+        if configuration["agentMaxAge"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(f"Agent cannot have agent maximum age range of {configuration['agentMaxAge']}. Setting agents to live infinitely.")
+        configuration["agentMaxAge"] = [-1, -1]
+
+    if configuration["agentSelfishnessFactor"][0] < 0:
+        if configuration["agentSelfishnessFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(f"Cannot have agent selfishness factor range of {configuration['agentSelfishnessFactor']}. Disabling agent selfishness.")
+        configuration["agentSelfishnessFactor"] = [-1, -1]
+    elif configuration["agentSelfishnessFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have agent maximum selfishness factor of {configuration['agentSelfishnessFactor'][1]}. Setting agent maximum selfishness factor to 1.0.")
+        configuration["agentSelfishnessFactor"][1] = 1
+   
+    if configuration["agentDecisionModelTribalFactor"][0] < 0:
+        if configuration["agentDecisionModelTribalFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(f"Cannot have age tribal factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent tribal factor.")
+        configuration["agentDecisionModelTribalFactor"] = [-1, -1]
+    elif configuration["agentDecisionModelTribalFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have agent maximum tribal factor of {configuration['agentDecisionModelTribalFactor'][1]}. Setting agent maximum tribal factor to 1.0.")
+        configuration["agentDecisionModelTribalFactor"][1] = 1
 
     if configuration["agentTagStringLength"] < 0:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have a negative agent tag string length. Setting agent tag string length to 0.")
         configuration["agentTagStringLength"] = 0
     if configuration["environmentMaxTribes"] < 0:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+            print(f"Cannot have a negative number of tribes. Setting number of tribes to 0.")
         configuration["environmentMaxTribes"] = 0
+    
     # Ensure at most number of tribes is equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have a longer agent tag string length than maximum number of tribes. Setting the number of tribes to {configuration['agentTagStringLength']}.")
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
 
-    # Ensure at most number of tribes is equal to the number of colors in the GUI
-    maxTribes = 25
-    if configuration["environmentMaxTribes"] > maxTribes:
+    # Ensure at most number of tribes and decision models are equal to the number of colors in the GUI
+    maxColors = 25
+    if configuration["environmentMaxTribes"] > maxColors:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-            print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxTribes}.")
-        configuration["environmentMaxTribes"] = maxTribes
+            print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
+        configuration["environmentMaxTribes"] = maxColors
+
+    uniqueAgentDecisionModels = set(configuration["agentDecisionModels"])
+    numUniqueAgentDecisionModels = len(uniqueAgentDecisionModels)
+    if numUniqueAgentDecisionModels > maxColors:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot provide {len(configuration['agentDecisionModels'])} decision models. Allocating maximum of {maxColors}.")
+        removeDecisionModels = uniqueAgentDecisionModels[maxColors:]
+        configuration["agentDecisionModels"] = [i for i in configuration["agentDecisionModels"] if i not in removeDecisionModels]
 
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
@@ -1044,6 +1069,8 @@ def verifyConfiguration(configuration):
 
     # Set timesteps to (seemingly) unlimited runtime
     if configuration["timesteps"] < 0:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print("Cannot have a negative amount of timesteps. Setting timesetup to unlimited runtime.")
         configuration["timesteps"] = sys.maxsize
 
     # Ensure the pollution start and end timesteps are in the proper order
@@ -1058,12 +1085,12 @@ def verifyConfiguration(configuration):
         # If provided a negative value, assume the start timestep is the very first of the simulation
         if pollutionStart < 0:
             if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution start timestep {pollutionStart} is invalid. Setting start timestep to 0.")
+                print(f"Pollution start timestep {pollutionStart} is invalid. Setting pollution start timestep to 0.")
             pollutionStart = 0
         # If provided a negative value, assume the end timestep is the very end of the simulation
         if pollutionEnd < 0:
             if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution end timestep {pollutionEnd} is invalid. Setting end timestep to {configuration['timesteps']}.")
+                print(f"Pollution end timestep {pollutionEnd} is invalid. Setting pollution end timestep to {configuration['timesteps']}.")
             pollutionEnd = configuration["timesteps"]
         configuration["environmentPollutionTimeframe"] = [pollutionStart, pollutionEnd]
 
@@ -1079,12 +1106,12 @@ def verifyConfiguration(configuration):
         # If provided a negative value, assume the start timestep is the very first of the simulation
         if pollutionDiffusionStart < 0:
             if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion start timestep {pollutionDiffusionStart} is invalid. Setting start timestep to 0.")
+                print(f"Pollution diffusion start timestep {pollutionDiffusionStart} is invalid. Setting pollution diffusion start timestep to 0.")
             pollutionDiffusionStart = 0
         # If provided a negative value, assume the end timestep is the very end of the simulation
         if pollutionDiffusionEnd < 0:
             if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion end timestep {pollutionDiffusionEnd} is invalid. Setting end timestep to {configuration['timesteps']}.")
+                print(f"Pollution diffusion end timestep {pollutionDiffusionEnd} is invalid. Setting pollution diffusion end timestep to {configuration['timesteps']}.")
             pollutionDiffusionEnd = configuration["timesteps"]
         configuration["environmentPollutionDiffusionTimeframe"] = [pollutionDiffusionStart, pollutionDiffusionEnd]
 
@@ -1129,6 +1156,7 @@ if __name__ == "__main__":
                      "agentDecisionModelFactor": [0, 0],
                      "agentDecisionModelLookaheadDiscount": [0, 0],
                      "agentDecisionModelLookaheadFactor": [0],
+                     "agentDecisionModelTribalFactor": [-1, -1],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],

@@ -1,12 +1,11 @@
 {
     "__README__": "Default values for helper scripts. Details can be found in the README.",
     "dataCollectionOptions": {
-        "bashAlias": "bash",
         "decisionModels": [["none"]],
         "jobUpdateFrequency": 5,
         "numParallelSimJobs": 1,
         "numSeeds": 100,
-        "plots": ["population", "meanttl", "starvationCombat", "wealth", "wealthNormalized", "meanAgeAtDeath"],
+        "plots": ["deaths", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "wealth"],
         "plotTimesteps": 1000,
         "pythonAlias": "python"
     },
@@ -18,6 +17,7 @@
         "agentDecisionModelFactor": [1, 1],
         "agentDecisionModelLookaheadDiscount": [0.5, 0.5],
         "agentDecisionModelLookaheadFactor": 0,
+        "agentDecisionModelTribalFactor": [-1, -1],
         "agentFemaleInfertilityAge": [40, 50],
         "agentFemaleFertilityAge": [12, 15],
         "agentFertilityFactor": [1, 1],

@@ -1,12 +1,13 @@
+import csv
 import getopt
 import json
+import multiprocessing
 import os
-import os.path
 import random
-import re
 import sys
+import time
 
-def createConfigurations(config, path):
+def createConfigurations(config, path, mode="json"):
     configs = getJobsToDo(config, path)
     if len(configs) == 0:
         print("Generating new configurations for random seeds.")
@@ -23,7 +24,12 @@ def createConfigurations(config, path):
                 simOpts = config["sugarscapeOptions"]
                 simOpts["agentDecisionModels"] = model
                 simOpts["seed"] = seed
-                simOpts["logfile"] = f"{path}{modelString}{seed}.json"
+                if mode == "json":
+                    simOpts["logfile"] = f"{path}{modelString}{seed}.json"
+                    simOpts["logfileFormat"] = "json"
+                else:
+                    simOpts["logfile"] = f"{path}{modelString}{seed}.csv"
+                    simOpts["logfileFormat"] = "csv"
                 # Enforce noninteractive, no-output mode
                 simOpts["headlessMode"] = True
                 simOpts["debugMode"] = ["none"]
@@ -34,6 +40,11 @@ def createConfigurations(config, path):
                 conf.close()
         return confFiles
     return configs
+
+def finishSimulations():
+    # Sleep to prevent printing from occurring out of order with final job submission
+    time.sleep(1)
+    print("Waiting for jobs to finish up.")
 
 def generateSeeds(config):
     seeds = []
@@ -47,50 +58,51 @@ def generateSeeds(config):
 def getJobsToDo(config, path):
     print("Searching for incomplete logs from previously created seeds.")
     encodedDir = os.fsencode(path)
-    dataOpts = config["dataCollectionOptions"]
     simOpts = config["sugarscapeOptions"]
     configs = []
     for file in os.listdir(encodedDir):
         filename = os.fsdecode(file)
-        if not filename.endswith('.config'):
+        if not filename.endswith(".config"):
             continue
         filePath = path + filename
-        fileDecisionModel = re.compile(r"([A-z]*)\d*\.config")
-        model = re.search(fileDecisionModel, filename).group(1)
-        if model not in dataOpts["decisionModels"]:
-            continue
         configs.append(filePath)
     completedRuns = []
     for config in configs:
         configFile = open(config)
-        log = json.loads(configFile.read())["logfile"]
+        rawConf = json.loads(configFile.read())
+        log = rawConf["logfile"]
         configFile.close()
         if os.path.exists(log) == False:
+            print(f"Configuration file {config} has no matching log. Adding it to be rerun.")
             continue
         try:
             logFile = open(log)
-            lastEntry = json.loads(logFile.read())[-1]
-            if lastEntry["timestep"] == simOpts["timesteps"] or lastEntry["population"] == 0:
+            lastEntry = None
+            if log.endswith(".json"):
+                lastEntry = json.loads(logFile.read())[-1]
+            else:
+                lastEntry = list(csv.DictReader(logFile))[-1]
+            logFile.close()
+            if int(lastEntry["timestep"]) == int(rawConf["timesteps"]) or int(lastEntry["population"]) == 0:
                 completedRuns.append(config)
             else:
                 print(f"Existing log {log} is incomplete. Adding it to be rerun.")
-            logFile.close()
+                os.remove(log)
         except:
             print(f"Existing log {log} is incomplete. Adding it to be rerun.")
+            os.remove(log)
             continue
     for run in completedRuns:
         configs.remove(run)
-    for config in configs:
-        print(f"Configuration file {config} has no matching log. Adding it to be rerun")
     if len(configs) == 0:
         print("No incomplete logs found.")
     return configs
 
 def parseOptions():
     commandLineArgs = sys.argv[1:]
-    shortOptions = "c:p:s:t:h"
-    longOptions = ("conf=", "path=", "seeds", "help")
-    options = {"config": None, "path": None, "seeds": False}
+    shortOptions = "c:m:p:s:t:h"
+    longOptions = ("conf=", "mode=", "path=", "seeds", "help")
+    options = {"config": None, "mode": "json", "path": None, "seeds": False}
     try:
         args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
     except getopt.GetoptError as err:
@@ -102,6 +114,11 @@ def parseOptions():
                 print("No configuration file provided.")
                 printHelp()
             options["config"] = currVal
+        elif currArg in ("-m", "--mode"):
+            options["mode"] = currVal
+            if currVal == "":
+                print("No log mode provided.")
+                printHelp()
         elif currArg in ("-p", "--path"):
             options["path"] = currVal
             if currVal == "":
@@ -117,35 +134,53 @@ def parseOptions():
     return options
 
 def printHelp():
-    print("Usage:\n\tpython run.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-p,--path\tUse the specified directory path to store dataset JSON files.\n\t-h,--help\tDisplay this message.")
+    print("Usage:\n\tpython run.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-m,--mode\tUse the specified file format for simulation logs.\n\t-p,--path\tUse the specified directory path to store dataset JSON files.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
-def runSimulations(config, configFiles, path):
+def runSimulation(configFile, pythonAlias, jobNumber, totalJobs):
+    print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
+    os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
+
+def runSimulations(config, configFiles):
     dataOpts = config["dataCollectionOptions"]
+    pythonAlias = dataOpts["pythonAlias"]
+    totalSimJobs = len(configFiles)
+    jobUpdateFrequency = dataOpts["jobUpdateFrequency"]
 
-    shell = "files=("
-    for conf in configFiles:
-        shell += f" {conf}"
-    shell += " )\n\n"
-    shell += f"# Number of parallel processes to run\nN={dataOpts["numParallelSimJobs"]}\n\n"
-    shell += "i=1\nj=${#files[@]}\nfor f in \"${files[@]}\"\ndo\n"
-    shell += "echo \"Running decision model $f ($i/$j)\"\n# Run simulation for config\n"
-    shell += f"{dataOpts["pythonAlias"]} ../sugarscape.py --conf $f &\n\n"
-    shell += "if [[ $(jobs -r -p | wc -l) -ge $N ]]; then\nwait -n\nfi\ni=$((i+1))\ndone\n\n"
-    shell += "sem=0\necho \"Waiting for jobs to finish up.\"\nwhile [[ $(jobs -r -p | wc -l) -gt 0 ]];\ndo\n"
-    shell += f"sem=$(((sem+1)%{dataOpts["jobUpdateFrequency"]}))\nif [[ $sem -eq 0 ]]; then\n"
-    shell += "status=$( ps -AF | grep 'sugarscape' | wc -l )\nstatus=$((status-1))\n"
-    shell += "echo -n $status\necho ' jobs remaining.'\nfi\nwait -n\ndone\n"
+    # Submit simulation jobs to local worker pool
+    pool = multiprocessing.Pool(processes = dataOpts["numParallelSimJobs"])
+    results = [pool.apply_async(runSimulation, args = (configFile, pythonAlias, i + 1, totalSimJobs)) for i, configFile in enumerate(configFiles)]
 
-    sh = open("temp.sh", 'w')
-    sh.write(shell)
-    sh.close()
-    os.system(f"{dataOpts["bashAlias"]} temp.sh")
-    os.remove("temp.sh")
+    # Wait for jobs to finish
+    pool.apply(finishSimulations)
+    lastUpdate = 0
+    while len(results) > 0:
+        waitingResults = []
+        for result in results:
+            ready = result.ready()
+            if ready == False:
+                waitingResults.append(result)
+        outstanding = len(waitingResults)
+        if outstanding != 0 and outstanding != lastUpdate and outstanding % jobUpdateFrequency == 0:
+            print(f"{outstanding} jobs remaining.")
+            lastUpdate = outstanding
+        results = waitingResults
+
+    # Clean up job pool
+    pool.close()
+    pool.join()
+
+def verifyConfiguration(configuration):
+    # Check if number of parallel jobs is greater than number of CPU cores
+    cores = os.cpu_count()
+    if configuration["dataCollectionOptions"]["numParallelSimJobs"] > cores:
+        configuration["dataCollectionOptions"]["numParallelSimJobs"] = cores
+    return configuration
 
 if __name__ == "__main__":
     options = parseOptions()
     seedsOnly = options["seeds"]
+    mode = options["mode"]
     path = options["path"]
     if path == None:
         path = "./"
@@ -161,8 +196,9 @@ if __name__ == "__main__":
         print("Configuration file must have specific data collection options in order to run automated data collection.")
         exit(1)
 
-    configFiles = createConfigurations(config, path)
+    config = verifyConfiguration(config)
+    configFiles = createConfigurations(config, path, mode)
     if seedsOnly == False:
-        runSimulations(config, configFiles, path)
+        runSimulations(config, configFiles)
 
     exit(0)
