@@ -675,14 +675,17 @@ class Sugarscape:
 
     def updateGiniCoefficient(self):
         agentWealths = sorted([agent.sugar + agent.spice for agent in self.agents])
-        # Calculate area between line of equality and Lorenz curve of agent wealths
-        height = 0
-        area = 0
+        # Calculate normalized area of Lorenz curve of agent wealths
+        totalWealth = sum(agentWealths)
+        cumulativeWealth = 0
+        lorenzCurveArea = 0
         for wealth in agentWealths:
-            height += wealth
-            area += (height - wealth) / 2
-        lineOfEquality = (height * len(agentWealths)) / 2
-        giniCoefficient = round((lineOfEquality - area) / max(1, lineOfEquality), 2)
+            cumulativeWealth += wealth
+            lorenzCurveArea += cumulativeWealth / totalWealth
+        lorenzCurveArea /= len(agentWealths)
+        # The total area under the equality line will be 0.5
+        equalityLineArea = 0.5
+        giniCoefficient = round((equalityLineArea - lorenzCurveArea) / equalityLineArea, 3)
         return giniCoefficient
 
     def updateRuntimeStats(self):
