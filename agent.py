@@ -87,7 +87,6 @@ class Agent:
         self.tagZeroes = 0
         self.tradeVolume = 0
         self.visionModifier = 0
-        self.wealth = configuration["sugar"] + configuration["spice"]
         self.wealthHappiness = 0
 
     def addChildToCell(self, mate, cell, childConfiguration):
@@ -180,7 +179,6 @@ class Agent:
         spiceCollected = self.cell.spice
         self.sugar += sugarCollected
         self.spice += spiceCollected
-        self.wealth += sugarCollected + spiceCollected
         self.updateMeanIncome(sugarCollected, spiceCollected)
         if self.cell.environment.pollutionStart <= self.timestep <= self.cell.environment.pollutionEnd:
             self.cell.doSugarProductionPollution(sugarCollected)
@@ -212,7 +210,6 @@ class Agent:
             self.sugar += sugarLoot
             self.spice += spiceLoot
             self.lastDoneCombat = self.cell.environment.sugarscape.timestep
-            self.wealth = self.sugar + self.spice
             prey.sugar -= sugarLoot
             prey.spice -= spiceLoot
             prey.doDeath("combat")
@@ -566,13 +563,6 @@ class Agent:
                 trader.updateTimesTradedWithAgent(self, self.lastMoved, transactions)
                 self.updateTimesTradedWithAgent(trader, self.lastMoved, transactions)
 
-    def findAgentWealthAtCell(self, cell):
-        agent = cell.agent
-        if agent == None:
-            return 0
-        else:
-            return agent.wealth
-
     def findAggression(self):
         return max(0, self.aggressionFactor + self.aggressionFactorModifier)
 
@@ -608,7 +598,7 @@ class Agent:
             welfare = self.findWelfare(((cell.sugar + welfarePreySugar) / (1 + cell.pollution)), ((cell.spice + welfarePreySpice) / (1 + cell.pollution)))
 
             # Avoid attacking agents protected via retaliation
-            if prey != None and retaliators[preyTribe] > self.wealth + welfare:
+            if prey != None and retaliators[preyTribe] > self.sugar + self.spice + welfare:
                 continue
 
             # Select closest cell with the most resources
@@ -950,7 +940,7 @@ class Agent:
                 potentialBorrowers.append(agent)
             if self.tradeFactor > 0 and agent.tradeFactor > 0 and self.canTradeWithNeighbor(agent) == True:
                 potentialTraders.append(agent)
-            if aggression > 0 and self.tribe != agent.tribe and self.wealth >= agent.wealth:
+            if aggression > 0 and self.tribe != agent.tribe and self.sugar + self.spice >= agent.sugar + agent.spice:
                 potentialPrey.append(agent)
         # TODO: Make nice calculation more fine-grained than just potentialities
         reproductionSugarCost = self.startingSugar / (self.fertilityFactor * 2) if self.fertilityFactor > 0 else 0
@@ -965,10 +955,11 @@ class Agent:
         for cell in self.cellsInRange.keys():
             agent = cell.agent
             if agent != None:
+                agentWealth = agent.sugar + agent.spice
                 if agent.tribe not in retaliators:
-                    retaliators[agent.tribe] = agent.wealth
-                elif retaliators[agent.tribe] < agent.wealth:
-                    retaliators[agent.tribe] = agent.wealth
+                    retaliators[agent.tribe] = agentWealth
+                elif retaliators[agent.tribe] < agentWealth:
+                    retaliators[agent.tribe] = agentWealth
         return retaliators
 
     def findSocialHappiness(self):
@@ -1009,16 +1000,18 @@ class Agent:
         return max(0, self.vision + self.visionModifier)
 
     def findWealthHappiness(self):
+        wealth = self.sugar + self.spice
         if self.cell.environment.sugarscape.runtimeStats["meanWealth"] < 1:
             return 0
-        elif(self.wealth < 1):
+        elif wealth < 1:
             return -1
         else:
-            if math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5 > 1:
+            wealthHappiness = math.log(wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"]) * 5
+            if wealthHappiness > 1:
                 return 1
-            elif math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5 < -1:
+            elif wealthHappiness < -1:
                 return -1
-            return (math.log(self.wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"] )*5)
+            return wealthHappiness
 
     def findWelfare(self, sugarReward, spiceReward):
         spiceMetabolism = self.findSpiceMetabolism()
@@ -1116,7 +1109,7 @@ class Agent:
     def isNeighborValidPrey(self, neighbor):
         if neighbor == None or self.findAggression() <= 0:
             return False
-        elif self.tribe != neighbor.tribe and self.wealth >= neighbor.wealth:
+        elif self.tribe != neighbor.tribe and self.sugar + self.spice >= neighbor.sugar + neighbor.spice:
             return True
         return False
 
