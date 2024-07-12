@@ -61,7 +61,7 @@ class Sugarscape:
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentWealths": [],
                              "agentTimesToLive": [], "agentTimesToLiveAgeLimited": [], "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
-        self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "wealthBins": [], "meanTribeTags": [],
+        self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
@@ -708,22 +708,34 @@ class Sugarscape:
         ageBins = [0] * histogramBins
         sugarBins = [0] * histogramBins
         spiceBins = [0] * histogramBins
-        wealthBins = [0] * histogramBins   
+        agentWealths = []
         meanTribeTags = [0] * self.configuration["agentTagStringLength"]
         for agent in self.agents:
             ageBins[math.floor(agent.age / (maxAge + 1) * histogramBins)] += 1
             sugarBins[math.floor(agent.sugar / (maxSugar + 1) * histogramBins)] += 1
             spiceBins[math.floor(agent.spice / (maxSpice + 1) * histogramBins)] += 1
-            wealthBins[math.floor((agent.sugar + agent.spice) / (maxWealth + 1) * histogramBins)] += 1
+            agentWealths.append(agent.sugar + agent.spice)
             meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
         numAgents = len(self.agents)
         if numAgents > 0:
             meanTribeTags = [round(tag / numAgents, 2) * 100 for tag in meanTribeTags]
 
+        agentWealths.sort()
+        totalPopulation = len(agentWealths)
+        totalWealth = sum(agentWealths)
+        cumulativeWealth = 0
+        lorenzCurvePoints = [(0, 0)]
+        for i, wealth in enumerate(agentWealths):
+            cumulativePopulation = (i + 1)
+            cumulativeWealth += wealth
+            lorenzCurvePoints.append((cumulativePopulation / totalPopulation, cumulativeWealth / totalWealth))
+        if lorenzCurvePoints[-1] != (1, 1):
+            lorenzCurvePoints.append((1, 1))
+
         self.graphStats["ageBins"] = ageBins
         self.graphStats["sugarBins"] = sugarBins
         self.graphStats["spiceBins"] = spiceBins
-        self.graphStats["wealthBins"] = wealthBins
+        self.graphStats["lorenzCurvePoints"] = lorenzCurvePoints
         self.graphStats["meanTribeTags"] = meanTribeTags
 
     def updateRuntimeStats(self):

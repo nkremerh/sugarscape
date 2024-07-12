@@ -21,6 +21,10 @@ class GUI:
         self.activeNetwork = None
         self.activeGraph = None
         self.graphObjects = {}
+        self.graphWidth = 720
+        self.graphHeight = 360
+        self.graphStartX = 100
+        self.graphStartY = 100
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
         self.activeColorOptions = {"agent": None, "environment": None}
@@ -268,88 +272,83 @@ class GUI:
         self.window.update()
 
     def configureGraph(self):
-        self.graphObjects = {"bins": {}, "labels": {}, "axes": {}, "xTicks": {}, "xTickLabels": {}, "yTicks": {}, "yTickLabels": {}}
+        self.graphObjects = {"xAxis": None, "xTicks": {}, "xTickLabels": {},
+                             "yAxis": None, "yTicks": {}, "yTickLabels": {}}
         activeGraph = self.activeGraph.get()
-        histogramBins = 10 if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
-        graphHeight = 360
-        graphWidth = 720
-        graphStartX = 100
-        graphStartY = 100
-        self.graphObjects["axes"]["y"] = self.canvas.create_line(graphStartX, graphStartY, graphStartX, graphStartY + graphHeight,  fill="black", width=2)
-        xTicks = histogramBins
-        xTickOffset = 0 if activeGraph != "Tag Histogram" else -1 * graphWidth / histogramBins / 2
-        yTicks = 2
+        if activeGraph == "Lorenz Curve":
+            self.configureLorenzCurve()
+        else:
+            self.configureHistogram()
+
+    def configureGraphAxes(self):
+        activeGraph = self.activeGraph.get()
+
+        self.graphObjects["xAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight,
+                                                             self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
+                                                             fill="black", width=2)
+        if activeGraph == "Lorenz Curve":
+            self.graphObjects["upperXAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY,
+                                                                      self.graphStartX + self.graphWidth, self.graphStartY,
+                                                                      fill="black", width=2)
+        xTicks = 10 if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
+        xTickOffset = 0 if activeGraph != "Tag Histogram" else -1 * self.graphWidth / xTicks / 2
         for i in range(1, xTicks + 1):
-            x0 = x1 = graphStartX + (graphWidth * i / xTicks) + xTickOffset
-            y0 = graphStartY + graphHeight
+            x0 = x1 = self.graphStartX + (self.graphWidth * i / xTicks) + xTickOffset
+            y0 = self.graphStartY + self.graphHeight
             y1 = y0 + 10
             self.graphObjects["xTicks"][i / xTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
             y0 = y1 + 10
             self.graphObjects["xTickLabels"][i / xTicks] = self.canvas.create_text(x0, y0, fill="black")
+
+        self.graphObjects["yAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY,
+                                                             self.graphStartX, self.graphStartY + self.graphHeight,
+                                                             fill="black", width=2)
+        if activeGraph == "Lorenz Curve":
+            self.graphObjects["rightYAxis"] = self.canvas.create_line(self.graphStartX + self.graphWidth, self.graphStartY,
+                                                                      self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
+                                                                      fill="black", width=2)
+        yTicks = 2 if activeGraph != "Lorenz Curve" else 10
         for i in range(1, yTicks + 1):
-            x0 = graphStartX - 10
-            x1 = graphStartX + 10
-            y0 = y1 = graphStartY + (graphHeight * (yTicks - i) / yTicks)
+            x0 = self.graphStartX - 10
+            x1 = self.graphStartX
+            y0 = y1 = self.graphStartY + (self.graphHeight * (yTicks - i) / yTicks)
             self.graphObjects["yTicks"][i / yTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
-            x0 = graphStartX - 20
+            x0 = self.graphStartX - 20
             self.graphObjects["yTickLabels"][i / yTicks] = self.canvas.create_text(x0, y0, fill="black", anchor="e")
+
+        if activeGraph == "Lorenz Curve":
+             self.updateGraphAxes(100, 100)
+             self.graphObjects["equalityLine"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight,
+                                                                         self.graphStartX + self.graphWidth, self.graphStartY,
+                                                                         fill="black", width=2)
+
+    def configureHistogram(self):
+        activeGraph = self.activeGraph.get()
+        histogramBins = 10 if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
+        self.configureGraphAxes()
+
+        self.graphObjects["bins"] = {}
+        self.graphObjects["binLabels"] = {}
         for i in range(histogramBins):
-            x0, y0 = graphStartX + i * graphWidth / histogramBins, graphStartY + graphHeight
-            x1, y1 = graphStartX + (i + 1) * graphWidth / histogramBins, graphStartY + graphHeight
+            x0, y0 = self.graphStartX + i * self.graphWidth / histogramBins, self.graphStartY + self.graphHeight
+            x1, y1 = self.graphStartX + (i + 1) * self.graphWidth / histogramBins, self.graphStartY + self.graphHeight
             self.graphObjects["bins"][i] = self.canvas.create_rectangle(x0, y0, x1, y1, fill="magenta", outline="black", width=2)
-            x0, y0 = graphStartX + (i + 0.5) * graphWidth / histogramBins, graphStartY + graphHeight - 10
-            self.graphObjects["labels"][i] = self.canvas.create_text(x0, y0, fill="black")
+            x0, y0 = self.graphStartX + (i + 0.5) * self.graphWidth / histogramBins, self.graphStartY + self.graphHeight - 10
+            self.graphObjects["binLabels"][i] = self.canvas.create_text(x0, y0, fill="black")
         if self.sugarscape.timestep != 0:
-            self.doGraphTimestep()
+            self.updateHistogram()
+
+    def configureLorenzCurve(self):
+        self.configureGraphAxes()
+        if self.sugarscape.timestep != 0:
+            self.updateLorenzCurve()
 
     def doGraphTimestep(self):
-        graphHeight = 360
-        bins = self.graphObjects["bins"]
-        labels = self.graphObjects["labels"]
-        graphStats = {
-            "Tag Histogram": self.sugarscape.graphStats["meanTribeTags"],
-            "Age Histogram": self.sugarscape.graphStats["ageBins"],
-            "Sugar Histogram": self.sugarscape.graphStats["sugarBins"],
-            "Spice Histogram": self.sugarscape.graphStats["spiceBins"]
-        }
-        graphMaxX = {
-            "Tag Histogram": self.sugarscape.configuration["agentTagStringLength"],
-            "Age Histogram": self.sugarscape.configuration["agentMaxAge"][1],
-            "Sugar Histogram": self.sugarscape.graphStats["maxSugar"],
-            "Spice Histogram": self.sugarscape.graphStats["maxSpice"]
-        }
         activeGraph = self.activeGraph.get()
-        binValues = graphStats[activeGraph]
-        maxX = graphMaxX[activeGraph]
-        maxBinHeight = max(binValues + [0]) if activeGraph != "Tag Histogram" else 100
-        if maxBinHeight != 0:
-            for i in range(len(bins)):
-                x0, y0, x1, y1 = self.canvas.coords(bins[i])
-                y0 = y1 - (binValues[i] / maxBinHeight) * graphHeight
-                self.canvas.coords(bins[i], x0, y0, x1, y1)
-                x2, y2 = self.canvas.coords(labels[i])
-                y2 = y0 - 10
-                self.canvas.itemconfigure(labels[i], text=round(binValues[i]))
-                self.canvas.coords(labels[i], x2, y2)
-            xTicks = len(self.graphObjects["xTickLabels"])
-            for i in range(1, xTicks + 1):
-                self.canvas.itemconfigure(self.graphObjects["xTickLabels"][i / xTicks], text=round(i / xTicks * maxX))
-            yTicks = len(self.graphObjects["yTickLabels"])
-            for i in range(1, yTicks + 1):
-                self.canvas.itemconfigure(self.graphObjects["yTickLabels"][i / yTicks], text=round(i / yTicks * maxBinHeight))
-
-        # Lorenz curve timestep
-        # destroy polygon
-        # create polygon: top right point to bottom right point to bottom left point
-        # then add all agent points
-            # agent percentile: agent position in wealth list / max position (len - 1)
-            # point x = (percentile * graphwidth) + graph start x
-            # point y = graph start y + graph height - (agent wealth / max wealth)
-            # make sure to handle divisions by 0.
-        # then add top right point again?
-
-        # what happens with 1000s of agents?
-        # if more than 100 agents (percentiles), sample every x
+        if activeGraph == "Lorenz Curve":
+            self.updateLorenzCurve()
+        else:
+            self.updateHistogram()
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
@@ -656,6 +655,44 @@ class GUI:
         else:
             self.configureEnvironment()
 
+    def updateGraphAxes(self, maxX, maxY):
+        xTicks = len(self.graphObjects["xTickLabels"])
+        for i in range(1, xTicks + 1):
+            self.canvas.itemconfigure(self.graphObjects["xTickLabels"][i / xTicks], text=round(i / xTicks * maxX))
+        yTicks = len(self.graphObjects["yTickLabels"])
+        for i in range(1, yTicks + 1):
+            self.canvas.itemconfigure(self.graphObjects["yTickLabels"][i / yTicks], text=round(i / yTicks * maxY))
+
+    def updateHistogram(self):
+        bins = self.graphObjects["bins"]
+        labels = self.graphObjects["binLabels"]
+        graphStats = {
+            "Tag Histogram": (self.sugarscape.graphStats["meanTribeTags"], self.sugarscape.configuration["agentTagStringLength"]),
+            "Age Histogram": (self.sugarscape.graphStats["ageBins"], self.sugarscape.configuration["agentMaxAge"][1]),
+            "Sugar Histogram": (self.sugarscape.graphStats["sugarBins"], self.sugarscape.graphStats["maxSugar"]),
+            "Spice Histogram": (self.sugarscape.graphStats["spiceBins"], self.sugarscape.graphStats["maxSpice"]),
+        }
+        activeGraph = self.activeGraph.get()
+        binValues = graphStats[activeGraph][0]
+        maxX = graphStats[activeGraph][1]
+        if len(binValues) == 0:
+            maxBinHeight = 0
+        elif activeGraph == "Tag Histogram":
+            maxBinHeight = 100
+        else:
+            maxBinHeight = max(binValues)
+
+        if maxBinHeight != 0:
+            self.updateGraphAxes(maxX, maxBinHeight)
+            for i in range(len(bins)):
+                x0, y0, x1, y1 = self.canvas.coords(bins[i])
+                y0 = y1 - (binValues[i] / maxBinHeight) * self.graphHeight
+                self.canvas.coords(bins[i], x0, y0, x1, y1)
+                x2, y2 = self.canvas.coords(labels[i])
+                y2 = y0 - 10
+                self.canvas.itemconfigure(labels[i], text=round(binValues[i]))
+                self.canvas.coords(labels[i], x2, y2)
+
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats
         statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats['population']} | Metabolism: {stats['meanMetabolism']} | Movement: {stats['meanMovement']} | Vision: {stats['meanVision']} | Gini: {stats['giniCoefficient']} | Trade Price: {stats['meanTradePrice']} | Trade Volume: {stats['tradeVolume']}"
@@ -665,6 +702,14 @@ class GUI:
             cellString = self.updateHighlightedCellStats()
             label = self.widgets["cellLabel"]
             label.config(text=cellString)
+
+    def updateLorenzCurve(self):
+        self.canvas.delete("lorenzCurve")
+        points = self.sugarscape.graphStats["lorenzCurvePoints"]
+        points.append((1, 0))
+        points = [(self.graphStartX + (x * self.graphWidth), self.graphStartY + ((1 - y) * self.graphHeight)) for x, y in points]
+        self.canvas.create_polygon(points, fill="magenta", tag="lorenzCurve")
+        self.canvas.tag_lower("lorenzCurve")
 
     def updateScreenDimensions(self):
         self.screenHeight = self.window.winfo_height()
