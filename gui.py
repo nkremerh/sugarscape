@@ -24,7 +24,7 @@ class GUI:
         self.graphWidth = 720
         self.graphHeight = 360
         self.graphStartX = 100
-        self.graphStartY = 100
+        self.graphStartY = 50
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
         self.activeColorOptions = {"agent": None, "environment": None}
@@ -272,8 +272,8 @@ class GUI:
         self.window.update()
 
     def configureGraph(self):
-        self.graphObjects = {"xAxis": None, "xTicks": {}, "xTickLabels": {},
-                             "yAxis": None, "yTicks": {}, "yTickLabels": {}}
+        self.graphObjects = {"xAxis": None, "xAxisLabel": None, "xTicks": {}, "xTickLabels": {},
+                             "yAxis": None, "yAxisLabel": None, "yTicks": {}, "yTickLabels": {}}
         activeGraph = self.activeGraph.get()
         if activeGraph == "Lorenz Curve":
             self.configureLorenzCurve()
@@ -282,6 +282,17 @@ class GUI:
 
     def configureGraphAxes(self):
         activeGraph = self.activeGraph.get()
+        axisLabels = {
+            "Sugar Histogram": ("Sugar Wealth", "Frequency"),
+            "Spice Histogram": ("Spice Wealth", "Frequency"),
+            "Tag Histogram": ("Tag Position", "% of Tags Set to 1"),
+            "Age Histogram": ("Age", "Frequency"),
+            "Lorenz Curve": ("% Population", "% Wealth")
+        }
+        self.graphObjects["xAxisLabel"] = self.canvas.create_text(self.graphStartX + (self.graphWidth / 2), self.graphStartY + self.graphHeight + 40,
+                                                                  fill="black", text=axisLabels[activeGraph][0])
+        self.graphObjects["yAxisLabel"] = self.canvas.create_text(self.graphStartX - 60, self.graphStartY + (self.graphHeight / 2),
+                                                                  angle=90, fill="black", text=axisLabels[activeGraph][1])
 
         self.graphObjects["xAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight,
                                                              self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
@@ -340,6 +351,8 @@ class GUI:
 
     def configureLorenzCurve(self):
         self.configureGraphAxes()
+        self.graphObjects["giniCoefficientLabel"] = self.canvas.create_text(
+            self.graphStartX + 20, self.graphStartY + 20, anchor="nw", fill="black", text="Gini coefficient:")
         if self.sugarscape.timestep != 0:
             self.updateLorenzCurve()
 
@@ -704,6 +717,7 @@ class GUI:
             label.config(text=cellString)
 
     def updateLorenzCurve(self):
+        self.canvas.itemconfigure(self.graphObjects["giniCoefficientLabel"], text=f"Gini coefficient: {self.sugarscape.runtimeStats["giniCoefficient"]}")
         self.canvas.delete("lorenzCurve")
         points = self.sugarscape.graphStats["lorenzCurvePoints"]
         points.append((1, 0))
