@@ -683,7 +683,7 @@ class Sugarscape:
             cumulativeWealth += wealth
             lorenzCurveArea += cumulativeWealth / totalWealth
         lorenzCurveArea /= len(agentWealths)
-        # When normalized, the triangle under the equality line has base and height 1
+        # The total area under the equality line will be 0.5
         equalityLineArea = 0.5
         giniCoefficient = round((equalityLineArea - lorenzCurveArea) / equalityLineArea, 3)
         return giniCoefficient
