@@ -674,7 +674,7 @@ class Sugarscape:
         self.run = not self.run
 
     def updateGiniCoefficient(self):
-        agentWealths = sorted([agent.wealth for agent in self.agents])
+        agentWealths = sorted([agent.sugar + agent.spice for agent in self.agents])
         # Calculate area between line of equality and Lorenz curve of agent wealths
         height = 0
         area = 0
@@ -732,12 +732,13 @@ class Sugarscape:
         for agent in self.agents:
             agentTimeToLive = agent.findTimeToLive()
             agentTimeToLiveAgeLimited = agent.findTimeToLive(True)
+            agentWealth = agent.sugar + agent.spice
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
             meanMovement += agent.movement
             meanVision += agent.vision
             meanAge += agent.age
-            meanWealth += agent.wealth
+            meanWealth += agentWealth
             meanHappiness += agent.happiness
             meanWealthHappiness += agent.wealthHappiness
             meanHealthHappiness += agent.healthHappiness
@@ -748,8 +749,8 @@ class Sugarscape:
                 meanTradePrice += max(agent.spicePrice, agent.sugarPrice)
                 tradeVolume += agent.tradeVolume
                 numTraders += 1
-            agentWealthTotal += agent.wealth
-            agentWealthCollected += agent.wealth - (agent.lastSugar + agent.lastSpice)
+            agentWealthTotal += agentWealth
+            agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
             agentWealthBurnRate += agentTimeToLive
             agentMeanTimeToLive += agentTimeToLiveAgeLimited
             agentReproduced += agent.lastReproduced
@@ -758,10 +759,10 @@ class Sugarscape:
             if agent.isSick():
                 totalSickAgents += 1
 
-            if agent.wealth < minWealth:
-                minWealth = agent.wealth
-            if agent.wealth > maxWealth:
-                maxWealth = agent.wealth
+            if agentWealth < minWealth:
+                minWealth = agentWealth
+            if agentWealth > maxWealth:
+                maxWealth = agentWealth
             totalMetabolismCost += agent.sugarMetabolism + agent.spiceMetabolism
 
         if numAgents > 0:
@@ -807,9 +808,10 @@ class Sugarscape:
         numDeadAgents = len(self.deadAgents)
         meanAgeAtDeath = 0
         for agent in self.deadAgents:
+            agentWealth = agent.sugar + agent.spice
             meanAgeAtDeath += agent.age
-            agentWealthCollected += agent.wealth - (agent.lastSugar + agent.lastSpice)
-            totalWealthLost += agent.sugar + agent.spice
+            agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
+            totalWealthLost += agentWealth
             agentReproduced += agent.lastReproduced
             agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
             agentDiseaseDeaths += 1 if agent.causeOfDeath == "disease" else 0

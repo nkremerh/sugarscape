@@ -12,8 +12,9 @@ class Bentham(agent.Agent):
         globalMaxCombatLoot = cell.environment.maxCombatLoot * 2
         cellMaxSiteWealth = cell.maxSugar + cell.maxSpice
         if cell.agent != None:
-            cellSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
-            cellMaxSiteWealth += min(cell.agent.wealth, globalMaxCombatLoot)
+            agentWealth = cell.agent.sugar + cell.agent.spice
+            cellSiteWealth += min(agentWealth, globalMaxCombatLoot)
+            cellMaxSiteWealth += min(agentWealth, globalMaxCombatLoot)
         cellNeighborWealth = cell.findNeighborWealth()
         globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
         cellValue = 0
