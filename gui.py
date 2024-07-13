@@ -21,10 +21,11 @@ class GUI:
         self.activeNetwork = None
         self.activeGraph = None
         self.graphObjects = {}
-        self.graphWidth = 720
-        self.graphHeight = 360
-        self.graphStartX = 100
-        self.graphStartY = 50
+        self.graphBorder = 90
+        self.initialGraphWidth = 720
+        self.initialGraphHeight = 540
+        self.xTicks = 10
+        self.yTicks = 2
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
         self.activeColorOptions = {"agent": None, "environment": None}
@@ -124,7 +125,7 @@ class GUI:
         self.widgets["cellLabel"] = cellLabel
 
     def configureCanvas(self):
-        canvas = tkinter.Canvas(self.window, width=self.screenWidth, height=self.screenHeight, bg="white")
+        canvas = tkinter.Canvas(self.window, background="white")
         canvas.grid(row=3, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
         if self.activeGraph.get() == "None":
             canvas.bind("<Button-1>", self.doClick)
@@ -181,19 +182,18 @@ class GUI:
             self.screenWidth = math.ceil(window.winfo_screenwidth() / 2) - self.borderEdge
         if self.screenHeight < 0:
             self.screenHeight = math.ceil(window.winfo_screenheight() / 2) - self.borderEdge
-        self.updateSiteDimensions()
-        window.geometry("%dx%d" % (self.screenWidth + self.borderEdge, self.screenHeight + self.borderEdge))
-        window.resizable(True, True)
-        window.configure(background="white")
+        self.initialScreenWidth = self.screenWidth
+        self.initialScreenHeight = self.screenHeight
+        window.geometry(f"{self.screenWidth + self.borderEdge}x{self.screenHeight + self.borderEdge}")
         window.option_add("*font", "Roboto 10")
+        # Make the canvas and buttons fill the window
+        window.grid_rowconfigure(3, weight=1)
+        window.grid_columnconfigure(list(range(self.menuTrayColumns)), weight=1)
         self.configureButtons(window)
         self.configureCanvas()
-        window.update()
 
+        self.updateSiteDimensions()
         self.configureEnvironment()
-        buttonsOffset = self.widgets["playButton"].winfo_height()
-        window.geometry("%dx%d" % (self.screenWidth + self.borderEdge, self.screenHeight + self.borderEdge + buttonsOffset))
-        window.update()
 
         self.window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
         self.window.bind("<Escape>", self.doWindowClose)
@@ -260,18 +260,21 @@ class GUI:
         self.destroyCanvas()
         self.configureCanvas()
         if self.activeGraph.get() != "None":
+            self.configureGraph()
+            self.window.geometry(f"{self.initialGraphWidth}x{self.initialGraphHeight}")
             self.widgets["networkButton"].configure(state="disabled")
             self.widgets["agentColorButton"].configure(state="disabled")
             self.widgets["environmentColorButton"].configure(state="disabled")
-            self.configureGraph()
         else:
+            self.configureEnvironment()
+            self.window.geometry(f"{self.initialScreenWidth + self.borderEdge}x{self.initialScreenHeight + self.borderEdge}")
             self.widgets["networkButton"].configure(state="normal")
             self.widgets["agentColorButton"].configure(state="normal")
             self.widgets["environmentColorButton"].configure(state="normal")
-            self.configureEnvironment()
         self.window.update()
 
     def configureGraph(self):
+        self.updateGraphDimensions()
         self.graphObjects = {"xAxis": None, "xAxisLabel": None, "xTicks": {}, "xTickLabels": {},
                              "yAxis": None, "yAxisLabel": None, "yTicks": {}, "yTickLabels": {}}
         activeGraph = self.activeGraph.get()
@@ -301,7 +304,11 @@ class GUI:
             self.graphObjects["upperXAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY,
                                                                       self.graphStartX + self.graphWidth, self.graphStartY,
                                                                       fill="black", width=2)
-        xTicks = 10 if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
+            xTicks = 10
+        elif activeGraph == "Tag Histogram":
+            xTicks = self.sugarscape.configuration["agentTagStringLength"]
+        else:
+            xTicks = self.xTicks
         xTickOffset = 0 if activeGraph != "Tag Histogram" else -1 * self.graphWidth / xTicks / 2
         for i in range(1, xTicks + 1):
             x0 = x1 = self.graphStartX + (self.graphWidth * i / xTicks) + xTickOffset
@@ -318,7 +325,7 @@ class GUI:
             self.graphObjects["rightYAxis"] = self.canvas.create_line(self.graphStartX + self.graphWidth, self.graphStartY,
                                                                       self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
                                                                       fill="black", width=2)
-        yTicks = 2 if activeGraph != "Lorenz Curve" else 10
+        yTicks = self.yTicks if activeGraph != "Lorenz Curve" else 10
         for i in range(1, yTicks + 1):
             x0 = self.graphStartX - 10
             x1 = self.graphStartX
@@ -335,7 +342,7 @@ class GUI:
 
     def configureHistogram(self):
         activeGraph = self.activeGraph.get()
-        histogramBins = 10 if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
+        histogramBins = self.xTicks if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
         self.configureGraphAxes()
 
         self.graphObjects["bins"] = {}
@@ -380,9 +387,6 @@ class GUI:
         if self.stopSimulation == True:
             self.sugarscape.toggleEnd()
             return
-        if self.screenHeight != self.window.winfo_height() or self.screenWidth != self.window.winfo_width():
-            self.resizeInterface()
-
         if self.activeGraph.get() != "None" and self.widgets["graphButton"].cget("state") != "disabled":
             self.doGraphTimestep()
         else:
@@ -408,18 +412,6 @@ class GUI:
 
         self.updateLabels()
         self.window.update()
-
-    def doNetworkTimestep(self):
-        for i in range(self.sugarscape.environmentWidth):
-            for j in range(self.sugarscape.environmentHeight):
-                cell = self.sugarscape.environment.findCell(i, j)
-                fillColor = self.lookupFillColor(cell)
-                if self.grid[i][j]["color"] != fillColor:
-                    self.canvas.itemconfig(self.grid[i][j]["object"], fill=fillColor)
-                self.grid[i][j]["color"] = fillColor
-
-            self.deleteLines()
-            self.drawLines()
 
     def doNetworkMenu(self):
         if self.activeNetwork.get() != "None":
@@ -657,7 +649,7 @@ class GUI:
 
     def resizeInterface(self, event=None):
         # Do not do resizing if capturing a user input event but the event does not come from the GUI window
-        if event != None and (event.widget != self.window or (event.widget == self.window and (self.screenHeight == event.height and self.screenWidth == event.width))):
+        if event != None and (event.widget != self.window or (self.screenHeight == event.height and self.screenWidth == event.width)):
             return
         self.updateScreenDimensions()
         self.updateSiteDimensions()
@@ -675,6 +667,15 @@ class GUI:
         yTicks = len(self.graphObjects["yTickLabels"])
         for i in range(1, yTicks + 1):
             self.canvas.itemconfigure(self.graphObjects["yTickLabels"][i / yTicks], text=round(i / yTicks * maxY))
+
+    def updateGraphDimensions(self):
+        self.window.update_idletasks()
+        canvasWidth = self.canvas.winfo_width()
+        canvasHeight = self.canvas.winfo_height()
+        self.graphStartX = self.graphBorder
+        self.graphWidth = canvasWidth - 2 * self.graphBorder
+        self.graphStartY = self.graphBorder
+        self.graphHeight = canvasHeight - 2 * self.graphBorder
 
     def updateHistogram(self):
         bins = self.graphObjects["bins"]
@@ -726,9 +727,10 @@ class GUI:
         self.canvas.tag_lower("lorenzCurve")
 
     def updateScreenDimensions(self):
-        self.screenHeight = self.window.winfo_height()
+        self.window.update_idletasks()
         self.screenWidth = self.window.winfo_width()
+        self.screenHeight = self.window.winfo_height()
 
     def updateSiteDimensions(self):
-        self.siteHeight = (self.screenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
         self.siteWidth = (self.screenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
+        self.siteHeight = (self.screenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight

@@ -232,8 +232,8 @@ class Sugarscape:
                 agent.doTimestep(self.timestep)
             self.removeDeadAgents()
             self.updateRuntimeStats()
-            self.updateGraphStats()
             if self.gui != None:
+                self.updateGraphStats()
                 self.gui.doTimestep()
             # If final timestep, do not write to log to cleanly close JSON array log structure
             if self.timestep != self.maxTimestep and len(self.agents) > 0:
@@ -689,7 +689,7 @@ class Sugarscape:
         return giniCoefficient
     
     def updateGraphStats(self):
-        histogramBins = 10
+        histogramBins = self.gui.xTicks
 
         maxAge = self.configuration["agentMaxAge"][1]
         maxSugar = 0
