@@ -4,8 +4,8 @@ import tkinter
 class GUI:
     def __init__(self, sugarscape, screenHeight=1000, screenWidth=900):
         self.sugarscape = sugarscape
-        self.screenHeight = screenHeight
-        self.screenWidth = screenWidth
+        self.initialScreenHeight = screenHeight
+        self.initialScreenWidth = screenWidth
         self.window = None
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
@@ -36,8 +36,8 @@ class GUI:
         self.menuTrayOffset = 110
         self.windowBorderOffset = 10
         self.borderEdge = 5
-        self.siteHeight = (self.screenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
-        self.siteWidth = (self.screenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
+        self.siteHeight = (self.initialScreenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
+        self.siteWidth = (self.initialScreenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
         self.configureWindow()
         self.stopSimulation = False
 
@@ -178,12 +178,12 @@ class GUI:
         self.window = window
         window.title("Sugarscape")
         # Do one-quarter window sizing only after initial window object is created to get user's monitor dimensions
-        if self.screenWidth < 0:
-            self.screenWidth = math.ceil(window.winfo_screenwidth() / 2) - self.borderEdge
-        if self.screenHeight < 0:
-            self.screenHeight = math.ceil(window.winfo_screenheight() / 2) - self.borderEdge
-        self.initialScreenWidth = self.screenWidth
-        self.initialScreenHeight = self.screenHeight
+        if self.initialScreenWidth < 0:
+            self.initialScreenWidth = math.ceil(window.winfo_screenwidth() / 2) - self.borderEdge
+        if self.initialScreenHeight < 0:
+            self.initialScreenHeight = math.ceil(window.winfo_screenheight() / 2) - self.borderEdge
+        self.screenWidth = self.initialScreenWidth
+        self.screenHeight = self.initialScreenHeight
         window.geometry(f"{self.screenWidth + self.borderEdge}x{self.screenHeight + self.borderEdge}")
         window.option_add("*font", "Roboto 10")
         # Make the canvas and buttons fill the window
@@ -261,7 +261,9 @@ class GUI:
         self.configureCanvas()
         if self.activeGraph.get() != "None":
             self.configureGraph()
-            self.window.geometry(f"{self.initialGraphWidth}x{self.initialGraphHeight}")
+            # Only set default graph size when switching from environment to graph
+            if self.widgets["networkButton"].cget("state") != "disabled":
+                self.window.geometry(f"{self.initialGraphWidth}x{self.initialGraphHeight}")
             self.widgets["networkButton"].configure(state="disabled")
             self.widgets["agentColorButton"].configure(state="disabled")
             self.widgets["environmentColorButton"].configure(state="disabled")
