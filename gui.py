@@ -33,11 +33,9 @@ class GUI:
         self.highlightedAgent = None
         self.highlightRectangle = None
         self.menuTrayColumns = 6
-        self.menuTrayOffset = 110
-        self.windowBorderOffset = 10
         self.borderEdge = 5
-        self.siteHeight = (self.initialScreenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
-        self.siteWidth = (self.initialScreenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
+        self.siteHeight = (self.initialScreenHeight - 2 * self.borderEdge) / self.sugarscape.environmentHeight
+        self.siteWidth = (self.initialScreenWidth - 2 * self.borderEdge) / self.sugarscape.environmentWidth
         self.configureWindow()
         self.stopSimulation = False
 
@@ -177,6 +175,7 @@ class GUI:
         window = tkinter.Tk()
         self.window = window
         window.title("Sugarscape")
+        window.minsize(width=150, height=250)
         # Do one-quarter window sizing only after initial window object is created to get user's monitor dimensions
         if self.initialScreenWidth < 0:
             self.initialScreenWidth = math.ceil(window.winfo_screenwidth() / 2) - self.borderEdge
@@ -263,6 +262,7 @@ class GUI:
             self.configureGraph()
             # Only set default graph size when switching from environment to graph
             if self.widgets["networkButton"].cget("state") != "disabled":
+                self.clearHighlight()
                 self.window.geometry(f"{self.initialGraphWidth}x{self.initialGraphHeight}")
             self.widgets["networkButton"].configure(state="disabled")
             self.widgets["agentColorButton"].configure(state="disabled")
@@ -374,7 +374,7 @@ class GUI:
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
-        self.widgets["playButton"].config(text="  Play Simulation  " if self.sugarscape.run == False else "Pause Simulation")
+        self.widgets["playButton"].config(text="Play Simulation" if self.sugarscape.run == False else "Pause Simulation")
         self.doTimestep()
 
     def doStepForwardButton(self, *args):
@@ -531,7 +531,7 @@ class GUI:
                 agentStats += f"Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)} | Decision Model: {agent.decisionModel}"
             else:
                 agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: -"
-            cellStats += f"\n  {agentStats}"
+            cellStats += f"\n{agentStats}"
         else:
             cellStats = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - "
         
@@ -608,7 +608,7 @@ class GUI:
             elif isChild == True and isParent == False:
                 return "green"
             else: # isChild == True and isParent == True
-                return "yellow"            
+                return "yellow"
         elif self.activeNetwork.get() == "Loans":
             isLender = len(agent.socialNetwork["debtors"]) > 0
             isBorrower = len(agent.socialNetwork["creditors"]) > 0
@@ -675,9 +675,9 @@ class GUI:
         canvasWidth = self.canvas.winfo_width()
         canvasHeight = self.canvas.winfo_height()
         self.graphStartX = self.graphBorder
-        self.graphWidth = canvasWidth - 2 * self.graphBorder
+        self.graphWidth = max(canvasWidth - 2 * self.graphBorder, 0)
         self.graphStartY = self.graphBorder
-        self.graphHeight = canvasHeight - 2 * self.graphBorder
+        self.graphHeight = max(canvasHeight - 2 * self.graphBorder, 0)
 
     def updateHistogram(self):
         bins = self.graphObjects["bins"]
@@ -715,9 +715,7 @@ class GUI:
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
         if self.highlightedCell != None:
-            cellString = self.updateHighlightedCellStats()
-            label = self.widgets["cellLabel"]
-            label.config(text=cellString)
+            self.updateHighlightedCellStats()
 
     def updateLorenzCurve(self):
         self.canvas.itemconfigure(self.graphObjects["giniCoefficientLabel"], text=f"Gini coefficient: {self.sugarscape.runtimeStats["giniCoefficient"]}")
@@ -734,5 +732,5 @@ class GUI:
         self.screenHeight = self.window.winfo_height()
 
     def updateSiteDimensions(self):
-        self.siteWidth = (self.screenWidth - self.windowBorderOffset) / self.sugarscape.environmentWidth
-        self.siteHeight = (self.screenHeight - self.menuTrayOffset) / self.sugarscape.environmentHeight
+        self.siteWidth = (self.screenWidth - 2 * self.borderEdge) / self.sugarscape.environmentWidth
+        self.siteHeight = (self.canvas.winfo_height() - 2 * self.borderEdge) / self.sugarscape.environmentHeight
