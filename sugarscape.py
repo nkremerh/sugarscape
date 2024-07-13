@@ -717,7 +717,8 @@ class Sugarscape:
             sugarBins[math.floor(agent.sugar / (maxSugar + 1) * histogramBins)] += 1
             spiceBins[math.floor(agent.spice / (maxSpice + 1) * histogramBins)] += 1
             agentWealths.append(agent.sugar + agent.spice)
-            meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
+            if agent.tags != None:
+                meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
         numAgents = len(self.agents)
         if numAgents > 0:
             meanTribeTags = [round(tag / numAgents, 2) * 100 for tag in meanTribeTags]

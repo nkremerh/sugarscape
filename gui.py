@@ -311,7 +311,7 @@ class GUI:
             xTicks = self.sugarscape.configuration["agentTagStringLength"]
         else:
             xTicks = self.xTicks
-        xTickOffset = 0 if activeGraph != "Tag Histogram" else -1 * self.graphWidth / xTicks / 2
+        xTickOffset = 0 if activeGraph != "Tag Histogram" or xTicks == 0 else -1 * self.graphWidth / xTicks / 2
         for i in range(1, xTicks + 1):
             x0 = x1 = self.graphStartX + (self.graphWidth * i / xTicks) + xTickOffset
             y0 = self.graphStartY + self.graphHeight
