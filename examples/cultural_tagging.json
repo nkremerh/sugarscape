@@ -8,6 +8,7 @@
     "agentMaxAge": [60, 100],
     "agentMovement": [1000, 1000],
     "agentStartingSugar": [50, 100],
+    "agentTagging": true,
     "agentTagStringLength": 11,
     "environmentMaxTribes": 3,
     "seed": 12345,
