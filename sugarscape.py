@@ -982,10 +982,28 @@ def printHelp():
     exit(0)
 
 def verifyConfiguration(configuration):
+    negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
+    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseVisionPenalty"]
+    negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
+    negativesAllowed += ["seed", "timesteps"]
+    negativeFlag = 0
     for configName, configValue in configuration.items():
         if isinstance(configValue, list):
+            configType = type(configValue[0])
             if configName != "environmentPollutionDiffusionTimeFrame" and configName != "environmentPollutionTimeFrame":
                 configValue.sort()
+            if configName not in negativesAllowed and (configType == int or configType == float):
+                for i in range(len(configValue)):
+                    if configValue[i] < 0:
+                        configValue[i] = 0
+                        negativeFlag += 1
+        else:
+            configType = type(configValue)
+            if configName not in negativesAllowed and (configType == int or configType == float) and configValue < 0:
+                configValue = 0
+                negativeFlag += 1
+    if negativeFlag > 0:
+        print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
 
     if len(configuration["environmentStartingQuadrants"]) == 0:
         configuration["environmentStartingQuadrants"] = [1, 2, 3, 4]
