@@ -164,10 +164,10 @@ class GUI:
         return ["Pollution"]
 
     def configureGraphNames(self):
-        return ["Sugar Histogram", "Spice Histogram", "Tag Histogram", "Age Histogram", "Lorenz Curve"]
+        return ["Age Histogram", "Gini Coefficient", "Spice Histogram", "Sugar Histogram", "Tag Histogram"]
     
     def configureNetworkNames(self):
-        return ["Neighbors", "Family", "Friends", "Trade", "Loans", "Disease"]
+        return ["Disease", "Family", "Friends", "Loans", "Neighbors", "Trade"]
 
     def configureWindow(self):
         window = tkinter.Tk()
@@ -272,7 +272,7 @@ class GUI:
         self.graphObjects = {"xAxis": None, "xAxisLabel": None, "xTicks": {}, "xTickLabels": {},
                              "yAxis": None, "yAxisLabel": None, "yTicks": {}, "yTickLabels": {}}
         activeGraph = self.activeGraph.get()
-        if activeGraph == "Lorenz Curve":
+        if activeGraph == "Gini Coefficient":
             self.configureLorenzCurve()
         else:
             self.configureHistogram()
@@ -284,7 +284,7 @@ class GUI:
             "Spice Histogram": ("Spice Wealth", "Frequency"),
             "Tag Histogram": ("Tag Position", "% of Tags Set to 1"),
             "Age Histogram": ("Age", "Frequency"),
-            "Lorenz Curve": ("% Population", "% Wealth")
+            "Gini Coefficient": ("% Population", "% Wealth")
         }
         self.graphObjects["xAxisLabel"] = self.canvas.create_text(self.graphStartX + (self.graphWidth / 2), self.graphStartY + self.graphHeight + 40,
                                                                   fill="black", text=axisLabels[activeGraph][0])
@@ -294,7 +294,7 @@ class GUI:
         self.graphObjects["xAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight,
                                                              self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
                                                              fill="black", width=2)
-        if activeGraph == "Lorenz Curve":
+        if activeGraph == "Gini Coefficient":
             self.graphObjects["upperXAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY,
                                                                       self.graphStartX + self.graphWidth, self.graphStartY,
                                                                       fill="black", width=2)
@@ -315,11 +315,11 @@ class GUI:
         self.graphObjects["yAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY,
                                                              self.graphStartX, self.graphStartY + self.graphHeight,
                                                              fill="black", width=2)
-        if activeGraph == "Lorenz Curve":
+        if activeGraph == "Gini Coefficient":
             self.graphObjects["rightYAxis"] = self.canvas.create_line(self.graphStartX + self.graphWidth, self.graphStartY,
                                                                       self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
                                                                       fill="black", width=2)
-        yTicks = self.yTicks if activeGraph != "Lorenz Curve" else 10
+        yTicks = self.yTicks if activeGraph != "Gini Coefficient" else 10
         for i in range(1, yTicks + 1):
             x0 = self.graphStartX - 10
             x1 = self.graphStartX
@@ -328,7 +328,7 @@ class GUI:
             x0 = self.graphStartX - 20
             self.graphObjects["yTickLabels"][i / yTicks] = self.canvas.create_text(x0, y0, fill="black", anchor="e")
 
-        if activeGraph == "Lorenz Curve":
+        if activeGraph == "Gini Coefficient":
              self.updateGraphAxes(100, 100)
              self.graphObjects["equalityLine"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight,
                                                                          self.graphStartX + self.graphWidth, self.graphStartY,
@@ -359,7 +359,7 @@ class GUI:
 
     def doGraphTimestep(self):
         activeGraph = self.activeGraph.get()
-        if activeGraph == "Lorenz Curve":
+        if activeGraph == "Gini Coefficient":
             self.updateLorenzCurve()
         else:
             self.updateHistogram()
