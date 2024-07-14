@@ -710,7 +710,7 @@ class GUI:
             self.updateHighlightedCellStats()
 
     def updateLorenzCurve(self):
-        self.canvas.itemconfigure(self.graphObjects["giniCoefficientLabel"], text=f"Gini coefficient: {self.sugarscape.runtimeStats["giniCoefficient"]}")
+        self.canvas.itemconfigure(self.graphObjects["giniCoefficientLabel"], text=f"Gini coefficient: {self.sugarscape.runtimeStats['giniCoefficient']}")
         self.canvas.delete("lorenzCurve")
         points = self.sugarscape.graphStats["lorenzCurvePoints"]
         points.append((1, 0))
