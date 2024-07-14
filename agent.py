@@ -675,6 +675,7 @@ class Agent:
         cellRange = min(vision, movement)
         allCells = {}
         if cellRange <= 0:
+            self.cellsInRange = allCells
             return allCells
         for i in range(1, cellRange + 1):
             allCells.update(cell.ranges[i])
