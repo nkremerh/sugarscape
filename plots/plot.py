@@ -71,8 +71,12 @@ def findMeans(dataset):
         dataset[model]["means"]["meanDeaths"] = []
         for i in range(len(dataset[model]["metrics"]["population"])):
             deaths = dataset[model]["metrics"]["agentStarvationDeaths"][i] + dataset[model]["metrics"]["agentCombatDeaths"][i] + dataset[model]["metrics"]["agentAgingDeaths"][i]
-            dataset[model]["means"]["meanWealth"].append(dataset[model]["metrics"]["agentWealthTotal"][i] / dataset[model]["metrics"]["population"][i])
-            dataset[model]["means"]["meanDeaths"].append((deaths / dataset[model]["metrics"]["population"][i]) * 100)
+            if dataset[model]["metrics"]["population"][i] == 0:
+                dataset[model]["means"]["meanWealth"].append(0)
+                dataset[model]["means"]["meanDeaths"].append(0)
+            else:
+                dataset[model]["means"]["meanWealth"].append(dataset[model]["metrics"]["agentWealthTotal"][i] / dataset[model]["metrics"]["population"][i])
+                dataset[model]["means"]["meanDeaths"].append((deaths / dataset[model]["metrics"]["population"][i]) * 100)
     return dataset
 
 def parseOptions():
