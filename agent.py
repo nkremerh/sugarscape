@@ -1002,7 +1002,7 @@ class Agent:
 
     def findWealthHappiness(self):
         wealth = self.sugar + self.spice
-        if self.cell.environment.sugarscape.runtimeStats["meanWealth"] < 1:
+        if self.cell.environment.sugarscape.runtimeStats["meanWealth"] <= 1:
             return 0
         elif wealth < 1:
             return -1
