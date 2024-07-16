@@ -679,13 +679,17 @@ class Sugarscape:
     def updateGiniCoefficient(self):
         agentWealths = sorted([agent.sugar + agent.spice for agent in self.agents])
         # Calculate normalized area of Lorenz curve of agent wealths
+        numAgents = len(agentWealths)
         totalWealth = sum(agentWealths)
         cumulativeWealth = 0
         lorenzCurveArea = 0
-        for wealth in agentWealths:
-            cumulativeWealth += wealth
+        for i in range(numAgents - 1):
+            cumulativeWealth += agentWealths[i]
             lorenzCurveArea += cumulativeWealth / totalWealth
-        lorenzCurveArea /= len(agentWealths)
+        # Use trapezoidal area to maintain accuracy with smaller populations
+        cumulativeWealth += agentWealths[-1]
+        lorenzCurveArea += (cumulativeWealth / 2) / totalWealth
+        lorenzCurveArea /= numAgents
         # The total area under the equality line will be 0.5
         equalityLineArea = 0.5
         giniCoefficient = round((equalityLineArea - lorenzCurveArea) / equalityLineArea, 3)
