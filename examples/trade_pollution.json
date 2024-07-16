@@ -19,5 +19,5 @@
     "environmentSugarProductionPollutionFactor": 1,
     "seed": 12345,
     "startingAgents": 400,
-    "timesteps": 500
+    "timesteps": 1000
 }

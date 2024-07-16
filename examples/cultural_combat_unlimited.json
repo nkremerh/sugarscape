@@ -1,0 +1,15 @@
+{
+    "__README__": "Agent combat with cultural tagging and unlimited combat loot (pg. 91 of Growing Artificial Societies).",
+    "agentMaxAge": [60, 100],
+    "agentMovement": [1000, 1000],
+    "agentTagging": true,
+    "agentTagStringLength": 11,
+    "environmentMaxCombatLoot": 1000000,
+    "environmentMaxTribes": 2,
+    "environmentQuadrantSizeFactor": 0.8,
+    "environmentStartingQuadrants": [2, 4],
+    "environmentTribePerQuadrant": true,
+    "seed": 12345,
+    "startingAgents": 400,
+    "timesteps": 500
+}
