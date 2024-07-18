@@ -343,7 +343,6 @@ class Sugarscape:
         sortedTribes = sorted(tribeCounts, reverse=True)
         tribeData["majority"] = tribeCounts.index(sortedTribes[0])
         population = sum(tribeCounts)
-        print(f"{sortedTribes[0]} / {population}")
         if population > 0:
             tribeData["percentage"] = round(sortedTribes[0] / population, 2)
         else:

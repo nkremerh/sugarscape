@@ -1,6 +1,8 @@
 import csv
+import json
 import sys
 
+# Will only produce results for the first run in a CSV file
 def analyzeTribalAssimilation(log):
     tribeSummary = {}
     numTribes = 0
@@ -19,6 +21,17 @@ def isTribeDominant(numTribes, percent):
         return True
     return False
 
+def loadCSVFile(fileName):
+    logFile = open(fileName)
+    log = csv.DictReader(logFile)
+    return log
+
+# Will only parse if there is only one run logged in the file
+def loadJSONFile(filename):
+    logFile = open(fileName)
+    log = json.load(logFile)
+    return log
+
 def parseFile(filename):
     split = filename.split(".")
     format = split[-1]
@@ -35,7 +48,13 @@ if __name__ == "__main__":
     log = None
 
     if fileFormat == "csv":
-        logFile = open(fileName)
-        log = csv.DictReader(logFile)
+        log = loadCSVFile(fileName)
+    elif fileFormat == "json":
+        log = loadJSONFile(fileName)
+    else:
+        print("Unsupported file format.")
+        exit(1)
 
     analyzeTribalAssimilation(log)
+
+    exit(0)
