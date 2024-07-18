@@ -60,7 +60,7 @@ class Sugarscape:
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "totalWealthLost": 0,
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0,
-                             "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
+                             "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0, "majorityTribe": 0, "tribePopulationPercentage": 0, "totalTribes": 0}
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -333,6 +333,22 @@ class Sugarscape:
         tags = [0 for i in range(zeroes)] + [1 for i in range(ones)]
         random.shuffle(tags)
         return tags
+
+    def getTribeMajority(self):
+        tribeData = {}
+        numTribes = self.configuration["environmentMaxTribes"]
+        tribeCounts = [0 for i in range(numTribes)]
+        for agent in self.agents:
+            tribeCounts[agent.tribe] += 1
+        sortedTribes = sorted(tribeCounts, reverse=True)
+        tribeData["majority"] = tribeCounts.index(sortedTribes[0])
+        population = sum(tribeCounts)
+        print(f"{sortedTribes[0]} / {population}")
+        if population > 0:
+            tribeData["percentage"] = round(sortedTribes[0] / population, 2)
+        else:
+            tribeData["percentage"] = 0.0
+        return tribeData
 
     def pauseSimulation(self):
         while self.run == False:
@@ -883,6 +899,10 @@ class Sugarscape:
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
         self.deadAgents = []
 
+        tribeData = self.getTribeMajority()
+        majorityTribe = tribeData["majority"]
+        tribePopulationPercent = tribeData["percentage"]
+
         self.runtimeStats["timestep"] = self.timestep
         self.runtimeStats["population"] = numAgents
         self.runtimeStats["meanMetabolism"] = meanMetabolism
@@ -918,9 +938,11 @@ class Sugarscape:
         self.runtimeStats["agentMeanTimeToLive"] = agentMeanTimeToLive
         self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
         self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
-
         self.runtimeStats["agentTotalMetabolism"] = agentTotalMetabolism
         self.runtimeStats["totalSickAgents"] = totalSickAgents
+        self.runtimeStats["majorityTribe"] = majorityTribe
+        self.runtimeStats["tribePopulationPercentage"] = tribePopulationPercent
+        self.runtimeStats["totalTribes"] = self.configuration["environmentMaxTribes"]
 
     def writeToLog(self):
         if self.log == None:
