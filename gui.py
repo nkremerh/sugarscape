@@ -27,6 +27,9 @@ class GUI:
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
         self.activeColorOptions = {"agent": None, "environment": None}
+        self.meanAgentMetabolism = (sum(self.sugarscape.configuration["agentSugarMetabolism"]) + sum(self.sugarscape.configuration["agentSpiceMetabolism"])) / 2
+        self.meanAgentMovement = sum(self.sugarscape.configuration["agentMovement"]) / 2
+        self.meanAgentVision = sum(self.sugarscape.configuration["agentVision"]) / 2
         self.highlightedCell = None
         self.highlightedAgent = None
         self.highlightRectangle = None
@@ -46,7 +49,7 @@ class GUI:
         self.updateHighlightedCellStats()
 
     def configureAgentColorNames(self):
-        return ["Disease", "Sex", "Tribes", "Decision Models"]
+        return ["Decision Models", "Disease", "Metabolism", "Movement", "Sex", "Tribes", "Vision"]
 
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
@@ -572,16 +575,20 @@ class GUI:
                     return self.recolorByResourceAmount(cell, self.colors["spice"])
                 else:
                     return self.recolorByResourceAmount(cell, self.colors["sugarAndSpice"])
-        elif agent.sex != None and self.activeColorOptions["agent"] == "Sex":
-            return self.colors[agent.sex]
-        elif agent.tribe != None and self.activeColorOptions["agent"] == "Tribes":
-            return self.colors[str(agent.tribe)]
         elif agent.decisionModel != None and self.activeColorOptions["agent"] == "Decision Models":
             return self.colors[agent.decisionModel]
-        elif len(agent.diseases) > 0 and self.activeColorOptions["agent"] == "Disease":
-            return self.colors["sick"]
-        elif len(agent.diseases) == 0 and self.activeColorOptions["agent"] == "Disease":
-            return self.colors["healthy"]
+        elif self.activeColorOptions["agent"] == "Disease":
+            return self.colors["sick"] if len(agent.diseases) > 0 else self.colors["healthy"]
+        elif self.activeColorOptions["agent"] == "Metabolism":
+            return "red" if agent.findSugarMetabolism() + agent.findSpiceMetabolism() > self.meanAgentMetabolism else "blue"
+        elif self.activeColorOptions["agent"] == "Movement":
+            return "red" if agent.findMovement() > self.meanAgentMovement else "blue"
+        elif self.activeColorOptions["agent"] == "Sex" and agent.sex != None:
+            return self.colors[agent.sex]
+        elif self.activeColorOptions["agent"] == "Tribes" and agent.tribe != None:
+            return self.colors[str(agent.tribe)]
+        elif self.activeColorOptions["agent"] == "Vision":
+            return "red" if agent.findVision() > self.meanAgentVision else "blue"
         return self.colors["noSex"]
 
     def lookupNetworkColor(self, cell):
