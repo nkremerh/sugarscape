@@ -1,4 +1,5 @@
 import csv
+import getopt
 import json
 import sys
 
@@ -10,7 +11,7 @@ class Analysis:
         self.tribeSummary = {"dominantTribe": -1, "timestep": -1}
 
     def analyzeTribalAssimilation(self):
-        for day in log:
+        for day in self.log:
             majorityPercent = float(day["tribePopulationPercentage"])
             if self.isTribeDominant(majorityPercent) == True:
                 self.tribeSummary["dominantTribe"] = int(day["majorityTribe"])
@@ -50,24 +51,36 @@ def loadJSON(filename):
 def parseFile(fileName):
     split = fileName.split(".")
     fileFormat = split[-1]
-    return fileFormat
+    if fileFormat == "csv":
+        log = loadCSV(fileName)
+    elif fileFormat == "json":
+        log = loadJSON(fileName)
+    return log
+
+def parseOptions():
+    commandLineArgs = sys.argv[1:]
+    shortOptions = "l:h:"
+    longOptions = ["log=", "help"]
+    try:
+        args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
+    except getopt.GetoptError as err:
+        print(err)
+        printHelp()
+    for currArg, currVal in args:
+        if currArg in ("-l", "--log"):
+            if currVal == "":
+                print("No log file provided.")
+                printHelp()
+            logFile = parseFile(currVal)
+        elif currArg in ("-h", "--help"):
+            printHelp()
+    return logFile
+
+def printHelp():
+    print("Usage:\n\tpython analysis.py --log [logfile]\n\nOptions:\n\t-l,--log\tAnalyze specified log file.\n\t-h,--help\tDisplay this message.")
+    exit(0)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python analysis.py [logfile]")
-        exit(1)
-
-    file = sys.argv[1]
-    fileFormat = parseFile(file)
-    log = None
-    if fileFormat == "csv":
-        log = loadCSV(file)
-    elif fileFormat == "json":
-        log = loadJSON(file)
-
-    if log == None:
-        print("No log found.")
-        exit(1)
-    else:
-        A = Analysis(log)
-        A.analyzeTribalAssimilation()
+    log = parseOptions()
+    A = Analysis(log)
+    A.analyzeTribalAssimilation()
