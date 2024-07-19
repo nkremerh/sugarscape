@@ -27,7 +27,7 @@ class GUI:
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
         self.activeColorOptions = {"agent": None, "environment": None}
-        self.meanAgentMetabolism = (sum(self.sugarscape.configuration["agentSugarMetabolism"]) + sum(self.sugarscape.configuration["agentSpiceMetabolism"])) / 2
+        self.meanAgentMetabolism = sum(self.sugarscape.configuration["agentSugarMetabolism"] + self.sugarscape.configuration["agentSpiceMetabolism"]) / 2
         self.meanAgentMovement = sum(self.sugarscape.configuration["agentMovement"]) / 2
         self.meanAgentVision = sum(self.sugarscape.configuration["agentVision"]) / 2
         self.highlightedCell = None
