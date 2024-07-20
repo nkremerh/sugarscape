@@ -50,6 +50,11 @@ class Sugarscape:
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
+        if configuration["headlessMode"] == False:
+            import gui
+            self.gui = gui.GUI(self, self.configuration["interfaceHeight"], self.configuration["interfaceWidth"])
+        else:
+            self.gui = None
         self.gui = gui.GUI(self, self.configuration["interfaceHeight"], self.configuration["interfaceWidth"]) if configuration["headlessMode"] == False else None
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
@@ -65,6 +70,7 @@ class Sugarscape:
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
+        self.runtimeStats["population_over_time"] = []
 
     def addAgent(self, agent):
         self.agents.append(agent)
