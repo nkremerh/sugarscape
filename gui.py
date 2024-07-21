@@ -602,7 +602,7 @@ class GUI:
         agent = cell.agent
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
-                return self.colors["pollution"][max(round(cell.pollution), 20)]
+                return self.colors["pollution"][min(round(cell.pollution), 20)]
             elif cell.sugar > 0 and cell.spice == 0:
                 return self.colors["sugar"][cell.sugar]
             elif cell.spice > 0 and cell.sugar == 0:
