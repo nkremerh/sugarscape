@@ -1,5 +1,5 @@
 {
-    "__README__": "Agent reproduction with lower infertility age, lower reproduction cost, and constant sugar growback (pgs. 64-66 of Growing Artificial Societies).",
+    "__README__": "Agent reproduction with lower infertility age, lower reproduction cost, and constant sugar growback (pg. 66 of Growing Artificial Societies).",
     "agentFemaleInfertilityAge": [30, 40],
     "agentFemaleFertilityAge": [12, 15],
     "agentFertilityFactor": [1, 1],
