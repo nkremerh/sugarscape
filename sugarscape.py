@@ -723,15 +723,13 @@ class Sugarscape:
             agentWealths.append(agent.sugar + agent.spice)
 
         meanTribeTags = [0] * self.configuration["agentTagStringLength"]
-        if agent.tags != None:
+        totalPopulation = len(self.agents)
+        if agent.tags != None and totalPopulation > 0:
             for agent in self.agents:
                 meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
-            numAgents = len(self.agents)
-            if numAgents > 0:
-                meanTribeTags = [round(tag / numAgents, 2) * 100 for tag in meanTribeTags]
+            meanTribeTags = [round(tag / totalPopulation, 2) * 100 for tag in meanTribeTags]
 
         agentWealths.sort()
-        totalPopulation = len(agentWealths)
         totalWealth = sum(agentWealths)
         cumulativeWealth = 0
         lorenzCurvePoints = [(0, 0)]

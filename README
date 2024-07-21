@@ -83,7 +83,7 @@ combat_limited.json:
     Agent combat with unlimited combat loot and constant sugar growback (pgs. 86-90).
 
 cultural_combat_unlimited.json:
-    Agent combat with cultural tagging and unlimited combat loot (pg. 91).
+    Agent combat with agent cultural tagging and unlimited combat loot (pg. 91).
 
 spice_growback.json:
     Agent sugar and spice collection with constant sugar and spice growback (pgs. 96-99).
@@ -98,7 +98,7 @@ trade_reproduction.json:
     Agent trading with agent reproduction and constant sugar and spice growback (pg. 124).
 
 trade_tagging.json:
-    Agent trading with cultural tagging and constant sugar and spice growback (pgs. 125-126).
+    Agent trading with agent cultural tagging and constant sugar and spice growback (pgs. 125-126).
 
 trade_tagging_reproduction.json:
     Agent trading with agent cultural tagging, agent reproduction, and constant sugar and spice growback (pg. 127).
