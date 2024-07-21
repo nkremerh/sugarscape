@@ -1,5 +1,5 @@
 {
-    "__README__": "Agent cultural tagging with constant sugar growback (pgs. 72-79 of Growing Artificial Societies).",
+    "__README__": "Agent reproduction with lower reproduction cost and constant sugar growback (pg. 65 of Growing Artificial Societies).",
     "agentFemaleInfertilityAge": [40, 50],
     "agentFemaleFertilityAge": [12, 15],
     "agentFertilityFactor": [1, 1],
@@ -7,10 +7,7 @@
     "agentMaleFertilityAge": [12, 15],
     "agentMaxAge": [60, 100],
     "agentMovement": [1000, 1000],
-    "agentStartingSugar": [50, 100],
-    "agentTagging": true,
-    "agentTagStringLength": 11,
-    "environmentMaxTribes": 3,
+    "agentStartingSugar": [20, 80],
     "seed": 12345,
     "startingAgents": 400,
     "timesteps": 500
