@@ -1,18 +1,16 @@
 {
-    "__README__": "Agent sugar and spice collection with trading and constant sugar and spice growback (pgs. 101-107 of Growing Artificial Societies).",
-    "agentFemaleInfertilityAge": [40, 50],
-    "agentFemaleFertilityAge": [12, 15],
-    "agentFertilityFactor": [1, 1],
-    "agentMaleInfertilityAge": [50, 60],
-    "agentMaleFertilityAge": [12, 15],
-    "agentMaxAge": [60, 100],
+    "__README__": "Agent sugar and spice collection with trading and constant sugar and spice growback (pgs. 108-115 of Growing Artificial Societies).",
+    "agentMaxAge": [-1, -1],
     "agentMovement": [1000, 1000],
-    "agentSpiceMetabolism": [1, 4],
-    "agentStartingSpice": [10, 40],
+    "agentSpiceMetabolism": [1, 5],
+    "agentStartingSpice": [25, 50],
+    "agentStartingSugar": [25, 50],
+    "agentSugarMetabolism": [1, 5],
     "agentTradeFactor": [1, 1],
+    "agentVision": [1, 5],
     "environmentMaxSpice": 4,
     "environmentSpiceRegrowRate": 1,
     "seed": 12345,
-    "startingAgents": 400,
-    "timesteps": 500
+    "startingAgents": 200,
+    "timesteps": 1000
 }

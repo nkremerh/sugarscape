@@ -699,6 +699,11 @@ class Sugarscape:
         histogramBins = self.gui.xTicks
 
         maxAge = self.configuration["agentMaxAge"][1]
+        ageBins = [0] * histogramBins
+        if maxAge != -1:
+            for agent in self.agents:
+                ageBins[math.floor(agent.age / (maxAge + 1) * histogramBins)] += 1
+
         maxSugar = 0
         maxSpice = 0
         maxWealth = 0
@@ -709,29 +714,26 @@ class Sugarscape:
                 maxSpice = agent.spice
             if agent.sugar + agent.spice > maxWealth:
                 maxWealth = agent.sugar + agent.spice
-
         self.graphStats["maxSugar"] = maxSugar
         self.graphStats["maxSpice"] = maxSpice
         self.graphStats["maxWealth"] = maxWealth
 
-        ageBins = [0] * histogramBins
         sugarBins = [0] * histogramBins
         spiceBins = [0] * histogramBins
         agentWealths = []
-        meanTribeTags = [0] * self.configuration["agentTagStringLength"]
         for agent in self.agents:
-            ageBins[math.floor(agent.age / (maxAge + 1) * histogramBins)] += 1
             sugarBins[math.floor(agent.sugar / (maxSugar + 1) * histogramBins)] += 1
             spiceBins[math.floor(agent.spice / (maxSpice + 1) * histogramBins)] += 1
             agentWealths.append(agent.sugar + agent.spice)
-            if agent.tags != None:
+
+        meanTribeTags = [0] * self.configuration["agentTagStringLength"]
+        totalPopulation = len(self.agents)
+        if agent.tags != None and totalPopulation > 0:
+            for agent in self.agents:
                 meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
-        numAgents = len(self.agents)
-        if numAgents > 0:
-            meanTribeTags = [round(tag / numAgents, 2) * 100 for tag in meanTribeTags]
+            meanTribeTags = [round(tag / totalPopulation, 2) * 100 for tag in meanTribeTags]
 
         agentWealths.sort()
-        totalPopulation = len(agentWealths)
         totalWealth = sum(agentWealths)
         cumulativeWealth = 0
         lorenzCurvePoints = [(0, 0)]
@@ -1206,9 +1208,9 @@ if __name__ == "__main__":
                      "agentStartingSpice": [0, 0],
                      "agentStartingSugar": [10, 40],
                      "agentSugarMetabolism": [1, 4],
+                     "agentTagging": False,
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
-                     "agentTagging": False,
                      "agentTradeFactor": [0, 0],
                      "agentUniversalSpice": [0,0],
                      "agentUniversalSugar": [0,0],

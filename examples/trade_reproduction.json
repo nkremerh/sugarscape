@@ -1,5 +1,5 @@
 {
-    "__README__": "Agent trading with sugar pollution and constant sugar and spice growback (pgs. 127-129 of Growing Artificial Societies).",
+    "__README__": "Agent trading with agent reproduction and constant sugar and spice growback (pg. 124 of Growing Artificial Societies).",
     "agentFemaleInfertilityAge": [40, 50],
     "agentFemaleFertilityAge": [12, 15],
     "agentFertilityFactor": [1, 1],
@@ -11,12 +11,7 @@
     "agentStartingSpice": [10, 40],
     "agentTradeFactor": [1, 1],
     "environmentMaxSpice": 4,
-    "environmentPollutionDiffusionDelay": 1,
-    "environmentPollutionDiffusionTimeframe": [150, 500],
-    "environmentPollutionTimeframe": [100, 150],
     "environmentSpiceRegrowRate": 1,
-    "environmentSugarConsumptionPollutionFactor": 1,
-    "environmentSugarProductionPollutionFactor": 1,
     "seed": 12345,
     "startingAgents": 400,
     "timesteps": 1000
