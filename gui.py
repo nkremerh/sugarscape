@@ -9,7 +9,23 @@ class GUI:
         self.window = None
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
-        self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280", "healthy": "#3232FA", "sick": "#FA3232"}
+
+        sugarColors = self.findColorRange("#FFFFFF", "#F2FA00", 0, sugarscape.configuration["environmentMaxSugar"])
+        spiceColors = self.findColorRange("#FFFFFF", "#9B4722", 0, sugarscape.configuration["environmentMaxSpice"])
+        sugarAndSpiceColors = self.findColorRange("#FFFFFF", "#CFB20E", 0, sugarscape.configuration["environmentMaxSugar"] + sugarscape.configuration["environmentMaxSpice"])
+        pollutionColors = self.findColorRange("#FFFFFF", "#803280", 0, 20)
+        minMetabolism = sugarscape.configuration["agentSugarMetabolism"][0] + sugarscape.configuration["agentSpiceMetabolism"][0]
+        maxMetabolism = sugarscape.configuration["agentSugarMetabolism"][1] + sugarscape.configuration["agentSpiceMetabolism"][1]
+        metabolismColors = self.findColorRange("#FF0000", "#00FF00", minMetabolism, maxMetabolism)
+        movementColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentMovement"][0], sugarscape.configuration["agentMovement"][1])
+        visionColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentVision"][0], sugarscape.configuration["agentVision"][1])
+        self.colors = {"sugar": sugarColors, "spice": spiceColors, "sugarAndSpice": sugarAndSpiceColors,
+                       "pollution": pollutionColors,
+                       "healthy": "#3232FA", "sick": "#FA3232",
+                       "metabolism": metabolismColors,
+                       "movement": movementColors,
+                       "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA",
+                       "vision": visionColors}
         self.palette = ["#FA3232", "#3232FA", "#32FA32", "#32FAFA", "#FA32FA", "#AA3232", "#3232AA", "#32AA32", "#32AAAA", "#AA32AA", "#FA8800", "#00FA88", "#8800FA", "#FA8888", "#8888FA", "#88FA88", "#FA3288", "#3288FA", "#88FA32", "#AA66AA", "#66AAAA", "#3ED06E", "#6E3ED0", "#D06E3E", "#000000"]
         numTribes = self.sugarscape.configuration["environmentMaxTribes"]
         numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
@@ -17,6 +33,7 @@ class GUI:
             self.colors[str(i)] = self.palette[i]
         for i in range(numDecisionModels):
             self.colors[self.sugarscape.configuration["agentDecisionModels"][i]] = self.palette[i]
+
         self.widgets = {}
         self.activeNetwork = None
         self.activeGraph = None
@@ -514,6 +531,24 @@ class GUI:
         cell = self.sugarscape.environment.findCell(gridX, gridY)
         return cell
 
+    def findColorRange(self, startColor, endColor, minValue, maxValue):
+        numColors = maxValue - minValue + 1
+        if numColors < 2:
+            return {minValue: endColor}
+
+        startRGB = self.hexToInt(startColor)
+        endRGB = self.hexToInt(endColor)
+        colorRange = {}
+        for i in range(numColors):
+            factor = i / (numColors - 1)
+            interpolatedRGB = [
+                int(startValue + (endValue - startValue) * factor)
+                for startValue, endValue in zip(startRGB, endRGB)
+            ]
+            colorRange[minValue + i] = self.intToHex(interpolatedRGB)
+
+        return colorRange
+
     def updateHighlightedCellStats(self):
         cell = self.highlightedCell
         if cell != None:
@@ -567,28 +602,28 @@ class GUI:
         agent = cell.agent
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
-                return self.recolorByResourceAmount(cell, self.colors["pollution"])
+                return self.colors["pollution"][max(round(cell.pollution), 20)]
+            elif cell.sugar > 0 and cell.spice == 0:
+                return self.colors["sugar"][cell.sugar]
+            elif cell.spice > 0 and cell.sugar == 0:
+                return self.colors["spice"][cell.spice]
             else:
-                if cell.sugar > 0 and cell.spice == 0:
-                    return self.recolorByResourceAmount(cell, self.colors["sugar"])
-                elif cell.spice > 0 and cell.sugar == 0:
-                    return self.recolorByResourceAmount(cell, self.colors["spice"])
-                else:
-                    return self.recolorByResourceAmount(cell, self.colors["sugarAndSpice"])
+                return self.colors["sugarAndSpice"][cell.sugar + cell.spice]
+
         elif agent.decisionModel != None and self.activeColorOptions["agent"] == "Decision Models":
             return self.colors[agent.decisionModel]
         elif self.activeColorOptions["agent"] == "Disease":
             return self.colors["sick"] if len(agent.diseases) > 0 else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Metabolism":
-            return "red" if agent.findSugarMetabolism() + agent.findSpiceMetabolism() > self.meanAgentMetabolism else "blue"
+            return self.colors["metabolism"][agent.sugarMetabolism + agent.spiceMetabolism]
         elif self.activeColorOptions["agent"] == "Movement":
-            return "red" if agent.findMovement() > self.meanAgentMovement else "blue"
+            return self.colors["movement"][agent.movement]
         elif self.activeColorOptions["agent"] == "Sex" and agent.sex != None:
             return self.colors[agent.sex]
         elif self.activeColorOptions["agent"] == "Tribes" and agent.tribe != None:
             return self.colors[str(agent.tribe)]
         elif self.activeColorOptions["agent"] == "Vision":
-            return "red" if agent.findVision() > self.meanAgentVision else "blue"
+            return self.colors["vision"][agent.vision]
         return self.colors["noSex"]
 
     def lookupNetworkColor(self, cell):
@@ -620,33 +655,6 @@ class GUI:
         elif self.activeNetwork.get() == "Disease":
             return self.colors["sick"] if agent.isSick() == True else self.colors["healthy"]
         return "black"
-
-    def recolorByResourceAmount(self, cell, fillColor):
-        recolorFactor = 0
-        if self.activeColorOptions["environment"] == "Pollution":
-            # Since global max pollution changes at each timestep, set constant to prevent misleading recoloring of cells
-            maxPollution = 20
-            # Once a cell has exceeded the number of colors made possible with maxPollution, keep using the max color
-            recolorFactor = min(1, cell.pollution / maxPollution)
-        else:
-            maxSugar = self.sugarscape.environment.globalMaxSugar
-            maxSpice = self.sugarscape.environment.globalMaxSpice
-            if maxSugar == 0 and maxSpice == 0:
-                recolorFactor = 0
-            elif cell.sugar > 0 and cell.spice == 0 and maxSugar > 0:
-                recolorFactor = cell.sugar / maxSugar
-            elif cell.spice > 0 and cell.sugar == 0 and maxSpice > 0:
-                recolorFactor = cell.spice / maxSpice
-            else:
-                recolorFactor = (cell.sugar + cell.spice) / (maxSugar + maxSpice)
-        subcolors = self.hexToInt(fillColor)
-        i = 0
-        for color in subcolors:
-            color = int(color + (255 - color) * (1 - recolorFactor))
-            subcolors[i] = color
-            i += 1
-        fillColor = self.intToHex(subcolors)
-        return fillColor
 
     def resizeInterface(self, event=None):
         # Do not do resizing if capturing a user input event but the event does not come from the GUI window
