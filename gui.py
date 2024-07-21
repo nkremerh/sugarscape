@@ -183,110 +183,6 @@ class GUI:
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
 
-    def configureGraphNames(self):
-        return ["Age Histogram", "Gini Coefficient", "Spice Histogram", "Sugar Histogram", "Tag Histogram"]
-    
-    def configureNetworkNames(self):
-        return ["Disease", "Family", "Friends", "Loans", "Neighbors", "Trade"]
-
-    def configureWindow(self):
-        window = tkinter.Tk()
-        self.window = window
-        window.title("Sugarscape")
-        window.minsize(width=150, height=250)
-        # Do one-quarter window sizing only after initial window object is created to get user's monitor dimensions
-        if self.screenWidth < 0:
-            self.screenWidth = math.ceil(window.winfo_screenwidth() / 2) - self.borderEdge
-        if self.screenHeight < 0:
-            self.screenHeight = math.ceil(window.winfo_screenheight() / 2) - self.borderEdge
-        window.geometry(f"{self.screenWidth + self.borderEdge}x{self.screenHeight + self.borderEdge}")
-        window.option_add("*font", "Roboto 10")
-        # Make the canvas and buttons fill the window
-        window.grid_rowconfigure(3, weight=1)
-        window.grid_columnconfigure(list(range(self.menuTrayColumns)), weight=1)
-        self.configureButtons(window)
-        self.configureCanvas()
-
-        self.updateSiteDimensions()
-        self.configureEnvironment()
-
-        self.window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
-        self.window.bind("<Escape>", self.doWindowClose)
-        self.window.bind("<space>", self.doPlayButton)
-        self.window.bind("<Right>", self.doStepForwardButton)
-        self.window.bind("<Configure>", self.resizeInterface)
-
-        # Adjust for slight deviations from initially configured window size
-        self.resizeInterface()
-        window.update()
-
-    def deleteLines(self):
-        self.canvas.delete("line")
-
-    def destroyCanvas(self):
-        self.canvas.destroy()
-
-    def doAgentColorMenu(self, *args):
-        self.activeColorOptions["agent"] = self.lastSelectedAgentColor.get()
-        self.doTimestep()
-
-    def doControlClick(self, event):
-        self.doubleClick = False
-        cell = self.findClickedCell(event)
-        if cell == self.highlightedCell or cell.agent == None:
-            self.clearHighlight()
-        else:
-            self.highlightedCell = cell
-            self.highlightedAgent = cell.agent
-            self.highlightCell(cell)
-        self.doTimestep()
-
-    def doClick(self, event):
-        self.canvas.after(300, self.doClickAction, event)
-
-    def doDoubleClick(self, event):
-        self.doubleClick = True
-
-    def doClickAction(self, event):
-        if self.doubleClick == True:
-            cell = self.findClickedCell(event)
-            if cell == self.highlightedCell or cell.agent == None:
-                self.clearHighlight()
-            else:
-                self.highlightedCell = cell
-                self.highlightedAgent = cell.agent
-                self.highlightCell(cell)
-            self.doubleClick = False
-        else:
-            cell = self.findClickedCell(event)
-            if cell == self.highlightedCell and self.highlightedAgent == None:
-                self.clearHighlight()
-            else:
-                self.highlightedCell = cell
-                self.highlightedAgent = None
-                self.highlightCell(cell)
-        self.doTimestep()
-
-    def doEnvironmentColorMenu(self):
-        self.activeColorOptions["environment"] = self.lastSelectedEnvironmentColor.get()
-        self.doTimestep()
-
-    def doGraphMenu(self):
-        self.destroyCanvas()
-        self.configureCanvas()
-        if self.activeGraph.get() != "None":
-            self.clearHighlight()
-            self.configureGraph()
-            self.widgets["networkButton"].configure(state="disabled")
-            self.widgets["agentColorButton"].configure(state="disabled")
-            self.widgets["environmentColorButton"].configure(state="disabled")
-        else:
-            self.configureEnvironment()
-            self.widgets["networkButton"].configure(state="normal")
-            self.widgets["agentColorButton"].configure(state="normal")
-            self.widgets["environmentColorButton"].configure(state="normal")
-        self.window.update()
-
     def configureGraph(self):
         self.updateGraphDimensions()
         self.graphObjects = {"xAxis": None, "xAxisLabel": None, "xTicks": {}, "xTickLabels": {},
@@ -354,6 +250,9 @@ class GUI:
                                                                          self.graphStartX + self.graphWidth, self.graphStartY,
                                                                          fill="black", width=2)
 
+    def configureGraphNames(self):
+        return ["Age Histogram", "Gini Coefficient", "Spice Histogram", "Sugar Histogram", "Tag Histogram"]
+
     def configureHistogram(self):
         activeGraph = self.activeGraph.get()
         histogramBins = self.xTicks if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
@@ -370,6 +269,9 @@ class GUI:
         if self.sugarscape.timestep != 0:
             self.updateHistogram()
 
+    def configureNetworkNames(self):
+        return ["Disease", "Family", "Friends", "Loans", "Neighbors", "Trade"]
+
     def configureLorenzCurve(self):
         self.configureGraphAxes()
         self.graphObjects["giniCoefficientLabel"] = self.canvas.create_text(
@@ -377,12 +279,124 @@ class GUI:
         if self.sugarscape.timestep != 0:
             self.updateLorenzCurve()
 
+    def configureWindow(self):
+        window = tkinter.Tk()
+        self.window = window
+        window.title("Sugarscape")
+        window.minsize(width=150, height=250)
+        # Do one-quarter window sizing only after initial window object is created to get user's monitor dimensions
+        if self.screenWidth < 0:
+            self.screenWidth = math.ceil(window.winfo_screenwidth() / 2) - self.borderEdge
+        if self.screenHeight < 0:
+            self.screenHeight = math.ceil(window.winfo_screenheight() / 2) - self.borderEdge
+        window.geometry(f"{self.screenWidth + self.borderEdge}x{self.screenHeight + self.borderEdge}")
+        window.option_add("*font", "Roboto 10")
+        # Make the canvas and buttons fill the window
+        window.grid_rowconfigure(3, weight=1)
+        window.grid_columnconfigure(list(range(self.menuTrayColumns)), weight=1)
+        self.configureButtons(window)
+        self.configureCanvas()
+
+        self.updateSiteDimensions()
+        self.configureEnvironment()
+
+        self.window.protocol("WM_DELETE_WINDOW", self.doWindowClose)
+        self.window.bind("<Escape>", self.doWindowClose)
+        self.window.bind("<space>", self.doPlayButton)
+        self.window.bind("<Right>", self.doStepForwardButton)
+        self.window.bind("<Configure>", self.resizeInterface)
+
+        # Adjust for slight deviations from initially configured window size
+        self.resizeInterface()
+        window.update()
+
+    def deleteLines(self):
+        self.canvas.delete("line")
+
+    def destroyCanvas(self):
+        self.canvas.destroy()
+
+    def doAgentColorMenu(self, *args):
+        self.activeColorOptions["agent"] = self.lastSelectedAgentColor.get()
+        self.doTimestep()
+
+    def doControlClick(self, event):
+        self.doubleClick = False
+        cell = self.findClickedCell(event)
+        if cell == self.highlightedCell or cell.agent == None:
+            self.clearHighlight()
+        else:
+            self.highlightedCell = cell
+            self.highlightedAgent = cell.agent
+            self.highlightCell(cell)
+        self.doTimestep()
+
+    def doClick(self, event):
+        self.canvas.after(300, self.doClickAction, event)
+
+    def doClickAction(self, event):
+        if self.doubleClick == True:
+            cell = self.findClickedCell(event)
+            if cell == self.highlightedCell or cell.agent == None:
+                self.clearHighlight()
+            else:
+                self.highlightedCell = cell
+                self.highlightedAgent = cell.agent
+                self.highlightCell(cell)
+            self.doubleClick = False
+        else:
+            cell = self.findClickedCell(event)
+            if cell == self.highlightedCell and self.highlightedAgent == None:
+                self.clearHighlight()
+            else:
+                self.highlightedCell = cell
+                self.highlightedAgent = None
+                self.highlightCell(cell)
+        self.doTimestep()
+
+    def doDoubleClick(self, event):
+        self.doubleClick = True
+
+    def doEnvironmentColorMenu(self):
+        self.activeColorOptions["environment"] = self.lastSelectedEnvironmentColor.get()
+        self.doTimestep()
+
+    def doGraphMenu(self):
+        self.destroyCanvas()
+        self.configureCanvas()
+        if self.activeGraph.get() != "None":
+            self.clearHighlight()
+            self.configureGraph()
+            self.widgets["networkButton"].configure(state="disabled")
+            self.widgets["agentColorButton"].configure(state="disabled")
+            self.widgets["environmentColorButton"].configure(state="disabled")
+        else:
+            self.configureEnvironment()
+            self.widgets["networkButton"].configure(state="normal")
+            self.widgets["agentColorButton"].configure(state="normal")
+            self.widgets["environmentColorButton"].configure(state="normal")
+        self.window.update()
+
     def doGraphTimestep(self):
         activeGraph = self.activeGraph.get()
         if activeGraph == "Gini Coefficient":
             self.updateLorenzCurve()
         else:
             self.updateHistogram()
+
+    def doNetworkMenu(self):
+        if self.activeNetwork.get() != "None":
+            self.widgets["graphButton"].configure(state="disabled")
+            self.widgets["agentColorButton"].configure(state="disabled")
+            self.widgets["environmentColorButton"].configure(state="disabled")
+        else:
+            self.widgets["graphButton"].configure(state="normal")
+            self.widgets["agentColorButton"].configure(state="normal")
+            self.widgets["environmentColorButton"].configure(state="normal")
+        self.destroyCanvas()
+        self.configureCanvas()
+        self.configureEnvironment()
+        self.window.update()
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
@@ -425,20 +439,6 @@ class GUI:
                     self.clearHighlight()
 
         self.updateLabels()
-        self.window.update()
-
-    def doNetworkMenu(self):
-        if self.activeNetwork.get() != "None":
-            self.widgets["graphButton"].configure(state="disabled")
-            self.widgets["agentColorButton"].configure(state="disabled")
-            self.widgets["environmentColorButton"].configure(state="disabled")
-        else:
-            self.widgets["graphButton"].configure(state="normal")
-            self.widgets["agentColorButton"].configure(state="normal")
-            self.widgets["environmentColorButton"].configure(state="normal")
-        self.destroyCanvas()
-        self.configureCanvas()
-        self.configureEnvironment()
         self.window.update()
 
     def doWindowClose(self, *args):
@@ -548,25 +548,6 @@ class GUI:
             colorRange[minValue + i] = self.intToHex(interpolatedRGB)
 
         return colorRange
-
-    def updateHighlightedCellStats(self):
-        cell = self.highlightedCell
-        if cell != None:
-            cellSeason = cell.season if cell.season != None else '-'
-            cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
-            agent = cell.agent
-            if agent != None:
-                agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "
-                agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | "
-                agentStats += f"Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)} | Decision Model: {agent.decisionModel}"
-            else:
-                agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: -"
-            cellStats += f"\n{agentStats}"
-        else:
-            cellStats = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - "
-        
-        label = self.widgets["cellLabel"]
-        label.config(text=cellStats)
 
     def hexToInt(self, hexval):
         intvals = []
@@ -685,6 +666,25 @@ class GUI:
         self.graphWidth = max(canvasWidth - 2 * self.graphBorder, 0)
         self.graphStartY = self.graphBorder
         self.graphHeight = max(canvasHeight - 2 * self.graphBorder, 0)
+
+    def updateHighlightedCellStats(self):
+        cell = self.highlightedCell
+        if cell != None:
+            cellSeason = cell.season if cell.season != None else '-'
+            cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
+            agent = cell.agent
+            if agent != None:
+                agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "
+                agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | "
+                agentStats += f"Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)} | Decision Model: {agent.decisionModel}"
+            else:
+                agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: -"
+            cellStats += f"\n{agentStats}"
+        else:
+            cellStats = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - "
+
+        label = self.widgets["cellLabel"]
+        label.config(text=cellStats)
 
     def updateHistogram(self):
         bins = self.graphObjects["bins"]
