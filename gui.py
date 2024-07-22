@@ -16,7 +16,7 @@ class GUI:
         pollutionColors = self.findColorRange("#FFFFFF", "#803280", 0, 20)
         minMetabolism = sugarscape.configuration["agentSugarMetabolism"][0] + sugarscape.configuration["agentSpiceMetabolism"][0]
         maxMetabolism = sugarscape.configuration["agentSugarMetabolism"][1] + sugarscape.configuration["agentSpiceMetabolism"][1]
-        metabolismColors = self.findColorRange("#FF0000", "#00FF00", minMetabolism, maxMetabolism)
+        metabolismColors = self.findColorRange("#00FF0000", "#FF0000", minMetabolism, maxMetabolism)
         movementColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentMovement"][0], sugarscape.configuration["agentMovement"][1])
         visionColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentVision"][0], sugarscape.configuration["agentVision"][1])
         self.colors = {"sugar": sugarColors, "spice": spiceColors, "sugarAndSpice": sugarAndSpiceColors,
