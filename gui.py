@@ -19,13 +19,7 @@ class GUI:
         metabolismColors = self.findColorRange("#00FF0000", "#FF0000", minMetabolism, maxMetabolism)
         movementColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentMovement"][0], sugarscape.configuration["agentMovement"][1])
         visionColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentVision"][0], sugarscape.configuration["agentVision"][1])
-        self.colors = {"sugar": sugarColors, "spice": spiceColors, "sugarAndSpice": sugarAndSpiceColors,
-                       "pollution": pollutionColors,
-                       "healthy": "#3232FA", "sick": "#FA3232",
-                       "metabolism": metabolismColors,
-                       "movement": movementColors,
-                       "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA",
-                       "vision": visionColors}
+        self.colors = {"sugar": sugarColors, "spice": spiceColors, "sugarAndSpice": sugarAndSpiceColors, "pollution": pollutionColors, "healthy": "#3232FA", "sick": "#FA3232", "metabolism": metabolismColors, "movement": movementColors, "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "vision": visionColors}
         self.palette = ["#FA3232", "#3232FA", "#32FA32", "#32FAFA", "#FA32FA", "#AA3232", "#3232AA", "#32AA32", "#32AAAA", "#AA32AA", "#FA8800", "#00FA88", "#8800FA", "#FA8888", "#8888FA", "#88FA88", "#FA3288", "#3288FA", "#88FA32", "#AA66AA", "#66AAAA", "#3ED06E", "#6E3ED0", "#D06E3E", "#000000"]
         numTribes = self.sugarscape.configuration["environmentMaxTribes"]
         numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
@@ -182,8 +176,7 @@ class GUI:
 
     def configureGraph(self):
         self.updateGraphDimensions()
-        self.graphObjects = {"xAxis": None, "xAxisLabel": None, "xTicks": {}, "xTickLabels": {},
-                             "yAxis": None, "yAxisLabel": None, "yTicks": {}, "yTickLabels": {}}
+        self.graphObjects = {"xAxis": None, "xAxisLabel": None, "xTicks": {}, "xTickLabels": {}, "yAxis": None, "yAxisLabel": None, "yTicks": {}, "yTickLabels": {}}
         activeGraph = self.activeGraph.get()
         if activeGraph == "Gini Coefficient":
             self.configureLorenzCurve()
@@ -192,25 +185,12 @@ class GUI:
 
     def configureGraphAxes(self):
         activeGraph = self.activeGraph.get()
-        axisLabels = {
-            "Sugar Histogram": ("Sugar Wealth", "Frequency"),
-            "Spice Histogram": ("Spice Wealth", "Frequency"),
-            "Tag Histogram": ("Tag Position", "% of Tags Set to 1"),
-            "Age Histogram": ("Age", "Frequency"),
-            "Gini Coefficient": ("% Population", "% Wealth")
-        }
-        self.graphObjects["xAxisLabel"] = self.canvas.create_text(self.graphStartX + (self.graphWidth / 2), self.graphStartY + self.graphHeight + 40,
-                                                                  fill="black", text=axisLabels[activeGraph][0])
-        self.graphObjects["yAxisLabel"] = self.canvas.create_text(self.graphStartX - 60, self.graphStartY + (self.graphHeight / 2),
-                                                                  angle=90, fill="black", text=axisLabels[activeGraph][1])
-
-        self.graphObjects["xAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight,
-                                                             self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
-                                                             fill="black", width=2)
+        axisLabels = {"Sugar Histogram": ("Sugar Wealth", "Frequency"), "Spice Histogram": ("Spice Wealth", "Frequency"), "Tag Histogram": ("Tag Position", "% of Tags Set to 1"), "Age Histogram": ("Age", "Frequency"), "Gini Coefficient": ("% Population", "% Wealth")}
+        self.graphObjects["xAxisLabel"] = self.canvas.create_text(self.graphStartX + (self.graphWidth / 2), self.graphStartY + self.graphHeight + 40, fill="black", text=axisLabels[activeGraph][0])
+        self.graphObjects["yAxisLabel"] = self.canvas.create_text(self.graphStartX - 60, self.graphStartY + (self.graphHeight / 2), angle=90, fill="black", text=axisLabels[activeGraph][1])
+        self.graphObjects["xAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight, self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight, fill="black", width=2)
         if activeGraph == "Gini Coefficient":
-            self.graphObjects["upperXAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY,
-                                                                      self.graphStartX + self.graphWidth, self.graphStartY,
-                                                                      fill="black", width=2)
+            self.graphObjects["upperXAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY, self.graphStartX + self.graphWidth, self.graphStartY, fill="black", width=2)
             xTicks = 10
         elif activeGraph == "Tag Histogram":
             xTicks = self.sugarscape.configuration["agentTagStringLength"]
@@ -225,13 +205,9 @@ class GUI:
             y0 = y1 + 10
             self.graphObjects["xTickLabels"][i / xTicks] = self.canvas.create_text(x0, y0, fill="black")
 
-        self.graphObjects["yAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY,
-                                                             self.graphStartX, self.graphStartY + self.graphHeight,
-                                                             fill="black", width=2)
+        self.graphObjects["yAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY, self.graphStartX, self.graphStartY + self.graphHeight, fill="black", width=2)
         if activeGraph == "Gini Coefficient":
-            self.graphObjects["rightYAxis"] = self.canvas.create_line(self.graphStartX + self.graphWidth, self.graphStartY,
-                                                                      self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
-                                                                      fill="black", width=2)
+            self.graphObjects["rightYAxis"] = self.canvas.create_line(self.graphStartX + self.graphWidth, self.graphStartY, self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight, fill="black", width=2)
         yTicks = self.yTicks if activeGraph != "Gini Coefficient" else 10
         for i in range(1, yTicks + 1):
             x0 = self.graphStartX - 10
@@ -243,9 +219,7 @@ class GUI:
 
         if activeGraph == "Gini Coefficient":
              self.updateGraphAxes(100, 100)
-             self.graphObjects["equalityLine"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight,
-                                                                         self.graphStartX + self.graphWidth, self.graphStartY,
-                                                                         fill="black", width=2)
+             self.graphObjects["equalityLine"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight, self.graphStartX + self.graphWidth, self.graphStartY, fill="black", width=2)
 
     def configureGraphNames(self):
         return ["Age Histogram", "Gini Coefficient", "Spice Histogram", "Sugar Histogram", "Tag Histogram"]
