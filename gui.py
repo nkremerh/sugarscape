@@ -9,7 +9,17 @@ class GUI:
         self.window = None
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
-        self.colors = {"sugar": "#F2FA00", "spice": "#9B4722", "sugarAndSpice": "#CFB20E", "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "pollution": "#803280", "healthy": "#3232FA", "sick": "#FA3232"}
+
+        sugarColors = self.findColorRange("#FFFFFF", "#F2FA00", 0, sugarscape.configuration["environmentMaxSugar"])
+        spiceColors = self.findColorRange("#FFFFFF", "#9B4722", 0, sugarscape.configuration["environmentMaxSpice"])
+        sugarAndSpiceColors = self.findColorRange("#FFFFFF", "#CFB20E", 0, sugarscape.configuration["environmentMaxSugar"] + sugarscape.configuration["environmentMaxSpice"])
+        pollutionColors = self.findColorRange("#FFFFFF", "#803280", 0, 20)
+        minMetabolism = sugarscape.configuration["agentSugarMetabolism"][0] + sugarscape.configuration["agentSpiceMetabolism"][0]
+        maxMetabolism = sugarscape.configuration["agentSugarMetabolism"][1] + sugarscape.configuration["agentSpiceMetabolism"][1]
+        metabolismColors = self.findColorRange("#00FF0000", "#FF0000", minMetabolism, maxMetabolism)
+        movementColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentMovement"][0], sugarscape.configuration["agentMovement"][1])
+        visionColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentVision"][0], sugarscape.configuration["agentVision"][1])
+        self.colors = {"sugar": sugarColors, "spice": spiceColors, "sugarAndSpice": sugarAndSpiceColors, "pollution": pollutionColors, "healthy": "#3232FA", "sick": "#FA3232", "metabolism": metabolismColors, "movement": movementColors, "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "vision": visionColors}
         self.palette = ["#FA3232", "#3232FA", "#32FA32", "#32FAFA", "#FA32FA", "#AA3232", "#3232AA", "#32AA32", "#32AAAA", "#AA32AA", "#FA8800", "#00FA88", "#8800FA", "#FA8888", "#8888FA", "#88FA88", "#FA3288", "#3288FA", "#88FA32", "#AA66AA", "#66AAAA", "#3ED06E", "#6E3ED0", "#D06E3E", "#000000"]
         numTribes = self.sugarscape.configuration["environmentMaxTribes"]
         numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
@@ -17,6 +27,7 @@ class GUI:
             self.colors[str(i)] = self.palette[i]
         for i in range(numDecisionModels):
             self.colors[self.sugarscape.configuration["agentDecisionModels"][i]] = self.palette[i]
+
         self.widgets = {}
         self.activeNetwork = None
         self.activeGraph = None
@@ -46,7 +57,7 @@ class GUI:
         self.updateHighlightedCellStats()
 
     def configureAgentColorNames(self):
-        return ["Disease", "Sex", "Tribes", "Decision Models"]
+        return ["Decision Models", "Disease", "Metabolism", "Movement", "Sex", "Tribes", "Vision"]
 
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
@@ -163,11 +174,81 @@ class GUI:
     def configureEnvironmentColorNames(self):
         return ["Pollution"]
 
+    def configureGraph(self):
+        self.updateGraphDimensions()
+        self.graphObjects = {"xAxis": None, "xAxisLabel": None, "xTicks": {}, "xTickLabels": {}, "yAxis": None, "yAxisLabel": None, "yTicks": {}, "yTickLabels": {}}
+        activeGraph = self.activeGraph.get()
+        if activeGraph == "Gini Coefficient":
+            self.configureLorenzCurve()
+        else:
+            self.configureHistogram()
+
+    def configureGraphAxes(self):
+        activeGraph = self.activeGraph.get()
+        axisLabels = {"Sugar Histogram": ("Sugar Wealth", "Frequency"), "Spice Histogram": ("Spice Wealth", "Frequency"), "Tag Histogram": ("Tag Position", "% of Tags Set to 1"), "Age Histogram": ("Age", "Frequency"), "Gini Coefficient": ("% Population", "% Wealth")}
+        self.graphObjects["xAxisLabel"] = self.canvas.create_text(self.graphStartX + (self.graphWidth / 2), self.graphStartY + self.graphHeight + 40, fill="black", text=axisLabels[activeGraph][0])
+        self.graphObjects["yAxisLabel"] = self.canvas.create_text(self.graphStartX - 60, self.graphStartY + (self.graphHeight / 2), angle=90, fill="black", text=axisLabels[activeGraph][1])
+        self.graphObjects["xAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight, self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight, fill="black", width=2)
+        if activeGraph == "Gini Coefficient":
+            self.graphObjects["upperXAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY, self.graphStartX + self.graphWidth, self.graphStartY, fill="black", width=2)
+            xTicks = 10
+        elif activeGraph == "Tag Histogram":
+            xTicks = self.sugarscape.configuration["agentTagStringLength"]
+        else:
+            xTicks = self.xTicks
+        xTickOffset = 0 if activeGraph != "Tag Histogram" or xTicks == 0 else -1 * self.graphWidth / xTicks / 2
+        for i in range(1, xTicks + 1):
+            x0 = x1 = self.graphStartX + (self.graphWidth * i / xTicks) + xTickOffset
+            y0 = self.graphStartY + self.graphHeight
+            y1 = y0 + 10
+            self.graphObjects["xTicks"][i / xTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
+            y0 = y1 + 10
+            self.graphObjects["xTickLabels"][i / xTicks] = self.canvas.create_text(x0, y0, fill="black")
+
+        self.graphObjects["yAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY, self.graphStartX, self.graphStartY + self.graphHeight, fill="black", width=2)
+        if activeGraph == "Gini Coefficient":
+            self.graphObjects["rightYAxis"] = self.canvas.create_line(self.graphStartX + self.graphWidth, self.graphStartY, self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight, fill="black", width=2)
+        yTicks = self.yTicks if activeGraph != "Gini Coefficient" else 10
+        for i in range(1, yTicks + 1):
+            x0 = self.graphStartX - 10
+            x1 = self.graphStartX
+            y0 = y1 = self.graphStartY + (self.graphHeight * (yTicks - i) / yTicks)
+            self.graphObjects["yTicks"][i / yTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
+            x0 = self.graphStartX - 20
+            self.graphObjects["yTickLabels"][i / yTicks] = self.canvas.create_text(x0, y0, fill="black", anchor="e")
+
+        if activeGraph == "Gini Coefficient":
+             self.updateGraphAxes(100, 100)
+             self.graphObjects["equalityLine"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight, self.graphStartX + self.graphWidth, self.graphStartY, fill="black", width=2)
+
     def configureGraphNames(self):
         return ["Age Histogram", "Gini Coefficient", "Spice Histogram", "Sugar Histogram", "Tag Histogram"]
-    
+
+    def configureHistogram(self):
+        activeGraph = self.activeGraph.get()
+        histogramBins = self.xTicks if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
+        self.configureGraphAxes()
+
+        self.graphObjects["bins"] = {}
+        self.graphObjects["binLabels"] = {}
+        for i in range(histogramBins):
+            x0, y0 = self.graphStartX + i * self.graphWidth / histogramBins, self.graphStartY + self.graphHeight
+            x1, y1 = self.graphStartX + (i + 1) * self.graphWidth / histogramBins, self.graphStartY + self.graphHeight
+            self.graphObjects["bins"][i] = self.canvas.create_rectangle(x0, y0, x1, y1, fill="magenta", outline="black", width=2)
+            x0, y0 = self.graphStartX + (i + 0.5) * self.graphWidth / histogramBins, self.graphStartY + self.graphHeight - 10
+            self.graphObjects["binLabels"][i] = self.canvas.create_text(x0, y0, fill="black")
+        if self.sugarscape.timestep != 0:
+            self.updateHistogram()
+
     def configureNetworkNames(self):
         return ["Disease", "Family", "Friends", "Loans", "Neighbors", "Trade"]
+
+    def configureLorenzCurve(self):
+        self.configureGraphAxes()
+        self.graphObjects["giniCoefficientLabel"] = self.canvas.create_text(
+            self.graphStartX + 20, self.graphStartY + 20, anchor="nw", fill="black", text="Gini coefficient:")
+        if self.sugarscape.timestep != 0:
+            self.updateLorenzCurve()
 
     def configureWindow(self):
         window = tkinter.Tk()
@@ -224,9 +305,6 @@ class GUI:
     def doClick(self, event):
         self.canvas.after(300, self.doClickAction, event)
 
-    def doDoubleClick(self, event):
-        self.doubleClick = True
-
     def doClickAction(self, event):
         if self.doubleClick == True:
             cell = self.findClickedCell(event)
@@ -246,6 +324,9 @@ class GUI:
                 self.highlightedAgent = None
                 self.highlightCell(cell)
         self.doTimestep()
+
+    def doDoubleClick(self, event):
+        self.doubleClick = True
 
     def doEnvironmentColorMenu(self):
         self.activeColorOptions["environment"] = self.lastSelectedEnvironmentColor.get()
@@ -267,102 +348,26 @@ class GUI:
             self.widgets["environmentColorButton"].configure(state="normal")
         self.window.update()
 
-    def configureGraph(self):
-        self.updateGraphDimensions()
-        self.graphObjects = {"xAxis": None, "xAxisLabel": None, "xTicks": {}, "xTickLabels": {},
-                             "yAxis": None, "yAxisLabel": None, "yTicks": {}, "yTickLabels": {}}
-        activeGraph = self.activeGraph.get()
-        if activeGraph == "Gini Coefficient":
-            self.configureLorenzCurve()
-        else:
-            self.configureHistogram()
-
-    def configureGraphAxes(self):
-        activeGraph = self.activeGraph.get()
-        axisLabels = {
-            "Sugar Histogram": ("Sugar Wealth", "Frequency"),
-            "Spice Histogram": ("Spice Wealth", "Frequency"),
-            "Tag Histogram": ("Tag Position", "% of Tags Set to 1"),
-            "Age Histogram": ("Age", "Frequency"),
-            "Gini Coefficient": ("% Population", "% Wealth")
-        }
-        self.graphObjects["xAxisLabel"] = self.canvas.create_text(self.graphStartX + (self.graphWidth / 2), self.graphStartY + self.graphHeight + 40,
-                                                                  fill="black", text=axisLabels[activeGraph][0])
-        self.graphObjects["yAxisLabel"] = self.canvas.create_text(self.graphStartX - 60, self.graphStartY + (self.graphHeight / 2),
-                                                                  angle=90, fill="black", text=axisLabels[activeGraph][1])
-
-        self.graphObjects["xAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight,
-                                                             self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
-                                                             fill="black", width=2)
-        if activeGraph == "Gini Coefficient":
-            self.graphObjects["upperXAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY,
-                                                                      self.graphStartX + self.graphWidth, self.graphStartY,
-                                                                      fill="black", width=2)
-            xTicks = 10
-        elif activeGraph == "Tag Histogram":
-            xTicks = self.sugarscape.configuration["agentTagStringLength"]
-        else:
-            xTicks = self.xTicks
-        xTickOffset = 0 if activeGraph != "Tag Histogram" or xTicks == 0 else -1 * self.graphWidth / xTicks / 2
-        for i in range(1, xTicks + 1):
-            x0 = x1 = self.graphStartX + (self.graphWidth * i / xTicks) + xTickOffset
-            y0 = self.graphStartY + self.graphHeight
-            y1 = y0 + 10
-            self.graphObjects["xTicks"][i / xTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
-            y0 = y1 + 10
-            self.graphObjects["xTickLabels"][i / xTicks] = self.canvas.create_text(x0, y0, fill="black")
-
-        self.graphObjects["yAxis"] = self.canvas.create_line(self.graphStartX, self.graphStartY,
-                                                             self.graphStartX, self.graphStartY + self.graphHeight,
-                                                             fill="black", width=2)
-        if activeGraph == "Gini Coefficient":
-            self.graphObjects["rightYAxis"] = self.canvas.create_line(self.graphStartX + self.graphWidth, self.graphStartY,
-                                                                      self.graphStartX + self.graphWidth, self.graphStartY + self.graphHeight,
-                                                                      fill="black", width=2)
-        yTicks = self.yTicks if activeGraph != "Gini Coefficient" else 10
-        for i in range(1, yTicks + 1):
-            x0 = self.graphStartX - 10
-            x1 = self.graphStartX
-            y0 = y1 = self.graphStartY + (self.graphHeight * (yTicks - i) / yTicks)
-            self.graphObjects["yTicks"][i / yTicks] = self.canvas.create_line(x0, y0, x1, y1, fill="black", width=2)
-            x0 = self.graphStartX - 20
-            self.graphObjects["yTickLabels"][i / yTicks] = self.canvas.create_text(x0, y0, fill="black", anchor="e")
-
-        if activeGraph == "Gini Coefficient":
-             self.updateGraphAxes(100, 100)
-             self.graphObjects["equalityLine"] = self.canvas.create_line(self.graphStartX, self.graphStartY + self.graphHeight,
-                                                                         self.graphStartX + self.graphWidth, self.graphStartY,
-                                                                         fill="black", width=2)
-
-    def configureHistogram(self):
-        activeGraph = self.activeGraph.get()
-        histogramBins = self.xTicks if activeGraph != "Tag Histogram" else self.sugarscape.configuration["agentTagStringLength"]
-        self.configureGraphAxes()
-
-        self.graphObjects["bins"] = {}
-        self.graphObjects["binLabels"] = {}
-        for i in range(histogramBins):
-            x0, y0 = self.graphStartX + i * self.graphWidth / histogramBins, self.graphStartY + self.graphHeight
-            x1, y1 = self.graphStartX + (i + 1) * self.graphWidth / histogramBins, self.graphStartY + self.graphHeight
-            self.graphObjects["bins"][i] = self.canvas.create_rectangle(x0, y0, x1, y1, fill="magenta", outline="black", width=2)
-            x0, y0 = self.graphStartX + (i + 0.5) * self.graphWidth / histogramBins, self.graphStartY + self.graphHeight - 10
-            self.graphObjects["binLabels"][i] = self.canvas.create_text(x0, y0, fill="black")
-        if self.sugarscape.timestep != 0:
-            self.updateHistogram()
-
-    def configureLorenzCurve(self):
-        self.configureGraphAxes()
-        self.graphObjects["giniCoefficientLabel"] = self.canvas.create_text(
-            self.graphStartX + 20, self.graphStartY + 20, anchor="nw", fill="black", text="Gini coefficient:")
-        if self.sugarscape.timestep != 0:
-            self.updateLorenzCurve()
-
     def doGraphTimestep(self):
         activeGraph = self.activeGraph.get()
         if activeGraph == "Gini Coefficient":
             self.updateLorenzCurve()
         else:
             self.updateHistogram()
+
+    def doNetworkMenu(self):
+        if self.activeNetwork.get() != "None":
+            self.widgets["graphButton"].configure(state="disabled")
+            self.widgets["agentColorButton"].configure(state="disabled")
+            self.widgets["environmentColorButton"].configure(state="disabled")
+        else:
+            self.widgets["graphButton"].configure(state="normal")
+            self.widgets["agentColorButton"].configure(state="normal")
+            self.widgets["environmentColorButton"].configure(state="normal")
+        self.destroyCanvas()
+        self.configureCanvas()
+        self.configureEnvironment()
+        self.window.update()
 
     def doPlayButton(self, *args):
         self.sugarscape.toggleRun()
@@ -405,20 +410,6 @@ class GUI:
                     self.clearHighlight()
 
         self.updateLabels()
-        self.window.update()
-
-    def doNetworkMenu(self):
-        if self.activeNetwork.get() != "None":
-            self.widgets["graphButton"].configure(state="disabled")
-            self.widgets["agentColorButton"].configure(state="disabled")
-            self.widgets["environmentColorButton"].configure(state="disabled")
-        else:
-            self.widgets["graphButton"].configure(state="normal")
-            self.widgets["agentColorButton"].configure(state="normal")
-            self.widgets["environmentColorButton"].configure(state="normal")
-        self.destroyCanvas()
-        self.configureCanvas()
-        self.configureEnvironment()
         self.window.update()
 
     def doWindowClose(self, *args):
@@ -511,24 +502,23 @@ class GUI:
         cell = self.sugarscape.environment.findCell(gridX, gridY)
         return cell
 
-    def updateHighlightedCellStats(self):
-        cell = self.highlightedCell
-        if cell != None:
-            cellSeason = cell.season if cell.season != None else '-'
-            cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
-            agent = cell.agent
-            if agent != None:
-                agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "
-                agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | "
-                agentStats += f"Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)} | Decision Model: {agent.decisionModel}"
-            else:
-                agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: -"
-            cellStats += f"\n{agentStats}"
-        else:
-            cellStats = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - "
-        
-        label = self.widgets["cellLabel"]
-        label.config(text=cellStats)
+    def findColorRange(self, startColor, endColor, minValue, maxValue):
+        numColors = maxValue - minValue + 1
+        if numColors < 2:
+            return {minValue: endColor}
+
+        startRGB = self.hexToInt(startColor)
+        endRGB = self.hexToInt(endColor)
+        colorRange = {}
+        for i in range(numColors):
+            factor = i / (numColors - 1)
+            interpolatedRGB = [
+                int(startValue + (endValue - startValue) * factor)
+                for startValue, endValue in zip(startRGB, endRGB)
+            ]
+            colorRange[minValue + i] = self.intToHex(interpolatedRGB)
+
+        return colorRange
 
     def hexToInt(self, hexval):
         intvals = []
@@ -564,24 +554,28 @@ class GUI:
         agent = cell.agent
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
-                return self.recolorByResourceAmount(cell, self.colors["pollution"])
+                return self.colors["pollution"][min(round(cell.pollution), 20)]
+            elif cell.sugar > 0 and cell.spice == 0:
+                return self.colors["sugar"][cell.sugar]
+            elif cell.spice > 0 and cell.sugar == 0:
+                return self.colors["spice"][cell.spice]
             else:
-                if cell.sugar > 0 and cell.spice == 0:
-                    return self.recolorByResourceAmount(cell, self.colors["sugar"])
-                elif cell.spice > 0 and cell.sugar == 0:
-                    return self.recolorByResourceAmount(cell, self.colors["spice"])
-                else:
-                    return self.recolorByResourceAmount(cell, self.colors["sugarAndSpice"])
-        elif agent.sex != None and self.activeColorOptions["agent"] == "Sex":
-            return self.colors[agent.sex]
-        elif agent.tribe != None and self.activeColorOptions["agent"] == "Tribes":
-            return self.colors[str(agent.tribe)]
+                return self.colors["sugarAndSpice"][cell.sugar + cell.spice]
+
         elif agent.decisionModel != None and self.activeColorOptions["agent"] == "Decision Models":
             return self.colors[agent.decisionModel]
-        elif len(agent.diseases) > 0 and self.activeColorOptions["agent"] == "Disease":
-            return self.colors["sick"]
-        elif len(agent.diseases) == 0 and self.activeColorOptions["agent"] == "Disease":
-            return self.colors["healthy"]
+        elif self.activeColorOptions["agent"] == "Disease":
+            return self.colors["sick"] if len(agent.diseases) > 0 else self.colors["healthy"]
+        elif self.activeColorOptions["agent"] == "Metabolism":
+            return self.colors["metabolism"][agent.sugarMetabolism + agent.spiceMetabolism]
+        elif self.activeColorOptions["agent"] == "Movement":
+            return self.colors["movement"][agent.movement]
+        elif self.activeColorOptions["agent"] == "Sex" and agent.sex != None:
+            return self.colors[agent.sex]
+        elif self.activeColorOptions["agent"] == "Tribes" and agent.tribe != None:
+            return self.colors[str(agent.tribe)]
+        elif self.activeColorOptions["agent"] == "Vision":
+            return self.colors["vision"][agent.vision]
         return self.colors["noSex"]
 
     def lookupNetworkColor(self, cell):
@@ -614,33 +608,6 @@ class GUI:
             return self.colors["sick"] if agent.isSick() == True else self.colors["healthy"]
         return "black"
 
-    def recolorByResourceAmount(self, cell, fillColor):
-        recolorFactor = 0
-        if self.activeColorOptions["environment"] == "Pollution":
-            # Since global max pollution changes at each timestep, set constant to prevent misleading recoloring of cells
-            maxPollution = 20
-            # Once a cell has exceeded the number of colors made possible with maxPollution, keep using the max color
-            recolorFactor = min(1, cell.pollution / maxPollution)
-        else:
-            maxSugar = self.sugarscape.environment.globalMaxSugar
-            maxSpice = self.sugarscape.environment.globalMaxSpice
-            if maxSugar == 0 and maxSpice == 0:
-                recolorFactor = 0
-            elif cell.sugar > 0 and cell.spice == 0 and maxSugar > 0:
-                recolorFactor = cell.sugar / maxSugar
-            elif cell.spice > 0 and cell.sugar == 0 and maxSpice > 0:
-                recolorFactor = cell.spice / maxSpice
-            else:
-                recolorFactor = (cell.sugar + cell.spice) / (maxSugar + maxSpice)
-        subcolors = self.hexToInt(fillColor)
-        i = 0
-        for color in subcolors:
-            color = int(color + (255 - color) * (1 - recolorFactor))
-            subcolors[i] = color
-            i += 1
-        fillColor = self.intToHex(subcolors)
-        return fillColor
-
     def resizeInterface(self, event=None):
         # Do not do resizing if capturing a user input event but the event does not come from the GUI window
         if event != None and (event.widget != self.window or (self.screenHeight == event.height and self.screenWidth == event.width)):
@@ -670,6 +637,25 @@ class GUI:
         self.graphWidth = max(canvasWidth - 2 * self.graphBorder, 0)
         self.graphStartY = self.graphBorder
         self.graphHeight = max(canvasHeight - 2 * self.graphBorder, 0)
+
+    def updateHighlightedCellStats(self):
+        cell = self.highlightedCell
+        if cell != None:
+            cellSeason = cell.season if cell.season != None else '-'
+            cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
+            agent = cell.agent
+            if agent != None:
+                agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "
+                agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | "
+                agentStats += f"Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)} | Decision Model: {agent.decisionModel}"
+            else:
+                agentStats = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: -"
+            cellStats += f"\n{agentStats}"
+        else:
+            cellStats = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -\nAgent: - | Age: - | Sugar: - | Spice: - "
+
+        label = self.widgets["cellLabel"]
+        label.config(text=cellStats)
 
     def updateHistogram(self):
         bins = self.graphObjects["bins"]

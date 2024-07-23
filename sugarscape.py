@@ -728,7 +728,7 @@ class Sugarscape:
 
         meanTribeTags = [0] * self.configuration["agentTagStringLength"]
         totalPopulation = len(self.agents)
-        if agent.tags != None and totalPopulation > 0:
+        if self.configuration["agentTagStringLength"] > 0 and totalPopulation > 0:
             for agent in self.agents:
                 meanTribeTags = [i + j for i, j in zip(meanTribeTags, agent.tags)]
             meanTribeTags = [round(tag / totalPopulation, 2) * 100 for tag in meanTribeTags]
