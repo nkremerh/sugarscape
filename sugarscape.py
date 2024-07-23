@@ -995,6 +995,8 @@ def verifyConfiguration(configuration):
     negativeFlag = 0
     for configName, configValue in configuration.items():
         if isinstance(configValue, list):
+            if len(configValue) == 0:
+                continue
             configType = type(configValue[0])
             if configName != "environmentPollutionDiffusionTimeFrame" and configName != "environmentPollutionTimeFrame":
                 configValue.sort()
