@@ -681,6 +681,8 @@ class Sugarscape:
         # Calculate normalized area of Lorenz curve of agent wealths
         numAgents = len(agentWealths)
         totalWealth = sum(agentWealths)
+        if totalWealth == 0:
+            return 1
         cumulativeWealth = 0
         lorenzCurveArea = 0
         for i in range(numAgents - 1):
@@ -736,13 +738,16 @@ class Sugarscape:
         agentWealths.sort()
         totalWealth = sum(agentWealths)
         cumulativeWealth = 0
-        lorenzCurvePoints = [(0, 0)]
-        for i, wealth in enumerate(agentWealths):
-            cumulativePopulation = (i + 1)
-            cumulativeWealth += wealth
-            lorenzCurvePoints.append((cumulativePopulation / totalPopulation, cumulativeWealth / totalWealth))
-        if lorenzCurvePoints[-1] != (1, 1):
-            lorenzCurvePoints.append((1, 1))
+        if totalWealth > 0 and len(agentWealths) > 0:
+            lorenzCurvePoints = [(0, 0)]
+            for i, wealth in enumerate(agentWealths):
+                cumulativePopulation = (i + 1)
+                cumulativeWealth += wealth
+                lorenzCurvePoints.append((cumulativePopulation / totalPopulation, cumulativeWealth / totalWealth))
+            if lorenzCurvePoints[-1] != (1, 1):
+                lorenzCurvePoints.append((1, 1))
+        else:
+            lorenzCurvePoints = [(0, 0), (1, 1)]
 
         self.graphStats["ageBins"] = ageBins
         self.graphStats["sugarBins"] = sugarBins
