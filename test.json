@@ -1,0 +1,217 @@
+{
+    "sugarscapeOptions": {
+        "agentAggressionFactor": [
+            0,
+            0
+        ],
+        "agentBaseInterestRate": [
+            0.0,
+            0.0
+        ],
+        "agentDecisionModels": [
+            "none"
+        ],
+        "agentDecisionModel": null,
+        "agentDecisionModelFactor": [
+            0,
+            0
+        ],
+        "agentDecisionModelLookaheadDiscount": [
+            0,
+            0
+        ],
+        "agentDecisionModelLookaheadFactor": [
+            0
+        ],
+        "agentFemaleInfertilityAge": [
+            0,
+            0
+        ],
+        "agentFemaleFertilityAge": [
+            0,
+            0
+        ],
+        "agentFertilityFactor": [
+            0,
+            0
+        ],
+        "agentImmuneSystemLength": 0,
+        "agentInheritancePolicy": "none",
+        "agentLendingFactor": [
+            0,
+            0
+        ],
+        "agentLoanDuration": [
+            0,
+            0
+        ],
+        "agentLookaheadFactor": [
+            0,
+            0
+        ],
+        "agentMaleInfertilityAge": [
+            0,
+            0
+        ],
+        "agentMaleFertilityAge": [
+            0,
+            0
+        ],
+        "agentMaleToFemaleRatio": 1.0,
+        "agentMaxAge": [
+            -1,
+            -1
+        ],
+        "agentMaxFriends": [
+            0,
+            0
+        ],
+        "agentMovement": [
+            1,
+            6
+        ],
+        "agentMovementMode": "cardinal",
+        "agentReplacements": 0,
+        "agentSelfishnessFactor": [
+            -1,
+            -1
+        ],
+        "agentSpiceMetabolism": [
+            0,
+            0
+        ],
+        "agentStartingSpice": [
+            0,
+            0
+        ],
+        "agentStartingSugar": [
+            10,
+            40
+        ],
+        "agentStartingQuadrants": [
+            1,
+            2,
+            3,
+            4
+        ],
+        "agentSugarMetabolism": [
+            1,
+            4
+        ],
+        "agentTagPreferences": false,
+        "agentTagStringLength": 0,
+        "agentTradeFactor": [
+            0,
+            0
+        ],
+        "agentUniversalSpice": [
+            0,
+            0
+        ],
+        "agentUniversalSugar": [
+            0,
+            0
+        ],
+        "agentVision": [
+            1,
+            6
+        ],
+        "agentVisionMode": "cardinal",
+        "debugMode": [
+            "none"
+        ],
+        "diseaseAggressionPenalty": [
+            0,
+            0
+        ],
+        "diseaseFertilityPenalty": [
+            0,
+            0
+        ],
+        "diseaseMovementPenalty": [
+            0,
+            0
+        ],
+        "diseaseSpiceMetabolismPenalty": [
+            0,
+            0
+        ],
+        "diseaseSugarMetabolismPenalty": [
+            0,
+            0
+        ],
+        "diseaseTagStringLength": [
+            0,
+            0
+        ],
+        "diseaseVisionPenalty": [
+            0,
+            0
+        ],
+        "environmentEquator": -1,
+        "environmentHeight": 50,
+        "environmentMaxCombatLoot": 0,
+        "environmentMaxSpice": 0,
+        "environmentMaxSugar": 4,
+        "environmentMaxTribes": 0,
+        "environmentPollutionDiffusionDelay": 0,
+        "environmentPollutionDiffusionTimeframe": [
+            0,
+            0
+        ],
+        "environmentPollutionTimeframe": [
+            0,
+            0
+        ],
+        "environmentQuadrantSizeFactor": 1,
+        "environmentSeasonalGrowbackDelay": 0,
+        "environmentSeasonInterval": 0,
+        "environmentSpiceConsumptionPollutionFactor": 0,
+        "environmentSpicePeaks": [
+            [
+                35,
+                35
+            ],
+            [
+                15,
+                15
+            ]
+        ],
+        "environmentSpiceProductionPollutionFactor": 0,
+        "environmentSpiceRegrowRate": 0,
+        "environmentSugarConsumptionPollutionFactor": 0,
+        "environmentSugarPeaks": [
+            [
+                35,
+                15
+            ],
+            [
+                15,
+                35
+            ]
+        ],
+        "environmentSugarProductionPollutionFactor": 0,
+        "environmentSugarRegrowRate": 1,
+        "environmentUniversalSpiceIncomeInterval": 0,
+        "environmentUniversalSugarIncomeInterval": 0,
+        "environmentWidth": 50,
+        "environmentWraparound": true,
+        "headlessMode": false,
+        "interfaceHeight": 1000,
+        "interfaceWidth": 900,
+        "keepAlivePostExtinction": false,
+        "logfile": null,
+        "logfileFormat": "json",
+        "neighborhoodMode": "vonNeumann",
+        "profileMode": false,
+        "screenshots": false,
+        "seed": -1,
+        "startingAgents": 250,
+        "startingDiseases": 0,
+        "startingDiseasesPerAgent": [
+            0,
+            0
+        ],
+        "timesteps": 200
+    }
+}
