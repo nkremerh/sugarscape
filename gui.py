@@ -10,16 +10,14 @@ class GUI:
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
 
-        sugarColors = self.findColorRange("#FFFFFF", "#F2FA00", 0, sugarscape.configuration["environmentMaxSugar"])
-        spiceColors = self.findColorRange("#FFFFFF", "#9B4722", 0, sugarscape.configuration["environmentMaxSpice"])
-        sugarAndSpiceColors = self.findColorRange("#FFFFFF", "#CFB20E", 0, sugarscape.configuration["environmentMaxSugar"] + sugarscape.configuration["environmentMaxSpice"])
+        sugarAndSpiceColors = self.findSugarAndSpiceColors("#F2FA00", "#9B4722")
         pollutionColors = self.findColorRange("#FFFFFF", "#803280", 0, 20)
         minMetabolism = sugarscape.configuration["agentSugarMetabolism"][0] + sugarscape.configuration["agentSpiceMetabolism"][0]
         maxMetabolism = sugarscape.configuration["agentSugarMetabolism"][1] + sugarscape.configuration["agentSpiceMetabolism"][1]
         metabolismColors = self.findColorRange("#00FF0000", "#FF0000", minMetabolism, maxMetabolism)
         movementColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentMovement"][0], sugarscape.configuration["agentMovement"][1])
         visionColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentVision"][0], sugarscape.configuration["agentVision"][1])
-        self.colors = {"sugar": sugarColors, "spice": spiceColors, "sugarAndSpice": sugarAndSpiceColors, "pollution": pollutionColors, "healthy": "#3232FA", "sick": "#FA3232", "metabolism": metabolismColors, "movement": movementColors, "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "vision": visionColors}
+        self.colors = {"sugarAndSpice": sugarAndSpiceColors, "pollution": pollutionColors, "healthy": "#3232FA", "sick": "#FA3232", "metabolism": metabolismColors, "movement": movementColors, "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "vision": visionColors}
         self.palette = ["#FA3232", "#3232FA", "#32FA32", "#32FAFA", "#FA32FA", "#AA3232", "#3232AA", "#32AA32", "#32AAAA", "#AA32AA", "#FA8800", "#00FA88", "#8800FA", "#FA8888", "#8888FA", "#88FA88", "#FA3288", "#3288FA", "#88FA32", "#AA66AA", "#66AAAA", "#3ED06E", "#6E3ED0", "#D06E3E", "#000000"]
         numTribes = self.sugarscape.configuration["environmentMaxTribes"]
         numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
@@ -512,11 +510,30 @@ class GUI:
         colorRange = {}
         for i in range(numColors):
             factor = i / (numColors - 1)
-            interpolatedRGB = [
-                int(startValue + (endValue - startValue) * factor)
-                for startValue, endValue in zip(startRGB, endRGB)
-            ]
+            interpolatedRGB = self.interpolateColor(startRGB, endRGB, factor)
             colorRange[minValue + i] = self.intToHex(interpolatedRGB)
+
+        return colorRange
+
+    def findSugarAndSpiceColors(self, sugarColor, spiceColor):
+        sugarRGB = self.hexToInt(sugarColor)
+        spiceRGB = self.hexToInt(spiceColor)
+        sugarAndSpiceRGB = self.interpolateColor(sugarRGB, spiceRGB, 0.5)
+        whiteRGB = [255, 255, 255]
+
+        maxSugar = self.sugarscape.configuration["environmentMaxSugar"]
+        maxSpice = self.sugarscape.configuration["environmentMaxSpice"]
+        colorRange = [[None for spice in range(maxSpice + 1)] for sugar in range(maxSugar + 1)]
+
+        for sugar in range(maxSugar + 1):
+            sugarFactor = sugar / maxSugar if maxSugar > 0 else 0
+            for spice in range(maxSpice + 1):
+                spiceFactor = spice / maxSpice if maxSpice > 0 else 0
+
+                top = self.interpolateColor(whiteRGB, spiceRGB, spiceFactor)
+                bottom = self.interpolateColor(sugarRGB, sugarAndSpiceRGB, spiceFactor)
+                finalRGB = self.interpolateColor(top, bottom, sugarFactor)
+                colorRange[sugar][spice] = self.intToHex(finalRGB)
 
         return colorRange
 
@@ -540,6 +557,10 @@ class GUI:
             self.canvas.delete(self.highlightRectangle)
         self.highlightRectangle = self.canvas.create_rectangle(x1, y1, x2, y2, fill="", activefill="#88cafc", outline="black", width=5)
 
+    def interpolateColor(self, startRGB, endRGB, factor):
+        return [int((1 - factor) * startValue + factor * endValue)
+                for startValue, endValue in zip(startRGB, endRGB)]
+
     def intToHex(self, intvals):
         hexval = "#"
         for i in intvals:
@@ -555,12 +576,8 @@ class GUI:
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
                 return self.colors["pollution"][min(round(cell.pollution), 20)]
-            elif cell.sugar > 0 and cell.spice == 0:
-                return self.colors["sugar"][cell.sugar]
-            elif cell.spice > 0 and cell.sugar == 0:
-                return self.colors["spice"][cell.spice]
             else:
-                return self.colors["sugarAndSpice"][cell.sugar + cell.spice]
+                return self.colors["sugarAndSpice"][cell.sugar][cell.spice]
 
         elif agent.decisionModel != None and self.activeColorOptions["agent"] == "Decision Models":
             return self.colors[agent.decisionModel]
