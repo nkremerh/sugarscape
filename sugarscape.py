@@ -106,7 +106,7 @@ class Sugarscape:
         quadrants = len(emptyCells)
         if totalCells == 0:
             return
-        if len(self.agents) + numAgents > totalCells:
+        if numAgents > totalCells:
             if "all" in self.debug or "sugarscape" in self.debug:
                 print(f"Could not allocate {numAgents} agents. Allocating maximum of {totalCells}.")
             numAgents = totalCells
@@ -215,8 +215,6 @@ class Sugarscape:
         self.environment.findCellRanges()
 
     def doTimestep(self):
-        self.removeDeadAgents()
-        self.replaceDeadAgents()
         if self.timestep >= self.maxTimestep:
             self.toggleEnd()
             return
@@ -231,6 +229,7 @@ class Sugarscape:
             for agent in self.agents:
                 agent.doTimestep(self.timestep)
             self.removeDeadAgents()
+            self.replaceDeadAgents()
             self.updateRuntimeStats()
             if self.gui != None:
                 self.updateGraphStats()
@@ -628,8 +627,6 @@ class Sugarscape:
         if numAgents < self.configuration["agentReplacements"]:
             numReplacements = self.configuration["agentReplacements"] - numAgents
             self.configureAgents(numReplacements)
-            if self.gui != None:
-                self.gui.doTimestep()
 
     def runSimulation(self, timesteps=5):
         self.startLog()
