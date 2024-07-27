@@ -630,6 +630,8 @@ class Sugarscape:
 
     def runSimulation(self, timesteps=5):
         self.startLog()
+        if self.log == None:
+            self.updateRuntimeStats()
         if self.gui != None:
             # Simulation begins paused until start button in GUI pressed
             self.gui.updateLabels()
