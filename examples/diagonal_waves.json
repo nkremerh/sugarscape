@@ -1,0 +1,12 @@
+{
+    "__README__": "Emergent agent migration waves with constant sugar growback (pgs. 42-43 of Growing Artificial Societies).",
+    "agentMovement": [1, 1000],
+    "agentVision": [1, 10],
+    "agentStartingSugar": [5, 25],
+    "environmentMaxSugar": 10,
+    "environmentQuadrantSizeFactor": 0.8,
+    "environmentStartingQuadrants": [4],
+    "seed": 12345,
+    "startingAgents": 300,
+    "timesteps": 500
+}
