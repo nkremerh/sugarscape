@@ -45,6 +45,8 @@ class Sugarscape:
         self.debug = configuration["debugMode"]
         self.keepAlive = configuration["keepAlivePostExtinction"]
         self.agents = []
+        self.agentsReplaced = 0
+        self.agentsBorn = 0
         self.deadAgents = []
         self.diseases = []
         self.activeQuadrants = self.findActiveQuadrants()
@@ -58,7 +60,7 @@ class Sugarscape:
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanMovement": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                              "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "totalWealthLost": 0,
-                             "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
+                             "totalMetabolismCost": 0, "agentsReplaced": 0, "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0,
                              "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
@@ -67,6 +69,7 @@ class Sugarscape:
         self.logFormat = configuration["logfileFormat"]
 
     def addAgent(self, agent):
+        self.agentsBorn += 1
         self.agents.append(agent)
 
     def addSpicePeak(self, startX, startY, radius, maxSpice):
@@ -106,10 +109,12 @@ class Sugarscape:
         quadrants = len(emptyCells)
         if totalCells == 0:
             return
-        if len(self.agents) + numAgents > totalCells:
+        if numAgents > totalCells:
             if "all" in self.debug or "sugarscape" in self.debug:
                 print(f"Could not allocate {numAgents} agents. Allocating maximum of {totalCells}.")
             numAgents = totalCells
+        if self.timestep > 0:
+            self.agentsReplaced = numAgents
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
         for quadrant in emptyCells:
@@ -215,8 +220,6 @@ class Sugarscape:
         self.environment.findCellRanges()
 
     def doTimestep(self):
-        self.removeDeadAgents()
-        self.replaceDeadAgents()
         if self.timestep >= self.maxTimestep:
             self.toggleEnd()
             return
@@ -231,6 +234,7 @@ class Sugarscape:
             for agent in self.agents:
                 agent.doTimestep(self.timestep)
             self.removeDeadAgents()
+            self.replaceDeadAgents()
             self.updateRuntimeStats()
             if self.gui != None:
                 self.updateGraphStats()
@@ -628,11 +632,11 @@ class Sugarscape:
         if numAgents < self.configuration["agentReplacements"]:
             numReplacements = self.configuration["agentReplacements"] - numAgents
             self.configureAgents(numReplacements)
-            if self.gui != None:
-                self.gui.doTimestep()
 
     def runSimulation(self, timesteps=5):
         self.startLog()
+        if self.log == None:
+            self.updateRuntimeStats()
         if self.gui != None:
             # Simulation begins paused until start button in GUI pressed
             self.gui.updateLabels()
@@ -796,7 +800,6 @@ class Sugarscape:
         agentAgingDeaths = 0
         agentWealthBurnRate = 0
         agentMeanTimeToLive = 0
-        agentReproduced = 0
         agentTotalMetabolism = 0
 
         for agent in self.agents:
@@ -823,7 +826,6 @@ class Sugarscape:
             agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
             agentWealthBurnRate += agentTimeToLive
             agentMeanTimeToLive += agentTimeToLiveAgeLimited
-            agentReproduced += agent.lastReproduced
             agentTotalMetabolism += agent.sugarMetabolism + agent.spiceMetabolism
 
             if agent.isSick():
@@ -882,7 +884,6 @@ class Sugarscape:
             meanAgeAtDeath += agent.age
             agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
             totalWealthLost += agentWealth
-            agentReproduced += agent.lastReproduced
             agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
             agentDiseaseDeaths += 1 if agent.causeOfDeath == "disease" else 0
             agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
@@ -918,7 +919,10 @@ class Sugarscape:
         self.runtimeStats["agentDiseaseDeaths"] = agentDiseaseDeaths
         self.runtimeStats["agentCombatDeaths"] = agentCombatDeaths
         self.runtimeStats["agentAgingDeaths"] = agentAgingDeaths
-        self.runtimeStats["agentReproduced"] = agentReproduced
+        self.runtimeStats["agentsReplaced"] = self.agentsReplaced
+        self.runtimeStats["agentsBorn"] = self.agentsBorn
+        self.agentsReplaced = 0
+        self.agentsBorn = 0
         self.runtimeStats["agentWealthCollected"] = agentWealthCollected
         self.runtimeStats["agentWealthTotal"] = agentWealthTotal
         self.runtimeStats["agentWealthBurnRate"] = agentWealthBurnRate
