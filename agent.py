@@ -672,7 +672,7 @@ class Agent:
         cell = self.cell if newCell == None else newCell
         vision = self.findVision()
         movement = self.findMovement()
-        cellRange = min(vision, movement)
+        cellRange = min(min(vision, movement), self.cell.environment.maxCellDistance)
         allCells = {}
         if cellRange <= 0:
             self.cellsInRange = allCells
