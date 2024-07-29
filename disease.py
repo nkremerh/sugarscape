@@ -12,6 +12,12 @@ class Disease:
         self.aggressionPenalty = configuration["aggressionPenalty"]
         self.tags = configuration["tags"]
         self.configuration = configuration
+        self.infectors = []
+        self.infected = 0
+
+    def resetRStats(self):
+        self.infectors = []
+        self.infected = 0
 
     def __str__(self):
         return f"{self.ID}"

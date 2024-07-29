@@ -170,6 +170,9 @@ class Agent:
         caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex}
         if infector != None:
             caughtDisease["infector"] = infector
+            if infector not in disease.infectors:
+                disease.infectors.append(infector.ID)
+        disease.infected += 1
         self.diseases.append(caughtDisease)
         self.updateDiseaseEffects(disease)
         self.findCellsInRange()

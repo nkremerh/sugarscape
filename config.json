@@ -87,6 +87,7 @@
         "keepAlivePostExtinction": false,
         "logfile": "log.json",
         "logfileFormat": "json",
+        "logfileDisease": "diseaselog.json",
         "neighborhoodMode": "vonNeumann",
         "profileMode": false,
         "screenshots": false,

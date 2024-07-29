@@ -65,6 +65,9 @@ class Sugarscape:
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
+        self.diseaselog = open(configuration["logfileDisease"], 'w')
+        self.diseasesStats = []
+        self.diseasesStats.append({"disease": None, "timestep": None, "totalInfected": None, "newlyInfected": None, "infectors": None, "r": None})
 
     def addAgent(self, agent):
         self.agents.append(agent)
@@ -96,6 +99,12 @@ class Sugarscape:
                 if cellMaxCapacity > self.environment.findCell(i, j).maxSugar:
                     self.environment.findCell(i, j).maxSugar = cellMaxCapacity
                     self.environment.findCell(i, j).sugar = cellMaxCapacity
+
+    def checkActiveDiseases(self):
+        for agent in self.agents:
+            if len(agent.diseases) > 0:
+                return True
+        return False
 
     def configureAgents(self, numAgents):
         if self.environment == None:
@@ -214,11 +223,24 @@ class Sugarscape:
         self.environment.findCellNeighbors()
         self.environment.findCellRanges()
 
+    def countInfectedAgents(self, disease):
+        totalInfected = 0
+        for agent in self.agents:
+            for agentDisease in agent.diseases:
+                if disease == agentDisease["disease"]:
+                    totalInfected += 1
+        return totalInfected
+
     def doTimestep(self):
         self.removeDeadAgents()
         self.replaceDeadAgents()
         if self.timestep >= self.maxTimestep:
             self.toggleEnd()
+            return
+        if self.checkActiveDiseases() == True:
+            for disease in self.diseases:
+                disease.resetRStats()
+        else:
             return
         if "all" in self.debug or "sugarscape" in self.debug:
             print(f"Timestep: {self.timestep}\nLiving Agents: {len(self.agents)}")
@@ -254,6 +276,7 @@ class Sugarscape:
         self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
         self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
         logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
+        self.diseasesStats.sort(key=lambda d: d["disease"])
         if self.logFormat == "csv":
             logString = ""
             # Ensure consistent ordering for CSV format
@@ -263,16 +286,24 @@ class Sugarscape:
                 else:
                     logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
+            # Entire disease log written at the end of the simulation to sort it by disease instead of timestep
+            for disease in self.diseasesStats:
+                diseaselogString = ""
+                for stat in disease.values():
+                    if diseaselogString == "":
+                        diseaselogString += f"{stat}"
+                    else:
+                        diseaselogString += f",{stat}"
+                diseaselogString += "\n"
+                self.diseaselog.write(diseaselogString)
+        else:
+            groupedDiseases = self.groupDiseases()
+            self.diseaselog.write(self.formatDiseaseJSON(groupedDiseases))
         self.log.write(logString)
         self.log.flush()
         self.log.close()
-
-    def endSimulation(self):
-        self.removeDeadAgents()
-        self.endLog()
-        if "all" in self.debug or "sugarscape" in self.debug:
-            print(str(self))
-        exit(0)
+        self.diseaselog.flush()
+        self.diseaselog.close()
 
     def findActiveQuadrants(self):
         quadrants = self.configuration["environmentStartingQuadrants"]
@@ -297,6 +328,15 @@ class Sugarscape:
             quadrantFour = [self.environment.grid[i][j] for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
             cellRange.append(quadrantFour)
         return cellRange
+
+    def formatDiseaseJSON(self, data):
+        formattedData = json.dumps(data, indent=4)
+        formattedData = formattedData.replace(", \"", ",\t\"")
+        formattedData = formattedData.replace("{\n            ", "{")
+        formattedData = formattedData.replace(",\n            ", ", ")
+        formattedData = formattedData.replace("\n        },", "},")
+        formattedData = formattedData.replace("\n        }\n    ]", "}\n    ]")
+        return formattedData
 
     def generateAgentID(self):
         agentID = self.nextAgentID
@@ -333,6 +373,23 @@ class Sugarscape:
         tags = [0 for i in range(zeroes)] + [1 for i in range(ones)]
         random.shuffle(tags)
         return tags
+
+    def groupDiseases(self):
+        groupedDiseases = {}
+        for timestep in self.diseasesStats:
+            disease = timestep["disease"]
+            if disease not in groupedDiseases:
+                groupedDiseases[disease] = []
+            del timestep["disease"]
+            groupedDiseases[disease].append(timestep)
+        return groupedDiseases
+
+    def endSimulation(self):
+        self.removeDeadAgents()
+        self.endLog()
+        if "all" in self.debug or "sugarscape" in self.debug:
+            print(str(self))
+        exit(0)
 
     def pauseSimulation(self):
         while self.run == False:
@@ -665,8 +722,18 @@ class Sugarscape:
                     header += f",{stat}"
             header += "\n"
             self.log.write(header)
+
+            diseaseHeader = ""
+            for stat in (self.diseasesStats[0]):
+                if diseaseHeader == "":
+                    diseaseHeader += f"{stat}"
+                else:
+                    diseaseHeader += f",{stat}"
+            diseaseHeader += "\n"
+            self.diseaselog.write(diseaseHeader)
         else:
             self.log.write("[\n")
+        self.diseasesStats.clear()
         self.updateRuntimeStats()
         self.writeToLog()
 
@@ -890,7 +957,6 @@ class Sugarscape:
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
         self.deadAgents = []
 
-        self.runtimeStats["timestep"] = self.timestep
         self.runtimeStats["population"] = numAgents
         self.runtimeStats["meanMetabolism"] = meanMetabolism
         self.runtimeStats["meanMovement"] = meanMovement
@@ -928,6 +994,17 @@ class Sugarscape:
 
         self.runtimeStats["agentTotalMetabolism"] = agentTotalMetabolism
         self.runtimeStats["totalSickAgents"] = totalSickAgents
+
+        if self.checkActiveDiseases == True:
+            for disease in self.diseases:
+                infectors = len(disease.infectors)
+                newlyInfected = disease.infected
+                r = 0
+                totalInfected = self.countInfectedAgents(disease)
+                if infectors > 0:
+                    r = round(float(newlyInfected / infectors), 2)
+                diseaseInfo = {"disease": disease.ID, "timestep": self.timestep, "totalInfected": totalInfected, "newlyInfected": newlyInfected, "infectors": infectors, "r": r}
+                self.diseasesStats.append(diseaseInfo)
 
     def writeToLog(self):
         if self.log == None:
@@ -1263,6 +1340,7 @@ if __name__ == "__main__":
                      "keepAlivePostExtinction": False,
                      "logfile": None,
                      "logfileFormat": "json",
+                     "logfileDisease": "disease.json",
                      "neighborhoodMode": "vonNeumann",
                      "profileMode": False,
                      "screenshots": False,
