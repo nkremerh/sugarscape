@@ -36,6 +36,16 @@ $(PLOTCHECK): $(DATACHECK)
 
 all: $(DATACHECK) $(PLOTCHECK)
 
+analysis:
+	@for log in $(LOGS); do \
+		if [ -f $$log ]; then \
+			$(PYTHON) analysis.py --log $$log; \
+			exit 0; \
+		fi; \
+	done; \
+	@echo "No log files found."; \
+	exit 1;
+
 data: $(DATACHECK)
 
 plots: $(PLOTCHECK)
