@@ -100,6 +100,12 @@ class Sugarscape:
                     self.environment.findCell(i, j).maxSugar = cellMaxCapacity
                     self.environment.findCell(i, j).sugar = cellMaxCapacity
 
+    def checkActiveDiseases(self):
+        for agent in self.agents:
+            if len(agent.diseases) > 0:
+                return True
+        return False
+
     def configureAgents(self, numAgents):
         if self.environment == None:
             return
@@ -231,8 +237,9 @@ class Sugarscape:
         if self.timestep >= self.maxTimestep:
             self.toggleEnd()
             return
-        for disease in self.diseases:
-            disease.resetRStats()
+        if self.checkActiveDiseases() == True:
+            for disease in self.diseases:
+                disease.resetRStats()
         if "all" in self.debug or "sugarscape" in self.debug:
             print(f"Timestep: {self.timestep}\nLiving Agents: {len(self.agents)}")
         self.timestep += 1
@@ -986,15 +993,16 @@ class Sugarscape:
         self.runtimeStats["agentTotalMetabolism"] = agentTotalMetabolism
         self.runtimeStats["totalSickAgents"] = totalSickAgents
 
-        for disease in self.diseases:
-            infectors = len(disease.infectors)
-            newlyInfected = disease.infected
-            r = 0
-            totalInfected = self.countInfectedAgents(disease)
-            if infectors > 0:
-                r = round(float(newlyInfected / infectors), 2)
-            diseaseInfo = {"disease": disease.ID, "timestep": self.timestep, "totalInfected": totalInfected, "newlyInfected": newlyInfected, "infectors": infectors, "r": r}
-            self.diseasesStats.append(diseaseInfo)
+        if self.checkActiveDiseases() == True:
+            for disease in self.diseases:
+                infectors = len(disease.infectors)
+                newlyInfected = disease.infected
+                r = 0
+                totalInfected = self.countInfectedAgents(disease)
+                if infectors > 0:
+                    r = round(float(newlyInfected / infectors), 2)
+                diseaseInfo = {"disease": disease.ID, "timestep": self.timestep, "totalInfected": totalInfected, "newlyInfected": newlyInfected, "infectors": infectors, "r": r}
+                self.diseasesStats.append(diseaseInfo)
 
     def writeToLog(self):
         if self.log == None:
