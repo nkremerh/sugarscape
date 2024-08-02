@@ -61,7 +61,8 @@ class Sugarscape:
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0,
                              "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
-        diseaseStats = {f"disease{disease.ID}RValue": 0 for disease in self.diseases}
+        diseaseStats = {f"disease0{disease.ID}RValue": 0 for disease in self.diseases if disease.ID < 10}
+        diseaseStats.update({f"disease{disease.ID}RValue": 0 for disease in self.diseases})
         self.runtimeStats.update(diseaseStats)
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
@@ -971,10 +972,12 @@ class Sugarscape:
             infectors = len(disease.infectors)
             newlyInfected = disease.infected
             r = 0
-            totalInfected = self.countInfectedAgents(disease)
             if infectors > 0:
                 r = round(float(newlyInfected / infectors), 2)
-            self.runtimeStats[f"disease{disease.ID}RValue"] = r
+            if disease.ID < 10:
+                self.runtimeStats[f"disease0{disease.ID}RValue"] = r
+            else:
+                self.runtimeStats[f"disease{disease.ID}RValue"] = r
 
     def writeToLog(self):
         if self.log == None:
