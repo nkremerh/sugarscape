@@ -61,9 +61,12 @@ class Sugarscape:
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0,
                              "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
-        diseaseStats = {f"disease0{disease.ID}RValue": 0 for disease in self.diseases if disease.ID < 10}
-        diseaseStats.update({f"disease{disease.ID}RValue": 0 for disease in self.diseases})
-        self.runtimeStats.update(diseaseStats)
+        self.diseaseStats = {}
+        for disease in self.diseases:
+            self.diseaseStats[f"disease{disease.ID}Incidence"] = 0
+            self.diseaseStats[f"disease{disease.ID}Prevalence"] = 0
+            self.diseaseStats[f"disease{disease.ID}RValue"] = 0
+        self.runtimeStats.update(self.diseaseStats)
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -970,14 +973,14 @@ class Sugarscape:
 
         for disease in self.diseases:
             infectors = len(disease.infectors)
-            newlyInfected = disease.infected
+            incidence = disease.infected
+            prevalence = self.countInfectedAgents(disease)
             r = 0
             if infectors > 0:
-                r = round(float(newlyInfected / infectors), 2)
-            if disease.ID < 10:
-                self.runtimeStats[f"disease0{disease.ID}RValue"] = r
-            else:
-                self.runtimeStats[f"disease{disease.ID}RValue"] = r
+                r = round(float(incidence / infectors), 2)
+            self.runtimeStats[f"disease{disease.ID}Incidence"] = incidence
+            self.runtimeStats[f"disease{disease.ID}Prevalence"] = prevalence
+            self.runtimeStats[f"disease{disease.ID}RValue"] = r
 
     def writeToLog(self):
         if self.log == None:
