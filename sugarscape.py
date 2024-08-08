@@ -189,7 +189,6 @@ class Sugarscape:
             timestep = newDisease.startTimestep
             self.diseases.append(newDisease)
             self.diseasesCount[timestep].append(newDisease)
-        self.diseaseStats.sort(key=lambda d: d["disease"])
         self.infectAgents()
 
 
@@ -308,6 +307,7 @@ class Sugarscape:
                     logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
         # temporary, to be deleted
+        self.diseaseStats.sort(key=lambda d: d["disease"])
         for disease in self.diseaseStats:
             diseaselogString = ""
             for stat in disease.values():
