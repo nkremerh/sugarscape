@@ -306,6 +306,11 @@ diseaseSpiceMetabolismPenalty: [float, float]
     Note: Negative values constitute a decrease in agent spice metabolism.
     Default: [0, 0]
 
+diseaseStartTimeframe: [int, int]
+    Set the timestep a disease can be initialized.
+    Default: [0, 0]
+
+
 diseaseSugarMetabolismPenalty: [float, float]
     Set the impact a disease will have on an agent's sugar metabolism rate.
     Note: Negative values constitute a decrease in agent sugar metabolism.

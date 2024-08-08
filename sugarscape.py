@@ -62,19 +62,12 @@ class Sugarscape:
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0,
                              "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
-        """
         self.diseaseStats = {}
         for disease in self.diseases:
             self.diseaseStats[f"disease{disease.ID}Incidence"] = 0
             self.diseaseStats[f"disease{disease.ID}Prevalence"] = 0
             self.diseaseStats[f"disease{disease.ID}RValue"] = 0
         self.runtimeStats.update(self.diseaseStats)
-        """
-        # temporary, to be deleted
-        self.diseaselog = open("diseaselog.csv", 'w')
-        self.diseaseStats = []
-        self.diseaseStats.append({"disease": None, "timestep": None, "incidence": None, "prevalence": None, "RValue": None})
-
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -189,8 +182,8 @@ class Sugarscape:
             timestep = newDisease.startTimestep
             self.diseases.append(newDisease)
             self.diseasesCount[timestep].append(newDisease)
+        self.diseases.sort(key=lambda d: d.ID)
         self.infectAgents()
-
 
     def infectAgents(self):
         timestep = self.timestep
@@ -266,6 +259,7 @@ class Sugarscape:
         if "all" in self.debug or "sugarscape" in self.debug:
             print(f"Timestep: {self.timestep}\nLiving Agents: {len(self.agents)}")
         self.timestep += 1
+        self.infectAgents()
         if self.end == True or (len(self.agents) == 0 and self.keepAlive == False):
             self.toggleEnd()
         else:
@@ -306,23 +300,9 @@ class Sugarscape:
                 else:
                     logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
-        # temporary, to be deleted
-        self.diseaseStats.sort(key=lambda d: d["disease"])
-        for disease in self.diseaseStats:
-            diseaselogString = ""
-            for stat in disease.values():
-                if diseaselogString == "":
-                    diseaselogString += f"{stat}"
-                else:
-                    diseaselogString += f",{stat}"
-            diseaselogString += "\n"
-            self.diseaselog.write(diseaselogString)
         self.log.write(logString)
         self.log.flush()
         self.log.close()
-        # to be deleted
-        self.diseaselog.flush()
-        self.diseaselog.close()
 
     def findActiveQuadrants(self):
         quadrants = self.configuration["environmentStartingQuadrants"]
@@ -724,7 +704,6 @@ class Sugarscape:
             if self.configuration["screenshots"] == True and self.configuration["headlessMode"] == False:
                 self.gui.canvas.postscript(file=f"screenshot{screenshots}.ps", colormode="color")
                 screenshots += 1
-            self.infectAgents()
             self.doTimestep()
             t += 1
             if self.gui != None and self.run == False:
@@ -746,16 +725,6 @@ class Sugarscape:
             self.log.write(header)
         else:
             self.log.write("[\n")
-        # temporary for disease testing
-        diseaseHeader = ""
-        for stat in self.diseaseStats[0]:
-            if diseaseHeader == "":
-                diseaseHeader += f"{stat}"
-            else:
-                diseaseHeader += f",{stat}"
-        diseaseHeader += "\n"
-        self.diseaselog.write(diseaseHeader)
-        self.diseaseStats.clear()
         self.updateRuntimeStats()
         self.writeToLog()
 
@@ -1018,29 +987,16 @@ class Sugarscape:
         self.runtimeStats["agentTotalMetabolism"] = agentTotalMetabolism
         self.runtimeStats["totalSickAgents"] = totalSickAgents
 
-
-
-        if self.checkActiveDiseases() == True:
-            for disease in self.diseases:
-                """
-                prevalence = self.countInfectedAgents(disease)
-                r = 0
-                if infectors > 0:
-                    r = round(float(incidence / infectors), 2)
-                self.runtimeStats[f"disease{disease.ID}Incidence"] = incidence       
-                self.runtimeStats[f"disease{disease.ID}Prevalence"] = prevalence     
-                self.runtimeStats[f"disease{disease.ID}RValue"] = r
-                """
-                # below is temporary, the commented code above is to write to the main log
-                infectors = len(disease.infectors)
-                incidence = disease.infected
-                prevalence = self.countInfectedAgents(disease)
-                r = 0
-                if infectors > 0:
-                    r = round(float(incidence / infectors), 2)
-                diseaseInfo = {"disease": disease.ID, "timestep": self.timestep, "incidence": incidence,
-                               "prevalence": prevalence, "rValue": r}
-                self.diseaseStats.append(diseaseInfo)
+        for disease in self.diseases:
+            infectors = len(disease.infectors)
+            incidence = disease.infected
+            prevalence = self.countInfectedAgents(disease)
+            r = 0
+            if infectors > 0:
+                r = round(float(incidence / infectors), 2)
+            self.runtimeStats[f"disease{disease.ID}Incidence"] = incidence       
+            self.runtimeStats[f"disease{disease.ID}Prevalence"] = prevalence     
+            self.runtimeStats[f"disease{disease.ID}RValue"] = r
 
     def writeToLog(self):
         if self.log == None:

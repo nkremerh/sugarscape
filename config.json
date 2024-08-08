@@ -7,7 +7,7 @@
         "numSeeds": 100,
         "plots": ["deaths", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "wealth"],
         "plotTimesteps": 1000,
-        "pythonAlias": "python"
+        "pythonAlias": "python3"
     },
     "sugarscapeOptions": {
         "__README__": "Default values for Sugarscape simulation provided here. Details can be found in the README.",
@@ -53,7 +53,7 @@
         "diseaseMovementPenalty": [0, 0],
         "diseaseSpiceMetabolismPenalty": [1, 3],
         "diseaseSugarMetabolismPenalty": [1, 3],
-        "diseaseStartTimeframe": [1, 1],
+        "diseaseStartTimeframe": [50, 52],
         "diseaseTagStringLength": [11, 21],
         "diseaseVisionPenalty": [-1, 1],
         "environmentEquator": -1,
@@ -86,15 +86,15 @@
         "interfaceHeight": 1000,
         "interfaceWidth": 900,
         "keepAlivePostExtinction": false,
-        "logfile": "log.json",
-        "logfileFormat": "json",
+        "logfile": "log.csv",
+        "logfileFormat": "csv",
         "neighborhoodMode": "vonNeumann",
         "profileMode": false,
         "screenshots": false,
         "seed": -1,
         "startingAgents": 250,
         "startingDiseases": 50,
-        "startingDiseasesPerAgent": [0, 0],
-        "timesteps": 1000
+        "startingDiseasesPerAgent": [0, 5],
+        "timesteps": 500
     }
 }
