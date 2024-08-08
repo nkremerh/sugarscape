@@ -47,6 +47,7 @@ class Sugarscape:
         self.agents = []
         self.deadAgents = []
         self.diseases = []
+        self.diseasesCount = [[] for i in range(configuration["diseaseStartTimeframe"][1] + 1)]
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
@@ -61,12 +62,19 @@ class Sugarscape:
                              "totalMetabolismCost": 0, "agentReproduced": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
                              "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0,
                              "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "totalSickAgents": 0}
+        """
         self.diseaseStats = {}
         for disease in self.diseases:
             self.diseaseStats[f"disease{disease.ID}Incidence"] = 0
             self.diseaseStats[f"disease{disease.ID}Prevalence"] = 0
             self.diseaseStats[f"disease{disease.ID}RValue"] = 0
         self.runtimeStats.update(self.diseaseStats)
+        """
+        # temporary, to be deleted
+        self.diseaselog = open("diseaselog.csv", 'w')
+        self.diseaseStats = []
+        self.diseaseStats.append({"disease": None, "timestep": None, "incidence": None, "prevalence": None, "RValue": None})
+
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -174,37 +182,51 @@ class Sugarscape:
             numDiseases = numAgents
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
-        random.shuffle(self.agents)
-        diseases = []
         for i in range(numDiseases):
             diseaseID = self.generateDiseaseID()
             diseaseConfiguration = diseaseEndowments[i]
             newDisease = disease.Disease(diseaseID, diseaseConfiguration)
-            diseases.append(newDisease)
+            timestep = newDisease.startTimestep
+            self.diseases.append(newDisease)
+            self.diseasesCount[timestep].append(newDisease)
+        self.diseaseStats.sort(key=lambda d: d["disease"])
+        self.infectAgents()
 
+
+    def infectAgents(self):
+        timestep = self.timestep
+        if timestep > self.configuration["diseaseStartTimeframe"][1]:
+            return
+        diseases = self.diseasesCount[timestep]
+        if len(diseases) == 0:
+            return
         startingDiseases = self.configuration["startingDiseasesPerAgent"]
         minStartingDiseases = startingDiseases[0]
         maxStartingDiseases = startingDiseases[1]
         currStartingDiseases = minStartingDiseases
+        random.shuffle(self.agents)
         for agent in self.agents:
             random.shuffle(diseases)
             for newDisease in diseases:
-                if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
+                if newDisease.startingInfectedAgents == 1 and startingDiseases == [0, 0]:
+                    continue
+                if agent.startingDiseases >= currStartingDiseases and startingDiseases != [0, 0]:
                     currStartingDiseases += 1
                     break
                 hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
                 if hammingDistance == 0:
                     continue
                 agent.catchDisease(newDisease)
-                self.diseases.append(newDisease)
+                agent.startingDiseases += 1
+                newDisease.startingInfectedAgents += 1
                 if startingDiseases == [0, 0]:
                     diseases.remove(newDisease)
                     break
             if currStartingDiseases > maxStartingDiseases:
                 currStartingDiseases = minStartingDiseases
-        self.diseases.sort(key=lambda d: d.ID)
-        if startingDiseases == [0, 0] and len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-            print(f"Could not place {len(diseases)} diseases.")
+        if startingDiseases == [0, 0] and self.timestep == self.configuration["diseaseStartTimeframe"][1] and len(diseases) > 0:
+            if  "all" in self.debug or "sugarscape" in self.debug:
+                print(f"Could not place {len(diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
@@ -240,9 +262,8 @@ class Sugarscape:
         if self.timestep >= self.maxTimestep:
             self.toggleEnd()
             return
-        if self.checkActiveDiseases() == True:
-            for disease in self.diseases:
-                disease.resetRStats()
+        for disease in self.diseases:
+            disease.resetRStats()
         if "all" in self.debug or "sugarscape" in self.debug:
             print(f"Timestep: {self.timestep}\nLiving Agents: {len(self.agents)}")
         self.timestep += 1
@@ -286,9 +307,22 @@ class Sugarscape:
                 else:
                     logString += f",{self.runtimeStats[stat]}"
             logString += "\n"
+        # temporary, to be deleted
+        for disease in self.diseaseStats:
+            diseaselogString = ""
+            for stat in disease.values():
+                if diseaselogString == "":
+                    diseaselogString += f"{stat}"
+                else:
+                    diseaselogString += f",{stat}"
+            diseaselogString += "\n"
+            self.diseaselog.write(diseaselogString)
         self.log.write(logString)
         self.log.flush()
         self.log.close()
+        # to be deleted
+        self.diseaselog.flush()
+        self.diseaselog.close()
 
     def findActiveQuadrants(self):
         quadrants = self.configuration["environmentStartingQuadrants"]
@@ -313,15 +347,6 @@ class Sugarscape:
             quadrantFour = [self.environment.grid[i][j] for j in range(self.environmentHeight - quadrantHeight, self.environmentHeight) for i in range(quadrantWidth)]
             cellRange.append(quadrantFour)
         return cellRange
-
-    def formatDiseaseJSON(self, data):
-        formattedData = json.dumps(data, indent=4)
-        formattedData = formattedData.replace(", \"", ",\t\"")
-        formattedData = formattedData.replace("{\n            ", "{")
-        formattedData = formattedData.replace(",\n            ", ", ")
-        formattedData = formattedData.replace("\n        },", "},")
-        formattedData = formattedData.replace("\n        }\n    ]", "}\n    ]")
-        return formattedData
 
     def generateAgentID(self):
         agentID = self.nextAgentID
@@ -392,6 +417,7 @@ class Sugarscape:
         fertilityPenalty = configs["diseaseFertilityPenalty"]
         aggressionPenalty = configs["diseaseAggressionPenalty"]
         tagLengths = configs["diseaseTagStringLength"]
+        startTimeframe = configs["diseaseStartTimeframe"]
 
         minSugarMetabolismPenalty = sugarMetabolismPenalty[0]
         minSpiceMetabolismPenalty = spiceMetabolismPenalty[0]
@@ -400,6 +426,7 @@ class Sugarscape:
         minFertilityPenalty = fertilityPenalty[0]
         minAggressionPenalty = aggressionPenalty[0]
         minTagLength = tagLengths[0]
+        minStartTimeframe = startTimeframe[0]
 
         maxSugarMetabolismPenalty = sugarMetabolismPenalty[1]
         maxSpiceMetabolismPenalty = spiceMetabolismPenalty[1]
@@ -408,6 +435,7 @@ class Sugarscape:
         maxFertilityPenalty = fertilityPenalty[1]
         maxAggressionPenalty = aggressionPenalty[1]
         maxTagLength = tagLengths[1]
+        maxStartTimeframe = startTimeframe[1]
 
         endowments = []
         sugarMetabolismPenalties = []
@@ -417,6 +445,7 @@ class Sugarscape:
         fertilityPenalties = []
         aggressionPenalties = []
         diseaseTags = []
+        startTimesteps = []
 
         currSugarMetabolismPenalty = minSugarMetabolismPenalty
         currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
@@ -425,6 +454,7 @@ class Sugarscape:
         currFertilityPenalty = minFertilityPenalty
         currAggressionPenalty = minAggressionPenalty
         currTagLength = minTagLength
+        currStartTimestep = minStartTimeframe
 
         for i in range(numDiseases):
             sugarMetabolismPenalties.append(currSugarMetabolismPenalty)
@@ -434,6 +464,7 @@ class Sugarscape:
             fertilityPenalties.append(currFertilityPenalty)
             aggressionPenalties.append(currAggressionPenalty)
             diseaseTags.append([random.randrange(2) for i in range(currTagLength)])
+            startTimesteps.append(currStartTimestep)
 
             currSugarMetabolismPenalty += 1
             currSpiceMetabolismPenalty += 1
@@ -442,6 +473,7 @@ class Sugarscape:
             currFertilityPenalty += 1
             currAggressionPenalty += 1
             currTagLength += 1
+            currStartTimestep += 1
 
             if currSugarMetabolismPenalty > maxSugarMetabolismPenalty:
                 currSugarMetabolismPenalty = minSugarMetabolismPenalty
@@ -457,6 +489,8 @@ class Sugarscape:
                 currAggressionPenalty = minAggressionPenalty
             if currTagLength > maxTagLength:
                 currTagLength = minTagLength
+            if currStartTimestep > maxStartTimeframe:
+                currStartTimestep = minStartTimeframe
 
         randomDiseaseEndowment = {"sugarMetabolismPenalties": sugarMetabolismPenalties,
                      "spiceMetabolismPenalties": spiceMetabolismPenalties,
@@ -464,7 +498,8 @@ class Sugarscape:
                      "visionPenalties": visionPenalties,
                      "fertilityPenalties": fertilityPenalties,
                      "aggressionPenalties": aggressionPenalties,
-                     "diseaseTags": diseaseTags}
+                     "diseaseTags": diseaseTags,
+                     "startTimesteps": startTimesteps}
 
         # Map configuration to a random number via hash to make random number generation independent of iteration order
         if (self.diseaseConfigHashes == None):
@@ -487,7 +522,8 @@ class Sugarscape:
                                 "sugarMetabolismPenalty": sugarMetabolismPenalties.pop(),
                                 "spiceMetabolismPenalty": spiceMetabolismPenalties.pop(),
                                 "tags": diseaseTags.pop(),
-                                "visionPenalty": visionPenalties.pop()}
+                                "visionPenalty": visionPenalties.pop(),
+                                "startTimestep": startTimesteps.pop()}
             endowments.append(diseaseEndowment)
         return endowments
 
@@ -688,6 +724,7 @@ class Sugarscape:
             if self.configuration["screenshots"] == True and self.configuration["headlessMode"] == False:
                 self.gui.canvas.postscript(file=f"screenshot{screenshots}.ps", colormode="color")
                 screenshots += 1
+            self.infectAgents()
             self.doTimestep()
             t += 1
             if self.gui != None and self.run == False:
@@ -709,6 +746,16 @@ class Sugarscape:
             self.log.write(header)
         else:
             self.log.write("[\n")
+        # temporary for disease testing
+        diseaseHeader = ""
+        for stat in self.diseaseStats[0]:
+            if diseaseHeader == "":
+                diseaseHeader += f"{stat}"
+            else:
+                diseaseHeader += f",{stat}"
+        diseaseHeader += "\n"
+        self.diseaselog.write(diseaseHeader)
+        self.diseaseStats.clear()
         self.updateRuntimeStats()
         self.writeToLog()
 
@@ -971,16 +1018,29 @@ class Sugarscape:
         self.runtimeStats["agentTotalMetabolism"] = agentTotalMetabolism
         self.runtimeStats["totalSickAgents"] = totalSickAgents
 
-        for disease in self.diseases:
-            infectors = len(disease.infectors)
-            incidence = disease.infected
-            prevalence = self.countInfectedAgents(disease)
-            r = 0
-            if infectors > 0:
-                r = round(float(incidence / infectors), 2)
-            self.runtimeStats[f"disease{disease.ID}Incidence"] = incidence
-            self.runtimeStats[f"disease{disease.ID}Prevalence"] = prevalence
-            self.runtimeStats[f"disease{disease.ID}RValue"] = r
+
+
+        if self.checkActiveDiseases() == True:
+            for disease in self.diseases:
+                """
+                prevalence = self.countInfectedAgents(disease)
+                r = 0
+                if infectors > 0:
+                    r = round(float(incidence / infectors), 2)
+                self.runtimeStats[f"disease{disease.ID}Incidence"] = incidence       
+                self.runtimeStats[f"disease{disease.ID}Prevalence"] = prevalence     
+                self.runtimeStats[f"disease{disease.ID}RValue"] = r
+                """
+                # below is temporary, the commented code above is to write to the main log
+                infectors = len(disease.infectors)
+                incidence = disease.infected
+                prevalence = self.countInfectedAgents(disease)
+                r = 0
+                if infectors > 0:
+                    r = round(float(incidence / infectors), 2)
+                diseaseInfo = {"disease": disease.ID, "timestep": self.timestep, "incidence": incidence,
+                               "prevalence": prevalence, "rValue": r}
+                self.diseaseStats.append(diseaseInfo)
 
     def writeToLog(self):
         if self.log == None:
@@ -1281,6 +1341,7 @@ if __name__ == "__main__":
                      "diseaseFertilityPenalty": [0, 0],
                      "diseaseMovementPenalty": [0, 0],
                      "diseaseSpiceMetabolismPenalty": [0, 0],
+                     "diseaseStartTimeframe": [0, 0],
                      "diseaseSugarMetabolismPenalty": [0, 0],
                      "diseaseTagStringLength": [0, 0],
                      "diseaseVisionPenalty": [0, 0],

@@ -10,10 +10,13 @@ class Disease:
         self.movementPenalty = configuration["movementPenalty"]
         self.fertilityPenalty = configuration["fertilityPenalty"]
         self.aggressionPenalty = configuration["aggressionPenalty"]
+        self.startTimestep = configuration["startTimestep"]
         self.tags = configuration["tags"]
         self.configuration = configuration
+        self.startingInfectedAgents = 0
         self.infectors = []
         self.infected = 0
+        self.immuneAgents = []
 
     def resetRStats(self):
         self.infectors = []
