@@ -34,6 +34,7 @@ class Environment:
         self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
         self.neighborhoodMode = configuration["neighborhoodMode"]
         self.wraparound = configuration["wraparound"]
+        self.maxCellDistance = 0
         # Populate grid with NoneType objects
         self.grid = [[None for j in range(height)]for i in range(width)]
 
@@ -105,16 +106,14 @@ class Environment:
         numCells = self.width * self.height
         for i in range(numCells):
             x1, y1 = cellCoords[i]
-            eastRange = min(x1 + maxDeltaX, self.width - 1)
-            southRange = min(y1 + maxDeltaY, self.height - 1)
-            for j in range(x1 + 1, eastRange + 1):
+            for j in range(x1 + 1, x1 + maxDeltaX + 1):
                 deltaX = self.findWraparoundDistance(j - x1, self.width)
-                self.grid[x1][y1].ranges[deltaX][self.grid[j][y1]] = deltaX
-                self.grid[j][y1].ranges[deltaX][self.grid[x1][y1]] = deltaX
-            for j in range(y1 + 1, southRange + 1):
+                self.grid[x1][y1].ranges[deltaX][self.grid[j % self.width][y1]] = deltaX
+                self.grid[j % self.width][y1].ranges[deltaX][self.grid[x1][y1]] = deltaX
+            for j in range(y1 + 1, y1 + maxDeltaY + 1):
                 deltaY = self.findWraparoundDistance(j - y1, self.height)
-                self.grid[x1][y1].ranges[deltaY][self.grid[x1][j]] = deltaY
-                self.grid[x1][j].ranges[deltaY][self.grid[x1][y1]] = deltaY
+                self.grid[x1][y1].ranges[deltaY][self.grid[x1][j % self.height]] = deltaY
+                self.grid[x1][j % self.height].ranges[deltaY][self.grid[x1][y1]] = deltaY
 
     def findCell(self, x, y):
         return self.grid[x][y]
@@ -130,16 +129,22 @@ class Environment:
         maxVision = config["startingDiseases"] * max(config["diseaseVisionPenalty"][1], 0) + config["agentVision"][1]
         maxMovement = config["startingDiseases"] * max(config["diseaseMovementPenalty"][1], 0) + config["agentMovement"][1]
         maxAgentRange = max(maxVision, maxMovement)
-        maxDeltaX = self.width - 1 if maxAgentRange > self.width - 1 else maxAgentRange
-        maxDeltaY = self.height - 1 if maxAgentRange > self.height - 1 else maxAgentRange
-        maxDeltaRadius = max(maxDeltaX, maxDeltaY)
+        maxDeltaX = min(maxAgentRange, self.width // 2)
+        maxDeltaY = min(maxAgentRange, self.height // 2)
+        maxRadialDelta = min(maxAgentRange, math.floor(math.sqrt((self.width // 2) ** 2 + (self.height // 2) ** 2)))
+        if self.wraparound == False:
+            maxDeltaX = min(maxAgentRange, self.width - 1)
+            maxDeltaY = min(maxAgentRange, self.height - 1)
+            maxRadialDelta = min(maxAgentRange, math.floor(math.sqrt((self.width - 1) ** 2 + (self.height - 1) ** 2)))
+        maxCardinalDelta = max(maxDeltaX, maxDeltaY)
+        self.maxCellDistance = maxRadialDelta if config["agentVisionMode"] == "radial" and config["agentMovementMode"] == "radial" else maxCardinalDelta
         cellCoords = [(x, y) for x in range(self.width) for y in range(self.height)]
         # Initialize ranges with all possible values
         for x, y in cellCoords:
-            self.grid[x][y].ranges = {gridRange: {} for gridRange in range(1, maxDeltaRadius + 1)}
+            self.grid[x][y].ranges = {gridRange: {} for gridRange in range(1, self.maxCellDistance + 1)}
 
         if config["agentVisionMode"] == "radial" and config["agentMovementMode"] == "radial":
-            self.findRadialCellRanges(maxDeltaX, maxDeltaY, maxDeltaRadius, cellCoords)
+            self.findRadialCellRanges(maxDeltaX, maxDeltaY, maxRadialDelta, cellCoords)
         else:
             self.findCardinalCellRanges(maxDeltaX, maxDeltaY, cellCoords)
 
