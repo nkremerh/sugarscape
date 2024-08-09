@@ -628,8 +628,7 @@ class Agent:
             return greedyBestCell
 
         for cell in cells:
-            ethicalScore = self.findEthicalValueOfCell(cell["cell"])
-            cell["wealth"] = ethicalScore
+            cell["wealth"] = self.findEthicalValueOfCell(cell["cell"])
         if self.selfishnessFactor >= 0:
             for cell in cells:
                 if cell["wealth"] > 0:
