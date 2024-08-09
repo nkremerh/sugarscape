@@ -129,11 +129,10 @@ class Environment:
         maxVision = config["startingDiseases"] * max(config["diseaseVisionPenalty"][1], 0) + config["agentVision"][1]
         maxMovement = config["startingDiseases"] * max(config["diseaseMovementPenalty"][1], 0) + config["agentMovement"][1]
         maxAgentRange = max(maxVision, maxMovement)
-        if self.wraparound == True:
-            maxDeltaX = min(maxAgentRange, self.width // 2)
-            maxDeltaY = min(maxAgentRange, self.height // 2)
-            maxRadialDelta = min(maxAgentRange, math.floor(math.sqrt((self.width // 2) ** 2 + (self.height // 2) ** 2)))
-        else:
+        maxDeltaX = min(maxAgentRange, self.width // 2)
+        maxDeltaY = min(maxAgentRange, self.height // 2)
+        maxRadialDelta = min(maxAgentRange, math.floor(math.sqrt((self.width // 2) ** 2 + (self.height // 2) ** 2)))
+        if self.wraparound == False:
             maxDeltaX = min(maxAgentRange, self.width - 1)
             maxDeltaY = min(maxAgentRange, self.height - 1)
             maxRadialDelta = min(maxAgentRange, math.floor(math.sqrt((self.width - 1) ** 2 + (self.height - 1) ** 2)))
