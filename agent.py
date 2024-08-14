@@ -75,7 +75,7 @@ class Agent:
         self.neighbors = []
         self.nice = 0
         self.socialHappiness = 0
-        self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": []}
+        self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": [], "mates": []}
         self.spiceMeanIncome = 1
         self.spiceMetabolismModifier = 0
         self.spicePrice = 0
@@ -392,6 +392,8 @@ class Agent:
                     # If no adjacent empty cell is found, skip reproduction with this neighbor
                     if emptyCell.agent != None:
                         continue
+                    if neighbor not in self.socialNetwork["mates"]:
+                        self.socialNetwork["mates"].append(neighbor)
                     childEndowment = self.findChildEndowment(neighbor)
                     child = self.addChildToCell(neighbor, emptyCell, childEndowment)
                     child.findCellsInRange()
@@ -791,7 +793,7 @@ class Agent:
             if(self.findAggression() > 1):
                 return 1
             else:
-                return -0.5
+                return -1
         return 0
 
     def findCurrentSpiceDebt(self):
@@ -827,17 +829,23 @@ class Agent:
 
     def findFamilyHappiness(self):
         familyHappiness = 0
-        if self.lastReproduced == self.timestep:
-            familyHappiness = 0.5
         for child in self.socialNetwork["children"]:
-            if child.isAlive() == False and familyHappiness != -1:
-                familyHappiness -= 0.125
-            if child.isAlive() == True and familyHappiness < 1:
-                if child.isSick():
-                    familyHappiness -= 0.05
-                else:
-                    familyHappiness += 0.05
-        return familyHappiness
+            if child.isAlive() == True:
+                familyHappiness += 1
+                if child.isSick() == True:
+                    familyHappiness -= 0.5
+                if child.born == self.timestep:
+                    familyHappiness += 1
+            else:
+                familyHappiness -= 1
+        for mate in self.socialNetwork["mates"]:
+            if mate.isAlive() == True:
+                familyHappiness += 1
+                if mate.isSick() == True:
+                    familyHappiness -= 0.5
+            else:
+                familyHappiness -= 1
+        return math.erf(familyHappiness)
 
     def findHammingDistanceInTags(self, neighbor):
         if self.tags == None:
@@ -850,7 +858,7 @@ class Agent:
         return hammingDistance
 
     def findHappiness(self):
-        return self.findWealthHappiness() + self.findConflictHappiness() + self.findFamilyHappiness() + self.findSocialHappiness() + self.findHealthHappiness()
+        return self.conflictHappiness + self.familyHappiness + self.healthHappiness + self.socialHappiness + self.wealthHappiness
 
     def findHealthHappiness(self):
         if self.isSick():
@@ -963,21 +971,8 @@ class Agent:
         return retaliators
 
     def findSocialHappiness(self):
-        if len(self.socialNetwork["friends"]) < 1:
-            return -0.8
-        elif len(self.socialNetwork["friends"]) < 2:
-            return -0.7
-        elif len(self.socialNetwork["friends"]) < 3:
-            return -0.5
-        elif len(self.socialNetwork["friends"]) <= len(self.socialNetwork["creditors"]):
-            return -0.3
-        elif len(self.socialNetwork["friends"]) <= len(self.socialNetwork["debtors"]):
-            return -0.1
-        else:
-            if len(self.socialNetwork["friends"]) * 0.1 < 1:
-                return len(self.socialNetwork["friends"]) * 0.1
-            else:
-                return 1
+        step = 2 / self.maxFriends
+        return (len(self.socialNetwork["friends"]) * step) - 1
 
     def findSpiceMetabolism(self):
         return max(0, self.spiceMetabolism + self.spiceMetabolismModifier)
@@ -1001,17 +996,8 @@ class Agent:
 
     def findWealthHappiness(self):
         wealth = self.sugar + self.spice
-        if self.cell.environment.sugarscape.runtimeStats["meanWealth"] <= 1:
-            return 0
-        elif wealth < 1:
-            return -1
-        else:
-            wealthHappiness = math.log(wealth * 0.01, self.cell.environment.sugarscape.runtimeStats["meanWealth"]) * 5
-            if wealthHappiness > 1:
-                return 1
-            elif wealthHappiness < -1:
-                return -1
-            return wealthHappiness
+        diffWealth = wealth - self.cell.environment.sugarscape.runtimeStats["meanWealth"]
+        return math.erf(diffWealth)
 
     def findWelfare(self, sugarReward, spiceReward):
         spiceMetabolism = self.findSpiceMetabolism()
