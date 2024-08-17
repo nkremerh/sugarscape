@@ -490,6 +490,10 @@ class Sugarscape:
         neighborhoodMode = configs["neighborhoodMode"]
         visionMode = configs["agentVisionMode"]
 
+        numDepressedAgents = int(math.ceil(numAgents * configs["agentDepressionPercentage"]))
+        depressionFactors = [1 for i in range(numDepressedAgents)] + [0 for i in range(numAgents - numDepressedAgents)]
+        random.shuffle(depressionFactors)
+
         configurations = {"aggressionFactor": {"endowments": [], "curr": aggressionFactor[0], "min": aggressionFactor[0], "max": aggressionFactor[1]},
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
                           "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
@@ -593,7 +597,8 @@ class Sugarscape:
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
-                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode}
+                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
+                              "depressionFactor": depressionFactors[i]}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -1198,6 +1203,7 @@ if __name__ == "__main__":
                      "agentDecisionModelLookaheadDiscount": [0, 0],
                      "agentDecisionModelLookaheadFactor": [0],
                      "agentDecisionModelTribalFactor": [-1, -1],
+                     "agentDepressionPercentage": 0,
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],

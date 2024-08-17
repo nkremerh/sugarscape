@@ -17,6 +17,7 @@ class Agent:
         self.decisionModelLookaheadDiscount = configuration["decisionModelLookaheadDiscount"]
         self.decisionModelLookaheadFactor = configuration["decisionModelLookaheadFactor"]
         self.decisionModelTribalFactor = configuration["decisionModelTribalFactor"]
+        self.depressionFactor = configuration["depressionFactor"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
         self.immuneSystem = configuration["immuneSystem"]
@@ -56,6 +57,7 @@ class Agent:
         self.cellsInRange = []
         self.childEndowmentHashes = None
         self.conflictHappiness = 0
+        self.depressed = False
         self.diseases = []
         self.familyHappiness = 0
         self.fertile = False
@@ -88,6 +90,21 @@ class Agent:
         self.tradeVolume = 0
         self.visionModifier = 0
         self.wealthHappiness = 0
+
+        # Change metrics for depressed agents
+        if self.depressionFactor == 1:
+            self.depressed = True
+            # Depressed agents undereat due to eating disorders
+            # TODO: Current implementation increases metabolism, causing overeating instead
+            self.sugarMetabolism = math.ceil(self.sugarMetabolism + (self.sugarMetabolism * 0.544))
+            self.spiceMetabolism = math.ceil(self.spiceMetabolism + (self.spiceMetabolism * 0.544))
+            # Depressed agents move slower due to fatigue
+            self.movement = math.ceil(self.movement - (self.movement * 0.375 + self.movement * 0.196))
+            # Depressed agents have heightened aggression due to irritability
+            self.aggressionFactor = math.ceil(self.aggressionFactor + (self.aggressionFactor * 0.145))
+            # Social withdrawal: to represent a degree of social withdrawal, the maximum number of friends an agent can have will be lowered
+            # Depressed agents have a smaller friend network due to social withdrawal
+            self.maxFriends = math.ceil(self.maxFriends - (self.maxFriends * 0.3667))
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
@@ -688,6 +705,7 @@ class Agent:
         parentEndowments = {
         "aggressionFactor": [self.aggressionFactor, mate.aggressionFactor],
         "baseInterestRate": [self.baseInterestRate, mate.baseInterestRate],
+        "depressionFactor": [self.depressionFactor, mate.depressionFactor],
         "fertilityAge": [self.fertilityAge, mate.fertilityAge],
         "fertilityFactor": [self.fertilityFactor, mate.fertilityFactor],
         "infertilityAge": [self.infertilityAge, mate.infertilityAge],
@@ -772,6 +790,14 @@ class Agent:
         childEndowment["tags"] = childTags
         childEndowment["tagPreferences"] = self.tagPreferences
         childEndowment["tagging"] = self.tagging
+
+        # Current implementation randomly assigns depressed state at agent birth
+        depressionPercentage = self.cell.environment.sugarscape.configuration["agentDepressionPercentage"]
+        depression = random.random()
+        if depression <= depressionPercentage:
+            childEndowment["depressionFactor"] = 1
+        else:
+            childEndowment["depressionFactor"] = 0
 
         hashed = hashlib.md5("immuneSystem".encode())
         hashNum = int(hashed.hexdigest(), 16)
@@ -1334,6 +1360,9 @@ class Agent:
         self.familyHappiness = self.findFamilyHappiness()
         self.conflictHappiness = self.findConflictHappiness()
         self.happiness = self.findHappiness()
+        # Depressed agents have lower overall happiness due to depression
+        if self.depressed == True:
+            self.happiness = math.ceil(self.happiness - (self.happiness * 0.5763))
 
     def __str__(self):
         return f"{self.ID}"

@@ -55,7 +55,7 @@ class GUI:
         self.updateHighlightedCellStats()
 
     def configureAgentColorNames(self):
-        return ["Decision Models", "Disease", "Metabolism", "Movement", "Sex", "Tribes", "Vision"]
+        return ["Decision Models", "Depression", "Disease", "Metabolism", "Movement", "Sex", "Tribes", "Vision"]
 
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
@@ -581,6 +581,8 @@ class GUI:
 
         elif agent.decisionModel != None and self.activeColorOptions["agent"] == "Decision Models":
             return self.colors[agent.decisionModel]
+        elif self.activeColorOptions["agent"] == "Depression":
+            return self.colors["sick"] if agent.depressed == True else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Disease":
             return self.colors["sick"] if len(agent.diseases) > 0 else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Metabolism":
