@@ -19,7 +19,7 @@ CLEAN = $(DATASET) \
 		$(SCREENSHOTS)
 
 # Change to python3 (or other alias) if needed
-PYTHON = python3
+PYTHON = python
 SUGARSCAPE = sugarscape.py
 
 # Check for local Python aliases
@@ -64,11 +64,6 @@ clean:
 
 lean:
 	rm -rf $(PLOTS) || true
-
-rerun:
-	rm log.csv
-	$(PYTHON) $(SUGARSCAPE) --conf $(CONFIG)
-
 
 .PHONY: all clean data lean plots setup
 
