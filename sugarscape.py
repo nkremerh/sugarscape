@@ -624,6 +624,114 @@ class Sugarscape:
             endowments.append(agentEndowment)
         return endowments
 
+    def randomizeDiseaseEndowments(self, numDiseases):
+        configs = self.configuration
+        sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
+        spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
+        movementPenalty = configs["diseaseMovementPenalty"]
+        visionPenalty = configs["diseaseVisionPenalty"]
+        fertilityPenalty = configs["diseaseFertilityPenalty"]
+        aggressionPenalty = configs["diseaseAggressionPenalty"]
+        tagLengths = configs["diseaseTagStringLength"]
+
+        minSugarMetabolismPenalty = sugarMetabolismPenalty[0]
+        minSpiceMetabolismPenalty = spiceMetabolismPenalty[0]
+        minMovementPenalty = movementPenalty[0]
+        minVisionPenalty = visionPenalty[0]
+        minFertilityPenalty = fertilityPenalty[0]
+        minAggressionPenalty = aggressionPenalty[0]
+        minTagLength = tagLengths[0]
+
+        maxSugarMetabolismPenalty = sugarMetabolismPenalty[1]
+        maxSpiceMetabolismPenalty = spiceMetabolismPenalty[1]
+        maxMovementPenalty = movementPenalty[1]
+        maxVisionPenalty = visionPenalty[1]
+        maxFertilityPenalty = fertilityPenalty[1]
+        maxAggressionPenalty = aggressionPenalty[1]
+        maxTagLength = tagLengths[1]
+
+        endowments = []
+        sugarMetabolismPenalties = []
+        spiceMetabolismPenalties = []
+        movementPenalties = []
+        visionPenalties = []
+        fertilityPenalties = []
+        aggressionPenalties = []
+        diseaseTags = []
+
+        currSugarMetabolismPenalty = minSugarMetabolismPenalty
+        currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
+        currMovementPenalty = minMovementPenalty
+        currVisionPenalty = minVisionPenalty
+        currFertilityPenalty = minFertilityPenalty
+        currAggressionPenalty = minAggressionPenalty
+        currTagLength = minTagLength
+
+        for i in range(numDiseases):
+            sugarMetabolismPenalties.append(currSugarMetabolismPenalty)
+            spiceMetabolismPenalties.append(currSpiceMetabolismPenalty)
+            movementPenalties.append(currMovementPenalty)
+            visionPenalties.append(currVisionPenalty)
+            fertilityPenalties.append(currFertilityPenalty)
+            aggressionPenalties.append(currAggressionPenalty)
+            diseaseTags.append([random.randrange(2) for i in range(currTagLength)])
+
+            currSugarMetabolismPenalty += 1
+            currSpiceMetabolismPenalty += 1
+            currMovementPenalty += 1
+            currVisionPenalty += 1
+            currFertilityPenalty += 1
+            currAggressionPenalty += 1
+            currTagLength += 1
+
+            if currSugarMetabolismPenalty > maxSugarMetabolismPenalty:
+                currSugarMetabolismPenalty = minSugarMetabolismPenalty
+            if currSpiceMetabolismPenalty > maxSpiceMetabolismPenalty:
+                currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
+            if currMovementPenalty > maxMovementPenalty:
+                currMovementPenalty = minMovementPenalty
+            if currVisionPenalty > maxVisionPenalty:
+                currVisionPenalty = minVisionPenalty
+            if currFertilityPenalty > maxFertilityPenalty:
+                currFertilityPenalty = minFertilityPenalty
+            if currAggressionPenalty > maxAggressionPenalty:
+                currAggressionPenalty = minAggressionPenalty
+            if currTagLength > maxTagLength:
+                currTagLength = minTagLength
+
+        randomDiseaseEndowment = {"sugarMetabolismPenalties": sugarMetabolismPenalties,
+                     "spiceMetabolismPenalties": spiceMetabolismPenalties,
+                     "movementPenalties": movementPenalties,
+                     "visionPenalties": visionPenalties,
+                     "fertilityPenalties": fertilityPenalties,
+                     "aggressionPenalties": aggressionPenalties,
+                     "diseaseTags": diseaseTags}
+
+        # Map configuration to a random number via hash to make random number generation independent of iteration order
+        if (self.diseaseConfigHashes == None):
+            self.diseaseConfigHashes = {}
+            for penalty in randomDiseaseEndowment:
+                hashed = hashlib.md5(penalty.encode())
+                self.diseaseConfigHashes[penalty] = int(hashed.hexdigest(), 16)
+
+        # Keep state of random numbers to allow extending agent endowments without altering original random object state
+        randomNumberReset = random.getstate()
+        for endowment in randomDiseaseEndowment.keys():
+            random.seed(self.diseaseConfigHashes[endowment] + self.timestep)
+            random.shuffle(randomDiseaseEndowment[endowment])
+        random.setstate(randomNumberReset)
+
+        for i in range(numDiseases):
+            diseaseEndowment = {"aggressionPenalty": aggressionPenalties.pop(),
+                                "fertilityPenalty": fertilityPenalties.pop(),
+                                "movementPenalty": movementPenalties.pop(),
+                                "sugarMetabolismPenalty": sugarMetabolismPenalties.pop(),
+                                "spiceMetabolismPenalty": spiceMetabolismPenalties.pop(),
+                                "tags": diseaseTags.pop(),
+                                "visionPenalty": visionPenalties.pop()}
+            endowments.append(diseaseEndowment)
+        return endowments
+
     def removeDeadAgents(self):
         deadAgents = []
         for agent in self.agents:

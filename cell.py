@@ -6,45 +6,45 @@ class Cell:
         self.y = y
         self.environment = environment
         self.maxSugar = maxSugar
-        self.sugar = maxSugar
         self.maxSpice = maxSpice
-        self.spice = maxSpice
-        self.pollution = 0
-        self.pollutionFlux = 0
+
         self.agent = None
         self.hemisphere = "north" if self.x >= self.environment.equator else "south"
-        self.season = None
-        self.timestep = 0
         self.neighbors = {}
+        self.pollution = 0
+        self.pollutionFlux = 0
         self.ranges = {}
-        self.sugarLastProduced = 0
+        self.season = None
+        self.spice = maxSpice
         self.spiceLastProduced = 0
+        self.sugar = maxSugar
+        self.sugarLastProduced = 0
+        self.timestep = 0
+
+    def doPollutionDiffusion(self):
+        self.pollution = self.pollutionFlux
 
     def doSpiceConsumptionPollution(self, spiceConsumed):
         consumptionPollutionFactor = self.environment.spiceConsumptionPollutionFactor
         self.pollution += consumptionPollutionFactor * spiceConsumed
 
-    def doSugarConsumptionPollution(self, sugarConsumed):
-        consumptionPollutionFactor = self.environment.sugarConsumptionPollutionFactor
-        self.pollution += consumptionPollutionFactor * sugarConsumed
-
-    def doPollutionDiffusion(self):
-        self.pollution = self.pollutionFlux
-
     def doSpiceProductionPollution(self, spiceProduced):
         productionPollutionFactor = self.environment.spiceProductionPollutionFactor
         self.pollution += productionPollutionFactor * spiceProduced
+
+    def doSugarConsumptionPollution(self, sugarConsumed):
+        consumptionPollutionFactor = self.environment.sugarConsumptionPollutionFactor
+        self.pollution += consumptionPollutionFactor * sugarConsumed
 
     def doSugarProductionPollution(self, sugarProduced):
         productionPollutionFactor = self.environment.sugarProductionPollutionFactor
         self.pollution += productionPollutionFactor * sugarProduced
 
-    def findPollutionFlux(self):
-        meanPollution = 0
-        for neighbor in self.neighbors.values():
-            meanPollution += neighbor.pollution
-        meanPollution = meanPollution / (len(self.neighbors))
-        self.pollutionFlux = meanPollution
+    def findEastNeighbor(self):
+        if self.environment.wraparound == False and self.x + 1 > self.environment.width - 1:
+            return None
+        eastNeighbor = self.environment.findCell((self.x + 1 + self.environment.width) % self.environment.width, self.y)
+        return eastNeighbor
 
     def findNeighborAgents(self):
         agents = []
@@ -91,17 +91,18 @@ class Cell:
                 neighborWealth += neighbor.sugar + neighbor.spice
         return neighborWealth
 
-    def findEastNeighbor(self):
-        if self.environment.wraparound == False and self.x + 1 > self.environment.width - 1:
-            return None
-        eastNeighbor = self.environment.findCell((self.x + 1 + self.environment.width) % self.environment.width, self.y)
-        return eastNeighbor
-
     def findNorthNeighbor(self):
         if self.environment.wraparound == False and self.y - 1 < 0:
             return None
         northNeighbor = self.environment.findCell(self.x, (self.y - 1 + self.environment.height) % self.environment.height)
         return northNeighbor
+
+    def findPollutionFlux(self):
+        meanPollution = 0
+        for neighbor in self.neighbors.values():
+            meanPollution += neighbor.pollution
+        meanPollution = meanPollution / (len(self.neighbors))
+        self.pollutionFlux = meanPollution
 
     def findSouthNeighbor(self):
         if self.environment.wraparound == False and self.y + 1 < self.environment.height - 1:

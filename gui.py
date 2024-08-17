@@ -6,9 +6,9 @@ class GUI:
         self.sugarscape = sugarscape
         self.screenHeight = screenHeight
         self.screenWidth = screenWidth
-        self.window = None
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
+        self.window = None
 
         sugarAndSpiceColors = self.findSugarAndSpiceColors("#F2FA00", "#9B4722")
         pollutionColors = self.findColorRange("#FFFFFF", "#803280", 0, 20)
@@ -29,6 +29,7 @@ class GUI:
         self.widgets = {}
         self.activeNetwork = None
         self.activeGraph = None
+        self.borderEdge = 5
         self.graphObjects = {}
         self.graphBorder = 90
         self.xTicks = 10
@@ -36,15 +37,14 @@ class GUI:
         self.lastSelectedAgentColor = None
         self.lastSelectedEnvironmentColor = None
         self.activeColorOptions = {"agent": None, "environment": None}
-        self.highlightedCell = None
         self.highlightedAgent = None
+        self.highlightedCell = None
         self.highlightRectangle = None
         self.menuTrayColumns = 6
-        self.borderEdge = 5
         self.siteHeight = (self.screenHeight - 2 * self.borderEdge) / self.sugarscape.environmentHeight
         self.siteWidth = (self.screenWidth - 2 * self.borderEdge) / self.sugarscape.environmentWidth
-        self.configureWindow()
         self.stopSimulation = False
+        self.configureWindow()
 
     def clearHighlight(self):
         self.highlightedAgent = None
@@ -238,15 +238,15 @@ class GUI:
         if self.sugarscape.timestep != 0:
             self.updateHistogram()
 
-    def configureNetworkNames(self):
-        return ["Disease", "Family", "Friends", "Loans", "Neighbors", "Trade"]
-
     def configureLorenzCurve(self):
         self.configureGraphAxes()
         self.graphObjects["giniCoefficientLabel"] = self.canvas.create_text(
             self.graphStartX + 20, self.graphStartY + 20, anchor="nw", fill="black", text="Gini coefficient:")
         if self.sugarscape.timestep != 0:
             self.updateLorenzCurve()
+
+    def configureNetworkNames(self):
+        return ["Disease", "Family", "Friends", "Loans", "Neighbors", "Trade"]
 
     def configureWindow(self):
         window = tkinter.Tk()
@@ -287,17 +287,6 @@ class GUI:
         self.activeColorOptions["agent"] = self.lastSelectedAgentColor.get()
         self.doTimestep()
 
-    def doControlClick(self, event):
-        self.doubleClick = False
-        cell = self.findClickedCell(event)
-        if cell == self.highlightedCell or cell.agent == None:
-            self.clearHighlight()
-        else:
-            self.highlightedCell = cell
-            self.highlightedAgent = cell.agent
-            self.highlightCell(cell)
-        self.doTimestep()
-
     def doClick(self, event):
         self.canvas.after(300, self.doClickAction, event)
 
@@ -319,6 +308,17 @@ class GUI:
                 self.highlightedCell = cell
                 self.highlightedAgent = None
                 self.highlightCell(cell)
+        self.doTimestep()
+
+    def doControlClick(self, event):
+        self.doubleClick = False
+        cell = self.findClickedCell(event)
+        if cell == self.highlightedCell or cell.agent == None:
+            self.clearHighlight()
+        else:
+            self.highlightedCell = cell
+            self.highlightedAgent = cell.agent
+            self.highlightCell(cell)
         self.doTimestep()
 
     def doCrossPlatformWindowSizing(self):
