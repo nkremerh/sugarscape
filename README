@@ -154,6 +154,11 @@ agentDecisionModelTribalFactor: [float, float]
     Note: Valid range is [0.0, 1.0], use -1 to disable.
     Default: [-1, -1]
 
+agentDepressionPercentage: float
+    Set the percentage chance an agent will experience depression symptoms at birth.
+    Note: The starting agent population will have this same percentage of depressed agents.
+    Default: 0.0
+
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
     Default: [0, 0]
