@@ -442,11 +442,10 @@ class GUI:
 
         elif self.activeNetwork.get() == "Trade":
             for agent in self.sugarscape.agents:
-                nonTraders = ["bestFriend", "children", "creditors", "debtors", "father", "friends", "mother"]
-                for other in agent.socialNetwork:
-                    if other in nonTraders:
+                for label in agent.socialNetwork:
+                    if isinstance(label, str):
                         continue
-                    trader = agent.socialNetwork[other]
+                    trader = agent.socialNetwork[label]
                     if trader != None and trader["agent"].isAlive() == True and trader["lastSeen"] == self.sugarscape.timestep and trader["timesTraded"] > 0:
                         trader = trader["agent"]
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (trader.cell.x, trader.cell.y)])
