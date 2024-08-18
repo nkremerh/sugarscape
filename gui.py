@@ -277,7 +277,7 @@ class GUI:
 
         # Adjust for slight deviations from initially configured window size
         self.resizeInterface()
-        window.update()
+        window.update_idletasks()
 
     def deleteLines(self):
         self.canvas.delete("line")
