@@ -840,6 +840,13 @@ class Agent:
         # If no sugar or spice metabolism, set days to death for that resource to seemingly infinite
         sugarTimeToLive = self.sugar / sugarMetabolism if sugarMetabolism > 0 else sys.maxsize
         spiceTimeToLive = self.spice / spiceMetabolism if spiceMetabolism > 0 else sys.maxsize
+        # If an agent has basic income, include the income for at least as many timesteps as they can already survive
+        if self.universalSugar != 0:
+            sugarIncome = (sugarTimeToLive * self.universalSugar) / self.cell.environment.universalSugarIncomeInterval
+            sugarTimeToLive = (self.sugar + sugarIncome) / sugarMetabolism if sugarMetabolism > 0 else sys.maxsize
+        if self.universalSpice != 0:
+            spiceIncome = (spiceTimeToLive * self.universalSpice) / self.cell.environment.universalSpiceIncomeInterval
+            spiceTimeToLive = (self.spice + spiceIncome) / spiceMetabolism if spiceMetabolism > 0 else sys.maxsize
         timeToLive = min(sugarTimeToLive, spiceTimeToLive)
         if ageLimited == True:
             timeToLive = min(timeToLive, self.maxAge - self.age)
@@ -1093,6 +1100,21 @@ class Agent:
         if self.sugar >= self.startingSugar and self.spice >= self.startingSpice and self.age >= self.fertilityAge and self.age < self.infertilityAge and (self.fertilityFactor + self.fertilityFactorModifier) > 0:
             return True
         return False
+
+    def isInGroup(self, group, notInGroup=False):
+        membership = False
+        if group == "depressed":
+            membership = self.depressed
+        elif group == "female":
+            membership = True if self.sex == "female" else False
+        elif group == "male":
+            membership = True if self.sex == "male" else False
+        elif group == "sick":
+            membership = self.isSick()
+
+        if notInGroup == True:
+            membership = not membership
+        return membership
 
     def isLender(self):
         # If not a lender, skip lending
