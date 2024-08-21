@@ -236,11 +236,7 @@ class Sugarscape:
                 agent.doTimestep(self.timestep)
             self.removeDeadAgents()
             self.replaceDeadAgents()
-            # Log separate stats for experimental and control groups
-            if self.experimentalGroup != None:
-                self.updateRuntimeStats(self.experimentalGroup)
-                self.updateRuntimeStats(self.experimentalGroup, True)
-            self.updateRuntimeStats()
+            self.updateStats()
             if self.gui != None:
                 self.updateGraphStats()
                 self.gui.doTimestep()
@@ -646,11 +642,7 @@ class Sugarscape:
     def runSimulation(self, timesteps=5):
         self.startLog()
         if self.log == None:
-            # Log separate stats for experimental and control groups
-            if self.experimentalGroup != None:
-                self.updateRuntimeStats(self.experimentalGroup)
-                self.updateRuntimeStats(self.experimentalGroup, True)
-            self.updateRuntimeStats()
+            self.updateStats()
         if self.gui != None:
             # Simulation begins paused until start button in GUI pressed
             self.gui.updateLabels()
@@ -685,11 +677,7 @@ class Sugarscape:
             self.log.write(header)
         else:
             self.log.write("[\n")
-        # Log separate stats for experimental and control groups
-        if self.experimentalGroup != None:
-            self.updateRuntimeStats(self.experimentalGroup)
-            self.updateRuntimeStats(self.experimentalGroup, True)
-        self.updateRuntimeStats()
+        self.updateStats()
         self.writeToLog()
 
     def toggleEnd(self):
@@ -946,6 +934,13 @@ class Sugarscape:
 
         for key in runtimeStats.keys():
             self.runtimeStats[key] = runtimeStats[key]
+
+    def updateStats(self):
+        # Log separate stats for experimental and control groups
+        if self.experimentalGroup != None:
+            self.updateRuntimeStats(self.experimentalGroup)
+            self.updateRuntimeStats(self.experimentalGroup, True)
+        self.updateRuntimeStats()
 
     def writeToLog(self):
         if self.log == None:
