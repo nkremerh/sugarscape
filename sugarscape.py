@@ -45,8 +45,8 @@ class Sugarscape:
         self.debug = configuration["debugMode"]
         self.keepAlive = configuration["keepAlivePostExtinction"]
         self.agents = []
-        self.agentsReplaced = 0
-        self.agentsBorn = 0
+        self.replacedAgents = []
+        self.bornAgents = []
         self.deadAgents = []
         self.diseases = []
         self.activeQuadrants = self.findActiveQuadrants()
@@ -70,7 +70,7 @@ class Sugarscape:
         self.experimentalGroup = configuration["experimentalGroup"]
 
     def addAgent(self, agent):
-        self.agentsBorn += 1
+        self.bornAgents.append(agent)
         self.agents.append(agent)
 
     def addSpicePeak(self, startX, startY, radius, maxSpice):
@@ -114,8 +114,7 @@ class Sugarscape:
             if "all" in self.debug or "sugarscape" in self.debug:
                 print(f"Could not allocate {numAgents} agents. Allocating maximum of {totalCells}.")
             numAgents = totalCells
-        if self.timestep > 0:
-            self.agentsReplaced = numAgents
+
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
         for quadrant in emptyCells:
@@ -155,6 +154,8 @@ class Sugarscape:
                 a.tribe = a.findTribe()
             randomCell.agent = a
             self.agents.append(a)
+            if self.timestep > 0:
+                self.replacedAgents.append(a)
 
         for a in self.agents:
             a.findCellsInRange()
@@ -810,6 +811,9 @@ class Sugarscape:
         agentMeanTimeToLive = 0
         agentTotalMetabolism = 0
 
+        agentsBorn = 0
+        agentsReplaced = 0
+
         for agent in self.agents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
                 continue
@@ -902,26 +906,35 @@ class Sugarscape:
             numDeadAgents += 1
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
 
+        for agent in self.replacedAgents:
+            if group != None and agent.isInGroup(group, notInGroup) == False:
+                continue
+            agentsReplaced += 1
+
+        for agent in self.bornAgents:
+            if group != None and agent.isInGroup(group, notInGroup) == False:
+                continue
+            agentsBorn += 1
+
         # TODO: make clear whether agent or environment calculation
-        runtimeStats = {"agentAgingDeaths": agentAgingDeaths, "agentCombatDeaths": agentCombatDeaths, "agentDiseaseDeaths": agentDiseaseDeaths, "agentMeanTimeToLive": agentMeanTimeToLive,
-                        "agentStarvationDeaths": agentStarvationDeaths, "agentTotalMetabolism": agentTotalMetabolism, "agentWealthBurnRate": agentWealthBurnRate,
-                        "agentWealthCollected": agentWealthCollected, "agentWealthTotal": agentWealthTotal, "maxWealth": maxWealth, "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath,
-                        "meanConflictHappiness": meanConflictHappiness, "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
-                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
-                        "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision, "minWealth": minWealth, "population": numAgents, "sickAgents": sickAgents, "tradeVolume": tradeVolume
+        runtimeStats = {"agentAgingDeaths": agentAgingDeaths, "agentCombatDeaths": agentCombatDeaths, "agentDeaths": numDeadAgents,
+                        "agentDiseaseDeaths": agentDiseaseDeaths, "agentMeanTimeToLive": agentMeanTimeToLive, "agentsBorn": agentsBorn,
+                        "agentsReplaced": agentsReplaced, "agentStarvationDeaths": agentStarvationDeaths, "agentTotalMetabolism": agentTotalMetabolism,
+                        "agentWealthBurnRate": agentWealthBurnRate, "agentWealthCollected": agentWealthCollected, "agentWealthTotal": agentWealthTotal,
+                        "maxWealth": maxWealth, "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
+                        "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
+                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSocialHappiness": meanSocialHappiness,
+                        "meanTradePrice": meanTradePrice, "meanWealth": meanWealth, "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision,
+                        "minWealth": minWealth, "population": numAgents, "sickAgents": sickAgents, "tradeVolume": tradeVolume
                         }
 
         if group == None:
-            self.runtimeStats["agentsBorn"] = self.agentsBorn
-            self.runtimeStats["agentsReplaced"] = self.agentsReplaced
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
             self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
             self.runtimeStats["giniCoefficient"] = self.updateGiniCoefficient()
             self.runtimeStats["timestep"] = self.timestep
-            self.runtimeStats["totalMetabolismCost"] += totalMetabolismCost
-            self.runtimeStats["totalWealthLost"] += totalWealthLost
-            self.agentsBorn = 0
-            self.agentsReplaced = 0
+            self.bornAgents = []
+            self.replacedAgents = []
             self.deadAgents = []
         else:
             # Convert keys to Pythonic case scheme
