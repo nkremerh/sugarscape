@@ -275,9 +275,7 @@ class GUI:
         self.window.bind("<Right>", self.doStepForwardButton)
         self.window.bind("<Configure>", self.resizeInterface)
 
-        # Adjust for slight deviations from initially configured window size
-        self.resizeInterface()
-        window.update_idletasks()
+        self.doCrossPlatformWindowSizing()
 
     def deleteLines(self):
         self.canvas.delete("line")
@@ -322,6 +320,12 @@ class GUI:
                 self.highlightedAgent = None
                 self.highlightCell(cell)
         self.doTimestep()
+
+    def doCrossPlatformWindowSizing(self):
+        self.window.update_idletasks()
+        self.resizeInterface()
+        self.window.update_idletasks()
+        self.resizeInterface()
 
     def doDoubleClick(self, event):
         self.doubleClick = True
