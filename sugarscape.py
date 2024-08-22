@@ -1123,7 +1123,7 @@ def verifyConfiguration(configuration):
     # Ensure experimental group is properly defined or otherwise ignored
     if configuration["experimentalGroup"] == "":
         configuration["experimentalGroup"] = None
-    elif configuration["experimentalGroup"] not in ["depressed", "female", "male", "sick"]:
+    elif configuration["experimentalGroup"] != None and configuration["experimentalGroup"] not in ["depressed", "female", "male", "sick"]:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot provide separate log stats for experimental group {configuration['experimentalGroup']}. Disabling separate log stats.")
         configuration["experimentalGroup"] = None
