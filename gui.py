@@ -321,17 +321,6 @@ class GUI:
             self.highlightCell(cell)
         self.doTimestep()
 
-    def doControlClick(self, event):
-        self.doubleClick = False
-        cell = self.findClickedCell(event)
-        if cell == self.highlightedCell or cell.agent == None:
-            self.clearHighlight()
-        else:
-            self.highlightedCell = cell
-            self.highlightedAgent = cell.agent
-            self.highlightCell(cell)
-        self.doTimestep()
-
     def doCrossPlatformWindowSizing(self):
         self.window.update_idletasks()
         self.resizeInterface()
