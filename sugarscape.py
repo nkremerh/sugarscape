@@ -22,21 +22,26 @@ class Sugarscape:
         self.timestep = 0
         self.nextAgentID = 0
         self.nextDiseaseID = 0
-        environmentConfiguration = {"globalMaxSugar": configuration["environmentMaxSugar"], "sugarRegrowRate": configuration["environmentSugarRegrowRate"],
-                                    "seasonInterval": configuration["environmentSeasonInterval"], "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
-                                    "spiceConsumptionPollutionFactor": configuration["environmentSpiceConsumptionPollutionFactor"],
-                                    "sugarConsumptionPollutionFactor": configuration["environmentSugarConsumptionPollutionFactor"],
-                                    "spiceProductionPollutionFactor": configuration["environmentSpiceProductionPollutionFactor"],
-                                    "sugarProductionPollutionFactor": configuration["environmentSugarProductionPollutionFactor"],
-                                    "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"], 
+        environmentConfiguration = {"equator": configuration["environmentEquator"],
+                                    "globalMaxSpice": configuration["environmentMaxSpice"],
+                                    "globalMaxSugar": configuration["environmentMaxSugar"],
+                                    "maxCombatLoot": configuration["environmentMaxCombatLoot"],
+                                    "neighborhoodMode": configuration["neighborhoodMode"],
+                                    "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"],
                                     "pollutionDiffusionTimeframe": configuration["environmentPollutionDiffusionTimeframe"],
                                     "pollutionTimeframe": configuration["environmentPollutionTimeframe"],
-                                    "maxCombatLoot": configuration["environmentMaxCombatLoot"],
-                                    "globalMaxSpice": configuration["environmentMaxSpice"], "spiceRegrowRate": configuration["environmentSpiceRegrowRate"],
+                                    "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
+                                    "seasonInterval": configuration["environmentSeasonInterval"],
+                                    "spiceConsumptionPollutionFactor": configuration["environmentSpiceConsumptionPollutionFactor"],
+                                    "spiceProductionPollutionFactor": configuration["environmentSpiceProductionPollutionFactor"],
+                                    "spiceRegrowRate": configuration["environmentSpiceRegrowRate"],
+                                    "sugarConsumptionPollutionFactor": configuration["environmentSugarConsumptionPollutionFactor"],
+                                    "sugarProductionPollutionFactor": configuration["environmentSugarProductionPollutionFactor"],
+                                    "sugarRegrowRate": configuration["environmentSugarRegrowRate"],
+                                    "sugarscapeSeed": configuration["seed"],
                                     "universalSpiceIncomeInterval": configuration["environmentUniversalSpiceIncomeInterval"],
                                     "universalSugarIncomeInterval": configuration["environmentUniversalSugarIncomeInterval"],
-                                    "equator": configuration["environmentEquator"], "sugarscapeSeed": configuration["seed"],
-                                    "neighborhoodMode": configuration["neighborhoodMode"], "wraparound": configuration["environmentWraparound"]}
+                                    "wraparound": configuration["environmentWraparound"]}
         self.seed = configuration["seed"]
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
@@ -1147,13 +1152,14 @@ def verifyConfiguration(configuration):
     if negativeFlag > 0:
         print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
 
-    if len(configuration["environmentStartingQuadrants"]) == 0:
-        configuration["environmentStartingQuadrants"] = [1, 2, 3, 4]
 
     if configuration["environmentQuadrantSizeFactor"] > 1 or configuration["environmentQuadrantSizeFactor"] < 0:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
             print(f"Cannot have a quadrant size factor of {configuration['environmentQuadrantSizeFactor']}. Setting quadrant size factor to 1.")
         configuration["environmentQuadrantSizeFactor"] = 1
+
+    if len(configuration["environmentStartingQuadrants"]) == 0:
+        configuration["environmentStartingQuadrants"] = [1, 2, 3, 4]
 
     if configuration["environmentTribePerQuadrant"] == True:
         configuration["environmentMaxTribes"] = len(configuration["environmentStartingQuadrants"])
@@ -1166,7 +1172,25 @@ def verifyConfiguration(configuration):
             print(f"Could not allocate {configuration['startingAgents']} agents. Allocating maximum of {totalCells} agents.")
         configuration["startingAgents"] = totalCells
 
+    # Set timesteps to (seemingly) unlimited runtime
+    if configuration["timesteps"] < 0:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print("Cannot have a negative amount of timesteps. Setting timesetup to unlimited runtime.")
+        configuration["timesteps"] = sys.maxsize
+
     # Ensure infinitely-lived agents are properly initialized
+    if configuration["agentDecisionModelTribalFactor"][0] < 0:
+        if configuration["agentDecisionModelTribalFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(
+                    f"Cannot have age tribal factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent tribal factor.")
+        configuration["agentDecisionModelTribalFactor"] = [-1, -1]
+    elif configuration["agentDecisionModelTribalFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(
+                f"Cannot have agent maximum tribal factor of {configuration['agentDecisionModelTribalFactor'][1]}. Setting agent maximum tribal factor to 1.0.")
+        configuration["agentDecisionModelTribalFactor"][1] = 1
+
     if configuration["agentMaxAge"][0] < 0:
         if configuration["agentMaxAge"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
@@ -1182,21 +1206,12 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have agent maximum selfishness factor of {configuration['agentSelfishnessFactor'][1]}. Setting agent maximum selfishness factor to 1.0.")
         configuration["agentSelfishnessFactor"][1] = 1
-   
-    if configuration["agentDecisionModelTribalFactor"][0] < 0:
-        if configuration["agentDecisionModelTribalFactor"][1] != -1:
-            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(f"Cannot have age tribal factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent tribal factor.")
-        configuration["agentDecisionModelTribalFactor"] = [-1, -1]
-    elif configuration["agentDecisionModelTribalFactor"][1] > 1:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have agent maximum tribal factor of {configuration['agentDecisionModelTribalFactor'][1]}. Setting agent maximum tribal factor to 1.0.")
-        configuration["agentDecisionModelTribalFactor"][1] = 1
 
     if configuration["agentTagStringLength"] < 0:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have a negative agent tag string length. Setting agent tag string length to 0.")
         configuration["agentTagStringLength"] = 0
+
     if configuration["environmentMaxTribes"] < 0:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
             print(f"Cannot have a negative number of tribes. Setting number of tribes to 0.")
@@ -1210,18 +1225,19 @@ def verifyConfiguration(configuration):
 
     # Ensure at most number of tribes and decision models are equal to the number of colors in the GUI
     maxColors = 25
-    if configuration["environmentMaxTribes"] > maxColors:
-        if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-            print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
-        configuration["environmentMaxTribes"] = maxColors
-
     uniqueAgentDecisionModels = set(configuration["agentDecisionModels"])
     numUniqueAgentDecisionModels = len(uniqueAgentDecisionModels)
     if numUniqueAgentDecisionModels > maxColors:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot provide {len(configuration['agentDecisionModels'])} decision models. Allocating maximum of {maxColors}.")
+            print(
+                f"Cannot provide {len(configuration['agentDecisionModels'])} decision models. Allocating maximum of {maxColors}.")
         removeDecisionModels = uniqueAgentDecisionModels[maxColors:]
-        configuration["agentDecisionModels"] = [i for i in configuration["agentDecisionModels"] if i not in removeDecisionModels]
+        configuration["agentDecisionModels"] = [i for i in configuration["agentDecisionModels"] if
+                                                i not in removeDecisionModels]
+    if configuration["environmentMaxTribes"] > maxColors:
+        if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+            print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
+        configuration["environmentMaxTribes"] = maxColors
 
     # Ensure experimental group is properly defined or otherwise ignored
     if configuration["experimentalGroup"] == "":
@@ -1240,33 +1256,6 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"] and startingDiseasesPerAgent != configuration["startingDiseasesPerAgent"]:
             print(f"Range of starting diseases per agent exceeds {startingDiseases} starting diseases. Setting range to {startingDiseasesPerAgent}.")
         configuration["startingDiseasesPerAgent"] = startingDiseasesPerAgent
-
-    # Set timesteps to (seemingly) unlimited runtime
-    if configuration["timesteps"] < 0:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print("Cannot have a negative amount of timesteps. Setting timesetup to unlimited runtime.")
-        configuration["timesteps"] = sys.maxsize
-
-    # Ensure the pollution start and end timesteps are in the proper order
-    if configuration["environmentPollutionTimeframe"] != [0, 0]:
-        pollutionStart, pollutionEnd = configuration["environmentPollutionTimeframe"]
-        if pollutionStart > pollutionEnd and pollutionEnd >= 0:
-            swap = pollutionStart
-            pollutionStart = pollutionEnd
-            pollutionEnd = swap
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution start and end values provided in incorrect order. Switching values around.")
-        # If provided a negative value, assume the start timestep is the very first of the simulation
-        if pollutionStart < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution start timestep {pollutionStart} is invalid. Setting pollution start timestep to 0.")
-            pollutionStart = 0
-        # If provided a negative value, assume the end timestep is the very end of the simulation
-        if pollutionEnd < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution end timestep {pollutionEnd} is invalid. Setting pollution end timestep to {configuration['timesteps']}.")
-            pollutionEnd = configuration["timesteps"]
-        configuration["environmentPollutionTimeframe"] = [pollutionStart, pollutionEnd]
 
     # Ensure the pollution diffusion start and end timesteps are in the proper order
     if configuration["environmentPollutionDiffusionTimeframe"] != [0, 0]:
@@ -1289,11 +1278,32 @@ def verifyConfiguration(configuration):
             pollutionDiffusionEnd = configuration["timesteps"]
         configuration["environmentPollutionDiffusionTimeframe"] = [pollutionDiffusionStart, pollutionDiffusionEnd]
 
-    if configuration["seed"] == -1:
-        configuration["seed"] = random.randrange(sys.maxsize)
+    # Ensure the pollution start and end timesteps are in the proper order
+    if configuration["environmentPollutionTimeframe"] != [0, 0]:
+        pollutionStart, pollutionEnd = configuration["environmentPollutionTimeframe"]
+        if pollutionStart > pollutionEnd and pollutionEnd >= 0:
+            swap = pollutionStart
+            pollutionStart = pollutionEnd
+            pollutionEnd = swap
+            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"Pollution start and end values provided in incorrect order. Switching values around.")
+        # If provided a negative value, assume the start timestep is the very first of the simulation
+        if pollutionStart < 0:
+            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"Pollution start timestep {pollutionStart} is invalid. Setting pollution start timestep to 0.")
+            pollutionStart = 0
+        # If provided a negative value, assume the end timestep is the very end of the simulation
+        if pollutionEnd < 0:
+            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"Pollution end timestep {pollutionEnd} is invalid. Setting pollution end timestep to {configuration['timesteps']}.")
+            pollutionEnd = configuration["timesteps"]
+        configuration["environmentPollutionTimeframe"] = [pollutionStart, pollutionEnd]
 
     if configuration["logfile"] == "":
         configuration["logfile"] = None
+
+    if configuration["seed"] == -1:
+        configuration["seed"] = random.randrange(sys.maxsize)
 
     recognizedDebugModes = ["agent", "all", "cell", "disease", "environment", "ethics", "none", "sugarscape"]
     validModes = True

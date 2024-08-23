@@ -6,35 +6,36 @@ class Environment:
     def __init__(self, height, width, sugarscape, configuration):
         self.width = width
         self.height = height
-        self.globalMaxSugar = configuration["globalMaxSugar"]
-        self.sugarRegrowRate = configuration["sugarRegrowRate"]
-        self.globalMaxSpice = configuration["globalMaxSpice"]
-        self.spiceRegrowRate = configuration["spiceRegrowRate"]
         self.sugarscape = sugarscape
-        self.timestep = 0
-        self.seed = configuration["sugarscapeSeed"]
-        self.seasonInterval = configuration["seasonInterval"]
+        self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
+        self.globalMaxSpice = configuration["globalMaxSpice"]
+        self.globalMaxSugar = configuration["globalMaxSugar"]
+        self.maxCombatLoot = configuration["maxCombatLoot"]
+        self.neighborhoodMode = configuration["neighborhoodMode"]
+        self.pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
+        self.pollutionDiffusionDelay = configuration["pollutionDiffusionDelay"]
+        self.pollutionDiffusionEnd = configuration["pollutionDiffusionTimeframe"][1]
+        self.pollutionDiffusionStart = configuration["pollutionDiffusionTimeframe"][0]
+        self.pollutionEnd = configuration["pollutionTimeframe"][1]
+        self.pollutionStart = configuration["pollutionTimeframe"][0]
+        self.seasonalGrowbackCountdown = configuration["seasonalGrowbackDelay"]
         self.seasonalGrowbackDelay = configuration["seasonalGrowbackDelay"]
+        self.seasonInterval = configuration["seasonInterval"]
         self.seasonNorth = "wet" if configuration["seasonInterval"] > 0 else None
         self.seasonSouth = "dry" if configuration["seasonInterval"] > 0 else None
-        self.seasonalGrowbackCountdown = configuration["seasonalGrowbackDelay"]
-        self.pollutionDiffusionDelay = configuration["pollutionDiffusionDelay"]
-        self.pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
-        self.pollutionDiffusionStart = configuration["pollutionDiffusionTimeframe"][0]
-        self.pollutionDiffusionEnd = configuration["pollutionDiffusionTimeframe"][1]
-        self.pollutionStart = configuration["pollutionTimeframe"][0]
-        self.pollutionEnd = configuration["pollutionTimeframe"][1]
-        self.sugarConsumptionPollutionFactor = configuration["sugarConsumptionPollutionFactor"]
+        self.seed = configuration["sugarscapeSeed"]
         self.spiceConsumptionPollutionFactor = configuration["spiceConsumptionPollutionFactor"]
-        self.sugarProductionPollutionFactor = configuration["sugarProductionPollutionFactor"]
         self.spiceProductionPollutionFactor = configuration["spiceProductionPollutionFactor"]
-        self.maxCombatLoot = configuration["maxCombatLoot"]
+        self.spiceRegrowRate = configuration["spiceRegrowRate"]
+        self.sugarConsumptionPollutionFactor = configuration["sugarConsumptionPollutionFactor"]
+        self.sugarProductionPollutionFactor = configuration["sugarProductionPollutionFactor"]
+        self.sugarRegrowRate = configuration["sugarRegrowRate"]
         self.universalSpiceIncomeInterval = configuration["universalSpiceIncomeInterval"]
         self.universalSugarIncomeInterval = configuration["universalSugarIncomeInterval"]
-        self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
-        self.neighborhoodMode = configuration["neighborhoodMode"]
         self.wraparound = configuration["wraparound"]
         self.maxCellDistance = 0
+        self.timestep = 0
+
         # Populate grid with NoneType objects
         self.grid = [[None for j in range(height)]for i in range(width)]
 
