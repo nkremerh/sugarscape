@@ -154,6 +154,11 @@ agentDecisionModelTribalFactor: [float, float]
     Note: Valid range is [0.0, 1.0], use -1 to disable.
     Default: [-1, -1]
 
+agentDepressionPercentage: float
+    Set the percentage chance an agent will experience depression symptoms at birth.
+    Note: The starting agent population will have this same percentage of depressed agents.
+    Default: 0.0
+
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
     Default: [0, 0]
@@ -440,6 +445,11 @@ environmentWraparound: bool
     Set whether the environment is a torus (wraparound) or a plane (no wraparound).
     Default: true
 
+experimentalGroup: string
+    Set the experimental group of agents under study for finer-grained logging.
+    Options: "depressed", "female", "male", "sick"
+    Default: null
+
 headlessMode: bool
     Set whether the GUI is enabled.
     Default: false
@@ -456,7 +466,7 @@ interfaceWidth: int
 
 logfile: path
     Set the path of the log file.
-    Default: ""
+    Default: null
 
 logfileFormat: string
     Set the file format for the log file.
