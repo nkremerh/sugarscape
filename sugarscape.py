@@ -68,6 +68,15 @@ class Sugarscape:
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
         self.experimentalGroup = configuration["experimentalGroup"]
+        if self.experimentalGroup != None:
+            # Convert keys to Pythonic case scheme and initialize values
+            groupRuntimeStats = {}
+            for key in self.runtimeStats.keys():
+                controlGroupKey = "control" + key[0].upper() + key[1:]
+                experimentalGroupKey = self.experimentalGroup + key[0].upper() + key[1:]
+                groupRuntimeStats[controlGroupKey] = 0
+                groupRuntimeStats[experimentalGroupKey] = 0
+        self.runtimeStats.update(groupRuntimeStats)
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
