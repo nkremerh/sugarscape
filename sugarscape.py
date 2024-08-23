@@ -59,10 +59,10 @@ class Sugarscape:
         # TODO: Streamline naming
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanMovement": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
                              "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
-                             "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "totalWealthLost": 0,
-                             "totalMetabolismCost": 0, "agentsReplaced": 0, "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0,
-                             "agentWealthTotal": 0, "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0,
-                             "agentTotalMetabolism": 0, "agentCombatDeaths": 0, "agentAgingDeaths": 0, "sickAgents": 0}
+                             "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "agentsReplaced": 0,
+                             "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0,
+                             "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
+                             "agentCombatDeaths": 0, "agentAgingDeaths": 0, "sickAgents": 0}
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -249,8 +249,6 @@ class Sugarscape:
         if self.log == None:
             return
         # Update total wealth accumulation to include still living agents at simulation end
-        for agent in self.agents:
-            self.runtimeStats["totalMetabolismCost"] += agent.sugarMetabolism + agent.spiceMetabolism
         environmentWealthCreated = 0
         environmentWealthTotal = 0
         for i in range(self.environment.width):
@@ -795,8 +793,6 @@ class Sugarscape:
         meanFamilyHappiness = 0
         meanConflictHappiness = 0
         numTraders = 0
-        totalWealthLost = 0
-        totalMetabolismCost = 0
         sickAgents = 0
 
         environmentWealthCreated = 0
@@ -854,7 +850,6 @@ class Sugarscape:
                 minWealth = agentWealth
             if agentWealth > maxWealth:
                 maxWealth = agentWealth
-            totalMetabolismCost += agent.sugarMetabolism + agent.spiceMetabolism
             numAgents += 1
 
         if numAgents > 0:
@@ -905,7 +900,6 @@ class Sugarscape:
             agentWealth = agent.sugar + agent.spice
             meanAgeAtDeath += agent.age
             agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
-            totalWealthLost += agentWealth
             agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
             agentDiseaseDeaths += 1 if agent.causeOfDeath == "disease" else 0
             agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
