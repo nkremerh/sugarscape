@@ -1004,6 +1004,8 @@ class Agent:
         return retaliators
 
     def findSocialHappiness(self):
+        if self.maxFriends == 0:
+            return 0
         step = 2 / self.maxFriends
         return (len(self.socialNetwork["friends"]) * step) - 1
 
