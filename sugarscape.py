@@ -76,7 +76,7 @@ class Sugarscape:
                 experimentalGroupKey = self.experimentalGroup + key[0].upper() + key[1:]
                 groupRuntimeStats[controlGroupKey] = 0
                 groupRuntimeStats[experimentalGroupKey] = 0
-        self.runtimeStats.update(groupRuntimeStats)
+            self.runtimeStats.update(groupRuntimeStats)
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
