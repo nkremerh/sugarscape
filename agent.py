@@ -41,18 +41,18 @@ class Agent:
         self.startingSugar = configuration["sugar"]
         self.sugar = configuration["sugar"]
         self.sugarMetabolism = configuration["sugarMetabolism"]
-        self.tags = configuration["tags"]
         self.tagging = configuration["tagging"]
         self.tagPreferences = configuration["tagPreferences"]
+        self.tags = configuration["tags"]
         self.tradeFactor = configuration["tradeFactor"]
         self.universalSpice = configuration["universalSpice"]
         self.universalSugar = configuration["universalSugar"]
         self.vision = configuration["vision"]
         self.visionMode = configuration["visionMode"]
 
-        self.alive = True
         self.age = 0
         self.aggressionFactorModifier = 0
+        self.alive = True
         self.causeOfDeath = None
         self.cellsInRange = []
         self.childEndowmentHashes = None
@@ -84,10 +84,10 @@ class Agent:
         self.sugarMeanIncome = 1
         self.sugarMetabolismModifier = 0
         self.sugarPrice = 0
-        self.tribe = self.findTribe()
-        self.timestep = birthday
         self.tagZeroes = 0
+        self.timestep = birthday
         self.tradeVolume = 0
+        self.tribe = self.findTribe()
         self.visionModifier = 0
         self.wealthHappiness = 0
 
@@ -133,6 +133,15 @@ class Agent:
         self.socialNetwork[agentID] = {"agent": agent, "lastSeen": self.lastMoved, "timesVisited": 1, "timesReproduced": 0,
                                          "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
 
+    def addLoanFromAgent(self, agent, timestep, sugarLoan, spiceLoan, duration):
+        agentID = agent.ID
+        if agentID not in self.socialNetwork:
+            self.addAgentToSocialNetwork(agent)
+        self.socialNetwork[agentID]["timesLoaned"] += 1
+        loan = {"creditor": agentID, "debtor": self.ID, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
+                "loanOrigin": timestep}
+        self.socialNetwork["creditors"].append(loan)
+
     def addLoanToAgent(self, agent, timestep, sugarPrincipal, sugarLoan, spicePrincipal, spiceLoan, duration):
         agentID = agent.ID
         if agentID not in self.socialNetwork:
@@ -146,15 +155,6 @@ class Agent:
         self.spice -= spicePrincipal
         agent.sugar = agent.sugar + sugarPrincipal
         agent.spice = agent.spice + spicePrincipal
-
-    def addLoanFromAgent(self, agent, timestep, sugarLoan, spiceLoan, duration):
-        agentID = agent.ID
-        if agentID not in self.socialNetwork:
-            self.addAgentToSocialNetwork(agent)
-        self.socialNetwork[agentID]["timesLoaned"] += 1
-        loan = {"creditor": agentID, "debtor": self.ID, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
-                "loanOrigin": timestep}
-        self.socialNetwork["creditors"].append(loan)
 
     def canReachCell(self, cell):
         if cell == self.cell or cell in self.cellsInRange:
@@ -476,14 +476,6 @@ class Agent:
             self.findCellsInRange()
             self.updateHappiness()
 
-    def doUniversalIncome(self):
-        if (self.timestep - self.lastUniversalSpiceIncomeTimestep) >= self.cell.environment.universalSpiceIncomeInterval:
-            self.spice += self.universalSpice
-            self.lastUniversalSpiceIncomeTimestep = self.timestep
-        if (self.timestep - self.lastUniversalSugarIncomeTimestep) >= self.cell.environment.universalSugarIncomeInterval:
-            self.sugar += self.universalSugar
-            self.lastUniversalSugarIncomeTimestep = self.timestep
-
     def doTrading(self):
         # If not a trader, skip trading
         if self.tradeFactor == 0:
@@ -581,6 +573,14 @@ class Agent:
                 self.spicePrice += spicePrice
                 trader.updateTimesTradedWithAgent(self, self.lastMoved, transactions)
                 self.updateTimesTradedWithAgent(trader, self.lastMoved, transactions)
+
+    def doUniversalIncome(self):
+        if (self.timestep - self.lastUniversalSpiceIncomeTimestep) >= self.cell.environment.universalSpiceIncomeInterval:
+            self.spice += self.universalSpice
+            self.lastUniversalSpiceIncomeTimestep = self.timestep
+        if (self.timestep - self.lastUniversalSugarIncomeTimestep) >= self.cell.environment.universalSugarIncomeInterval:
+            self.sugar += self.universalSugar
+            self.lastUniversalSugarIncomeTimestep = self.timestep
 
     def findAggression(self):
         return max(0, self.aggressionFactor + self.aggressionFactorModifier)
@@ -834,24 +834,6 @@ class Agent:
             sugarDebt += creditor["sugarLoan"] / creditor["loanDuration"]
         return sugarDebt
 
-    def findTimeToLive(self, ageLimited=False):
-        spiceMetabolism = self.findSpiceMetabolism()
-        sugarMetabolism = self.findSugarMetabolism()
-        # If no sugar or spice metabolism, set days to death for that resource to seemingly infinite
-        sugarTimeToLive = self.sugar / sugarMetabolism if sugarMetabolism > 0 else sys.maxsize
-        spiceTimeToLive = self.spice / spiceMetabolism if spiceMetabolism > 0 else sys.maxsize
-        # If an agent has basic income, include the income for at least as many timesteps as they can already survive
-        if self.universalSugar != 0:
-            sugarIncome = (sugarTimeToLive * self.universalSugar) / self.cell.environment.universalSugarIncomeInterval
-            sugarTimeToLive = (self.sugar + sugarIncome) / sugarMetabolism if sugarMetabolism > 0 else sys.maxsize
-        if self.universalSpice != 0:
-            spiceIncome = (spiceTimeToLive * self.universalSpice) / self.cell.environment.universalSpiceIncomeInterval
-            spiceTimeToLive = (self.spice + spiceIncome) / spiceMetabolism if spiceMetabolism > 0 else sys.maxsize
-        timeToLive = min(sugarTimeToLive, spiceTimeToLive)
-        if ageLimited == True:
-            timeToLive = min(timeToLive, self.maxAge - self.age)
-        return timeToLive
-
     def findEmptyNeighborCells(self):
         emptyCells = []
         neighborCells = self.cell.neighbors.values()
@@ -1014,6 +996,24 @@ class Agent:
 
     def findSugarMetabolism(self):
         return max(0, self.sugarMetabolism + self.sugarMetabolismModifier)
+
+    def findTimeToLive(self, ageLimited=False):
+        spiceMetabolism = self.findSpiceMetabolism()
+        sugarMetabolism = self.findSugarMetabolism()
+        # If no sugar or spice metabolism, set days to death for that resource to seemingly infinite
+        sugarTimeToLive = self.sugar / sugarMetabolism if sugarMetabolism > 0 else sys.maxsize
+        spiceTimeToLive = self.spice / spiceMetabolism if spiceMetabolism > 0 else sys.maxsize
+        # If an agent has basic income, include the income for at least as many timesteps as they can already survive
+        if self.universalSugar != 0:
+            sugarIncome = (sugarTimeToLive * self.universalSugar) / self.cell.environment.universalSugarIncomeInterval
+            sugarTimeToLive = (self.sugar + sugarIncome) / sugarMetabolism if sugarMetabolism > 0 else sys.maxsize
+        if self.universalSpice != 0:
+            spiceIncome = (spiceTimeToLive * self.universalSpice) / self.cell.environment.universalSpiceIncomeInterval
+            spiceTimeToLive = (self.spice + spiceIncome) / spiceMetabolism if spiceMetabolism > 0 else sys.maxsize
+        timeToLive = min(sugarTimeToLive, spiceTimeToLive)
+        if ageLimited == True:
+            timeToLive = min(timeToLive, self.maxAge - self.age)
+        return timeToLive
 
     def findTribe(self):
         if self.tags == None:
@@ -1252,9 +1252,6 @@ class Agent:
             self.addAgentToSocialNetwork(mother)
         self.socialNetwork["mother"] = mother
 
-    def spawnChild(self, childID, birthday, cell, configuration):
-        return Agent(childID, birthday, cell, configuration)
-
     def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
         i = 0
@@ -1267,6 +1264,9 @@ class Agent:
                 j -= 1
             i += 1
         return cells
+
+    def spawnChild(self, childID, birthday, cell, configuration):
+        return Agent(childID, birthday, cell, configuration)
 
     def updateDiseaseEffects(self, disease):
         # If disease not in list of diseases, agent has recovered and undo its effects
@@ -1312,6 +1312,20 @@ class Agent:
                 self.socialNetwork["friends"].remove(maxDistanceFriend)
                 self.socialNetwork["friends"].append(neighborEntry)
         self.socialNetwork["bestFriend"] = self.findBestFriend()
+
+    def updateHappiness(self):
+        if self.isAlive() == False:
+            return
+        self.conflictHappiness = self.findConflictHappiness()
+        self.familyHappiness = self.findFamilyHappiness()
+        self.healthHappiness = self.findHealthHappiness()
+        self.socialHappiness = self.findSocialHappiness()
+        self.wealthHappiness = self.findWealthHappiness()
+
+        self.happiness = self.findHappiness()
+        # Depressed agents have lower overall happiness due to depression
+        if self.depressed == True:
+            self.happiness = math.ceil(self.happiness - (self.happiness * 0.5763))
 
     def updateLoans(self):
         for debtor in self.socialNetwork["debtors"]:
@@ -1374,19 +1388,6 @@ class Agent:
         else:
             self.socialNetwork[agentID]["timesVisited"] += 1
             self.socialNetwork[agentID]["lastSeen"] = timestep
-
-    def updateHappiness(self):
-        if self.isAlive() == False:
-            return
-        self.healthHappiness = self.findHealthHappiness()
-        self.wealthHappiness = self.findWealthHappiness()
-        self.socialHappiness = self.findSocialHappiness()
-        self.familyHappiness = self.findFamilyHappiness()
-        self.conflictHappiness = self.findConflictHappiness()
-        self.happiness = self.findHappiness()
-        # Depressed agents have lower overall happiness due to depression
-        if self.depressed == True:
-            self.happiness = math.ceil(self.happiness - (self.happiness * 0.5763))
 
     def __str__(self):
         return f"{self.ID}"
