@@ -8,8 +8,9 @@ Requirements:
 Python 3
 
 Optional Dependencies:
-Matplotlib
-TkInter
+Matplotlib (plotting)
+TkInter (GUI)
+neat-python (Neural decision model)
 
 Usage:
 python sugarscape.py
@@ -54,6 +55,9 @@ agent_replacement.json:
 
 seasonal_migration.json:
     Agent migration with seasonal sugar growback (pgs. 44-46).
+
+neat_basic.json:
+    Agent sugar and spice collection with simple rtNEAT decision models.
 
 pollution_formation.json:
     Agent sugar collection with constant sugar growback and pollution (pgs. 45-50).
@@ -145,7 +149,7 @@ agentDecisionModelFactor: [float, float]
 
 agentDecisionModels: [string, ...]
     Set the agent decision models for different decisionmaking.
-    Options: "altruistBinary", "altruistTop", "benthamBinary", "benthamTop", "egoistBinary", "egoistTop", "negativeBentham", "none", "rawSugarscape"
+    Options: "altruistBinary", "altruistTop", "benthamBinary", "benthamTop", "egoistBinary", "egoistTop", "neural", "negativeBentham", "none", "rawSugarscape"
     Note: Adding either "HalfLookahead" or "NoLookahead" after a decision model name will enforce a particular decision model lookahead factor.
     Default: ["none"]
 

@@ -5,6 +5,7 @@ import cell
 import disease
 import environment
 import ethics
+import machinelearning
 
 import getopt
 import hashlib
@@ -128,6 +129,10 @@ class Sugarscape:
             if "all" in self.debug or "sugarscape" in self.debug:
                 print(f"Could not allocate {numAgents} agents. Allocating maximum of {totalCells}.")
             numAgents = totalCells
+        if self.timestep > 0:
+            self.agentsReplaced = numAgents
+            # Fitness metric can be total wealth, time to live, age...
+            fittestAgents = sorted(self.agents, key=lambda agent: agent.age, reverse=True)[:10]
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
         agentEndowments = self.randomizeAgentEndowments(numAgents)
@@ -156,6 +161,20 @@ class Sugarscape:
             elif "negativeBentham" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 a.selfishnessFactor = -1
+            elif "neural" in agentConfiguration["decisionModel"]:
+                if self.timestep > 0:
+                    parent1 = random.choice(fittestAgents)
+                    parent2 = random.choice(fittestAgents)
+                    while parent1 == parent2:
+                        parent2 = random.choice(fittestAgents)
+                    parent1.genome.fitness = 0.0
+                    parent2.genome.fitness = 0.0
+                    childGenome = neat.DefaultGenome(agentID)
+                    childGenome.configure_crossover(parent1.genome, parent2.genome, NEATConfiguration.genome_config)
+                    childGenome.mutate(NEATConfiguration.genome_config)
+                    a = machinelearning.NeuralAgent(agentID, self.timestep, randomCell, agentConfiguration, NEATConfiguration, childGenome)
+                else:
+                    a = machinelearning.NeuralAgent(agentID, self.timestep, randomCell, agentConfiguration, NEATConfiguration)
 
             if "NoLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0
@@ -1338,6 +1357,11 @@ def verifyConfiguration(configuration):
             configuration["agentDecisionModels"] = configuration["agentDecisionModel"]
     if type(configuration["agentDecisionModels"]) == str:
             configuration["agentDecisionModels"] = [configuration["agentDecisionModels"]]
+
+    if len(configuration["agentDecisionModels"]) > 1 and "neural" in configuration["agentDecisionModels"]:
+        configuration["agentDecisionModels"] = ["neural"]
+        if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "ethics" in configuration["debugMode"]:
+            print("Crossover of neural agents and standard ethical agents is currently disabled. Setting all agents to use neural decision model.")
     return configuration
 
 if __name__ == "__main__":
@@ -1432,6 +1456,12 @@ if __name__ == "__main__":
                      }
     configuration = parseOptions(configuration)
     configuration = verifyConfiguration(configuration)
+    if configuration["agentDecisionModels"] == ["neural"]:
+        import neat
+        configPath = "neat_config"
+        NEATConfiguration = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                            neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                            configPath)
     if configuration["headlessMode"] == False:
         import gui
     random.seed(configuration["seed"])
