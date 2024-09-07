@@ -1018,12 +1018,13 @@ class Agent:
     def findTribe(self):
         if self.tags == None:
             return None
-        config = self.cell.environment.sugarscape.configuration
+        sugarscape = self.cell.environment.sugarscape
+        config = sugarscape.configuration
         numTribes = config["environmentMaxTribes"]
         possibleZeroes = config["agentTagStringLength"] + 1
         self.tagZeroes = self.tags.count(0)
         tribeSize = possibleZeroes / numTribes
-        tribe = min(math.ceil((self.tagZeroes + 1) / tribeSize) - 1, numTribes - 1)
+        tribe = sugarscape.tribes[min(math.ceil((self.tagZeroes + 1) / tribeSize) - 1, numTribes - 1)]
         return tribe
 
     def findVision(self):

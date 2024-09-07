@@ -54,6 +54,14 @@ class Sugarscape:
         self.bornAgents = []
         self.deadAgents = []
         self.diseases = []
+        self.tribes = []
+        tribeAdjectives = ["Bad", "Big", "Heroic", "Mighty", "Tiny", "Loud", "Quiet", "Scary", "Kind", "Good"]
+        tribeNouns = ["Apples", "Bananas", "Blueberries", "Cranberries", "Grapes", "Kiwis", "Cherries", "Strawberries", "Plums", "Lemons"]
+        for i in range(self.configuration["environmentMaxTribes"]):
+            tribe = f"{random.choice(tribeAdjectives)} {random.choice(tribeNouns)}"
+            while tribe in self.tribes:
+                tribe = f"{random.choice(tribeAdjectives)} {random.choice(tribeNouns)}"
+            self.tribes.append(tribe)
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
@@ -67,7 +75,8 @@ class Sugarscape:
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "agentsReplaced": 0,
                              "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0,
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
-                             "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "sickAgents": 0}
+                             "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": None, "largestTribeSize": 0,
+                             "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0}
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -897,6 +906,7 @@ class Sugarscape:
         self.updateRuntimeStatsPerGroup()
 
     def updateRuntimeStatsPerGroup(self, group=None, notInGroup=False):
+        maxTribe = None
         maxWealth = 0
         meanAge = 0
         meanConflictHappiness = 0
@@ -915,6 +925,7 @@ class Sugarscape:
         minWealth = sys.maxsize
         numAgents = 0
         numTraders = 0
+        numTribes = 0
         sickAgents = 0
         tradeVolume = 0
 
@@ -939,6 +950,7 @@ class Sugarscape:
 
         agentsBorn = 0
         agentsReplaced = 0
+        tribes = {}
 
         for agent in self.agents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
@@ -973,12 +985,18 @@ class Sugarscape:
                 minWealth = agentWealth
             if agentWealth > maxWealth:
                 maxWealth = agentWealth
+            if agent.tribe not in tribes:
+                tribes[agent.tribe] = 1
+            else:
+                tribes[agent.tribe] += 1
             numAgents += 1
 
         if numAgents > 0:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
             agentWealthBurnRate = round(agentWealthBurnRate / numAgents, 2)
             agentWealthTotal = round(agentWealthTotal, 2)
+            maxTribe = max(tribes, key=tribes.get)
+            maxTribeSize = tribes[maxTribe]
             maxWealth = round(maxWealth, 2)
             meanAge = round(meanAge / numAgents, 2)
             meanConflictHappiness = round(meanConflictHappiness / numAgents, 2)
@@ -996,10 +1014,12 @@ class Sugarscape:
             meanWealth = round(meanWealth / numAgents, 2)
             meanWealthHappiness = round(meanWealthHappiness / numAgents, 2)
             minWealth = round(minWealth, 2)
+            remainingTribes = len(tribes)
             tradeVolume = round(tradeVolume, 2)
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
+            maxTribe = None
             maxWealth = 0
             meanAge = 0
             meanConflictHappiness = 0
@@ -1013,6 +1033,7 @@ class Sugarscape:
             meanWealth = 0
             meanWealthHappiness = 0
             minWealth = 0
+            remainingTribes = 0
             tradeVolume = 0
 
         numDeadAgents = 0
@@ -1045,12 +1066,12 @@ class Sugarscape:
                         "agentDiseaseDeaths": agentDiseaseDeaths, "agentMeanTimeToLive": agentMeanTimeToLive, "agentsBorn": agentsBorn,
                         "agentsReplaced": agentsReplaced, "agentStarvationDeaths": agentStarvationDeaths, "agentTotalMetabolism": agentTotalMetabolism,
                         "agentWealthBurnRate": agentWealthBurnRate, "agentWealthCollected": agentWealthCollected, "agentWealthTotal": agentWealthTotal,
-                        "maxWealth": maxWealth, "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
-                        "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
-                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSocialHappiness": meanSocialHappiness,
-                        "meanTradePrice": meanTradePrice, "meanWealth": meanWealth, "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision,
-                        "minWealth": minWealth, "population": numAgents, "sickAgents": sickAgents, "tradeVolume": tradeVolume
-                        }
+                        "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth, "meanAge": meanAge,
+                        "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness, "meanFamilyHappiness": meanFamilyHappiness,
+                        "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness, "meanMetabolism": meanMetabolism,
+                        "meanMovement": meanMovement, "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice,
+                        "meanWealth": meanWealth, "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision, "minWealth": minWealth,
+                        "population": numAgents, "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume}
 
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
