@@ -22,7 +22,7 @@ class GUI:
         numTribes = self.sugarscape.configuration["environmentMaxTribes"]
         numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
         for i in range(numTribes):
-            self.colors[self.sugarscape.tribes[i]] = self.palette[i]
+            self.colors[str(i)] = self.palette[i]
         for i in range(numDecisionModels):
             self.colors[self.sugarscape.configuration["agentDecisionModels"][i]] = self.palette[i]
 

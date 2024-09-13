@@ -54,14 +54,6 @@ class Sugarscape:
         self.bornAgents = []
         self.deadAgents = []
         self.diseases = []
-        self.tribes = []
-        tribeAdjectives = ["Bad", "Big", "Heroic", "Mighty", "Tiny", "Loud", "Quiet", "Scary", "Kind", "Good"]
-        tribeNouns = ["Apples", "Bananas", "Blueberries", "Cranberries", "Grapes", "Kiwis", "Cherries", "Strawberries", "Plums", "Lemons"]
-        for i in range(self.configuration["environmentMaxTribes"]):
-            tribe = f"{random.choice(tribeAdjectives)} {random.choice(tribeNouns)}"
-            while tribe in self.tribes:
-                tribe = f"{random.choice(tribeAdjectives)} {random.choice(tribeNouns)}"
-            self.tribes.append(tribe)
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
@@ -75,7 +67,7 @@ class Sugarscape:
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "agentsReplaced": 0,
                              "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0,
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
-                             "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": None, "largestTribeSize": 0,
+                             "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
                              "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0}
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
@@ -906,7 +898,7 @@ class Sugarscape:
         self.updateRuntimeStatsPerGroup()
 
     def updateRuntimeStatsPerGroup(self, group=None, notInGroup=False):
-        maxTribe = None
+        maxTribe = 0
         maxWealth = 0
         meanAge = 0
         meanConflictHappiness = 0
