@@ -899,6 +899,7 @@ class Sugarscape:
 
     def updateRuntimeStatsPerGroup(self, group=None, notInGroup=False):
         maxTribe = 0
+        maxTribeSize = 0
         maxWealth = 0
         meanAge = 0
         meanConflictHappiness = 0
