@@ -10,14 +10,17 @@ import sys
 datacols = []
 
 def parseDataset(path, dataset, totalTimesteps, skipExtinct=False):
-    encodedDir = os.fsencode(path) 
+    encodedDir = os.fsencode(path)
     for file in os.listdir(encodedDir):
         filename = os.fsdecode(file)
         if not (filename.endswith(".json") or filename.endswith(".csv")):
             continue
         filePath = path + filename
-        fileDecisionModel = re.compile(r"([A-z]*)\d*\.(json|csv)")
-        model = re.search(fileDecisionModel, filename).group(1)
+        fileDecisionModel = re.compile(r"^([A-z]*)(\d*)\.(json|csv)")
+        fileSearch = re.search(fileDecisionModel, filename)
+        if fileSearch == None:
+            continue
+        model = fileSearch.group(1)
         if model not in dataset:
             continue
         log = open(filePath)
@@ -52,6 +55,8 @@ def parseDataset(path, dataset, totalTimesteps, skipExtinct=False):
                     datacols.append(entry)
                 if entry not in dataset[model]["metrics"]:
                     dataset[model]["metrics"][entry] = [0 for j in range(totalTimesteps + 1)]
+                if item[entry] == "None":
+                    item[entry] = 0
                 dataset[model]["metrics"][entry][i-1] += float(item[entry])
             i += 1
     for model in dataset:
@@ -69,14 +74,17 @@ def findMeans(dataset):
                 dataset[model]["means"][column][i] = dataset[model]["metrics"][column][i] / dataset[model]["runs"]
         dataset[model]["means"]["meanWealth"] = []
         dataset[model]["means"]["meanDeaths"] = []
+        dataset[model]["means"]["sickPercentage"] = []
         for i in range(len(dataset[model]["metrics"]["population"])):
             deaths = dataset[model]["metrics"]["agentStarvationDeaths"][i] + dataset[model]["metrics"]["agentCombatDeaths"][i] + dataset[model]["metrics"]["agentAgingDeaths"][i]
             if dataset[model]["metrics"]["population"][i] == 0:
                 dataset[model]["means"]["meanWealth"].append(0)
                 dataset[model]["means"]["meanDeaths"].append(0)
+                dataset[model]["means"]["sickPercentage"].append(0)
             else:
                 dataset[model]["means"]["meanWealth"].append(dataset[model]["metrics"]["agentWealthTotal"][i] / dataset[model]["metrics"]["population"][i])
                 dataset[model]["means"]["meanDeaths"].append((deaths / dataset[model]["metrics"]["population"][i]) * 100)
+                dataset[model]["means"]["sickPercentage"].append((dataset[model]["metrics"]["sickAgents"][i] / dataset[model]["metrics"]["population"][i]) * 100)
     return dataset
 
 def parseOptions():
@@ -130,24 +138,50 @@ def generatePlots(config, models, totalTimesteps, dataset):
         generateSimpleLinePlot(models, dataset, totalTimesteps, "deaths.pdf", "meanDeaths", "Mean Deaths", "center right", True)
     if "meanAgeAtDeath" in config["plots"]:
         print("Generating mean age at death plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, "mean_age_at_death.pdf", "meanAgeAtDeath", "Mean Age at Death", "center right")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "mean_age_at_death.pdf", "meanAgeAtDeath", "Mean Age at Death", "lower right")
     if "meanttl" in config["plots"]:
         print("Generating mean time to live plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, "meanttl.pdf", "agentMeanTimeToLive", "Mean Time to Live", "center right")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "meanttl.pdf", "agentMeanTimeToLive", "Mean Time to Live", "upper right")
     if "meanWealth" in config["plots"]:
         print("Generating mean wealth plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, "mean_wealth.pdf", "meanWealth", "Mean Wealth", "center right")
     if "population" in config["plots"]:
         print("Generating population plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, "population.pdf", "population", "Population", "center right")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "population.pdf", "population", "Population", "lower right")
     if "wealth" in config["plots"]:
         print("Generating total wealth plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, "wealth.pdf", "agentWealthTotal", "Total Wealth", "center right")
+    if "tradeVolume" in config["plots"]:
+        print("Generating trade volume plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "trades.pdf", "tradeVolume", "Trade Volume", "center right")
+    if "sickness" in config["plots"]:
+        print("Generating sick percentage plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "sickness.pdf", "sickPercentage", "Mean Diseased Agents", "center right", True)
+    if "giniCoefficient" in config["plots"]:
+        print("Generating Gini coefficient plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "gini.pdf", "giniCoefficient", "Mean Gini Coefficient", "center right")
+    if "happiness" in config["plots"]:
+        print("Generating mean happiness plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "happiness.pdf", "meanHappiness", "Mean Happiness", "center right")
+    if "conflictHappiness" in config["plots"]:
+        print("Generating mean conflict happiness plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "conflict_happiness.pdf", "meanConflictHappiness", "Mean Conflict Happiness", "center right")
+    if "familyHappiness" in config["plots"]:
+        print("Generating mean family happiness plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "family_happiness.pdf", "meanFamilyHappiness", "Mean Family Happiness", "center right")
+    if "healthHappiness" in config["plots"]:
+        print("Generating mean health happiness plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "health_happiness.pdf", "meanHealthHappiness", "Mean Health Happiness", "center right")
+    if "socialHappiness" in config["plots"]:
+        print("Generating mean social happiness plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "social_happiness.pdf", "meanSocialHappiness", "Mean Social Happiness", "center right")
+    if "wealthHappiness" in config["plots"]:
+        print("Generating mean wealth happiness plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "wealth_happiness.pdf", "meanWealthHappiness", "Mean Wealth Happiness", "center right")
 
 def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, label, positioning, percentage=False):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
-    matplotlib.pyplot.rcParams["font.serif"] = ["Times New Roman"]
-    matplotlib.pyplot.rcParams["font.size"] = 20
+    matplotlib.pyplot.rcParams["font.size"] = 18
     figure, axes = matplotlib.pyplot.subplots()
     axes.set(xlabel = "Timestep", ylabel = label, xlim = [0, totalTimesteps])
     x = [i for i in range(totalTimesteps + 1)]
