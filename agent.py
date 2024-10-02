@@ -18,6 +18,7 @@ class Agent:
         self.decisionModelLookaheadFactor = configuration["decisionModelLookaheadFactor"]
         self.decisionModelTribalFactor = configuration["decisionModelTribalFactor"]
         self.depressionFactor = configuration["depressionFactor"]
+        self.diseaseProtectionChance = configuration["diseaseProtectionChance"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
         self.immuneSystem = configuration["immuneSystem"]
@@ -58,12 +59,14 @@ class Agent:
         self.childEndowmentHashes = None
         self.conflictHappiness = 0
         self.depressed = False
-        self.diseases = []
+        self.diseaseDeath = False
+        self.depressed = False
         self.familyHappiness = 0
         self.fertile = False
         self.fertilityFactorModifier = 0
         self.happiness = 0
         self.healthHappiness = 0
+        self.incubatingDiseases = []
         self.lastDoneCombat = -1
         self.lastMoved = -1
         self.lastReproduced = -1
@@ -81,9 +84,11 @@ class Agent:
         self.spiceMeanIncome = 1
         self.spiceMetabolismModifier = 0
         self.spicePrice = 0
+        self.startingDiseases = 0
         self.sugarMeanIncome = 1
         self.sugarMetabolismModifier = 0
         self.sugarPrice = 0
+        self.symptomaticDiseases = []
         self.tagZeroes = 0
         self.timestep = birthday
         self.tradeVolume = 0
@@ -106,6 +111,22 @@ class Agent:
             # Depressed agents have a smaller friend network due to social withdrawal
             self.maxFriends = math.ceil(self.maxFriends - (self.maxFriends * 0.3667))
 
+    def addLoanFromAgent(self, agent, timestep, sugarLoan, spiceLoan, duration):
+        agentID = agent.ID
+        if agentID not in self.socialNetwork:
+            self.addAgentToSocialNetwork(agent)
+        self.socialNetwork[agentID]["timesLoaned"] += 1
+        loan = {"creditor": agentID, "debtor": self.ID, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
+                "loanOrigin": timestep}
+        self.socialNetwork["creditors"].append(loan)
+
+    def addAgentToSocialNetwork(self, agent):
+        agentID = agent.ID
+        if agentID in self.socialNetwork:
+            return
+        self.socialNetwork[agentID] = {"agent": agent, "lastSeen": self.lastMoved, "timesVisited": 1, "timesReproduced": 0,
+                                         "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
+
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
         childID = sugarscape.generateAgentID()
@@ -126,22 +147,6 @@ class Agent:
             child.setMother(mate)
         return child
 
-    def addAgentToSocialNetwork(self, agent):
-        agentID = agent.ID
-        if agentID in self.socialNetwork:
-            return
-        self.socialNetwork[agentID] = {"agent": agent, "lastSeen": self.lastMoved, "timesVisited": 1, "timesReproduced": 0,
-                                         "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
-
-    def addLoanFromAgent(self, agent, timestep, sugarLoan, spiceLoan, duration):
-        agentID = agent.ID
-        if agentID not in self.socialNetwork:
-            self.addAgentToSocialNetwork(agent)
-        self.socialNetwork[agentID]["timesLoaned"] += 1
-        loan = {"creditor": agentID, "debtor": self.ID, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
-                "loanOrigin": timestep}
-        self.socialNetwork["creditors"].append(loan)
-
     def addLoanToAgent(self, agent, timestep, sugarPrincipal, sugarLoan, spicePrincipal, spiceLoan, duration):
         agentID = agent.ID
         if agentID not in self.socialNetwork:
@@ -155,6 +160,25 @@ class Agent:
         self.spice -= spicePrincipal
         agent.sugar = agent.sugar + sugarPrincipal
         agent.spice = agent.spice + spicePrincipal
+
+    def canCatchDisease(self, disease, infector=None):
+        if self.diseaseProtectionChance == 1:
+            return False
+        if self.checkDiseaseImmunity(disease) == True:
+            return False
+        if self.diseaseProtectionChance == 0 or infector == None:
+            return True
+        diseaseID = disease.ID
+        combinedDiseases = self.incubatingDiseases + self.symptomaticDiseases
+        for currDisease in combinedDiseases:
+            currDiseaseID = currDisease["disease"].ID
+            if diseaseID == currDiseaseID:
+                return False
+        randomTransmission = random.random()
+        randomProtection = random.random()
+        if randomTransmission > disease.transmissionChance and randomProtection <= self.diseaseProtectionChance:
+            return False
+        return True
 
     def canReachCell(self, cell):
         if cell == self.cell or cell in self.cellsInRange:
@@ -171,25 +195,28 @@ class Agent:
             return False
 
     def catchDisease(self, disease, infector=None):
-        diseaseID = disease.ID
-        for currDisease in self.diseases:
-            currDiseaseID = currDisease["disease"].ID
-            # If currently sick with this disease, do not contract it again
-            if diseaseID == currDiseaseID:
-                return
-        diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
-        hammingDistance = diseaseInImmuneSystem["distance"]
-        # If immune to disease, do not contract it
+        if self.canCatchDisease(disease, infector) == True:
+            diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
+            startIndex = diseaseInImmuneSystem["start"]
+            endIndex = diseaseInImmuneSystem["end"]
+            caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex, "startIncubation": self.timestep, "endIncubation": self.timestep + disease.incubationPeriod}
+            if infector != None:
+                caughtDisease["infector"] = infector
+                disease.infectors.add(infector.ID)
+            else:
+                self.startingDiseases += 1
+                disease.startingInfectedAgents += 1
+            disease.infected += 1
+            self.incubatingDiseases.append(caughtDisease)
+            self.showSymptoms()
+            self.findCellsInRange()
+
+    def checkDiseaseImmunity(self, disease):
+        hammingDistance = self.findNearestHammingDistanceInDisease(disease)["distance"]
         if hammingDistance == 0:
-            return
-        startIndex = diseaseInImmuneSystem["start"]
-        endIndex = diseaseInImmuneSystem["end"]
-        caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex}
-        if infector != None:
-            caughtDisease["infector"] = infector
-        self.diseases.append(caughtDisease)
-        self.updateDiseaseEffects(disease)
-        self.findCellsInRange()
+            return True
+        else:
+            return False
 
     def collectResourcesAtCell(self):
         sugarCollected = self.cell.sugar
@@ -235,6 +262,8 @@ class Agent:
     def doDeath(self, causeOfDeath):
         self.alive = False
         self.causeOfDeath = causeOfDeath
+        if self.isSick():
+            self.diseaseDeath = True
         self.resetCell()
         self.doInheritance()
 
@@ -242,11 +271,16 @@ class Agent:
         self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
         self.neighbors = []
         self.neighborhood = []
-        self.diseases = []
+        self.symptomaticDiseases = []
 
     def doDisease(self):
-        random.shuffle(self.diseases)
-        for diseaseRecord in self.diseases:
+        self.showSymptoms()
+        if self.age >= self.infertilityAge:
+            self.diseaseProtectionChance = round(self.diseaseProtectionChance - 0.01, 2)
+            if self.diseaseProtectionChance < 0:
+                self.diseaseProtectionChance = 0
+        random.shuffle(self.symptomaticDiseases)
+        for diseaseRecord in self.symptomaticDiseases:
             diseaseTags = diseaseRecord["disease"].tags
             immuneResponseStart = diseaseRecord["startIndex"]
             immuneResponseEnd = min(diseaseRecord["endIndex"] + 1, len(self.immuneSystem))
@@ -256,10 +290,8 @@ class Agent:
                     self.immuneSystem[immuneResponseStart + i] = diseaseTags[i]
                     break
             if diseaseTags == immuneResponse:
-                self.diseases.remove(diseaseRecord)
-                self.updateDiseaseEffects(diseaseRecord["disease"])
-
-        diseaseCount = len(self.diseases)
+                self.recoverFromDisease(diseaseRecord)
+        diseaseCount = len(self.symptomaticDiseases)
         if diseaseCount == 0:
             return
         neighborCells = self.cell.neighbors.values()
@@ -270,7 +302,8 @@ class Agent:
                 neighbors.append(neighbor)
         random.shuffle(neighbors)
         for neighbor in neighbors:
-            neighbor.catchDisease(self.diseases[random.randrange(diseaseCount)]["disease"], self)
+            diseases = self.incubatingDiseases + self.symptomaticDiseases
+            neighbor.catchDisease(diseases[random.randrange(diseaseCount)]["disease"], self)
 
     def doInheritance(self):
         if self.inheritancePolicy == "none":
@@ -585,6 +618,14 @@ class Agent:
     def findAggression(self):
         return max(0, self.aggressionFactor + self.aggressionFactorModifier)
 
+    def isPreyInfected(self, prey):
+        if prey == None:
+            return False
+        if len(prey.symptomaticDiseases) > 0 and len(self.symptomaticDiseases) == 0:
+            return True
+        if len(self.symptomaticDiseases) > 0 and len(prey.symptomaticDiseases) == 0:
+            return True
+
     def findBestCell(self):
         self.findNeighborhood()
         if len(self.cellsInRange) == 0:
@@ -606,6 +647,7 @@ class Agent:
             prey = cell.agent
             if cell.isOccupied() and self.isNeighborValidPrey(prey) == False:
                 continue
+
             preyTribe = prey.tribe if prey != None else "empty"
             preySugar = prey.sugar if prey != None else 0
             preySpice = prey.spice if prey != None else 0
@@ -705,7 +747,7 @@ class Agent:
         parentEndowments = {
         "aggressionFactor": [self.aggressionFactor, mate.aggressionFactor],
         "baseInterestRate": [self.baseInterestRate, mate.baseInterestRate],
-        "depressionFactor": [self.depressionFactor, mate.depressionFactor],
+        "diseaseProtectionChance": [self.diseaseProtectionChance, mate.diseaseProtectionChance],
         "fertilityAge": [self.fertilityAge, mate.fertilityAge],
         "fertilityFactor": [self.fertilityFactor, mate.fertilityFactor],
         "infertilityAge": [self.infertilityAge, mate.infertilityAge],
@@ -1150,7 +1192,7 @@ class Agent:
         return False
 
     def isSick(self):
-        if len(self.diseases) > 0:
+        if len(self.symptomaticDiseases) > 0:
             return True
         return False
 
@@ -1230,6 +1272,11 @@ class Agent:
             print(f"Ethical cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 
+    def recoverFromDisease(self, disease):
+        index = self.symptomaticDiseases.index(disease)
+        recoveredDisease = self.symptomaticDiseases.pop(index)
+        self.updateDiseaseEffects(recoveredDisease["disease"])
+
     def removeDebt(self, loan):
         for debtor in self.socialNetwork["debtors"]:
             if debtor == loan:
@@ -1252,6 +1299,13 @@ class Agent:
             self.addAgentToSocialNetwork(mother)
         self.socialNetwork["mother"] = mother
 
+    def showSymptoms(self):
+        for disease in self.incubatingDiseases:
+            if self.timestep >= disease["endIncubation"]:
+                diseaseIndex = self.incubatingDiseases.index(disease)
+                self.symptomaticDiseases.append(self.incubatingDiseases.pop(diseaseIndex))
+                self.updateDiseaseEffects(disease["disease"])
+
     def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
         i = 0
@@ -1271,24 +1325,23 @@ class Agent:
     def updateDiseaseEffects(self, disease):
         # If disease not in list of diseases, agent has recovered and undo its effects
         recoveryCheck = -1
-        for diseaseRecord in self.diseases:
+        for diseaseRecord in self.symptomaticDiseases:
             if disease == diseaseRecord["disease"]:
                 recoveryCheck = 1
                 break
-
-        sugarMetabolismPenalty = disease.sugarMetabolismPenalty * recoveryCheck
-        spiceMetabolismPenalty = disease.spiceMetabolismPenalty * recoveryCheck
-        visionPenalty = disease.visionPenalty * recoveryCheck
-        movementPenalty = disease.movementPenalty * recoveryCheck
-        fertilityPenalty = disease.fertilityPenalty * recoveryCheck
         aggressionPenalty = disease.aggressionPenalty * recoveryCheck
+        fertilityPenalty = disease.fertilityPenalty * recoveryCheck
+        movementPenalty = disease.movementPenalty * recoveryCheck
+        spiceMetabolismPenalty = disease.spiceMetabolismPenalty * recoveryCheck
+        sugarMetabolismPenalty = disease.sugarMetabolismPenalty * recoveryCheck
+        visionPenalty = disease.visionPenalty * recoveryCheck
 
-        self.sugarMetabolismModifier += sugarMetabolismPenalty
-        self.spiceMetabolismModifier += spiceMetabolismPenalty
-        self.visionModifier += visionPenalty
-        self.movementModifier += movementPenalty
-        self.fertilityFactorModifier += fertilityPenalty
         self.aggressionFactorModifier += aggressionPenalty
+        self.fertilityFactorModifier += fertilityPenalty
+        self.movementModifier += movementPenalty
+        self.spiceMetabolismModifier += spiceMetabolismPenalty
+        self.sugarMetabolismModifier += sugarMetabolismPenalty
+        self.visionModifier += visionPenalty
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.ID
