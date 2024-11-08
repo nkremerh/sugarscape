@@ -15,7 +15,7 @@ class Disease:
         self.transmissionChance = configuration["transmissionChance"]
         self.visionPenalty = configuration["visionPenalty"]
 
-        self.infected = 0
+        self.newInfection = 0
         self.infectors = set()
         self.startingInfectedAgents = 0
 

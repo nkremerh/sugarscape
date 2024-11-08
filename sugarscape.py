@@ -1048,7 +1048,7 @@ class Sugarscape:
             r = 0.0
             if numAgents > 0:
                 infectors = len(disease.infectors)
-                incidence = disease.infected
+                incidence = disease.newInfected
                 prevalence = self.countInfectedAgents(disease)
                 r = 0.0
                 if infectors > 0:

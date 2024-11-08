@@ -79,6 +79,7 @@ class Agent:
         self.neighborhood = []
         self.neighbors = []
         self.nice = 0
+        self.recoveredDiseases = []
         self.socialHappiness = 0
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": [], "mates": []}
         self.spiceMeanIncome = 1
@@ -206,7 +207,7 @@ class Agent:
             else:
                 self.startingDiseases += 1
                 disease.startingInfectedAgents += 1
-            disease.infected += 1
+            disease.newInfection += 1
             self.incubatingDiseases.append(caughtDisease)
             self.showSymptoms()
             self.findCellsInRange()
@@ -1266,8 +1267,10 @@ class Agent:
 
     def recoverFromDisease(self, disease):
         index = self.symptomaticDiseases.index(disease)
-        recoveredDisease = self.symptomaticDiseases.pop(index)
-        self.updateDiseaseEffects(recoveredDisease["disease"])
+        recoveredDiseaseRecord = self.symptomaticDiseases.pop(index)
+        recoveredDisease = recoveredDiseaseRecord["disease"]
+        self.recoveredDiseases.append({"disease": recoveredDisease, "timestep": self.timestep})
+        self.updateDiseaseEffects(recoveredDisease)
 
     def removeDebt(self, loan):
         for debtor in self.socialNetwork["debtors"]:
