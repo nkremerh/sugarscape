@@ -68,7 +68,7 @@ class Sugarscape:
                              "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0,
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
-                             "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0}
+                             "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0}
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -921,6 +921,10 @@ class Sugarscape:
         numTribes = 0
         sickAgents = 0
         tradeVolume = 0
+        carryingCapacityWeight = 0.05
+        carryingCapacity = math.ceil((carryingCapacityWeight * len(self.agents)) + ((1 - carryingCapacityWeight) * self.runtimeStats["carryingCapacity"]))
+        if self.timestep == 0:
+            carryingCapacity = len(self.agents)
 
         environmentWealthCreated = 0
         environmentWealthTotal = 0
@@ -1059,12 +1063,13 @@ class Sugarscape:
                         "agentDiseaseDeaths": agentDiseaseDeaths, "agentMeanTimeToLive": agentMeanTimeToLive, "agentsBorn": agentsBorn,
                         "agentsReplaced": agentsReplaced, "agentStarvationDeaths": agentStarvationDeaths, "agentTotalMetabolism": agentTotalMetabolism,
                         "agentWealthBurnRate": agentWealthBurnRate, "agentWealthCollected": agentWealthCollected, "agentWealthTotal": agentWealthTotal,
-                        "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth, "meanAge": meanAge,
-                        "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness, "meanFamilyHappiness": meanFamilyHappiness,
-                        "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness, "meanMetabolism": meanMetabolism,
-                        "meanMovement": meanMovement, "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice,
-                        "meanWealth": meanWealth, "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision, "minWealth": minWealth,
-                        "population": numAgents, "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume}
+                        "carryingCapacity": carryingCapacity, "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
+                        "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
+                        "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
+                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSocialHappiness": meanSocialHappiness,
+                        "meanTradePrice": meanTradePrice, "meanWealth": meanWealth, "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision,
+                        "minWealth": minWealth, "population": numAgents, "sickAgents": sickAgents, "remainingTribes": remainingTribes,
+                        "tradeVolume": tradeVolume}
 
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
