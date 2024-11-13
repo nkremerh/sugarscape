@@ -15,12 +15,12 @@ class Disease:
         self.transmissionChance = configuration["transmissionChance"]
         self.visionPenalty = configuration["visionPenalty"]
 
-        self.newInfection = 0
+        self.newInfections = 0
         self.infectors = set()
         self.startingInfectedAgents = 0
 
     def resetRStats(self):
-        self.infected = 0
+        self.newInfections = 0
         self.infectors = set()
 
     def __str__(self):

@@ -207,7 +207,7 @@ class Agent:
             else:
                 self.startingDiseases += 1
                 disease.startingInfectedAgents += 1
-            disease.newInfection += 1
+            disease.newInfections += 1
             self.incubatingDiseases.append(caughtDisease)
             self.showSymptoms()
             self.findCellsInRange()
