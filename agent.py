@@ -66,7 +66,6 @@ class Agent:
         self.fertilityFactorModifier = 0
         self.happiness = 0
         self.healthHappiness = 0
-        self.incubatingDiseases = []
         self.lastDoneCombat = -1
         self.lastMoved = -1
         self.lastReproduced = -1
@@ -79,7 +78,6 @@ class Agent:
         self.neighborhood = []
         self.neighbors = []
         self.nice = 0
-        self.recoveredDiseases = []
         self.socialHappiness = 0
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": [], "mates": []}
         self.spiceMeanIncome = 1
@@ -89,13 +87,18 @@ class Agent:
         self.sugarMeanIncome = 1
         self.sugarMetabolismModifier = 0
         self.sugarPrice = 0
-        self.symptomaticDiseases = []
         self.tagZeroes = 0
         self.timestep = birthday
         self.tradeVolume = 0
         self.tribe = self.findTribe()
         self.visionModifier = 0
         self.wealthHappiness = 0
+
+        self.immuneDiseases = [] # disease only
+        self.susceptibleDiseases = [] # disease only
+        self.incubatingDiseases = [] # disease record
+        self.symptomaticDiseases = [] # disease record
+        self.recoveredDiseases = [] # different disease record
 
         # Change metrics for depressed agents
         if self.depressionFactor == 1:
@@ -166,15 +169,23 @@ class Agent:
         if self.diseaseProtectionChance == 1:
             return False
         if self.checkDiseaseImmunity(disease) == True:
+            if disease in self.susceptibleDiseases:
+                # susceptible to immune
+                self.updateDiseaseGroups(disease, disease, self.susceptibleDiseases, self.immuneDiseases)
             return False
-        if self.diseaseProtectionChance == 0 or infector == None:
-            return True
+        else:
+            # check if disease is in immune[] - this is to cover the case that the neighbor hasn't had their turn to doTimestep()
+            if disease in self.immuneDiseases:
+                # immune to susceptible
+                self.updateDiseaseGroups(disease, disease, self.immuneDiseases, self.susceptibleDiseases)
         diseaseID = disease.ID
         combinedDiseases = self.incubatingDiseases + self.symptomaticDiseases
         for currDisease in combinedDiseases:
             currDiseaseID = currDisease["disease"].ID
             if diseaseID == currDiseaseID:
                 return False
+        if self.diseaseProtectionChance == 0 or infector == None:
+            return True
         randomTransmission = random.random()
         randomProtection = random.random()
         if randomTransmission > disease.transmissionChance and randomProtection <= self.diseaseProtectionChance:
@@ -208,7 +219,8 @@ class Agent:
                 self.startingDiseases += 1
                 disease.startingInfectedAgents += 1
             disease.newInfections += 1
-            self.incubatingDiseases.append(caughtDisease)
+            # susceptible to infected
+            self.updateDiseaseGroups(disease, caughtDisease, self.susceptibleDiseases, self.incubatingDiseases)
             self.showSymptoms()
             self.findCellsInRange()
 
@@ -275,6 +287,10 @@ class Agent:
         self.symptomaticDiseases = []
 
     def doDisease(self):
+        for immuneDisease in self.immuneDiseases:
+            if self.checkDiseaseImmunity(immuneDisease) == False:
+                # immune to susceptible
+                self.updateDiseaseGroups(immuneDisease, immuneDisease, self.immuneDiseases, self.susceptibleDiseases)
         self.showSymptoms()
         if self.age >= self.infertilityAge:
             self.diseaseProtectionChance = round(self.diseaseProtectionChance - 0.01, 2)
@@ -292,6 +308,9 @@ class Agent:
                     break
             if diseaseTags == immuneResponse:
                 self.recoverFromDisease(diseaseRecord)
+        for recoveredDisease in self.recoveredDiseases:
+            if self.checkDiseaseImmunity(recoveredDisease["disease"]) == False and recoveredDisease["disease"] not in self.susceptibleDiseases:
+                self.susceptibleDiseases.append(recoveredDisease["disease"])
         diseaseCount = len(self.symptomaticDiseases)
         if diseaseCount == 0:
             return
@@ -423,7 +442,7 @@ class Agent:
         elif (self.sugar <= 0 and sugarMetabolism > 0) or (self.spice <= 0 and spiceMetabolism > 0):
             self.doDeath("starvation")
 
-    def doReproduction(self):
+    def doReproduction(self, diseasesList):
         # Agent marked for removal or not interested in reproduction should not reproduce
         if self.isAlive() == False or self.isFertile() == False:
             return
@@ -459,6 +478,14 @@ class Agent:
                     self.updateTimesReproducedWithAgent(neighbor, self.lastMoved)
                     self.lastReproduced += 1
 
+                    # traced sugarscape.diseases just for this line
+                    for potentialDisease in diseasesList:
+                        if child.checkDiseaseImmunity(potentialDisease) == True:
+                            child.immuneDiseases.append(potentialDisease)
+
+                        else:
+                            child.susceptibleDiseases.append(potentialDisease)
+
                     sugarCost = self.startingSugar / (self.fertilityFactor * 2)
                     spiceCost = self.startingSpice / (self.fertilityFactor * 2)
                     mateSugarCost = neighbor.startingSugar / (neighbor.fertilityFactor * 2)
@@ -483,7 +510,7 @@ class Agent:
                 neighbor.flipTag(position, self.tags[position])
                 neighbor.tribe = neighbor.findTribe()
 
-    def doTimestep(self, timestep):
+    def doTimestep(self, timestep, diseasesList):
         self.timestep = timestep
         # Prevent dead or already moved agent from moving
         if self.isAlive() == True and self.lastMoved != self.timestep:
@@ -500,7 +527,7 @@ class Agent:
                 return
             self.doTagging()
             self.doTrading()
-            self.doReproduction()
+            self.doReproduction(diseasesList)
             self.doLending()
             self.doDisease()
             self.doAging()
@@ -1265,11 +1292,11 @@ class Agent:
             print(f"Ethical cell {i + 1}/{len(cells)}: {cellString}")
             i += 1
 
-    def recoverFromDisease(self, disease):
-        index = self.symptomaticDiseases.index(disease)
-        recoveredDiseaseRecord = self.symptomaticDiseases.pop(index)
-        recoveredDisease = recoveredDiseaseRecord["disease"]
-        self.recoveredDiseases.append({"disease": recoveredDisease, "timestep": self.timestep})
+    def recoverFromDisease(self, diseaseRecord):
+        recoveredDisease = diseaseRecord["disease"]
+        recoveredDiseaseRecord = {"disease": recoveredDisease, "timestep": self.timestep}
+        # symptomatic to recovered
+        self.updateDiseaseGroups(diseaseRecord, recoveredDiseaseRecord, self.symptomaticDiseases, self.recoveredDiseases)
         self.updateDiseaseEffects(recoveredDisease)
 
     def removeDebt(self, loan):
@@ -1297,8 +1324,8 @@ class Agent:
     def showSymptoms(self):
         for disease in self.incubatingDiseases:
             if self.timestep >= disease["endIncubation"]:
-                diseaseIndex = self.incubatingDiseases.index(disease)
-                self.symptomaticDiseases.append(self.incubatingDiseases.pop(diseaseIndex))
+                # incubating to symptomatic
+                self.updateDiseaseGroups(disease, disease, self.incubatingDiseases, self.symptomaticDiseases)
                 self.updateDiseaseEffects(disease["disease"])
 
     def sortCellsByWealth(self, cells):
@@ -1337,6 +1364,11 @@ class Agent:
         self.spiceMetabolismModifier += spiceMetabolismPenalty
         self.sugarMetabolismModifier += sugarMetabolismPenalty
         self.visionModifier += visionPenalty
+
+    def updateDiseaseGroups(self, oldDisease, newDisease, oldGroup, newGroup):
+        # old disease and new disease for the case of disease records (incubating, symptomatatic, recovered)
+        oldGroup.remove(oldDisease)
+        newGroup.append(newDisease)
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.ID

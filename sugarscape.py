@@ -198,39 +198,13 @@ class Sugarscape:
             timestep = diseaseConfiguration["startTimestep"]
             self.diseases.append(newDisease)
             self.diseasesCount[timestep].append(newDisease)
+            # agents start either immune or susceptible - this part should be fine
+            for agent in self.agents:
+                if agent.checkDiseaseImmunity(newDisease) == True:
+                    agent.immuneDiseases.append(newDisease)
+                else:
+                    agent.susceptibleDiseases.append(newDisease)
         self.infectAgents()
-
-    def infectAgents(self):
-        timestep = self.timestep
-        if timestep > self.configuration["diseaseStartTimeframe"][1]:
-            return
-        diseases = self.diseasesCount[timestep]
-        if len(diseases) == 0:
-            return
-        startingDiseases = self.configuration["startingDiseasesPerAgent"]
-        minStartingDiseases = startingDiseases[0]
-        maxStartingDiseases = startingDiseases[1]
-        currStartingDiseases = minStartingDiseases
-        random.shuffle(self.agents)
-        random.shuffle(diseases)
-        for agent in self.agents:
-            for newDisease in diseases:
-                if newDisease.startingInfectedAgents == 1 and startingDiseases == [0, 0]:
-                    continue
-                if agent.startingDiseases >= currStartingDiseases and startingDiseases != [0, 0]:
-                    currStartingDiseases += 1
-                    break
-                if agent.canCatchDisease(newDisease) == False:
-                    continue
-                agent.catchDisease(newDisease)
-                if startingDiseases == [0, 0]:
-                    diseases.remove(newDisease)
-                    break
-            if currStartingDiseases > maxStartingDiseases:
-                currStartingDiseases = minStartingDiseases
-        if startingDiseases == [0, 0] and self.timestep == self.configuration["diseaseStartTimeframe"][1] and len(diseases) > 0:
-            if  "all" in self.debug or "sugarscape" in self.debug:
-                print(f"Could not place {len(diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
@@ -277,7 +251,7 @@ class Sugarscape:
             self.infectAgents()
             random.shuffle(self.agents)
             for agent in self.agents:
-                agent.doTimestep(self.timestep)
+                agent.doTimestep(self.timestep, self.diseases)
             self.removeDeadAgents()
             self.replaceDeadAgents()
             self.updateRuntimeStats()
@@ -313,6 +287,13 @@ class Sugarscape:
         self.log.write(logString)
         self.log.flush()
         self.log.close()
+
+    def endSimulation(self):
+        self.removeDeadAgents()
+        self.endLog()
+        if "all" in self.debug or "sugarscape" in self.debug:
+            print(str(self))
+        exit(0)
 
     def findActiveQuadrants(self):
         quadrants = self.configuration["environmentStartingQuadrants"]
@@ -374,12 +355,37 @@ class Sugarscape:
         random.shuffle(tags)
         return tags
 
-    def endSimulation(self):
-        self.removeDeadAgents()
-        self.endLog()
-        if "all" in self.debug or "sugarscape" in self.debug:
-            print(str(self))
-        exit(0)
+    def infectAgents(self):
+        timestep = self.timestep
+        if timestep > self.configuration["diseaseStartTimeframe"][1]:
+            return
+        diseases = self.diseasesCount[timestep]
+        if len(diseases) == 0:
+            return
+        startingDiseases = self.configuration["startingDiseasesPerAgent"]
+        minStartingDiseases = startingDiseases[0]
+        maxStartingDiseases = startingDiseases[1]
+        currStartingDiseases = minStartingDiseases
+        random.shuffle(self.agents)
+        random.shuffle(diseases)
+        for agent in self.agents:
+            for newDisease in diseases:
+                if newDisease.startingInfectedAgents == 1 and startingDiseases == [0, 0]:
+                    continue
+                if agent.startingDiseases >= currStartingDiseases and startingDiseases != [0, 0]:
+                    currStartingDiseases += 1
+                    break
+                if agent.canCatchDisease(newDisease) == False:
+                    continue
+                agent.catchDisease(newDisease)
+                if startingDiseases == [0, 0]:
+                    diseases.remove(newDisease)
+                    break
+            if currStartingDiseases > maxStartingDiseases:
+                currStartingDiseases = minStartingDiseases
+        if startingDiseases == [0, 0] and self.timestep == self.configuration["diseaseStartTimeframe"][1] and len(diseases) > 0:
+            if  "all" in self.debug or "sugarscape" in self.debug:
+                print(f"Could not place {len(diseases)} diseases.")
 
     def pauseSimulation(self):
         while self.run == False:
