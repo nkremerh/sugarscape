@@ -2,6 +2,7 @@
 
 import agent
 import cell
+import condition
 import disease
 import environment
 import ethics
@@ -184,12 +185,15 @@ class Sugarscape:
             a.findCellsInRange()
             a.findNeighborhood()
 
-    def configureDiseases(self, numDiseases):
+    def configureDiseases(self, numDiseases, conditions):
         numAgents = len(self.agents)
         if numAgents == 0:
             return
         elif numAgents < numDiseases:
             numDiseases = numAgents
+
+        # TODO: Store dictionary of defined conditions and their constructor methods
+        # TODO: Parse through conditions parameter and remove any undefined ones
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
         random.shuffle(self.agents)
@@ -1385,6 +1389,7 @@ if __name__ == "__main__":
     # Set default values for simulation configuration
     configuration = {"agentAggressionFactor": [0, 0],
                      "agentBaseInterestRate": [0.0, 0.0],
+                     "agentConditions": ["none"],
                      "agentDecisionModels": ["none"],
                      "agentDecisionModel": None,
                      "agentDecisionModelFactor": [0, 0],

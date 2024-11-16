@@ -455,11 +455,14 @@ class Agent:
         self.timestep = timestep
         # Prevent dead or already moved agent from moving
         if self.isAlive() == True and self.lastMoved != self.timestep:
+            # Bookkeeping before performing actions
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
             self.lastMoved = self.timestep
+            # Beginning of timestep actions
             self.moveToBestCell()
             self.updateNeighbors()
+            # Middle of timestep actions
             self.collectResourcesAtCell()
             self.doUniversalIncome()
             self.doMetabolism()
@@ -470,6 +473,8 @@ class Agent:
             self.doTrading()
             self.doReproduction()
             self.doLending()
+            # End of timestep actions
+            # TODO: Note about disease spread being near end of timestep to properly trigger disease conditions
             self.doDisease()
             self.doAging()
             # If dead from aging, skip remainder of timestep
@@ -782,7 +787,7 @@ class Agent:
 
     def findConflictHappiness(self):
         if self.lastDoneCombat == self.cell.environment.sugarscape.timestep:
-            if self.findAggression() > 1:
+            if(self.findAggression() > 1):
                 if self.depressed == True:
                     return 0.5763
                 return 1
@@ -834,6 +839,8 @@ class Agent:
                     familyHappiness -= 0.5
             else:
                 familyHappiness -= 1
+        if self.depressed == True and familyHappiness > 0:
+            familyHappiness *= 0.5763
         return math.erf(familyHappiness)
 
     def findHammingDistanceInTags(self, neighbor):
@@ -1012,7 +1019,7 @@ class Agent:
         wealth = self.sugar + self.spice
         diffWealth = wealth - self.cell.environment.sugarscape.runtimeStats["meanWealth"]
         if self.depressed == True and diffWealth > 0:
-            diffWealth *= 0.5763
+            diffWealth *= 0.5673
         return math.erf(diffWealth)
 
     def findWelfare(self, sugarReward, spiceReward):
@@ -1352,6 +1359,9 @@ class Agent:
         self.socialHappiness = self.findSocialHappiness()
         self.wealthHappiness = self.findWealthHappiness()
         self.happiness = self.findHappiness()
+        # Depressed agents have lower overall happiness due to depression
+        #if self.depressed == True:
+        #    self.happiness = math.ceil(self.happiness - (self.happiness * 0.5763))
 
     def updateLoans(self):
         for debtor in self.socialNetwork["debtors"]:
