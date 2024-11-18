@@ -69,11 +69,13 @@ class Sugarscape:
                              "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0,
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
-                             "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0}        
+                             "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0}
         diseaseStats = {}
         for disease in self.diseases:
-            diseaseStats[f"disease{disease.ID}Incidence"] = 0
-            diseaseStats[f"disease{disease.ID}Prevalence"] = 0
+            diseaseStats[f"disease{disease.ID}Immune"] = 0
+            diseaseStats[f"disease{disease.ID}Susceptible"] = 0
+            diseaseStats[f"disease{disease.ID}Infected"] = 0
+            diseaseStats[f"disease{disease.ID}Recovered"] = 0
             diseaseStats[f"disease{disease.ID}RValue"] = 0.0
         self.runtimeStats.update(diseaseStats)
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
@@ -225,15 +227,6 @@ class Sugarscape:
             self.addSpicePeak(peak[0], peak[1], radius, maxSpice)
         self.environment.findCellNeighbors()
         self.environment.findCellRanges()
-
-    def countInfectedAgents(self, disease):
-        totalInfected = 0
-        for agent in self.agents:
-            combinedDiseases = agent.incubatingDiseases + agent.symptomaticDiseases
-            for agentDisease in combinedDiseases:
-                if disease == agentDisease["disease"]:
-                    totalInfected += 1
-        return totalInfected
 
     def doTimestep(self):
         if self.timestep >= self.maxTimestep:
@@ -907,6 +900,11 @@ class Sugarscape:
         agentsReplaced = 0
         tribes = {}
 
+        immuneDiseaseStats = [0 for i in range(len(self.diseases))]
+        susceptibleDiseaseStats = [0 for i in range(len(self.diseases))]
+        infectedDiseaseStats = [0 for i in range(len(self.diseases))]
+        recoveredDiseaseStats = [0 for i in range(len(self.diseases))]
+
         for agent in self.agents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
                 continue
@@ -945,6 +943,17 @@ class Sugarscape:
             else:
                 tribes[agent.tribe] += 1
             numAgents += 1
+
+            for immuneDisease in agent.immuneDiseases:
+                immuneDiseaseStats[immuneDisease.ID] += 1
+            for susceptibleDisease in agent.susceptibleDiseases:
+                susceptibleDiseaseStats[susceptibleDisease.ID] += 1
+            for incubatingDisease in agent.incubatingDiseases:
+                infectedDiseaseStats[incubatingDisease["disease"].ID] += 1
+            for symptomaticDisease in agent.symptomaticDiseases:
+                infectedDiseaseStats[symptomaticDisease["disease"].ID] += 1
+            for recoveredDisease in agent.recoveredDiseases:
+                recoveredDiseaseStats[recoveredDisease["disease"].ID] += 1
 
         if numAgents > 0:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
@@ -1049,19 +1058,18 @@ class Sugarscape:
             self.runtimeStats[key] = runtimeStats[key]
 
         for disease in self.diseases:
-            incidence = 0
-            prevalence = 0
             r = 0.0
             if numAgents > 0:
                 infectors = len(disease.infectors)
                 incidence = disease.newInfections
-                prevalence = self.countInfectedAgents(disease)
                 r = 0.0
                 if infectors > 0:
                     r = round(float(incidence / infectors), 2)
-            self.runtimeStats[f"disease{disease.ID}Incidence"] = incidence
-            self.runtimeStats[f"disease{disease.ID}Prevalence"] = prevalence
             self.runtimeStats[f"disease{disease.ID}RValue"] = r
+            self.runtimeStats[f"disease{disease.ID}Immune"] = immuneDiseaseStats[disease.ID]
+            self.runtimeStats[f"disease{disease.ID}Susceptible"] = susceptibleDiseaseStats[disease.ID]
+            self.runtimeStats[f"disease{disease.ID}Infected"] = infectedDiseaseStats[disease.ID]
+            self.runtimeStats[f"disease{disease.ID}Recovered"] = recoveredDiseaseStats[disease.ID]
 
     def writeToLog(self):
         if self.log == None:
