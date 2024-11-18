@@ -124,6 +124,7 @@ class GUI:
 
         statsLabel = tkinter.Label(window, text=self.defaultSimulationString, font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
+        # need to add diseases to default agent string
         cellLabel = tkinter.Label(window, text=f"{self.defaultCellString}\n{self.defaultAgentString}", font="Roboto 10", justify=tkinter.CENTER)
         cellLabel.grid(row=2, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
 
@@ -476,7 +477,7 @@ class GUI:
         elif self.activeNetwork.get() == "Disease":
             for agent in self.sugarscape.agents:
                 if agent.isSick() == True:
-                    for diseaseRecord in agent.diseases:
+                    for diseaseRecord in agent.symptomaticDiseases:
                         # Starting diseases without an infector are not considered
                         if "infector" not in diseaseRecord:
                             continue
@@ -596,7 +597,7 @@ class GUI:
         elif self.activeColorOptions["agent"] == "Depression":
             return self.colors["sick"] if agent.depressed == True else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Disease":
-            return self.colors["sick"] if len(agent.diseases) > 0 else self.colors["healthy"]
+            return self.colors["sick"] if agent.isSick() else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Metabolism":
             return self.colors["metabolism"][agent.sugarMetabolism + agent.spiceMetabolism]
         elif self.activeColorOptions["agent"] == "Movement":
@@ -679,6 +680,7 @@ class GUI:
                 agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "
                 agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | "
                 agentStats += f"Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)} | Decision Model: {agent.decisionModel} | Tribe: {agent.tribe}"
+                # add disease to end
             else:
                 agentStats = self.defaultAgentString
             cellStats += f"\n{agentStats}"

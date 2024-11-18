@@ -1,7 +1,7 @@
 import math
 
 class Cell:
-    def __init__(self, x, y, environment, maxSugar=0, maxSpice=0, growbackRate=0):
+    def __init__(self, x, y, environment, maxSugar=0, maxSpice=0):
         self.x = x
         self.y = y
         self.environment = environment
