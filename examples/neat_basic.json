@@ -1,0 +1,13 @@
+{
+    "__README__": "Agent sugar and spice collection with simple rtNEAT decision models.",
+    "agentDecisionModels": ["bentham", "neural"],
+    "agentReplacements": 100,
+    "agentSpiceMetabolism": [1, 4],
+    "agentStartingSpice": [10, 40],
+    "debugMode": ["ethics"],
+    "environmentMaxCombatLoot": 1000,
+    "environmentMaxSpice": 4,
+    "environmentSpiceRegrowRate": 1,
+    "logfile": "log.json",
+    "timesteps": 3000
+}
