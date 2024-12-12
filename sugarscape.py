@@ -68,7 +68,8 @@ class Sugarscape:
                              "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0,
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
-                             "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0}
+                             "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0,
+                             "sickAgentsPercentage": 0}
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -945,6 +946,9 @@ class Sugarscape:
         agentWealthCollected = 0
         agentWealthTotal = 0
 
+        meanDeathsPercentage = 0
+        sickAgentsPercentage = 0
+
         agentsBorn = 0
         agentsReplaced = 0
         tribes = {}
@@ -988,6 +992,21 @@ class Sugarscape:
                 tribes[agent.tribe] += 1
             numAgents += 1
 
+        numDeadAgents = 0
+        meanAgeAtDeath = 0
+        for agent in self.deadAgents:
+            if group != None and agent.isInGroup(group, notInGroup) == False:
+                continue
+            agentWealth = agent.sugar + agent.spice
+            meanAgeAtDeath += agent.age
+            agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
+            agentAgingDeaths += 1 if agent.causeOfDeath == "aging" else 0
+            agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
+            agentDiseaseDeaths += 1 if agent.causeOfDeath == "disease" else 0
+            agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
+            numDeadAgents += 1
+        meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
+
         if numAgents > 0:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
             agentWealthBurnRate = round(agentWealthBurnRate / numAgents, 2)
@@ -1013,6 +1032,8 @@ class Sugarscape:
             minWealth = round(minWealth, 2)
             remainingTribes = len(tribes)
             tradeVolume = round(tradeVolume, 2)
+            meanDeathsPercentage = round(numDeadAgents / numAgents, 2) * 100
+            sickAgentsPercentage = round(sickAgents / numAgents, 2) * 100
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
@@ -1032,21 +1053,6 @@ class Sugarscape:
             minWealth = 0
             remainingTribes = 0
             tradeVolume = 0
-
-        numDeadAgents = 0
-        meanAgeAtDeath = 0
-        for agent in self.deadAgents:
-            if group != None and agent.isInGroup(group, notInGroup) == False:
-                continue
-            agentWealth = agent.sugar + agent.spice
-            meanAgeAtDeath += agent.age
-            agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
-            agentAgingDeaths += 1 if agent.causeOfDeath == "aging" else 0
-            agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
-            agentDiseaseDeaths += 1 if agent.causeOfDeath == "disease" else 0
-            agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
-            numDeadAgents += 1
-        meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
 
         for agent in self.replacedAgents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
@@ -1069,7 +1075,7 @@ class Sugarscape:
                         "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSocialHappiness": meanSocialHappiness,
                         "meanTradePrice": meanTradePrice, "meanWealth": meanWealth, "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision,
                         "minWealth": minWealth, "population": numAgents, "sickAgents": sickAgents, "remainingTribes": remainingTribes,
-                        "tradeVolume": tradeVolume}
+                        "tradeVolume": tradeVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage}
 
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
