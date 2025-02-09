@@ -181,6 +181,10 @@ agentInheritancePolicy: string
     Options: "children". "daughters", "friends", "none", "sons"
     Default: "none"
 
+agentLeader: bool
+    Set whether there is an immortal, omniscient leader agent to coordinate agent movements.
+    Default: false
+
 agentLendingFactor: [float, float]
     Set lending aggressiveness of agent.
     The more aggressive an agent is to lend, the higher the offered interest rate will be.

@@ -1,5 +1,7 @@
 import agent
 
+import sys
+
 class Bentham(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
@@ -94,3 +96,44 @@ class Bentham(agent.Agent):
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Bentham(childID, birthday, cell, configuration)
+
+class Leader(agent.Agent):
+    def __init__(self, agentID, birthday, cell, configuration):
+        super().__init__(agentID, birthday, cell, configuration)
+        # Special leader agent should be configured to be immortal and omniscient
+        self.fertilityFactor = 0.0
+        self.follower = False
+        self.grid = [[0 for j in range(self.cell.environment.height) ] for i in range(self.cell.environment.width)]
+        self.leader = True
+        self.maxAge = -1
+        self.movement = 0
+        self.spice = sys.maxsize
+        self.spiceMetabolism = 0
+        self.sugar = sys.maxsize
+        self.sugarMetabolism = 0
+        self.tradeFactor = 0.0
+        self.vision = max(self.cell.environment.height, self.cell.environment.width)
+
+    def findBestCell(self):
+        self.spice = sys.maxsize
+        self.sugar = sys.maxsize
+        for i in range(self.cell.environment.width):
+            for j in range(self.cell.environment.height):
+                cell = self.cell.environment.grid[i][j]
+                cellValue = cell.sugar + cell.spice
+                self.grid[i][j] = cellValue
+        return self.cell
+
+    def findBestCellForAgent(self, agent):
+        maxCell = agent.cell
+        maxCellValue = 0
+        for cell in agent.cellsInRange:
+            cellValue = self.grid[cell.x][cell.y]
+            if cellValue > maxCellValue:
+                maxCell = cell
+                maxCellValue = cellValue
+        self.grid[maxCell.x][maxCell.y] = 0
+        return maxCell
+
+    def spawnChild(self, childID, birthday, cell, configuration):
+        return Leader(childID, birthday, cell, configuration)

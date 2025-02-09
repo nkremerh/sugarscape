@@ -20,6 +20,8 @@ class Agent:
         self.depressionFactor = configuration["depressionFactor"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
+        self.follower = configuration["follower"]
+        self.leader = not self.follower
         self.immuneSystem = configuration["immuneSystem"]
         self.infertilityAge = configuration["infertilityAge"]
         self.inheritancePolicy = configuration["inheritancePolicy"]
@@ -589,6 +591,9 @@ class Agent:
         self.findNeighborhood()
         if len(self.cellsInRange) == 0:
             return self.cell
+        leader = self.cell.environment.sugarscape.agentLeader
+        if self.follower == True and leader != None:
+            return leader.findBestCellForAgent(self)
         cellsInRange = list(self.cellsInRange.items())
         random.shuffle(cellsInRange)
 
@@ -737,7 +742,7 @@ class Agent:
         "decisionModelTribalFactor": [self.decisionModelTribalFactor, mate.decisionModelTribalFactor],
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
         }
-        childEndowment = {"seed": self.seed}
+        childEndowment = {"seed": self.seed, "follower": self.follower}
         randomNumberReset = random.getstate()
 
         # Map configuration to a random number via hash to make random number generation independent of iteration order

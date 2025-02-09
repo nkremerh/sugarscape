@@ -54,6 +54,7 @@ class Sugarscape:
         self.bornAgents = []
         self.deadAgents = []
         self.diseases = []
+        self.agentLeader = None
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
@@ -121,6 +122,9 @@ class Sugarscape:
         if self.environment == None:
             return
 
+        if self.configuration["agentLeader"] == True:
+            numAgents += 1
+
         emptyCells = [[cell for cell in quadrant if cell.agent == None] for quadrant in self.activeQuadrants]
         totalCells = sum(len(quadrant) for quadrant in emptyCells)
         quadrants = len(emptyCells)
@@ -144,6 +148,9 @@ class Sugarscape:
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
+            if self.configuration["agentLeader"] == True and i == numAgents - 1:
+                a = ethics.Leader(agentID, self.timestep, randomCell, agentConfiguration)
+                self.agentLeader = a
             # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
@@ -249,7 +256,11 @@ class Sugarscape:
         else:
             self.environment.doTimestep(self.timestep)
             random.shuffle(self.agents)
+            if self.agentLeader != None:
+                self.agentLeader.doTimestep(self.timestep)
             for agent in self.agents:
+                if self.agentLeader != None and agent == self.agentLeader:
+                    continue
                 agent.doTimestep(self.timestep)
             self.removeDeadAgents()
             self.replaceDeadAgents()
@@ -480,6 +491,7 @@ class Sugarscape:
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         fertilityFactor = configs["agentFertilityFactor"]
+        follower = configs["agentLeader"]
         immuneSystemLength = configs["agentImmuneSystemLength"]
         inheritancePolicy = configs["agentInheritancePolicy"]
         lendingFactor = configs["agentLendingFactor"]
@@ -615,7 +627,7 @@ class Sugarscape:
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
                               "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
-                              "depressionFactor": depressionFactors[i]}
+                              "depressionFactor": depressionFactors[i], "follower": follower}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -1381,6 +1393,7 @@ if __name__ == "__main__":
                      "agentFertilityFactor": [0, 0],
                      "agentImmuneSystemLength": 0,
                      "agentInheritancePolicy": "none",
+                     "agentLeader": False,
                      "agentLendingFactor": [0, 0],
                      "agentLoanDuration": [0, 0],
                      "agentLookaheadFactor": [0, 0],
