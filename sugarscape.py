@@ -852,6 +852,8 @@ class Sugarscape:
         ageBins = [0] * histogramBins
         if maxAge != -1:
             for agent in self.agents:
+                if agent == self.agentLeader:
+                    continue
                 ageBins[math.floor(agent.age / (maxAge + 1) * histogramBins)] += 1
 
         maxSpice = 0
@@ -872,6 +874,8 @@ class Sugarscape:
         spiceBins = [0] * histogramBins
         agentWealths = []
         for agent in self.agents:
+            if agent == self.agentLeader:
+                continue
             spiceBins[math.floor(agent.spice / (maxSpice + 1) * histogramBins)] += 1
             sugarBins[math.floor(agent.sugar / (maxSugar + 1) * histogramBins)] += 1
             agentWealths.append(agent.sugar + agent.spice)

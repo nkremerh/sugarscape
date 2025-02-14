@@ -103,7 +103,8 @@ class Leader(agent.Agent):
         # Special leader agent should be configured to be immortal and omniscient
         self.fertilityFactor = 0.0
         self.follower = False
-        self.grid = [[0 for j in range(self.cell.environment.height) ] for i in range(self.cell.environment.width)]
+        self.grid = [[None for j in range(self.cell.environment.height) ] for i in range(self.cell.environment.width)]
+        self.agentPlacements = {}
         self.leader = True
         self.maxAge = -1
         self.movement = 0
@@ -115,25 +116,37 @@ class Leader(agent.Agent):
         self.vision = max(self.cell.environment.height, self.cell.environment.width)
 
     def findBestCell(self):
-        self.spice = sys.maxsize
-        self.sugar = sys.maxsize
-        for i in range(self.cell.environment.width):
-            for j in range(self.cell.environment.height):
-                cell = self.cell.environment.grid[i][j]
-                cellValue = cell.sugar + cell.spice
-                self.grid[i][j] = cellValue
+        self.resetForTimestep()
+        agents = self.cell.environment.sugarscape.agents
+        agentsByNeed = []
+        for agent in agents:
+            agentsByNeed.append({"agent": agent, "ttl": agent.findTimeToLive(), "cells": agent.rankCellsInRange()})
+        agentsByNeed = sorted(agentsByNeed, key=lambda agent: agent["ttl"])
+        for agentRecord in agentsByNeed:
+            agent = agentRecord["agent"]
+            for cellRecord in agentRecord["cells"]:
+                cell = cellRecord["cell"]
+                if self.grid[cell.x][cell.y] == None:
+                    self.grid[cell.x][cell.y] = agent
+                    self.agentPlacements[agent.ID] = self.cell.environment.grid[cell.x][cell.y]
+                    break
+        # Default to remain at cell if agent cannot find a new cell
+        if agent.ID not in self.agentPlacements:
+            self.agentPlacements[agent.ID] = agent.cell
         return self.cell
 
     def findBestCellForAgent(self, agent):
-        maxCell = agent.cell
-        maxCellValue = 0
-        for cell in agent.cellsInRange:
-            cellValue = self.grid[cell.x][cell.y]
-            if cellValue > maxCellValue:
-                maxCell = cell
-                maxCellValue = cellValue
-        self.grid[maxCell.x][maxCell.y] = 0
-        return maxCell
+        if agent.ID not in self.agentPlacements:
+            return agent.cell
+        return self.agentPlacements[agent.ID]
+
+    def resetForTimestep(self):
+        # Always ensure leader has maximum resources each timestep
+        self.spice = sys.maxsize
+        self.sugar = sys.maxsize
+        self.grid = [[None for j in range(self.cell.environment.height) ] for i in range(self.cell.environment.width)]
+        self.grid[self.cell.x][self.cell.y] = self
+        self.agentPlacements = {self.ID: self.cell}
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Leader(childID, birthday, cell, configuration)
