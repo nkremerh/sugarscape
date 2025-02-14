@@ -24,6 +24,7 @@
         "agentFertilityFactor": [1, 1],
         "agentImmuneSystemLength": 35,
         "agentInheritancePolicy": "children",
+        "agentLeader": false,
         "agentLendingFactor": [1, 1],
         "agentLoanDuration": [5, 5],
         "agentLookaheadFactor": [1, 10],
