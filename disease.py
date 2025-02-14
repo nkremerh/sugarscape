@@ -1,10 +1,11 @@
+import condition
+
 import math
 import random
 
-class Disease:
+class Disease (condition.Condition):
     def __init__(self, diseaseID, configuration):
-        self.ID = diseaseID
-        self.configuration = configuration
+        super().__init__(diseaseID, configuration)
         self.aggressionPenalty = configuration["aggressionPenalty"]
         self.fertilityPenalty = configuration["fertilityPenalty"]
         self.movementPenalty = configuration["movementPenalty"]

@@ -6,6 +6,7 @@ import random
 class Condition:
     def __init__(self, conditionID, configuration):
         self.ID = conditionID
+        self.configuration = configuration
         # Configuration:
         # Effects on agent (penalties, bonuses)
         # Infectious, hereditary, dormant/recessive

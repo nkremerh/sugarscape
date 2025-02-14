@@ -185,7 +185,7 @@ class Sugarscape:
             a.findCellsInRange()
             a.findNeighborhood()
 
-    def configureDiseases(self, numDiseases, conditions):
+    def configureDiseases(self, numDiseases, conditions=None):
         numAgents = len(self.agents)
         if numAgents == 0:
             return
