@@ -476,7 +476,7 @@ class GUI:
         elif self.activeNetwork.get() == "Disease":
             for agent in self.sugarscape.agents:
                 if agent.isSick() == True:
-                    for diseaseRecord in agent.diseases:
+                    for diseaseRecord in agent.symptomaticDiseases:
                         # Starting diseases without an infector are not considered
                         if "infector" not in diseaseRecord:
                             continue
@@ -596,7 +596,7 @@ class GUI:
         elif self.activeColorOptions["agent"] == "Depression":
             return self.colors["sick"] if agent.depressed == True else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Disease":
-            return self.colors["sick"] if len(agent.diseases) > 0 else self.colors["healthy"]
+            return self.colors["sick"] if agent.isSick() else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Metabolism":
             return self.colors["metabolism"][agent.sugarMetabolism + agent.spiceMetabolism]
         elif self.activeColorOptions["agent"] == "Movement":
