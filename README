@@ -310,6 +310,16 @@ diseaseFertilityPenalty: [float, float]
     Note: Negative values constitute a fertility decrease.
     Default: [0, 0]
 
+diseaseFriendlinessPenalty: [float, float]
+    Set the impact a disease will have on an agent's maximum number of friends.
+    Note: Negative values constitute a friendliness decrease.
+    Default: [0, 0]
+
+diseaseHappinessPenalty: [float, float]
+    Set the impact a disease will have on an agent's happiness.
+    Note: Negative values consitute a happiness decrease.
+    Default: [0, 0]
+
 diseaseMovementPenalty: [int, int]
     Set the impact a disease will have on an agent's movement distance.
     Note: Negative values constitute a decrease in movement range.

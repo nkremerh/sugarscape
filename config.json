@@ -53,6 +53,8 @@
         "debugMode": ["none"],
         "diseaseAggressionPenalty": [-1, 1],
         "diseaseFertilityPenalty": [-1, 1],
+        "diseaseFriendlinessPenalty": [0, 0],
+        "diseaseHappinessPenalty": [0, 0],
         "diseaseMovementPenalty": [0, 0],
         "diseaseSpiceMetabolismPenalty": [1, 3],
         "diseaseSugarMetabolismPenalty": [1, 3],
