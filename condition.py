@@ -1,18 +1,11 @@
 import math
-import random
 
-# Mental, physical conditions
-# Disorders, syndromes, injuries, infectious diseases, hereditary diseases, etc.
 class Condition:
     def __init__(self, conditionID, configuration):
         self.ID = conditionID
         self.configuration = configuration
         self.recoverable = False
         self.tags = None
-        # Configuration:
-        # Effects on agent (penalties, bonuses)
-        # Infectious, hereditary, dormant/recessive
-        # Immune system, chronic/incurable
 
     def __str__(self):
         return f"{self.ID}"
@@ -73,6 +66,3 @@ class Disease(Condition):
         agent.spiceMetabolismModifier -= self.spiceMetabolismPenalty
         agent.sugarMetabolismModifier -= self.sugarMetabolismPenalty
         agent.visionModifier -= self.visionPenalty
-
-    def __str__(self):
-        return f"{self.ID}"
