@@ -1180,18 +1180,46 @@ def printHelp():
     print("Usage:\n\tpython sugarscape.py --conf config.json\n\nOptions:\n\t-c,--conf\tUse specified config file for simulation settings.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
+def sortConfigurationTimeframes(configuration, timeframe):
+    config = configuration[timeframe]
+    if configuration != [0, 0]:
+        start = config[0]
+        end = config[1]
+        # Ensure start and end are in correct order
+        if start > end and end >= 0:
+            swap = start
+            start = end
+            end = swap
+            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"Start and end values provided for {timeframe} in incorrect order. Switching values around.")
+        # If provided a negative value, assume the start timestep is the very first of the simulation
+        if start < 0:
+            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"Start timestep {start} for {timeframe} is invalid. Setting {timeframe} start timestep to 0.")
+            start = 0
+        # If provided a negative value, assume the end timestep is the very end of the simulation
+        if end < 0:
+            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"End timestep {end} for {timeframe} is invalid. Setting {timeframe} end timestep to {configuration['timesteps']}.")
+            end = configuration["timesteps"]
+        config = [start, end]
+    return config
+
 def verifyConfiguration(configuration):
     negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
     negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseVisionPenalty"]
     negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
-    negativesAllowed += ["seed", "timesteps"]
+    negativesAllowed += ["interfaceHeight", "interfaceWidth", "seed", "timesteps"]
+    timeframes = ["environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
     negativeFlag = 0
     for configName, configValue in configuration.items():
         if isinstance(configValue, list):
             if len(configValue) == 0:
                 continue
             configType = type(configValue[0])
-            if configName != "environmentPollutionDiffusionTimeFrame" and configName != "environmentPollutionTimeFrame":
+            if configName in timeframes:
+                configuration[configName] = sortConfigurationTimeframes(configuration, configName)
+            else:
                 configValue.sort()
             if configName not in negativesAllowed and (configType == int or configType == float):
                 for i in range(len(configValue)):
