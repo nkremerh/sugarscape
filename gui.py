@@ -12,11 +12,15 @@ class GUI:
 
         sugarAndSpiceColors = self.findSugarAndSpiceColors("#F2FA00", "#9B4722")
         pollutionColors = self.findColorRange("#FFFFFF", "#803280", 0, 20)
-        minMetabolism = sugarscape.configuration["agentSugarMetabolism"][0] + sugarscape.configuration["agentSpiceMetabolism"][0]
-        maxMetabolism = sugarscape.configuration["agentSugarMetabolism"][1] + sugarscape.configuration["agentSpiceMetabolism"][1]
-        metabolismColors = self.findColorRange("#00FF0000", "#FF0000", minMetabolism, maxMetabolism)
-        movementColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentMovement"][0], sugarscape.configuration["agentMovement"][1])
-        visionColors = self.findColorRange("#FF0000", "#00FF00", sugarscape.configuration["agentVision"][0], sugarscape.configuration["agentVision"][1])
+        self.minMetabolism = sugarscape.configuration["agentSugarMetabolism"][0] + sugarscape.configuration["agentSpiceMetabolism"][0]
+        self.maxMetabolism = sugarscape.configuration["agentSugarMetabolism"][1] + sugarscape.configuration["agentSpiceMetabolism"][1]
+        metabolismColors = self.findColorRange("#00FF0000", "#FF0000", self.minMetabolism, self.maxMetabolism)
+        self.minMovement = sugarscape.configuration["agentMovement"][0]
+        self.maxMovement = sugarscape.configuration["agentMovement"][1]
+        movementColors = self.findColorRange("#FF0000", "#00FF00", self.minMovement, self.maxMovement)
+        self.minVision = sugarscape.configuration["agentVision"][0]
+        self.maxVision = sugarscape.configuration["agentVision"][1]
+        visionColors = self.findColorRange("#FF0000", "#00FF00", self.minVision, self.maxVision)
         self.colors = {"sugarAndSpice": sugarAndSpiceColors, "pollution": pollutionColors, "healthy": "#3232FA", "sick": "#FA3232", "metabolism": metabolismColors, "movement": movementColors, "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "vision": visionColors}
         self.palette = ["#FA3232", "#3232FA", "#32FA32", "#32FAFA", "#FA32FA", "#AA3232", "#3232AA", "#32AA32", "#32AAAA", "#AA32AA", "#FA8800", "#00FA88", "#8800FA", "#FA8888", "#8888FA", "#88FA88", "#FA3288", "#3288FA", "#88FA32", "#AA66AA", "#66AAAA", "#3ED06E", "#6E3ED0", "#D06E3E", "#000000"]
         numTribes = self.sugarscape.configuration["environmentMaxTribes"]
@@ -50,6 +54,13 @@ class GUI:
         self.siteWidth = (self.screenWidth - 2 * self.borderEdge) / self.sugarscape.environmentWidth
         self.stopSimulation = False
         self.configureWindow()
+
+    def clamp(self, value, mininum, maximum):
+        if value < mininum:
+            return mininum
+        elif value > maximum:
+            return maximum
+        return value
 
     def clearHighlight(self):
         self.highlightedAgent = None
@@ -598,15 +609,15 @@ class GUI:
         elif self.activeColorOptions["agent"] == "Disease":
             return self.colors["sick"] if len(agent.diseases) > 0 else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Metabolism":
-            return self.colors["metabolism"][agent.sugarMetabolism + agent.spiceMetabolism]
+            return self.colors["metabolism"][self.clamp(agent.sugarMetabolism + agent.spiceMetabolism, self.minMetabolism, self.maxMetabolism)]
         elif self.activeColorOptions["agent"] == "Movement":
-            return self.colors["movement"][agent.movement]
+            return self.colors["movement"][self.clamp(agent.movement, self.minMovement, self.maxMovement)]
         elif self.activeColorOptions["agent"] == "Sex" and agent.sex != None:
             return self.colors[agent.sex]
         elif self.activeColorOptions["agent"] == "Tribes" and agent.tribe != None:
             return self.colors[str(agent.tribe)]
         elif self.activeColorOptions["agent"] == "Vision":
-            return self.colors["vision"][agent.vision]
+            return self.colors["vision"][self.clamp(agent.vision, self.minVision, self.maxVision)]
         return self.colors["noSex"]
 
     def lookupNetworkColor(self, cell):
