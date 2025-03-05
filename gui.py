@@ -394,7 +394,8 @@ class GUI:
 
         if self.resizeID != None:
             self.window.after_cancel(self.resizeID)
-        self.resizeID = self.window.after(20, self.resizeInterface)
+        pollingRate = 10
+        self.resizeID = self.window.after(pollingRate, self.resizeInterface)
 
     def doStepForwardButton(self, *args):
         if self.sugarscape.end == True:
