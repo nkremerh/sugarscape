@@ -148,8 +148,10 @@ class Sugarscape:
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
-            if self.configuration["agentLeader"] == True and i == numAgents - 1:
+            if self.configuration["agentLeader"] == True and i == 0:
                 a = ethics.Leader(agentID, self.timestep, randomCell, agentConfiguration)
+                cornerCell = self.environment.grid[0][0]
+                a.gotoCell(cornerCell)
                 self.agentLeader = a
             # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:

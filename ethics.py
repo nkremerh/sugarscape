@@ -115,6 +115,12 @@ class Leader(agent.Agent):
         self.tradeFactor = 0.0
         self.vision = max(self.cell.environment.height, self.cell.environment.width)
 
+    def doAging(self):
+        agents = self.cell.environment.sugarscape.agents
+        # Consider being the last one left alive as an aging death for the leader
+        if len(agents) == 1 and agents[0] == self:
+            self.doDeath("aging")
+
     def findBestCell(self):
         self.resetForTimestep()
         agents = self.cell.environment.sugarscape.agents
