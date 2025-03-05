@@ -9,6 +9,8 @@ class GUI:
         self.canvas = None
         self.grid = [[None for j in range(self.sugarscape.environmentHeight)]for i in range(self.sugarscape.environmentWidth)]
         self.window = None
+        self.doubleClick = False
+        self.resizeID = None
 
         sugarAndSpiceColors = self.findSugarAndSpiceColors("#F2FA00", "#9B4722")
         pollutionColors = self.findColorRange("#FFFFFF", "#803280", 0, 20)
@@ -282,7 +284,7 @@ class GUI:
         self.window.bind("<Escape>", self.doWindowClose)
         self.window.bind("<space>", self.doPlayButton)
         self.window.bind("<Right>", self.doStepForwardButton)
-        self.window.bind("<Configure>", self.resizeInterface)
+        self.window.bind("<Configure>", self.doResize)
 
         self.doCrossPlatformWindowSizing()
 
@@ -336,7 +338,7 @@ class GUI:
         self.window.update_idletasks()
         self.resizeInterface()
 
-    def doDoubleClick(self, event):
+    def doDoubleClick(self):
         self.doubleClick = True
 
     def doEnvironmentColorMenu(self):
@@ -384,6 +386,15 @@ class GUI:
         self.sugarscape.toggleRun()
         self.widgets["playButton"].config(text="Play Simulation" if self.sugarscape.run == False else "Pause Simulation")
         self.doTimestep()
+
+    def doResize(self, event):
+        # Do not resize if capturing a user input event but the event does not come from the GUI window
+        if event != None and (event.widget != self.window or (self.screenHeight == event.height and self.screenWidth == event.width)):
+            return
+
+        if self.resizeID != None:
+            self.window.after_cancel(self.resizeID)
+        self.resizeID = self.window.after(20, self.resizeInterface)
 
     def doStepForwardButton(self, *args):
         if self.sugarscape.end == True:
@@ -639,10 +650,7 @@ class GUI:
             return self.colors["sick"] if agent.isSick() == True else self.colors["healthy"]
         return "black"
 
-    def resizeInterface(self, event=None):
-        # Do not do resizing if capturing a user input event but the event does not come from the GUI window
-        if event != None and (event.widget != self.window or (self.screenHeight == event.height and self.screenWidth == event.width)):
-            return
+    def resizeInterface(self):
         self.updateScreenDimensions()
         self.updateSiteDimensions()
         self.destroyCanvas()
