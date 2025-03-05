@@ -128,11 +128,6 @@ agentBaseInterestRate: [float, float]
     Set the interest rate for an agent's lending as a percentage.
     Default: [0.0, 0.0]
 
-agentConditions: [string, ...]
-    Set the agent medical conditions possible in the simulation.
-    Options: "none"
-    Default: ["none"]
-
 agentDecisionModelLookaheadDiscount: [float, float]
     Set the agent's discount applied to considering possible rewards in future timesteps.
     Note: This feature is used in agent decision models besides the "none" and "rawSugarscape" models.
