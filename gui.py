@@ -349,7 +349,7 @@ class GUI:
         self.window.update_idletasks()
         self.resizeInterface()
 
-    def doDoubleClick(self):
+    def doDoubleClick(self, event):
         self.doubleClick = True
 
     def doEnvironmentColorMenu(self):
@@ -405,8 +405,8 @@ class GUI:
 
         if self.resizeID != None:
             self.window.after_cancel(self.resizeID)
-        pollingRate = 10
-        self.resizeID = self.window.after(pollingRate, self.resizeInterface)
+        pollingInterval = 10
+        self.resizeID = self.window.after(pollingInterval, self.resizeInterface)
 
     def doStepForwardButton(self, *args):
         if self.sugarscape.end == True:
