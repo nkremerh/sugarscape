@@ -159,6 +159,11 @@ agentDepressionPercentage: float
     Note: The starting agent population will have this same percentage of depressed agents.
     Default: 0.0
 
+agentDiseaseProtectionChance: [float, float]
+    Sets the chance an agent can get infected by another agent.
+    Note: A value of 0.0 means no protection, while a value of 1.0 means complete protection.
+    Default: [0.0, 0.0]
+
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
     Default: [0, 0]
@@ -305,6 +310,10 @@ diseaseFertilityPenalty: [float, float]
     Note: Negative values constitute a fertility decrease.
     Default: [0, 0]
 
+diseaseIncubationPeriod: [int, int]
+    Set the number of timesteps a disease can remain hidden while still infecting other agents.
+    Default: [0, 0]
+
 diseaseMovementPenalty: [int, int]
     Set the impact a disease will have on an agent's movement distance.
     Note: Negative values constitute a decrease in movement range.
@@ -315,6 +324,12 @@ diseaseSpiceMetabolismPenalty: [float, float]
     Note: Negative values constitute a decrease in agent spice metabolism.
     Default: [0, 0]
 
+diseaseTimeframe: [int, int]
+    Set the timestep a disease can be initialized.
+    Note: Value of -1 for the start sets the start timestep to 0.
+    Note: Value of -1 for the end sets the end timestep to the end of the simulation.
+    Default: [-1, -1]
+
 diseaseSugarMetabolismPenalty: [float, float]
     Set the impact a disease will have on an agent's sugar metabolism rate.
     Note: Negative values constitute a decrease in agent sugar metabolism.
@@ -324,6 +339,11 @@ diseaseTagStringLength: [int, int]
     Set the length of disease tags.
     The longer the length, the longer an agent will have the disease.
     Default: [0, 0]
+
+diseaseTransmissionChance: [float, float]
+    Set the chance a disease can transmit between agents.
+    Note: A value of 0.0 means no transmission, while a value of 1.0 means perfect transmission.
+    Default: [1.0, 1.0]
 
 diseaseVisionPenalty: [int, int]
     Set the impact a disease will have on an agent's vision.
