@@ -157,6 +157,7 @@ agentDecisionModelTribalFactor: [float, float]
 agentDepressionPercentage: float
     Set the percentage chance an agent will experience depression symptoms at birth.
     Note: The starting agent population will have this same percentage of depressed agents.
+    Note: Valid range is [0.0, 1.0].
     Default: 0.0
 
 agentFemaleInfertilityAge: [int, int]
