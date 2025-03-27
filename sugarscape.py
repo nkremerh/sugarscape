@@ -2,7 +2,7 @@
 
 import agent
 import cell
-import disease
+import condition
 import environment
 import ethics
 
@@ -53,9 +53,11 @@ class Sugarscape:
         self.replacedAgents = []
         self.bornAgents = []
         self.deadAgents = []
+        self.depression = True if configuration["agentDepressionPercentage"] > 0 else False
         self.diseases = []
         self.agentLeader = None
         self.activeQuadrants = self.findActiveQuadrants()
+        self.configureDepression()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
         self.gui = gui.GUI(self, self.configuration["interfaceHeight"], self.configuration["interfaceWidth"]) if configuration["headlessMode"] == False else None
@@ -186,6 +188,11 @@ class Sugarscape:
             a.findCellsInRange()
             a.findNeighborhood()
 
+    def configureDepression(self):
+        if self.depression == True:
+            self.depression = condition.Depression()
+            self.diseases.append(self.depression)
+
     def configureDiseases(self, numDiseases):
         numAgents = len(self.agents)
         if numAgents == 0:
@@ -199,7 +206,7 @@ class Sugarscape:
         for i in range(numDiseases):
             diseaseID = self.generateDiseaseID()
             diseaseConfiguration = diseaseEndowments[i]
-            newDisease = disease.Disease(diseaseID, diseaseConfiguration)
+            newDisease = condition.Disease(diseaseID, diseaseConfiguration)
             diseases.append(newDisease)
 
         startingDiseases = self.configuration["startingDiseasesPerAgent"]
@@ -374,114 +381,6 @@ class Sugarscape:
             if self.end == True:
                 self.endSimulation()
 
-    def randomizeDiseaseEndowments(self, numDiseases):
-        configs = self.configuration
-        aggressionPenalty = configs["diseaseAggressionPenalty"]
-        fertilityPenalty = configs["diseaseFertilityPenalty"]
-        movementPenalty = configs["diseaseMovementPenalty"]
-        spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
-        sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
-        tagLengths = configs["diseaseTagStringLength"]
-        visionPenalty = configs["diseaseVisionPenalty"]
-
-        minAggressionPenalty = aggressionPenalty[0]
-        minFertilityPenalty = fertilityPenalty[0]
-        minMovementPenalty = movementPenalty[0]
-        minSpiceMetabolismPenalty = spiceMetabolismPenalty[0]
-        minSugarMetabolismPenalty = sugarMetabolismPenalty[0]
-        minTagLength = tagLengths[0]
-        minVisionPenalty = visionPenalty[0]
-
-        maxAggressionPenalty = aggressionPenalty[1]
-        maxFertilityPenalty = fertilityPenalty[1]
-        maxMovementPenalty = movementPenalty[1]
-        maxSpiceMetabolismPenalty = spiceMetabolismPenalty[1]
-        maxSugarMetabolismPenalty = sugarMetabolismPenalty[1]
-        maxTagLength = tagLengths[1]
-        maxVisionPenalty = visionPenalty[1]
-
-        aggressionPenalties = []
-        diseaseTags = []
-        endowments = []
-        fertilityPenalties = []
-        movementPenalties = []
-        spiceMetabolismPenalties = []
-        sugarMetabolismPenalties = []
-        visionPenalties = []
-
-        currAggressionPenalty = minAggressionPenalty
-        currFertilityPenalty = minFertilityPenalty
-        currMovementPenalty = minMovementPenalty
-        currSugarMetabolismPenalty = minSugarMetabolismPenalty
-        currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
-        currTagLength = minTagLength
-        currVisionPenalty = minVisionPenalty
-
-        for i in range(numDiseases):
-            aggressionPenalties.append(currAggressionPenalty)
-            diseaseTags.append([random.randrange(2) for i in range(currTagLength)])
-            fertilityPenalties.append(currFertilityPenalty)
-            movementPenalties.append(currMovementPenalty)
-            spiceMetabolismPenalties.append(currSpiceMetabolismPenalty)
-            sugarMetabolismPenalties.append(currSugarMetabolismPenalty)
-            visionPenalties.append(currVisionPenalty)
-
-            currAggressionPenalty += 1
-            currFertilityPenalty += 1
-            currMovementPenalty += 1
-            currSpiceMetabolismPenalty += 1
-            currSugarMetabolismPenalty += 1
-            currTagLength += 1
-            currVisionPenalty += 1
-
-            if currAggressionPenalty > maxAggressionPenalty:
-                currAggressionPenalty = minAggressionPenalty
-            if currFertilityPenalty > maxFertilityPenalty:
-                currFertilityPenalty = minFertilityPenalty
-            if currMovementPenalty > maxMovementPenalty:
-                currMovementPenalty = minMovementPenalty
-            if currSpiceMetabolismPenalty > maxSpiceMetabolismPenalty:
-                currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
-            if currSugarMetabolismPenalty > maxSugarMetabolismPenalty:
-                currSugarMetabolismPenalty = minSugarMetabolismPenalty
-            if currTagLength > maxTagLength:
-                currTagLength = minTagLength
-            if currVisionPenalty > maxVisionPenalty:
-                currVisionPenalty = minVisionPenalty
-
-        randomDiseaseEndowment = {"aggressionPenalties": aggressionPenalties,
-                     "diseaseTags": diseaseTags,
-                     "fertilityPenalties": fertilityPenalties,
-                     "movementPenalties": movementPenalties,
-                     "spiceMetabolismPenalties": spiceMetabolismPenalties,
-                     "sugarMetabolismPenalties": sugarMetabolismPenalties,
-                     "visionPenalties": visionPenalties}
-
-        # Map configuration to a random number via hash to make random number generation independent of iteration order
-        if (self.diseaseConfigHashes == None):
-            self.diseaseConfigHashes = {}
-            for penalty in randomDiseaseEndowment:
-                hashed = hashlib.md5(penalty.encode())
-                self.diseaseConfigHashes[penalty] = int(hashed.hexdigest(), 16)
-
-        # Keep state of random numbers to allow extending agent endowments without altering original random object state
-        randomNumberReset = random.getstate()
-        for endowment in randomDiseaseEndowment.keys():
-            random.seed(self.diseaseConfigHashes[endowment] + self.timestep)
-            random.shuffle(randomDiseaseEndowment[endowment])
-        random.setstate(randomNumberReset)
-
-        for i in range(numDiseases):
-            diseaseEndowment = {"aggressionPenalty": aggressionPenalties.pop(),
-                                "fertilityPenalty": fertilityPenalties.pop(),
-                                "movementPenalty": movementPenalties.pop(),
-                                "spiceMetabolismPenalty": spiceMetabolismPenalties.pop(),
-                                "sugarMetabolismPenalty": sugarMetabolismPenalties.pop(),
-                                "tags": diseaseTags.pop(),
-                                "visionPenalty": visionPenalties.pop()}
-            endowments.append(diseaseEndowment)
-        return endowments
-
     def randomizeAgentEndowments(self, numAgents):
         configs = self.configuration
         aggressionFactor = configs["agentAggressionFactor"]
@@ -654,109 +553,78 @@ class Sugarscape:
 
     def randomizeDiseaseEndowments(self, numDiseases):
         configs = self.configuration
-        sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
-        spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
-        movementPenalty = configs["diseaseMovementPenalty"]
-        visionPenalty = configs["diseaseVisionPenalty"]
-        fertilityPenalty = configs["diseaseFertilityPenalty"]
         aggressionPenalty = configs["diseaseAggressionPenalty"]
-        tagLengths = configs["diseaseTagStringLength"]
+        fertilityPenalty = configs["diseaseFertilityPenalty"]
+        friendlinessPenalty = configs["diseaseFriendlinessPenalty"]
+        happinessPenalty = configs["diseaseHappinessPenalty"]
+        movementPenalty = configs["diseaseMovementPenalty"]
+        spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
+        sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
+        tagLength = configs["diseaseTagStringLength"]
+        visionPenalty = configs["diseaseVisionPenalty"]
 
-        minSugarMetabolismPenalty = sugarMetabolismPenalty[0]
-        minSpiceMetabolismPenalty = spiceMetabolismPenalty[0]
-        minMovementPenalty = movementPenalty[0]
-        minVisionPenalty = visionPenalty[0]
-        minFertilityPenalty = fertilityPenalty[0]
-        minAggressionPenalty = aggressionPenalty[0]
-        minTagLength = tagLengths[0]
-
-        maxSugarMetabolismPenalty = sugarMetabolismPenalty[1]
-        maxSpiceMetabolismPenalty = spiceMetabolismPenalty[1]
-        maxMovementPenalty = movementPenalty[1]
-        maxVisionPenalty = visionPenalty[1]
-        maxFertilityPenalty = fertilityPenalty[1]
-        maxAggressionPenalty = aggressionPenalty[1]
-        maxTagLength = tagLengths[1]
-
-        endowments = []
-        sugarMetabolismPenalties = []
-        spiceMetabolismPenalties = []
-        movementPenalties = []
-        visionPenalties = []
-        fertilityPenalties = []
-        aggressionPenalties = []
-        diseaseTags = []
-
-        currSugarMetabolismPenalty = minSugarMetabolismPenalty
-        currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
-        currMovementPenalty = minMovementPenalty
-        currVisionPenalty = minVisionPenalty
-        currFertilityPenalty = minFertilityPenalty
-        currAggressionPenalty = minAggressionPenalty
-        currTagLength = minTagLength
-
-        for i in range(numDiseases):
-            sugarMetabolismPenalties.append(currSugarMetabolismPenalty)
-            spiceMetabolismPenalties.append(currSpiceMetabolismPenalty)
-            movementPenalties.append(currMovementPenalty)
-            visionPenalties.append(currVisionPenalty)
-            fertilityPenalties.append(currFertilityPenalty)
-            aggressionPenalties.append(currAggressionPenalty)
-            diseaseTags.append([random.randrange(2) for i in range(currTagLength)])
-
-            currSugarMetabolismPenalty += 1
-            currSpiceMetabolismPenalty += 1
-            currMovementPenalty += 1
-            currVisionPenalty += 1
-            currFertilityPenalty += 1
-            currAggressionPenalty += 1
-            currTagLength += 1
-
-            if currSugarMetabolismPenalty > maxSugarMetabolismPenalty:
-                currSugarMetabolismPenalty = minSugarMetabolismPenalty
-            if currSpiceMetabolismPenalty > maxSpiceMetabolismPenalty:
-                currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
-            if currMovementPenalty > maxMovementPenalty:
-                currMovementPenalty = minMovementPenalty
-            if currVisionPenalty > maxVisionPenalty:
-                currVisionPenalty = minVisionPenalty
-            if currFertilityPenalty > maxFertilityPenalty:
-                currFertilityPenalty = minFertilityPenalty
-            if currAggressionPenalty > maxAggressionPenalty:
-                currAggressionPenalty = minAggressionPenalty
-            if currTagLength > maxTagLength:
-                currTagLength = minTagLength
-
-        randomDiseaseEndowment = {"sugarMetabolismPenalties": sugarMetabolismPenalties,
-                     "spiceMetabolismPenalties": spiceMetabolismPenalties,
-                     "movementPenalties": movementPenalties,
-                     "visionPenalties": visionPenalties,
-                     "fertilityPenalties": fertilityPenalties,
-                     "aggressionPenalties": aggressionPenalties,
-                     "diseaseTags": diseaseTags}
+        configurations = {"aggressionPenalty": {"endowments": [], "curr": aggressionPenalty[0], "min": aggressionPenalty[0], "max": aggressionPenalty[1]},
+                          "fertilityPenalty": {"endowments": [], "curr": fertilityPenalty[0], "min": fertilityPenalty[0], "max": fertilityPenalty[1]},
+                          "friendlinessPenalty": {"endowments": [], "curr": friendlinessPenalty[0], "min": friendlinessPenalty[0], "max": friendlinessPenalty[1]},
+                          "happinessPenalty": {"endowments": [], "curr": happinessPenalty[0], "min": happinessPenalty[0], "max": happinessPenalty[1]},
+                          "movementPenalty": {"endowments": [], "curr": movementPenalty[0], "min": movementPenalty[0], "max": movementPenalty[1]},
+                          "spiceMetabolismPenalty": {"endowments": [], "curr": spiceMetabolismPenalty[0], "min": spiceMetabolismPenalty[0], "max": spiceMetabolismPenalty[1]},
+                          "sugarMetabolismPenalty": {"endowments": [], "curr": sugarMetabolismPenalty[0], "min": sugarMetabolismPenalty[0], "max": sugarMetabolismPenalty[1]},
+                          "tagLength": {"endowments": [], "curr": tagLength[0], "min": tagLength[0], "max": tagLength[1]},
+                          "visionPenalty": {"endowments": [], "curr": visionPenalty[0], "min": visionPenalty[0], "max": visionPenalty[1]}
+                          }
 
         # Map configuration to a random number via hash to make random number generation independent of iteration order
         if (self.diseaseConfigHashes == None):
             self.diseaseConfigHashes = {}
-            for penalty in randomDiseaseEndowment:
+            for penalty in configurations.keys():
                 hashed = hashlib.md5(penalty.encode())
                 self.diseaseConfigHashes[penalty] = int(hashed.hexdigest(), 16)
 
+        for config in configurations:
+            configMin = configurations[config]["min"]
+            configMax = configurations[config]["max"]
+            configMinDecimals = str(configMin).split('.')
+            configMaxDecimals = str(configMax).split('.')
+            decimalRange = []
+            if len(configMinDecimals) == 2:
+                configMinDecimals = len(configMinDecimals[1])
+                decimalRange.append(configMinDecimals)
+            if len(configMaxDecimals) == 2:
+                configMaxDecimals = len(configMaxDecimals[1])
+                decimalRange.append(configMaxDecimals)
+            # If no fractional component to configuration item, assume increment of 1
+            decimals = max(decimalRange) if len(decimalRange) > 0 else 0
+            increment = 10 ** (-1 * decimals)
+            configurations[config]["inc"] = increment
+            configurations[config]["decimals"] = decimals
+
+        endowments = []
+        tags = []
+        for i in range(numDiseases):
+            for config in configurations.keys():
+                if config == "tagLength":
+                    tagLength = configurations[config]["curr"]
+                    tags.append([random.randrange(2) for i in range(tagLength)])
+                config = configurations[config]
+                config["endowments"].append(config["curr"])
+                config["curr"] += config["inc"]
+                config["curr"] = round(config["curr"], config["decimals"])
+                if config["curr"] > config["max"]:
+                    config["curr"] = config["min"]
+
         # Keep state of random numbers to allow extending agent endowments without altering original random object state
         randomNumberReset = random.getstate()
-        for endowment in randomDiseaseEndowment.keys():
-            random.seed(self.diseaseConfigHashes[endowment] + self.timestep)
-            random.shuffle(randomDiseaseEndowment[endowment])
+        for config in configurations:
+            random.seed(self.diseaseConfigHashes[config] + self.timestep)
+            random.shuffle(configurations[config]["endowments"])
         random.setstate(randomNumberReset)
+        random.shuffle(tags)
 
         for i in range(numDiseases):
-            diseaseEndowment = {"aggressionPenalty": aggressionPenalties.pop(),
-                                "fertilityPenalty": fertilityPenalties.pop(),
-                                "movementPenalty": movementPenalties.pop(),
-                                "sugarMetabolismPenalty": sugarMetabolismPenalties.pop(),
-                                "spiceMetabolismPenalty": spiceMetabolismPenalties.pop(),
-                                "tags": diseaseTags.pop(),
-                                "visionPenalty": visionPenalties.pop()}
+            diseaseEndowment = {"tags": tags.pop()}
+            for config in configurations:
+                    diseaseEndowment[config] = configurations[config]["endowments"].pop()
             endowments.append(diseaseEndowment)
         return endowments
 
@@ -1183,18 +1051,46 @@ def printHelp():
     print("Usage:\n\tpython sugarscape.py --conf config.json\n\nOptions:\n\t-c,--conf\tUse specified config file for simulation settings.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
+def sortConfigurationTimeframes(configuration, timeframe):
+    config = configuration[timeframe]
+    if configuration != [0, 0]:
+        start = config[0]
+        end = config[1]
+        # Ensure start and end are in correct order
+        if start > end and end >= 0:
+            swap = start
+            start = end
+            end = swap
+            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"Start and end values provided for {timeframe} in incorrect order. Switching values around.")
+        # If provided a negative value, assume the start timestep is the very first of the simulation
+        if start < 0:
+            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"Start timestep {start} for {timeframe} is invalid. Setting {timeframe} start timestep to 0.")
+            start = 0
+        # If provided a negative value, assume the end timestep is the very end of the simulation
+        if end < 0:
+            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"End timestep {end} for {timeframe} is invalid. Setting {timeframe} end timestep to {configuration['timesteps']}.")
+            end = configuration["timesteps"]
+        config = [start, end]
+    return config
+
 def verifyConfiguration(configuration):
     negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
     negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseVisionPenalty"]
     negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
-    negativesAllowed += ["seed", "timesteps"]
+    negativesAllowed += ["interfaceHeight", "interfaceWidth", "seed", "timesteps"]
+    timeframes = ["environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
     negativeFlag = 0
     for configName, configValue in configuration.items():
         if isinstance(configValue, list):
             if len(configValue) == 0:
                 continue
             configType = type(configValue[0])
-            if configName != "environmentPollutionDiffusionTimeFrame" and configName != "environmentPollutionTimeFrame":
+            if configName in timeframes:
+                configuration[configName] = sortConfigurationTimeframes(configuration, configName)
+            else:
                 configValue.sort()
             if configName not in negativesAllowed and (configType == int or configType == float):
                 for i in range(len(configValue)):
@@ -1432,6 +1328,8 @@ if __name__ == "__main__":
                      "debugMode": ["none"],
                      "diseaseAggressionPenalty": [0, 0],
                      "diseaseFertilityPenalty": [0, 0],
+                     "diseaseFriendlinessPenalty": [0, 0],
+                     "diseaseHappinessPenalty": [0,0],
                      "diseaseMovementPenalty": [0, 0],
                      "diseaseSpiceMetabolismPenalty": [0, 0],
                      "diseaseSugarMetabolismPenalty": [0, 0],

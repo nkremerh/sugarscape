@@ -157,6 +157,7 @@ agentDecisionModelTribalFactor: [float, float]
 agentDepressionPercentage: float
     Set the percentage chance an agent will experience depression symptoms at birth.
     Note: The starting agent population will have this same percentage of depressed agents.
+    Note: Valid range is [0.0, 1.0].
     Default: 0.0
 
 agentFemaleInfertilityAge: [int, int]
@@ -303,6 +304,16 @@ diseaseAggressionPenalty: [float, float]
 diseaseFertilityPenalty: [float, float]
     Set the impact a disease will have on an agent's fertility.
     Note: Negative values constitute a fertility decrease.
+    Default: [0, 0]
+
+diseaseFriendlinessPenalty: [float, float]
+    Set the impact a disease will have on an agent's maximum number of friends.
+    Note: Negative values constitute a friendliness decrease.
+    Default: [0, 0]
+
+diseaseHappinessPenalty: [float, float]
+    Set the impact a disease will have on an agent's happiness.
+    Note: Negative values consitute a happiness decrease.
     Default: [0, 0]
 
 diseaseMovementPenalty: [int, int]

@@ -64,7 +64,10 @@ class Agent:
         self.familyHappiness = 0
         self.fertile = False
         self.fertilityFactorModifier = 0
+        self.friendlinessModifier = 0
         self.happiness = 0
+        self.happinessUnit = 1
+        self.happinessModifier = 0
         self.healthHappiness = 0
         self.lastDoneCombat = -1
         self.lastMoved = -1
@@ -96,17 +99,8 @@ class Agent:
         # Change metrics for depressed agents
         if self.depressionFactor == 1:
             self.depressed = True
-            # Depressed agents undereat due to eating disorders
-            # TODO: Current implementation increases metabolism, causing overeating instead
-            self.sugarMetabolism = math.ceil(self.sugarMetabolism * 1.544)
-            self.spiceMetabolism = math.ceil(self.spiceMetabolism * 1.544)
-            # Depressed agents move slower due to fatigue
-            self.movement = math.ceil(self.movement * 0.429)
-            # Depressed agents have heightened aggression due to irritability
-            self.aggressionFactor = math.ceil(self.aggressionFactor * 1.145)
-            # Social withdrawal: to represent a degree of social withdrawal, the maximum number of friends an agent can have will be lowered
-            # Depressed agents have a smaller friend network due to social withdrawal
-            self.maxFriends = math.ceil(self.maxFriends * 0.6333)
+            depression = cell.environment.sugarscape.depression
+            depression.trigger(self)
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
@@ -179,18 +173,21 @@ class Agent:
             # If currently sick with this disease, do not contract it again
             if diseaseID == currDiseaseID:
                 return
-        diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
-        hammingDistance = diseaseInImmuneSystem["distance"]
-        # If immune to disease, do not contract it
-        if hammingDistance == 0:
-            return
-        startIndex = diseaseInImmuneSystem["start"]
-        endIndex = diseaseInImmuneSystem["end"]
-        caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex}
-        if infector != None:
-            caughtDisease["infector"] = infector
-        self.diseases.append(caughtDisease)
-        self.updateDiseaseEffects(disease)
+        # If disease cannot be recovered by immune system, contract it
+        if disease.tags == None:
+            caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector}
+            self.diseases.append(caughtDisease)
+        else:
+            diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
+            hammingDistance = diseaseInImmuneSystem["distance"]
+            # If immune to disease, do not contract it
+            if hammingDistance == 0:
+                return
+            startIndex = diseaseInImmuneSystem["start"]
+            endIndex = diseaseInImmuneSystem["end"]
+            caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex, "infector": infector}
+            self.diseases.append(caughtDisease)
+        disease.trigger(self, infector)
         self.findCellsInRange()
 
     def collectResourcesAtCell(self):
@@ -249,17 +246,21 @@ class Agent:
     def doDisease(self):
         random.shuffle(self.diseases)
         for diseaseRecord in self.diseases:
+            disease = diseaseRecord["disease"]
+            if disease.recoverable == False:
+                continue
             diseaseTags = diseaseRecord["disease"].tags
-            immuneResponseStart = diseaseRecord["startIndex"]
-            immuneResponseEnd = min(diseaseRecord["endIndex"] + 1, len(self.immuneSystem))
-            immuneResponse = self.immuneSystem[immuneResponseStart:immuneResponseEnd]
-            for i in range(len(immuneResponse)):
-                if immuneResponse[i] != diseaseTags[i]:
-                    self.immuneSystem[immuneResponseStart + i] = diseaseTags[i]
-                    break
-            if diseaseTags == immuneResponse:
-                self.diseases.remove(diseaseRecord)
-                self.updateDiseaseEffects(diseaseRecord["disease"])
+            if diseaseTags != None:
+                immuneResponseStart = diseaseRecord["startIndex"]
+                immuneResponseEnd = min(diseaseRecord["endIndex"] + 1, len(self.immuneSystem))
+                immuneResponse = self.immuneSystem[immuneResponseStart:immuneResponseEnd]
+                for i in range(len(immuneResponse)):
+                    if immuneResponse[i] != diseaseTags[i]:
+                        self.immuneSystem[immuneResponseStart + i] = diseaseTags[i]
+                        break
+                if diseaseTags == immuneResponse:
+                    self.diseases.remove(diseaseRecord)
+                    disease.recover(self)
 
         diseaseCount = len(self.diseases)
         if diseaseCount == 0:
@@ -455,11 +456,14 @@ class Agent:
         self.timestep = timestep
         # Prevent dead or already moved agent from moving
         if self.isAlive() == True and self.lastMoved != self.timestep:
+            # Bookkeeping before performing actions
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
             self.lastMoved = self.timestep
+            # Beginning of timestep actions
             self.moveToBestCell()
             self.updateNeighbors()
+            # Middle of timestep actions
             self.collectResourcesAtCell()
             self.doUniversalIncome()
             self.doMetabolism()
@@ -470,6 +474,7 @@ class Agent:
             self.doTrading()
             self.doReproduction()
             self.doLending()
+            # End of timestep actions
             self.doDisease()
             self.doAging()
             # If dead from aging, skip remainder of timestep
@@ -782,12 +787,10 @@ class Agent:
 
     def findConflictHappiness(self):
         if self.lastDoneCombat == self.cell.environment.sugarscape.timestep:
-            if self.findAggression() > 1:
-                if self.depressed == True:
-                    return 0.5763
-                return 1
+            if(self.findAggression() > 1):
+                return self.happinessUnit
             else:
-                return -1
+                return self.happinessUnit * -1
         return 0
 
     def findCurrentSpiceDebt(self):
@@ -814,26 +817,20 @@ class Agent:
         familyHappiness = 0
         for child in self.socialNetwork["children"]:
             if child.isAlive() == True:
-                if self.depressed == True:
-                    familyHappiness += 0.5763
-                else:
-                    familyHappiness += 1
+                familyHappiness += self.happinessUnit
                 if child.isSick() == True:
-                    familyHappiness -= 0.5
+                    familyHappiness -= self.happinessUnit * 0.5
                 if child.born == self.timestep:
-                    if self.depressed == True:
-                        familyHappiness += 0.5763
-                    else:
-                        familyHappiness += 1
+                    familyHappiness += self.happinessUnit
             else:
-                familyHappiness -= 1
+                familyHappiness -= self.happinessUnit
         for mate in self.socialNetwork["mates"]:
             if mate.isAlive() == True:
-                familyHappiness += 1
+                familyHappiness += self.happinessUnit
                 if mate.isSick() == True:
-                    familyHappiness -= 0.5
+                    familyHappiness -= self.happinessUnit * 0.5
             else:
-                familyHappiness -= 1
+                familyHappiness -= self.happinessUnit
         return math.erf(familyHappiness)
 
     def findHammingDistanceInTags(self, neighbor):
@@ -851,11 +848,9 @@ class Agent:
 
     def findHealthHappiness(self):
         if self.isSick():
-            return -1
+            return self.happinessUnit * -1
         else:
-            if self.depressed == True:
-                return 0.5763
-            return 1
+            return self.happinessUnit
 
     def findMarginalRateOfSubstitution(self):
         spiceMetabolism = self.findSpiceMetabolism()
@@ -869,7 +864,7 @@ class Agent:
         return max(0, self.movement + self.movementModifier)
 
     def findNearestHammingDistanceInDisease(self, disease):
-        if self.immuneSystem == None:
+        if self.immuneSystem == None or disease.tags == None:
             return 0
         diseaseTags = disease.tags
         diseaseLength = len(diseaseTags)
@@ -966,9 +961,7 @@ class Agent:
             return 0
         step = 2 / self.maxFriends
         socialHappiness = (len(self.socialNetwork["friends"]) * step) - 1
-        if self.depressed == True and socialHappiness > 0:
-            socialHappiness *= 0.5763
-        return socialHappiness
+        return socialHappiness * self.happinessUnit
 
     def findSpiceMetabolism(self):
         return max(0, self.spiceMetabolism + self.spiceMetabolismModifier)
@@ -1011,8 +1004,7 @@ class Agent:
     def findWealthHappiness(self):
         wealth = self.sugar + self.spice
         diffWealth = wealth - self.cell.environment.sugarscape.runtimeStats["meanWealth"]
-        if self.depressed == True and diffWealth > 0:
-            diffWealth *= 0.5763
+        diffWealth *= self.happinessUnit
         return math.erf(diffWealth)
 
     def findWelfare(self, sugarReward, spiceReward):
@@ -1297,28 +1289,6 @@ class Agent:
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Agent(childID, birthday, cell, configuration)
-
-    def updateDiseaseEffects(self, disease):
-        # If disease not in list of diseases, agent has recovered and undo its effects
-        recoveryCheck = -1
-        for diseaseRecord in self.diseases:
-            if disease == diseaseRecord["disease"]:
-                recoveryCheck = 1
-                break
-
-        sugarMetabolismPenalty = disease.sugarMetabolismPenalty * recoveryCheck
-        spiceMetabolismPenalty = disease.spiceMetabolismPenalty * recoveryCheck
-        visionPenalty = disease.visionPenalty * recoveryCheck
-        movementPenalty = disease.movementPenalty * recoveryCheck
-        fertilityPenalty = disease.fertilityPenalty * recoveryCheck
-        aggressionPenalty = disease.aggressionPenalty * recoveryCheck
-
-        self.sugarMetabolismModifier += sugarMetabolismPenalty
-        self.spiceMetabolismModifier += spiceMetabolismPenalty
-        self.visionModifier += visionPenalty
-        self.movementModifier += movementPenalty
-        self.fertilityFactorModifier += fertilityPenalty
-        self.aggressionFactorModifier += aggressionPenalty
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.ID
