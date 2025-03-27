@@ -1,7 +1,9 @@
 CONFIG = config.json
 DATACHECK = data/data.complete
 LOGS = log.csv log.json
+PLOT = plot.py
 PLOTCHECK = plots/plots.complete
+RUN = run.py
 SCREENSHOTS = *.ps
 
 DATASET = $(DATACHECK) \
@@ -27,11 +29,11 @@ PYCHECK = $(shell which python > /dev/null; echo $$?)
 PY3CHECK = $(shell which python3 > /dev/null; echo $$?)
 
 $(DATACHECK):
-	cd data && $(PYTHON) run.py --conf ../$(CONFIG) --mode csv
+	cd data && $(PYTHON) $(RUN) --conf ../$(CONFIG) --mode csv
 	touch $(DATACHECK)
 
 $(PLOTCHECK): $(DATACHECK)
-	cd plots && $(PYTHON) plot.py --path ../data/ --conf ../$(CONFIG)
+	cd plots && $(PYTHON) $(PLOT) --path ../data/ --conf ../$(CONFIG)
 	touch $(PLOTCHECK)
 
 all: $(DATACHECK) $(PLOTCHECK)
@@ -41,7 +43,7 @@ data: $(DATACHECK)
 plots: $(PLOTCHECK)
 
 seeds:
-	cd data && $(PYTHON) run.py --conf ../$(CONFIG) --mode csv --seeds
+	cd data && $(PYTHON) $(RUN) --conf ../$(CONFIG) --mode csv --seeds
 
 setup:
 	@echo "Checking for local Python installation."
