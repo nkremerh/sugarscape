@@ -968,6 +968,17 @@ class Sugarscape:
                 tribes[agent.tribe] += 1
             numAgents += 1
 
+            for immuneDisease in agent.immuneDiseases:
+                immuneDiseaseStats[immuneDisease.ID] += 1
+            for susceptibleDisease in agent.susceptibleDiseases:
+                susceptibleDiseaseStats[susceptibleDisease.ID] += 1
+            for incubatingDisease in agent.incubatingDiseases:
+                infectedDiseaseStats[incubatingDisease["disease"].ID] += 1
+            for symptomaticDisease in agent.symptomaticDiseases:
+                infectedDiseaseStats[symptomaticDisease["disease"].ID] += 1
+            for recoveredDisease in agent.recoveredDiseases:
+                recoveredDiseaseStats[recoveredDisease["disease"].ID] += 1
+
         numDeadAgents = 0
         meanAgeAtDeath = 0
         for agent in self.deadAgents:

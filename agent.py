@@ -284,7 +284,11 @@ class Agent:
         self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
         self.neighbors = []
         self.neighborhood = []
-        self.diseases = []
+        self.immuneDiseases = []
+        self.susceptibleDiseases = []
+        self.incubatingDiseases = []
+        self.symptomaticDiseases = []
+        self.recoveredDiseases = []
 
     def doDisease(self):
         for immuneDisease in self.immuneDiseases:
