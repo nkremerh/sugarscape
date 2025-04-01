@@ -91,6 +91,7 @@ class Agent:
         self.sugarPrice = 0
         self.tagZeroes = 0
         self.timestep = birthday
+        self.timeToLive = 0
         self.tradeVolume = 0
         self.tribe = self.findTribe()
         self.visionModifier = 0
@@ -482,6 +483,7 @@ class Agent:
                 return
             self.findCellsInRange()
             self.updateHappiness()
+            self.updateValues()
 
     def doTrading(self):
         # If not a trader, skip trading
@@ -985,6 +987,7 @@ class Agent:
         timeToLive = min(sugarTimeToLive, spiceTimeToLive)
         if ageLimited == True:
             timeToLive = min(timeToLive, self.maxAge - self.age)
+        self.timeToLive = timeToLive
         return timeToLive
 
     def findTribe(self):
@@ -1384,6 +1387,10 @@ class Agent:
         else:
             self.socialNetwork[agentID]["timesVisited"] += 1
             self.socialNetwork[agentID]["lastSeen"] = timestep
+
+    def updateValues(self):
+        # Method to be used by child classes to do interesting things with agent behavior
+        return
 
     def __str__(self):
         return f"{self.ID}"
