@@ -280,7 +280,7 @@ class GUI:
             self.screenWidth = math.ceil(window.winfo_screenwidth() / 2) - self.borderEdge
         if self.screenHeight < 0:
             self.screenHeight = math.ceil(window.winfo_screenheight() / 2) - self.borderEdge
-        window.geometry("{self.screenWidth + self.borderEdge}x{self.screenHeight + self.borderEdge}")
+        window.geometry(f"{self.screenWidth + self.borderEdge}x{self.screenHeight + self.borderEdge}")
         window.option_add("*font", "Roboto 10")
         # Make the canvas and buttons fill the window
         window.grid_rowconfigure(3, weight=1)
@@ -693,7 +693,7 @@ class GUI:
         cell = self.highlightedCell
         if cell != None:
             cellSeason = cell.season if cell.season != None else '-'
-            cellStats = "Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
+            cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
             agent = cell.agent
             if agent != None:
                 agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "
@@ -740,14 +740,14 @@ class GUI:
 
     def updateLabels(self):
         stats = self.sugarscape.runtimeStats
-        statsString = "Timestep: {self.sugarscape.timestep} | Agents: {stats['population']} | Metabolism: {stats['meanMetabolism']} | Movement: {stats['meanMovement']} | Vision: {stats['meanVision']} | Gini: {stats['giniCoefficient']} | Trade Price: {stats['meanTradePrice']} | Trade Volume: {stats['tradeVolume']}"
+        statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats['population']} | Metabolism: {stats['meanMetabolism']} | Movement: {stats['meanMovement']} | Vision: {stats['meanVision']} | Gini: {stats['giniCoefficient']} | Trade Price: {stats['meanTradePrice']} | Trade Volume: {stats['tradeVolume']}"
         label = self.widgets["statsLabel"]
         label.config(text=statsString)
         if self.highlightedCell != None:
             self.updateHighlightedCellStats()
 
     def updateLorenzCurve(self):
-        self.canvas.itemconfigure(self.graphObjects["giniCoefficientLabel"], text="Gini coefficient: {self.sugarscape.runtimeStats['giniCoefficient']}")
+        self.canvas.itemconfigure(self.graphObjects["giniCoefficientLabel"], text=f"Gini coefficient: {self.sugarscape.runtimeStats['giniCoefficient']}")
         self.canvas.delete("lorenzCurve")
         points = self.sugarscape.graphStats["lorenzCurvePoints"]
         points.append((1, 0))
