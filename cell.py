@@ -146,5 +146,5 @@ class Cell:
         if self.agent != None:
             string = "-A-"
         else:
-            string = f"{str(self.sugar)}/{str(self.spice)}"
+            string = "{str(self.sugar)}/{str(self.spice)}"
         return string

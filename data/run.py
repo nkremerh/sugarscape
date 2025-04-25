@@ -25,15 +25,15 @@ def createConfigurations(config, path, mode="json"):
                 simOpts["agentDecisionModels"] = model
                 simOpts["seed"] = seed
                 if mode == "json":
-                    simOpts["logfile"] = f"{path}{modelString}{seed}.json"
+                    simOpts["logfile"] = "{path}{modelString}{seed}.json"
                     simOpts["logfileFormat"] = "json"
                 else:
-                    simOpts["logfile"] = f"{path}{modelString}{seed}.csv"
+                    simOpts["logfile"] = "{path}{modelString}{seed}.csv"
                     simOpts["logfileFormat"] = "csv"
                 # Enforce noninteractive, no-output mode
                 simOpts["headlessMode"] = True
                 simOpts["debugMode"] = ["none"]
-                confFilePath = f"{path}{modelString}{seed}.config"
+                confFilePath = "{path}{modelString}{seed}.config"
                 confFiles.append(confFilePath)
                 conf = open(confFilePath, 'w')
                 conf.write(json.dumps(simOpts))
@@ -73,7 +73,7 @@ def getJobsToDo(config, path):
         log = rawConf["logfile"]
         configFile.close()
         if os.path.exists(log) == False:
-            print(f"Configuration file {config} has no matching log. Adding it to be rerun.")
+            print("Configuration file {config} has no matching log. Adding it to be rerun.")
             continue
         try:
             logFile = open(log)
@@ -86,10 +86,10 @@ def getJobsToDo(config, path):
             if int(lastEntry["timestep"]) == int(rawConf["timesteps"]) or int(lastEntry["population"]) == 0:
                 completedRuns.append(config)
             else:
-                print(f"Existing log {log} is incomplete. Adding it to be rerun.")
+                print("Existing log {log} is incomplete. Adding it to be rerun.")
                 os.remove(log)
         except:
-            print(f"Existing log {log} is incomplete. Adding it to be rerun.")
+            print("Existing log {log} is incomplete. Adding it to be rerun.")
             os.remove(log)
             continue
     for run in completedRuns:
@@ -138,8 +138,8 @@ def printHelp():
     exit(0)
 
 def runSimulation(configFile, pythonAlias, jobNumber, totalJobs):
-    print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
-    os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
+    print("Running decision model {configFile} ({jobNumber}/{totalJobs})")
+    os.system("{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
 
 def runSimulations(config, configFiles):
     dataOpts = config["dataCollectionOptions"]
@@ -162,7 +162,7 @@ def runSimulations(config, configFiles):
                 waitingResults.append(result)
         outstanding = len(waitingResults)
         if outstanding != 0 and outstanding != lastUpdate and outstanding % jobUpdateFrequency == 0:
-            print(f"{outstanding} jobs remaining.")
+            print("{outstanding} jobs remaining.")
             lastUpdate = outstanding
         results = waitingResults
 
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     if path == None:
         path = "./"
     if not os.path.exists(path):
-        print(f"Path {path} not recognized.")
+        print("Path {path} not recognized.")
         printHelp()
 
     config = options["config"]
