@@ -100,6 +100,17 @@ class Agent:
         self.visionModifier = 0
         self.wealthHappiness = 0
 
+        self.combatWithControlGroup = 0
+        self.combatWithExperimentalGroup = 0
+        self.diseaseWithControlGroup = 0
+        self.diseaseWithExperimentalGroup = 0
+        self.lendingWithControlGroup = 0
+        self.lendingWithExperimentalGroup = 0
+        self.reproductionWithControlGroup = 0
+        self.reproductionWithExperimentalGroup = 0
+        self.tradeWithControlGroup = 0
+        self.tradeWithExperimentalGroup = 0
+
         # Change metrics for depressed agents
         if self.depressionFactor == 1:
             self.depressed = True
@@ -237,6 +248,11 @@ class Agent:
             prey.sugar -= sugarLoot
             prey.spice -= spiceLoot
             prey.doDeath("combat")
+            sugarscape = self.cell.environment.sugarscape
+            if sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup):
+                self.combatWithExperimentalGroup += 1
+            elif sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup, True):
+                self.combatWithControlGroup += 1
         self.gotoCell(cell)
 
     def doDeath(self, causeOfDeath="unknown"):
@@ -296,6 +312,11 @@ class Agent:
         random.shuffle(neighbors)
         for neighbor in neighbors:
             neighbor.catchDisease(self.diseases[random.randrange(diseaseCount)]["disease"], self)
+            sugarscape = self.cell.environment.sugarscape
+            if sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup):
+                self.diseaseWithExperimentalGroup += 1
+            elif sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup, True):
+                self.diseaseWithControlGroup += 1
 
     def doInfectionAttempt(self, disease):
         diseaseAttack = random.uniform(0.0, 1.0)
@@ -407,6 +428,11 @@ class Agent:
                 if "all" in self.debug or "agent" in self.debug:
                     print(f"Agent {self.ID} lending [{sugarLoanAmount},{spiceLoanAmount}]")
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
+                sugarscape = self.cell.environment.sugarscape
+                if sugarscape.experimentalGroup != None and borrower.isInGroup(sugarscape.experimentalGroup):
+                    self.lendingWithExperimentalGroup += 1
+                elif sugarscape.experimentalGroup != None and borrower.isInGroup(sugarscape.experimentalGroup, True):
+                    self.lendingWithControlGroup += 1
 
     def doMetabolism(self):
         if self.isAlive() == False:
@@ -468,6 +494,11 @@ class Agent:
                     neighbor.sugar = neighbor.sugar - mateSugarCost
                     neighbor.spice = neighbor.spice - mateSpiceCost
                     self.lastReproduced = self.cell.environment.sugarscape.timestep
+                    sugarscape = self.cell.environment.sugarscape
+                    if sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup):
+                        self.reproductionWithExperimentalGroup += 1
+                    elif sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup, True):
+                        self.reproductionWithControlGroup += 1
                     if "all" in self.debug or "agent" in self.debug:
                         print(f"Agent {self.ID} reproduced with agent {str(neighbor)} at cell ({emptyCell.x},{emptyCell.y})")
 
@@ -612,6 +643,11 @@ class Agent:
                 self.spicePrice += spicePrice
                 trader.updateTimesTradedWithAgent(self, self.lastMoved, transactions)
                 self.updateTimesTradedWithAgent(trader, self.lastMoved, transactions)
+                sugarscape = self.cell.environment.sugarscape
+                if sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup):
+                    self.tradeWithExperimentalGroup += 1
+                elif sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup, True):
+                    self.tradeWithControlGroup += 1
 
     def doUniversalIncome(self):
         if (self.timestep - self.lastUniversalSpiceIncomeTimestep) >= self.cell.environment.universalSpiceIncomeInterval:
@@ -1324,6 +1360,18 @@ class Agent:
         if motherID not in self.socialNetwork:
             self.addAgentToSocialNetwork(mother)
         self.socialNetwork["mother"] = mother
+
+    def resetTimestepMetrics(self):
+        self.combatWithControlGroup = 0
+        self.combatWithExperimentalGroup = 0
+        self.diseaseWithControlGroup = 0
+        self.diseaseWithExperimentalGroup = 0
+        self.lendingWithControlGroup = 0
+        self.lendingWithExperimentalGroup = 0
+        self.reproductionWithControlGroup = 0
+        self.reproductionWithExperimentalGroup = 0
+        self.tradeWithControlGroup = 0
+        self.tradeWithExperimentalGroup = 0
 
     def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
