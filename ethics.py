@@ -97,6 +97,21 @@ class Bentham(agent.Agent):
     def spawnChild(self, childID, birthday, cell, configuration):
         return Bentham(childID, birthday, cell, configuration)
 
+class ReactiveBentham(Bentham):
+    def __init__(self, agentID, birthday, cell, configuration):
+        super().__init__(agentID, birthday, cell, configuration)
+        self.lastTimeToLive = 0
+
+    def updateValues(self):
+        self.updateSelfishnessFactor()
+
+    def updateSelfishnessFactor(self):
+        if self.timeToLive < self.lastTimeToLive and self.selfishnessFactor < 1.0:
+            self.selfishnessFactor += 0.01
+        elif self.timeToLive > self.lastTimeToLive and self.selfishnessFactor > 0.0:
+            self.selfishnessFactor -= 0.01
+        self.lastTimeToLive = self.timeToLive
+
 class Leader(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
@@ -114,6 +129,12 @@ class Leader(agent.Agent):
         self.sugarMetabolism = 0
         self.tradeFactor = 0.0
         self.vision = max(self.cell.environment.height, self.cell.environment.width)
+
+    def doAging(self):
+        agents = self.cell.environment.sugarscape.agents
+        # Consider being the last one left alive as an aging death for the leader
+        if len(agents) == 1 and agents[0] == self:
+            self.doDeath("aging")
 
     def findBestCell(self):
         self.resetForTimestep()

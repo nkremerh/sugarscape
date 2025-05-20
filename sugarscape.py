@@ -2,7 +2,7 @@
 
 import agent
 import cell
-import disease
+import condition
 import environment
 import ethics
 
@@ -53,10 +53,13 @@ class Sugarscape:
         self.replacedAgents = []
         self.bornAgents = []
         self.deadAgents = []
+        self.depression = True if configuration["agentDepressionPercentage"] > 0 else False
         self.diseases = []
+
         self.diseasesCount = [[] for i in range(configuration["diseaseTimeframe"][1] + 1)]
         self.agentLeader = None
         self.activeQuadrants = self.findActiveQuadrants()
+        self.configureDepression()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"])
         self.gui = gui.GUI(self, self.configuration["interfaceHeight"], self.configuration["interfaceWidth"]) if configuration["headlessMode"] == False else None
@@ -71,7 +74,7 @@ class Sugarscape:
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
                              "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0,
-                             "sickAgentsPercentage": 0}
+                             "sickAgentsPercentage": 0, "meanSelfishness": 0}
         diseaseStats = {}
         for disease in self.diseases:
             diseaseStats[f"disease{disease.ID}Immune"] = 0
@@ -157,8 +160,10 @@ class Sugarscape:
             agentConfiguration = agentEndowments[i]
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
-            if self.configuration["agentLeader"] == True and i == numAgents - 1:
+            if self.configuration["agentLeader"] == True and i == 0:
                 a = ethics.Leader(agentID, self.timestep, randomCell, agentConfiguration)
+                cornerCell = self.environment.grid[0][0]
+                a.gotoCell(cornerCell)
                 self.agentLeader = a
             # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
@@ -174,6 +179,10 @@ class Sugarscape:
             elif "negativeBentham" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 a.selfishnessFactor = -1
+            elif "reactiveBentham" in agentConfiguration["decisionModel"]:
+                a = ethics.ReactiveBentham(agentID, self.timestep, randomCell, agentConfiguration)
+                if agentConfiguration["selfishnessFactor"] < 0:
+                    a.selfishnessFactor = 0.5
 
             if "NoLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0
@@ -193,6 +202,11 @@ class Sugarscape:
             a.findCellsInRange()
             a.findNeighborhood()
 
+    def configureDepression(self):
+        if self.depression == True:
+            self.depression = condition.Depression()
+            self.diseases.append(self.depression)
+
     def configureDiseases(self, numDiseases):
         numAgents = len(self.agents)
         if numAgents == 0:
@@ -204,8 +218,8 @@ class Sugarscape:
         for i in range(numDiseases):
             diseaseID = self.generateDiseaseID()
             diseaseConfiguration = diseaseEndowments[i]
-            newDisease = disease.Disease(diseaseID, diseaseConfiguration)
-            timestep = diseaseConfiguration["startTimestep"]
+            newDisease = condition.Disease(diseaseID, diseaseConfiguration)
+            timestep = diseaseConfiguration["startTimeframe"]
             self.diseases.append(newDisease)
             self.diseasesCount[timestep].append(newDisease)
             # agents start either immune or susceptible - this part should be fine
@@ -575,141 +589,83 @@ class Sugarscape:
         configs = self.configuration
         aggressionPenalty = configs["diseaseAggressionPenalty"]
         fertilityPenalty = configs["diseaseFertilityPenalty"]
+        friendlinessPenalty = configs["diseaseFriendlinessPenalty"]
+        happinessPenalty = configs["diseaseHappinessPenalty"]
         incubationPeriod = configs["diseaseIncubationPeriod"]
         movementPenalty = configs["diseaseMovementPenalty"]
         spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
         startTimeframe = configs["diseaseTimeframe"]
         sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
-        tagLengths = configs["diseaseTagStringLength"]
+        tagLength = configs["diseaseTagStringLength"]
         transmissionChance = configs["diseaseTransmissionChance"]
         visionPenalty = configs["diseaseVisionPenalty"]
 
-        minAggressionPenalty = aggressionPenalty[0]
-        minFertilityPenalty = fertilityPenalty[0]
-        minIncubationPeriod = incubationPeriod[0]
-        minMovementPenalty = movementPenalty[0]
-        minSpiceMetabolismPenalty = spiceMetabolismPenalty[0]
-        minTimeframe = startTimeframe[0]
-        minSugarMetabolismPenalty = sugarMetabolismPenalty[0]
-        minTagLength = tagLengths[0]
-        minTransmissionChance = transmissionChance[0]
-        minVisionPenalty = visionPenalty[0]
-
-        maxAggressionPenalty = aggressionPenalty[1]
-        maxFertilityPenalty = fertilityPenalty[1]
-        maxIncubationPeriod = incubationPeriod[1]
-        maxMovementPenalty = movementPenalty[1]
-        maxSpiceMetabolismPenalty = spiceMetabolismPenalty[1]
-        maxTimeframe = startTimeframe[1]
-        maxSugarMetabolismPenalty = sugarMetabolismPenalty[1]
-        maxTagLength = tagLengths[1]
-        maxTransmissionChance = transmissionChance[1]
-        maxVisionPenalty = visionPenalty[1]
-
-        aggressionPenalties = []
-        diseaseTags = []
-        endowments = []
-        fertilityPenalties = []
-        incubationPeriods = []
-        movementPenalties = []
-        spiceMetabolismPenalties = []
-        startTimesteps = []
-        sugarMetabolismPenalties = []
-        transmissionChances = []
-        visionPenalties = []
-
-        currAggressionPenalty = minAggressionPenalty
-        currFertilityPenalty = minFertilityPenalty
-        currIncubationPeriod = minIncubationPeriod
-        currMovementPenalty = minMovementPenalty
-        currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
-        currStartTimestep = minTimeframe
-        currSugarMetabolismPenalty = minSugarMetabolismPenalty
-        currTagLength = minTagLength
-        currTransmissionChance = minTransmissionChance
-        currVisionPenalty = minVisionPenalty
-
-        for i in range(numDiseases):
-            aggressionPenalties.append(currAggressionPenalty)
-            diseaseTags.append([random.randrange(2) for i in range(currTagLength)])
-            fertilityPenalties.append(currFertilityPenalty)
-            incubationPeriods.append(currIncubationPeriod)
-            movementPenalties.append(currMovementPenalty)
-            spiceMetabolismPenalties.append(currSpiceMetabolismPenalty)
-            startTimesteps.append(currStartTimestep)
-            sugarMetabolismPenalties.append(currSugarMetabolismPenalty)
-            transmissionChances.append(currTransmissionChance)
-            visionPenalties.append(currVisionPenalty)
-
-            currAggressionPenalty += 1
-            currFertilityPenalty += 1
-            currIncubationPeriod += 1
-            currMovementPenalty += 1
-            currSpiceMetabolismPenalty += 1
-            currStartTimestep += 1
-            currSugarMetabolismPenalty += 1
-            currTagLength += 1
-            # To make sure the disease's transmissionChance is a properly-formatted decimal
-            currTransmissionChance = round(currTransmissionChance + (10 ** -1), 1)
-            currVisionPenalty += 1
-
-            if currAggressionPenalty > maxAggressionPenalty:
-                currAggressionPenalty = minAggressionPenalty
-            if currFertilityPenalty > maxFertilityPenalty:
-                currFertilityPenalty = minFertilityPenalty
-            if currIncubationPeriod > maxIncubationPeriod:
-                currIncubationPeriod = minIncubationPeriod
-            if currMovementPenalty > maxMovementPenalty:
-                currMovementPenalty = minMovementPenalty
-            if currSpiceMetabolismPenalty > maxSpiceMetabolismPenalty:
-                currSpiceMetabolismPenalty = minSpiceMetabolismPenalty
-            if currStartTimestep > maxTimeframe:
-                currStartTimestep = minTimeframe
-            if currSugarMetabolismPenalty > maxSugarMetabolismPenalty:
-                currSugarMetabolismPenalty = minSugarMetabolismPenalty
-            if currTagLength > maxTagLength:
-                currTagLength = minTagLength
-            if currTransmissionChance > maxTransmissionChance:
-                currTransmissionChance = minTransmissionChance
-            if currVisionPenalty > maxVisionPenalty:
-                currVisionPenalty = minVisionPenalty
-
-        randomDiseaseEndowment = {"aggressionPenalties": aggressionPenalties,
-                     "diseaseTags": diseaseTags,
-                     "fertilityPenalties": fertilityPenalties,
-                     "incubationPeriods": incubationPeriods,
-                     "movementPenalties": movementPenalties,
-                     "spiceMetabolismPenalties": spiceMetabolismPenalties,
-                     "startTimesteps": startTimesteps,
-                     "sugarMetabolismPenalties": sugarMetabolismPenalties,
-                     "transmissionChances": transmissionChances,
-                     "visionPenalties": visionPenalties}
+        configurations = {"aggressionPenalty": {"endowments": [], "curr": aggressionPenalty[0], "min": aggressionPenalty[0], "max": aggressionPenalty[1]},
+                          "fertilityPenalty": {"endowments": [], "curr": fertilityPenalty[0], "min": fertilityPenalty[0], "max": fertilityPenalty[1]},
+                          "friendlinessPenalty": {"endowments": [], "curr": friendlinessPenalty[0], "min": friendlinessPenalty[0], "max": friendlinessPenalty[1]},
+                          "happinessPenalty": {"endowments": [], "curr": happinessPenalty[0], "min": happinessPenalty[0], "max": happinessPenalty[1]},
+                          "incubationPeriod": {"endowments": [], "curr": incubationPeriod[0],"min": incubationPeriod[0], "max": incubationPeriod[1]},
+                          "movementPenalty": {"endowments": [], "curr": movementPenalty[0], "min": movementPenalty[0], "max": movementPenalty[1]},
+                          "spiceMetabolismPenalty": {"endowments": [], "curr": spiceMetabolismPenalty[0], "min": spiceMetabolismPenalty[0], "max": spiceMetabolismPenalty[1]},
+                          "startTimeframe": {"endowments": [], "curr": startTimeframe[0], "min": startTimeframe[0], "max": startTimeframe[1]},
+                          "sugarMetabolismPenalty": {"endowments": [], "curr": sugarMetabolismPenalty[0], "min": sugarMetabolismPenalty[0], "max": sugarMetabolismPenalty[1]},
+                          "tagLength": {"endowments": [], "curr": tagLength[0], "min": tagLength[0], "max": tagLength[1]},
+                          "transmissionChance": {"endowments": [], "curr": transmissionChance[0],
+                                                 "min": transmissionChance[0], "max": transmissionChance[1]},
+                          "visionPenalty": {"endowments": [], "curr": visionPenalty[0], "min": visionPenalty[0], "max": visionPenalty[1]}
+                          }
 
         # Map configuration to a random number via hash to make random number generation independent of iteration order
         if (self.diseaseConfigHashes == None):
             self.diseaseConfigHashes = {}
-            for penalty in randomDiseaseEndowment:
+            for penalty in configurations.keys():
                 hashed = hashlib.md5(penalty.encode())
                 self.diseaseConfigHashes[penalty] = int(hashed.hexdigest(), 16)
 
+        for config in configurations:
+            configMin = configurations[config]["min"]
+            configMax = configurations[config]["max"]
+            configMinDecimals = str(configMin).split('.')
+            configMaxDecimals = str(configMax).split('.')
+            decimalRange = []
+            if len(configMinDecimals) == 2:
+                configMinDecimals = len(configMinDecimals[1])
+                decimalRange.append(configMinDecimals)
+            if len(configMaxDecimals) == 2:
+                configMaxDecimals = len(configMaxDecimals[1])
+                decimalRange.append(configMaxDecimals)
+            # If no fractional component to configuration item, assume increment of 1
+            decimals = max(decimalRange) if len(decimalRange) > 0 else 0
+            increment = 10 ** (-1 * decimals)
+            configurations[config]["inc"] = increment
+            configurations[config]["decimals"] = decimals
+
+        endowments = []
+        tags = []
+        for i in range(numDiseases):
+            for config in configurations.keys():
+                if config == "tagLength":
+                    tagLength = configurations[config]["curr"]
+                    tags.append([random.randrange(2) for i in range(tagLength)])
+                config = configurations[config]
+                config["endowments"].append(config["curr"])
+                config["curr"] += config["inc"]
+                config["curr"] = round(config["curr"], config["decimals"])
+                if config["curr"] > config["max"]:
+                    config["curr"] = config["min"]
+
         # Keep state of random numbers to allow extending agent endowments without altering original random object state
         randomNumberReset = random.getstate()
-        for endowment in randomDiseaseEndowment.keys():
-            random.seed(self.diseaseConfigHashes[endowment] + self.timestep)
-            random.shuffle(randomDiseaseEndowment[endowment])
+        for config in configurations:
+            random.seed(self.diseaseConfigHashes[config] + self.timestep)
+            random.shuffle(configurations[config]["endowments"])
         random.setstate(randomNumberReset)
+        random.shuffle(tags)
 
         for i in range(numDiseases):
-            diseaseEndowment = {"aggressionPenalty": aggressionPenalties.pop(),
-                                "fertilityPenalty": fertilityPenalties.pop(),
-                                "incubationPeriod": incubationPeriods.pop(),
-                                "movementPenalty": movementPenalties.pop(),
-                                "spiceMetabolismPenalty": spiceMetabolismPenalties.pop(),
-                                "startTimestep": startTimesteps.pop(),
-                                "sugarMetabolismPenalty": sugarMetabolismPenalties.pop(),
-                                "tags": diseaseTags.pop(),
-                                "transmissionChance": transmissionChances.pop(),
-                                "visionPenalty": visionPenalties.pop()}
+            diseaseEndowment = {"tags": tags.pop()}
+            for config in configurations:
+                    diseaseEndowment[config] = configurations[config]["endowments"].pop()
             endowments.append(diseaseEndowment)
         return endowments
 
@@ -880,6 +836,7 @@ class Sugarscape:
         meanHealthHappiness = 0
         meanMetabolism = 0
         meanMovement = 0
+        meanSelfishness = 0
         meanSocialHappiness = 0
         meanSpiceMetabolism = 0
         meanSugarMetabolism = 0
@@ -935,6 +892,7 @@ class Sugarscape:
             agentTimeToLive = agent.findTimeToLive()
             agentTimeToLiveAgeLimited = agent.findTimeToLive(True)
             agentWealth = agent.sugar + agent.spice
+            meanSelfishness += agent.selfishnessFactor
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
             meanMovement += agent.movement
@@ -1011,6 +969,7 @@ class Sugarscape:
                 combinedMetabolism = round(combinedMetabolism / 2, 2)
             meanMetabolism = round(combinedMetabolism / numAgents, 2)
             meanMovement = round(meanMovement / numAgents, 2)
+            meanSelfishness = round(meanSelfishness / numAgents, 2)
             meanSocialHappiness = round(meanSocialHappiness / numAgents, 2)
             meanTradePrice = round(meanTradePrice / numTraders, 2) if numTraders > 0 else 0
             meanVision = round(meanVision / numAgents, 2)
@@ -1033,6 +992,7 @@ class Sugarscape:
             meanHealthHappiness = 0
             meanMetabolism = 0
             meanMovement = 0
+            meanSelfishness = 0
             meanSocialHappiness = 0
             meanVision = 0
             meanWealth = 0
@@ -1059,10 +1019,11 @@ class Sugarscape:
                         "carryingCapacity": carryingCapacity, "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
                         "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
                         "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
-                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSocialHappiness": meanSocialHappiness,
-                        "meanTradePrice": meanTradePrice, "meanWealth": meanWealth, "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision,
-                        "minWealth": minWealth, "population": numAgents, "sickAgents": sickAgents, "remainingTribes": remainingTribes,
-                        "tradeVolume": tradeVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage}
+                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSelfishness": meanSelfishness,
+                        "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
+                        "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision, "minWealth": minWealth, "population": numAgents,
+                        "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
+                        "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage}
 
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
@@ -1189,9 +1150,9 @@ def sortConfigurationTimeframes(configuration, timeframe):
 def verifyConfiguration(configuration):
     negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
     negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
-    negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
-    negativesAllowed += ["seed", "timesteps"]
-    timeframes = ["diseaseTimeframe", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
+    negativesAllowed += ["diseaseTimeframe", "environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
+    negativesAllowed += ["interfaceHeight", "interfaceWidth", "seed", "timesteps"]
+    timeframes = ["environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
     negativeFlag = 0
     for configName, configValue in configuration.items():
         if isinstance(configValue, list):
@@ -1240,6 +1201,10 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print("Cannot have a negative amount of timesteps. Setting timesetup to unlimited runtime.")
         configuration["timesteps"] = sys.maxsize
+
+    if configuration["diseaseTimeframe"][0] < 0:
+        configuration["diseaseTimeframe"][0] = 0
+        configuration["diseaseTimeframe"][1] = configuration["timesteps"]
 
     # Ensure infinitely-lived agents are properly initialized
     if configuration["agentDecisionModelTribalFactor"][0] < 0:
@@ -1397,6 +1362,8 @@ if __name__ == "__main__":
                      "debugMode": ["none"],
                      "diseaseAggressionPenalty": [0, 0],
                      "diseaseFertilityPenalty": [0, 0],
+                     "diseaseFriendlinessPenalty": [0, 0],
+                     "diseaseHappinessPenalty": [0,0],
                      "diseaseIncubationPeriod": [0, 0],
                      "diseaseMovementPenalty": [0, 0],
                      "diseaseSpiceMetabolismPenalty": [0, 0],
