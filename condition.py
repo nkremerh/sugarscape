@@ -40,12 +40,18 @@ class Disease(Condition):
         self.fertilityPenalty = configuration["fertilityPenalty"]
         self.friendlinessPenalty = configuration["friendlinessPenalty"]
         self.happinessPenalty = configuration["happinessPenalty"]
+        self.incubationPeriod = configuration["incubationPeriod"]
         self.movementPenalty = configuration["movementPenalty"]
         self.recoverable = True
         self.spiceMetabolismPenalty = configuration["spiceMetabolismPenalty"]
         self.sugarMetabolismPenalty = configuration["sugarMetabolismPenalty"]
         self.tags = configuration["tags"]
+        self.transmissionChance = configuration["transmissionChance"]
         self.visionPenalty = configuration["visionPenalty"]
+
+        self.newInfections = 0
+        self.infectors = set()
+        self.startingInfectedAgents = 0
 
     def trigger(self, agent, infector=None, condition=None):
         agent.aggressionFactorModifier += self.aggressionPenalty
@@ -66,3 +72,11 @@ class Disease(Condition):
         agent.spiceMetabolismModifier -= self.spiceMetabolismPenalty
         agent.sugarMetabolismModifier -= self.sugarMetabolismPenalty
         agent.visionModifier -= self.visionPenalty
+
+
+    def resetRStats(self):
+        self.newInfections = 0
+        self.infectors = set()
+
+    def __str__(self):
+        return f"{self.ID}"

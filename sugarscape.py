@@ -55,6 +55,8 @@ class Sugarscape:
         self.deadAgents = []
         self.depression = True if configuration["agentDepressionPercentage"] > 0 else False
         self.diseases = []
+
+        self.diseasesCount = [[] for i in range(configuration["diseaseTimeframe"][1] + 1)]
         self.agentLeader = None
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureDepression()
@@ -73,6 +75,14 @@ class Sugarscape:
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
                              "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0,
                              "sickAgentsPercentage": 0, "meanSelfishness": 0}
+        diseaseStats = {}
+        for disease in self.diseases:
+            diseaseStats[f"disease{disease.ID}Immune"] = 0
+            diseaseStats[f"disease{disease.ID}Susceptible"] = 0
+            diseaseStats[f"disease{disease.ID}Infected"] = 0
+            diseaseStats[f"disease{disease.ID}Recovered"] = 0
+            diseaseStats[f"disease{disease.ID}RValue"] = 0.0
+        self.runtimeStats.update(diseaseStats)
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -205,37 +215,20 @@ class Sugarscape:
             numDiseases = numAgents
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
-        random.shuffle(self.agents)
-        diseases = []
         for i in range(numDiseases):
             diseaseID = self.generateDiseaseID()
             diseaseConfiguration = diseaseEndowments[i]
             newDisease = condition.Disease(diseaseID, diseaseConfiguration)
-            diseases.append(newDisease)
-
-        startingDiseases = self.configuration["startingDiseasesPerAgent"]
-        minStartingDiseases = startingDiseases[0]
-        maxStartingDiseases = startingDiseases[1]
-        currStartingDiseases = minStartingDiseases
-        for agent in self.agents:
-            random.shuffle(diseases)
-            for newDisease in diseases:
-                if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
-                    currStartingDiseases += 1
-                    break
-                hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
-                if hammingDistance == 0:
-                    continue
-                agent.catchDisease(newDisease)
-                self.diseases.append(newDisease)
-                if startingDiseases == [0, 0]:
-                    diseases.remove(newDisease)
-                    break
-            if currStartingDiseases > maxStartingDiseases:
-                currStartingDiseases = minStartingDiseases
-
-        if startingDiseases == [0, 0] and len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-            print(f"Could not place {len(diseases)} diseases.")
+            timestep = diseaseConfiguration["startTimeframe"]
+            self.diseases.append(newDisease)
+            self.diseasesCount[timestep].append(newDisease)
+            # agents start either immune or susceptible - this part should be fine
+            for agent in self.agents:
+                if agent.checkDiseaseImmunity(newDisease) == True:
+                    agent.immuneDiseases.append(newDisease)
+                else:
+                    agent.susceptibleDiseases.append(newDisease)
+        self.infectAgents()
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height
@@ -261,6 +254,8 @@ class Sugarscape:
         if self.timestep >= self.maxTimestep:
             self.toggleEnd()
             return
+        for disease in self.diseases:
+            disease.resetRStats()
         if "all" in self.debug or "sugarscape" in self.debug:
             print(f"Timestep: {self.timestep}\nLiving Agents: {len(self.agents)}")
         self.timestep += 1
@@ -268,13 +263,14 @@ class Sugarscape:
             self.toggleEnd()
         else:
             self.environment.doTimestep(self.timestep)
+            self.infectAgents()
             random.shuffle(self.agents)
             if self.agentLeader != None:
                 self.agentLeader.doTimestep(self.timestep)
             for agent in self.agents:
                 if self.agentLeader != None and agent == self.agentLeader:
                     continue
-                agent.doTimestep(self.timestep)
+                agent.doTimestep(self.timestep, self.diseases)
             self.removeDeadAgents()
             self.replaceDeadAgents()
             self.updateRuntimeStats()
@@ -378,6 +374,38 @@ class Sugarscape:
         random.shuffle(tags)
         return tags
 
+    def infectAgents(self):
+        timestep = self.timestep
+        if timestep > self.configuration["diseaseTimeframe"][1]:
+            return
+        diseases = self.diseasesCount[timestep]
+        if len(diseases) == 0:
+            return
+        startingDiseases = self.configuration["startingDiseasesPerAgent"]
+        minStartingDiseases = startingDiseases[0]
+        maxStartingDiseases = startingDiseases[1]
+        currStartingDiseases = minStartingDiseases
+        random.shuffle(self.agents)
+        random.shuffle(diseases)
+        for agent in self.agents:
+            for newDisease in diseases:
+                if newDisease.startingInfectedAgents == 1 and startingDiseases == [0, 0]:
+                    continue
+                if agent.startingDiseases >= currStartingDiseases and startingDiseases != [0, 0]:
+                    currStartingDiseases += 1
+                    break
+                if agent.canCatchDisease(newDisease) == False:
+                    continue
+                agent.catchDisease(newDisease)
+                if startingDiseases == [0, 0]:
+                    diseases.remove(newDisease)
+                    break
+            if currStartingDiseases > maxStartingDiseases:
+                currStartingDiseases = minStartingDiseases
+        if startingDiseases == [0, 0] and self.timestep == self.configuration["diseaseTimeframe"][1] and len(diseases) > 0:
+            if  "all" in self.debug or "sugarscape" in self.debug:
+                print(f"Could not place {len(diseases)} diseases.")
+
     def pauseSimulation(self):
         while self.run == False:
             if self.gui != None and self.end == False:
@@ -393,6 +421,7 @@ class Sugarscape:
         decisionModelLookaheadDiscount = configs["agentDecisionModelLookaheadDiscount"]
         decisionModelLookaheadFactor = configs["agentDecisionModelLookaheadFactor"]
         decisionModelTribalFactor = configs["agentDecisionModelTribalFactor"]
+        diseaseProtectionChance = configs["agentDiseaseProtectionChance"]
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -433,6 +462,7 @@ class Sugarscape:
                           "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
                           "decisionModelLookaheadDiscount": {"endowments": [], "curr": decisionModelLookaheadDiscount[0], "min": decisionModelLookaheadDiscount[0], "max": decisionModelLookaheadDiscount[1]},
                           "decisionModelTribalFactor": {"endowments": [], "curr": decisionModelTribalFactor[0], "min": decisionModelTribalFactor[0], "max": decisionModelTribalFactor[1]},
+                          "diseaseProtectionChance": {"endowments": [], "curr": diseaseProtectionChance[0], "min": diseaseProtectionChance[0], "max": diseaseProtectionChance[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
@@ -561,20 +591,27 @@ class Sugarscape:
         fertilityPenalty = configs["diseaseFertilityPenalty"]
         friendlinessPenalty = configs["diseaseFriendlinessPenalty"]
         happinessPenalty = configs["diseaseHappinessPenalty"]
+        incubationPeriod = configs["diseaseIncubationPeriod"]
         movementPenalty = configs["diseaseMovementPenalty"]
         spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
+        startTimeframe = configs["diseaseTimeframe"]
         sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
         tagLength = configs["diseaseTagStringLength"]
+        transmissionChance = configs["diseaseTransmissionChance"]
         visionPenalty = configs["diseaseVisionPenalty"]
 
         configurations = {"aggressionPenalty": {"endowments": [], "curr": aggressionPenalty[0], "min": aggressionPenalty[0], "max": aggressionPenalty[1]},
                           "fertilityPenalty": {"endowments": [], "curr": fertilityPenalty[0], "min": fertilityPenalty[0], "max": fertilityPenalty[1]},
                           "friendlinessPenalty": {"endowments": [], "curr": friendlinessPenalty[0], "min": friendlinessPenalty[0], "max": friendlinessPenalty[1]},
                           "happinessPenalty": {"endowments": [], "curr": happinessPenalty[0], "min": happinessPenalty[0], "max": happinessPenalty[1]},
+                          "incubationPeriod": {"endowments": [], "curr": incubationPeriod[0],"min": incubationPeriod[0], "max": incubationPeriod[1]},
                           "movementPenalty": {"endowments": [], "curr": movementPenalty[0], "min": movementPenalty[0], "max": movementPenalty[1]},
                           "spiceMetabolismPenalty": {"endowments": [], "curr": spiceMetabolismPenalty[0], "min": spiceMetabolismPenalty[0], "max": spiceMetabolismPenalty[1]},
+                          "startTimeframe": {"endowments": [], "curr": startTimeframe[0], "min": startTimeframe[0], "max": startTimeframe[1]},
                           "sugarMetabolismPenalty": {"endowments": [], "curr": sugarMetabolismPenalty[0], "min": sugarMetabolismPenalty[0], "max": sugarMetabolismPenalty[1]},
                           "tagLength": {"endowments": [], "curr": tagLength[0], "min": tagLength[0], "max": tagLength[1]},
+                          "transmissionChance": {"endowments": [], "curr": transmissionChance[0],
+                                                 "min": transmissionChance[0], "max": transmissionChance[1]},
                           "visionPenalty": {"endowments": [], "curr": visionPenalty[0], "min": visionPenalty[0], "max": visionPenalty[1]}
                           }
 
@@ -844,6 +881,11 @@ class Sugarscape:
         agentsReplaced = 0
         tribes = {}
 
+        immuneDiseaseStats = [0 for i in range(len(self.diseases))]
+        susceptibleDiseaseStats = [0 for i in range(len(self.diseases))]
+        infectedDiseaseStats = [0 for i in range(len(self.diseases))]
+        recoveredDiseaseStats = [0 for i in range(len(self.diseases))]
+
         for agent in self.agents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
                 continue
@@ -884,6 +926,17 @@ class Sugarscape:
                 tribes[agent.tribe] += 1
             numAgents += 1
 
+            for immuneDisease in agent.immuneDiseases:
+                immuneDiseaseStats[immuneDisease.ID] += 1
+            for susceptibleDisease in agent.susceptibleDiseases:
+                susceptibleDiseaseStats[susceptibleDisease.ID] += 1
+            for incubatingDisease in agent.incubatingDiseases:
+                infectedDiseaseStats[incubatingDisease["disease"].ID] += 1
+            for symptomaticDisease in agent.symptomaticDiseases:
+                infectedDiseaseStats[symptomaticDisease["disease"].ID] += 1
+            for recoveredDisease in agent.recoveredDiseases:
+                recoveredDiseaseStats[recoveredDisease["disease"].ID] += 1
+
         numDeadAgents = 0
         meanAgeAtDeath = 0
         for agent in self.deadAgents:
@@ -894,7 +947,7 @@ class Sugarscape:
             agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
             agentAgingDeaths += 1 if agent.causeOfDeath == "aging" else 0
             agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
-            agentDiseaseDeaths += 1 if agent.causeOfDeath == "disease" else 0
+            agentDiseaseDeaths += 1 if agent.diseaseDeath == True else 0
             agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
             numDeadAgents += 1
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
@@ -992,6 +1045,20 @@ class Sugarscape:
         for key in runtimeStats.keys():
             self.runtimeStats[key] = runtimeStats[key]
 
+        for disease in self.diseases:
+            r = 0.0
+            if numAgents > 0:
+                infectors = len(disease.infectors)
+                incidence = disease.newInfections
+                r = 0.0
+                if infectors > 0:
+                    r = round(float(incidence / infectors), 2)
+            self.runtimeStats[f"disease{disease.ID}RValue"] = r
+            self.runtimeStats[f"disease{disease.ID}Immune"] = immuneDiseaseStats[disease.ID]
+            self.runtimeStats[f"disease{disease.ID}Susceptible"] = susceptibleDiseaseStats[disease.ID]
+            self.runtimeStats[f"disease{disease.ID}Infected"] = infectedDiseaseStats[disease.ID]
+            self.runtimeStats[f"disease{disease.ID}Recovered"] = recoveredDiseaseStats[disease.ID]
+
     def writeToLog(self):
         if self.log == None:
             return
@@ -1082,8 +1149,8 @@ def sortConfigurationTimeframes(configuration, timeframe):
 
 def verifyConfiguration(configuration):
     negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
-    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseVisionPenalty"]
-    negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
+    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
+    negativesAllowed += ["diseaseTimeframe", "environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
     negativesAllowed += ["interfaceHeight", "interfaceWidth", "seed", "timesteps"]
     timeframes = ["environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
     negativeFlag = 0
@@ -1134,6 +1201,10 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print("Cannot have a negative amount of timesteps. Setting timesetup to unlimited runtime.")
         configuration["timesteps"] = sys.maxsize
+
+    if configuration["diseaseTimeframe"][0] < 0:
+        configuration["diseaseTimeframe"][0] = 0
+        configuration["diseaseTimeframe"][1] = configuration["timesteps"]
 
     # Ensure infinitely-lived agents are properly initialized
     if configuration["agentDecisionModelTribalFactor"][0] < 0:
@@ -1214,48 +1285,6 @@ def verifyConfiguration(configuration):
             print(f"Range of starting diseases per agent exceeds {startingDiseases} starting diseases. Setting range to {startingDiseasesPerAgent}.")
         configuration["startingDiseasesPerAgent"] = startingDiseasesPerAgent
 
-    # Ensure the pollution diffusion start and end timesteps are in the proper order
-    if configuration["environmentPollutionDiffusionTimeframe"] != [0, 0]:
-        pollutionDiffusionStart, pollutionDiffusionEnd = configuration["environmentPollutionDiffusionTimeframe"]
-        if pollutionDiffusionStart > pollutionDiffusionEnd and pollutionDiffusionEnd >= 0:
-            swap = pollutionDiffusionStart
-            pollutionDiffusionStart = pollutionDiffusionEnd
-            pollutionDiffusionEnd = swap
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion start and end values provided in incorrect order. Switching values around.")
-        # If provided a negative value, assume the start timestep is the very first of the simulation
-        if pollutionDiffusionStart < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion start timestep {pollutionDiffusionStart} is invalid. Setting pollution diffusion start timestep to 0.")
-            pollutionDiffusionStart = 0
-        # If provided a negative value, assume the end timestep is the very end of the simulation
-        if pollutionDiffusionEnd < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion end timestep {pollutionDiffusionEnd} is invalid. Setting pollution diffusion end timestep to {configuration['timesteps']}.")
-            pollutionDiffusionEnd = configuration["timesteps"]
-        configuration["environmentPollutionDiffusionTimeframe"] = [pollutionDiffusionStart, pollutionDiffusionEnd]
-
-    # Ensure the pollution start and end timesteps are in the proper order
-    if configuration["environmentPollutionTimeframe"] != [0, 0]:
-        pollutionStart, pollutionEnd = configuration["environmentPollutionTimeframe"]
-        if pollutionStart > pollutionEnd and pollutionEnd >= 0:
-            swap = pollutionStart
-            pollutionStart = pollutionEnd
-            pollutionEnd = swap
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution start and end values provided in incorrect order. Switching values around.")
-        # If provided a negative value, assume the start timestep is the very first of the simulation
-        if pollutionStart < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution start timestep {pollutionStart} is invalid. Setting pollution start timestep to 0.")
-            pollutionStart = 0
-        # If provided a negative value, assume the end timestep is the very end of the simulation
-        if pollutionEnd < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution end timestep {pollutionEnd} is invalid. Setting pollution end timestep to {configuration['timesteps']}.")
-            pollutionEnd = configuration["timesteps"]
-        configuration["environmentPollutionTimeframe"] = [pollutionStart, pollutionEnd]
-
     if configuration["logfile"] == "":
         configuration["logfile"] = None
 
@@ -1299,6 +1328,7 @@ if __name__ == "__main__":
                      "agentDecisionModelLookaheadFactor": [0],
                      "agentDecisionModelTribalFactor": [-1, -1],
                      "agentDepressionPercentage": 0,
+                     "agentDiseaseProtectionChance": [0.0, 0.0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
@@ -1334,10 +1364,13 @@ if __name__ == "__main__":
                      "diseaseFertilityPenalty": [0, 0],
                      "diseaseFriendlinessPenalty": [0, 0],
                      "diseaseHappinessPenalty": [0,0],
+                     "diseaseIncubationPeriod": [0, 0],
                      "diseaseMovementPenalty": [0, 0],
                      "diseaseSpiceMetabolismPenalty": [0, 0],
                      "diseaseSugarMetabolismPenalty": [0, 0],
                      "diseaseTagStringLength": [0, 0],
+                     "diseaseTimeframe": [-1, -1],
+                     "diseaseTransmissionChance": [1.0, 1.0],
                      "diseaseVisionPenalty": [0, 0],
                      "environmentEquator": -1,
                      "environmentHeight": 50,
