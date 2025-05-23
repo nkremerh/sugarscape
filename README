@@ -539,7 +539,7 @@ numSeeds: int
 
 plots: [string, ...]
     Set the plots to be created once data has been collected.
-    Default: ["deaths", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "wealth"]
+    Default: ["combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "selfishness", "socialHappiness", "wealth", "wealthHappiness"]
 
 plotTimesteps: int
     Set the number of timesteps to plot in graphs as the X axis.

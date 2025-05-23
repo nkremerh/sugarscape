@@ -136,6 +136,9 @@ def generatePlots(config, models, totalTimesteps, dataset, experimentalGroup=Non
     if "population" in config["plots"]:
         print("Generating population plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, "population.pdf", "population", "Population", "lower right", False, experimentalGroup)
+    if "selfishness" in config["plots"]:
+        print("Generating mean selfishness plot")
+        generateSimpleLinePlot(models, dataset, totalTimesteps, "selfishness.pdf", "meanSelfishness", "Mean Selfishness Factor", "lower center", False, experimentalGroup)
     if "wealth" in config["plots"]:
         print("Generating total wealth plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, "wealth.pdf", "agentWealthTotal", "Total Wealth", "center right", False, experimentalGroup)
