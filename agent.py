@@ -133,12 +133,15 @@ class Agent:
             child.setMother(mate)
         return child
 
+<<<<<<< HEAD
     def addDisease(self, disease, infector=None):
         self.diseases.append(disease)
         disease["disease"].infect(self, infector)
         if disease["incubation"] == 0:
             disease["disease"].trigger(self)
 
+=======
+>>>>>>> 7f96d9e (Adds disease protection and transmission chances)
     def addLoanFromAgent(self, agent, timestep, sugarLoan, spiceLoan, duration):
         agentID = agent.ID
         if agentID not in self.socialNetwork:
@@ -183,8 +186,14 @@ class Agent:
         if self.isInfectedWithDisease(diseaseID) == True:
             return
         # Handle irrecoverable diseases without tags
+<<<<<<< HEAD
         caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector, "caught": infectionTimestep, "incubation": disease.incubationPeriod}
         if disease.tags != None:
+=======
+        if disease.tags == None:
+            caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector, "caught": infectionTimestep} 
+        else:
+>>>>>>> 7f96d9e (Adds disease protection and transmission chances)
             diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
             hammingDistance = diseaseInImmuneSystem["distance"]
             # If immune to disease, do not contract it
@@ -192,10 +201,17 @@ class Agent:
                 return
             startIndex = diseaseInImmuneSystem["start"]
             endIndex = diseaseInImmuneSystem["end"]
+<<<<<<< HEAD
             caughtDisease.update({"startIndex": startIndex, "endIndex": endIndex})
 
         if initial == True or self.doInfectionAttempt(disease) == True:
             self.addDisease(caughtDisease, infector)
+=======
+            caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex, "infector": infector, "caught": infectionTimestep}
+
+        if initial == True or self.doInfectionAttempt(disease) == True:
+            self.triggerDisease(caughtDisease, infector)
+>>>>>>> 7f96d9e (Adds disease protection and transmission chances)
         self.findCellsInRange()
 
     def collectResourcesAtCell(self):
@@ -1340,6 +1356,10 @@ class Agent:
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Agent(childID, birthday, cell, configuration)
+
+    def triggerDisease(self, disease, infector=None):
+        self.diseases.append(disease)
+        disease["disease"].trigger(self, infector)
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.ID
