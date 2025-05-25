@@ -74,6 +74,7 @@ class Agent:
         self.healthHappiness = 0
         self.lastDoneCombat = -1
         self.lastMoved = -1
+        self.lastMoveOptimal = True
         self.lastReproduced = -1
         self.lastSpice = 0
         self.lastSugar = 0
@@ -665,13 +666,18 @@ class Agent:
         if self.follower == True and leader != None:
             return leader.findBestCellForAgent(self)
 
+        bestCell = None
         potentialCells = self.rankCellsInRange()
-        bestCell = potentialCells[0]["cell"]
+        greedyBestCell = potentialCells[0]["cell"]
 
         if self.decisionModelFactor > 0:
-            bestCell = self.findBestEthicalCell(potentialCells, bestCell)
+            bestCell = self.findBestEthicalCell(potentialCells, greedyBestCell)
         if bestCell == None:
             bestCell = self.cell
+        if bestCell == greedyBestCell:
+            self.lastMoveOptimal = True
+        else:
+            self.lastMoveOptimal = False
         return bestCell
 
     def findBestEthicalCell(self, cells, greedyBestCell=None):
