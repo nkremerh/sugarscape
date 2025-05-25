@@ -175,7 +175,7 @@ class Agent:
             return
         # If disease cannot be recovered by immune system, contract it
         if disease.tags == None:
-            caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector}
+            caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector, "caught": self.timestep}
             self.diseases.append(caughtDisease)
         else:
             diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
@@ -185,7 +185,7 @@ class Agent:
                 return
             startIndex = diseaseInImmuneSystem["start"]
             endIndex = diseaseInImmuneSystem["end"]
-            caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex, "infector": infector}
+            caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex, "infector": infector, "caught": self.timestep}
             self.diseases.append(caughtDisease)
         disease.trigger(self, infector)
         self.findCellsInRange()
@@ -241,6 +241,9 @@ class Agent:
         self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
         self.neighbors = []
         self.neighborhood = []
+        for disease in self.diseases:
+            diseaseRecord = disease["disease"]
+            diseaseRecord.recover(self)
         self.diseases = []
 
     def doDisease(self):
@@ -1044,6 +1047,13 @@ class Agent:
 
     def flipTag(self, position, value):
         self.tags[position] = value
+
+    def getDiseaseRecord(self, diseaseID):
+        for currDisease in self.diseases:
+            currDiseaseID = currDisease["disease"].ID
+            if int(diseaseID) == currDiseaseID:
+                return currDisease
+        return None
 
     def gotoCell(self, cell):
         self.resetCell()

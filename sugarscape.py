@@ -72,7 +72,7 @@ class Sugarscape:
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
                              "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0,
-                             "sickAgentsPercentage": 0, "meanSelfishness": 0}
+                             "sickAgentsPercentage": 0, "meanSelfishness": 0, "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0}
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -899,6 +899,20 @@ class Sugarscape:
             numDeadAgents += 1
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
 
+        diseaseEffectiveReproductionRate = 0
+        diseaseIncidence = 0
+        diseasePrevalence = 0
+        infectors = set()
+
+        for disease in self.diseases:
+            diseasePrevalence += len(disease.infected)
+            for infected in disease.infected:
+                diseaseRecord = infected.getDiseaseRecord(disease.ID)
+                if diseaseRecord["caught"] == self.timestep:
+                    diseaseIncidence += 1
+                    if self.timestep != 0:
+                        infectors.add(diseaseRecord["infector"])
+
         if numAgents > 0:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
             agentWealthBurnRate = round(agentWealthBurnRate / numAgents, 2)
@@ -925,8 +939,9 @@ class Sugarscape:
             minWealth = round(minWealth, 2)
             remainingTribes = len(tribes)
             tradeVolume = round(tradeVolume, 2)
-            meanDeathsPercentage = round(numDeadAgents / numAgents, 2) * 100
-            sickAgentsPercentage = round(sickAgents / numAgents, 2) * 100
+            meanDeathsPercentage = round((numDeadAgents / numAgents) * 100, 2)
+            sickAgentsPercentage = round((sickAgents / numAgents) * 100, 2)
+            diseaseEffectiveReproductionRate = round(diseaseIncidence / len(infectors), 2) if len(infectors) > 0 else 0
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
@@ -947,6 +962,7 @@ class Sugarscape:
             minWealth = 0
             remainingTribes = 0
             tradeVolume = 0
+            diseaseEffectiveReproductionRate = 0
 
         for agent in self.replacedAgents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
@@ -970,7 +986,9 @@ class Sugarscape:
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
                         "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision, "minWealth": minWealth, "population": numAgents,
                         "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
-                        "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage}
+                        "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
+                        "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
+                        "diseasePrevalence": diseasePrevalence}
 
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated

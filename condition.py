@@ -46,6 +46,7 @@ class Disease(Condition):
         self.sugarMetabolismPenalty = configuration["sugarMetabolismPenalty"]
         self.tags = configuration["tags"]
         self.visionPenalty = configuration["visionPenalty"]
+        self.infected = []
 
     def trigger(self, agent, infector=None, condition=None):
         agent.aggressionFactorModifier += self.aggressionPenalty
@@ -56,6 +57,7 @@ class Disease(Condition):
         agent.spiceMetabolismModifier += self.spiceMetabolismPenalty
         agent.sugarMetabolismModifier += self.sugarMetabolismPenalty
         agent.visionModifier += self.visionPenalty
+        self.infected.append(agent)
 
     def recover(self, agent):
         agent.aggressionFactorModifier -= self.aggressionPenalty
@@ -66,3 +68,4 @@ class Disease(Condition):
         agent.spiceMetabolismModifier -= self.spiceMetabolismPenalty
         agent.sugarMetabolismModifier -= self.sugarMetabolismPenalty
         agent.visionModifier -= self.visionPenalty
+        self.infected.remove(agent)
