@@ -45,6 +45,7 @@ class Disease(Condition):
         self.spiceMetabolismPenalty = configuration["spiceMetabolismPenalty"]
         self.sugarMetabolismPenalty = configuration["sugarMetabolismPenalty"]
         self.tags = configuration["tags"]
+        self.transmissionChance = configuration["transmissionChance"]
         self.visionPenalty = configuration["visionPenalty"]
         self.infected = []
 

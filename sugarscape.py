@@ -227,7 +227,7 @@ class Sugarscape:
                 hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
                 if hammingDistance == 0:
                     continue
-                agent.catchDisease(newDisease)
+                agent.catchDisease(newDisease, initial=True)
                 self.diseases.append(newDisease)
                 if startingDiseases == [0, 0]:
                     diseases.remove(newDisease)
@@ -403,6 +403,7 @@ class Sugarscape:
         decisionModelLookaheadDiscount = configs["agentDecisionModelLookaheadDiscount"]
         decisionModelLookaheadFactor = configs["agentDecisionModelLookaheadFactor"]
         decisionModelTribalFactor = configs["agentDecisionModelTribalFactor"]
+        diseaseProtectionChance = configs["agentDiseaseProtectionChance"]
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -443,6 +444,7 @@ class Sugarscape:
                           "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
                           "decisionModelLookaheadDiscount": {"endowments": [], "curr": decisionModelLookaheadDiscount[0], "min": decisionModelLookaheadDiscount[0], "max": decisionModelLookaheadDiscount[1]},
                           "decisionModelTribalFactor": {"endowments": [], "curr": decisionModelTribalFactor[0], "min": decisionModelTribalFactor[0], "max": decisionModelTribalFactor[1]},
+                          "diseaseProtectionChance": {"endowments": [], "curr": diseaseProtectionChance[0], "min": diseaseProtectionChance[0], "max": diseaseProtectionChance[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
@@ -571,20 +573,24 @@ class Sugarscape:
         fertilityPenalty = configs["diseaseFertilityPenalty"]
         friendlinessPenalty = configs["diseaseFriendlinessPenalty"]
         happinessPenalty = configs["diseaseHappinessPenalty"]
+        incubationPeriod = configs["diseaseIncubationPeriod"]
         movementPenalty = configs["diseaseMovementPenalty"]
         spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
         sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
         tagLength = configs["diseaseTagStringLength"]
+        transmissionChance = configs["diseaseTransmissionChance"]
         visionPenalty = configs["diseaseVisionPenalty"]
 
         configurations = {"aggressionPenalty": {"endowments": [], "curr": aggressionPenalty[0], "min": aggressionPenalty[0], "max": aggressionPenalty[1]},
                           "fertilityPenalty": {"endowments": [], "curr": fertilityPenalty[0], "min": fertilityPenalty[0], "max": fertilityPenalty[1]},
                           "friendlinessPenalty": {"endowments": [], "curr": friendlinessPenalty[0], "min": friendlinessPenalty[0], "max": friendlinessPenalty[1]},
                           "happinessPenalty": {"endowments": [], "curr": happinessPenalty[0], "min": happinessPenalty[0], "max": happinessPenalty[1]},
+                          "incubationPeriod": {"endowments": [], "curr": incubationPeriod[0], "min": incubationPeriod[0], "max": incubationPeriod[1]},
                           "movementPenalty": {"endowments": [], "curr": movementPenalty[0], "min": movementPenalty[0], "max": movementPenalty[1]},
                           "spiceMetabolismPenalty": {"endowments": [], "curr": spiceMetabolismPenalty[0], "min": spiceMetabolismPenalty[0], "max": spiceMetabolismPenalty[1]},
                           "sugarMetabolismPenalty": {"endowments": [], "curr": sugarMetabolismPenalty[0], "min": sugarMetabolismPenalty[0], "max": sugarMetabolismPenalty[1]},
                           "tagLength": {"endowments": [], "curr": tagLength[0], "min": tagLength[0], "max": tagLength[1]},
+                          "transmissionChance": {"endowments": [], "curr": transmissionChance[0], "min": transmissionChance[0], "max": transmissionChance[1]},
                           "visionPenalty": {"endowments": [], "curr": visionPenalty[0], "min": visionPenalty[0], "max": visionPenalty[1]}
                           }
 
@@ -651,6 +657,7 @@ class Sugarscape:
                 deadAgents.append(agent)
         self.deadAgents += deadAgents
         for agent in deadAgents:
+            agent.doDeath()
             self.agents.remove(agent)
 
     def replaceDeadAgents(self):
@@ -921,9 +928,21 @@ class Sugarscape:
             agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
             agentAgingDeaths += 1 if agent.causeOfDeath == "aging" else 0
             agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
-            agentDiseaseDeaths += 1 if agent.causeOfDeath == "disease" else 0
+            agentDiseaseDeaths += 1 if agent.diseaseDeath == True else 0
             agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
             numDeadAgents += 1
+
+            for disease in agent.diseases:
+                # If in the experimental group for a specific disease, skip other diseases
+                if group != None and self.isDiseaseExperimentalGroup(disease["disease"].ID) == False and notInGroup == False:
+                    continue
+                # If in the control group for a specific disease, skip the experimental disease
+                elif group != None and self.isDiseaseExperimentalGroup(disease["disease"].ID) == True and notInGroup == True:
+                    continue
+                if disease["caught"] == self.timestep:
+                    diseaseIncidence += 1
+                    if self.timestep != 0:
+                        infectors.add(disease["infector"])
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
 
         for disease in self.diseases:
@@ -1122,10 +1141,10 @@ def sortConfigurationTimeframes(configuration, timeframe):
 
 def verifyConfiguration(configuration):
     negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
-    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseVisionPenalty"]
+    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
     negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
     negativesAllowed += ["interfaceHeight", "interfaceWidth", "seed", "timesteps"]
-    timeframes = ["environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
+    timeframes = ["diseaseTimeframe", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
     negativeFlag = 0
     for configName, configValue in configuration.items():
         if isinstance(configValue, list):
@@ -1297,6 +1316,7 @@ if __name__ == "__main__":
                      "agentDecisionModelLookaheadFactor": [0],
                      "agentDecisionModelTribalFactor": [-1, -1],
                      "agentDepressionPercentage": 0,
+                     "agentDiseaseProtectionChance": [0.0, 0.0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
@@ -1332,10 +1352,13 @@ if __name__ == "__main__":
                      "diseaseFertilityPenalty": [0, 0],
                      "diseaseFriendlinessPenalty": [0, 0],
                      "diseaseHappinessPenalty": [0,0],
+                     "diseaseIncubationPeriod": [0, 0],
                      "diseaseMovementPenalty": [0, 0],
                      "diseaseSpiceMetabolismPenalty": [0, 0],
                      "diseaseSugarMetabolismPenalty": [0, 0],
                      "diseaseTagStringLength": [0, 0],
+                     "diseaseTimeframe": [0, 0],
+                     "diseaseTransmissionChance": [1.0, 1.0],
                      "diseaseVisionPenalty": [0, 0],
                      "environmentEquator": -1,
                      "environmentHeight": 50,

@@ -19,6 +19,7 @@ class Agent:
         self.decisionModelLookaheadFactor = configuration["decisionModelLookaheadFactor"]
         self.decisionModelTribalFactor = configuration["decisionModelTribalFactor"]
         self.depressionFactor = configuration["depressionFactor"]
+        self.diseaseProtectionChance = configuration["diseaseProtectionChance"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
         self.follower = configuration["follower"]
@@ -61,6 +62,7 @@ class Agent:
         self.childEndowmentHashes = None
         self.conflictHappiness = 0
         self.depressed = False
+        self.diseaseDeath = False
         self.diseases = []
         self.familyHappiness = 0
         self.fertile = False
@@ -104,6 +106,13 @@ class Agent:
             depression = cell.environment.sugarscape.depression
             depression.trigger(self)
 
+    def addAgentToSocialNetwork(self, agent):
+        agentID = agent.ID
+        if agentID in self.socialNetwork:
+            return
+        self.socialNetwork[agentID] = {"agent": agent, "lastSeen": self.lastMoved, "timesVisited": 1, "timesReproduced": 0,
+                                         "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
+
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
         childID = sugarscape.generateAgentID()
@@ -123,13 +132,6 @@ class Agent:
             child.setFather(self)
             child.setMother(mate)
         return child
-
-    def addAgentToSocialNetwork(self, agent):
-        agentID = agent.ID
-        if agentID in self.socialNetwork:
-            return
-        self.socialNetwork[agentID] = {"agent": agent, "lastSeen": self.lastMoved, "timesVisited": 1, "timesReproduced": 0,
-                                         "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
 
     def addLoanFromAgent(self, agent, timestep, sugarLoan, spiceLoan, duration):
         agentID = agent.ID
@@ -168,15 +170,15 @@ class Agent:
         elif neighbor.marginalRateOfSubstitution == self.marginalRateOfSubstitution:
             return False
 
-    def catchDisease(self, disease, infector=None):
+    def catchDisease(self, disease, infector=None, initial=False):
         diseaseID = disease.ID
+        infectionTimestep = infector.timestep if infector != None else self.cell.environment.sugarscape.timestep
         # If currently sick with this disease, do not contract it again
         if self.isInfectedWithDisease(diseaseID) == True:
             return
-        # If disease cannot be recovered by immune system, contract it
+        # Handle irrecoverable diseases without tags
         if disease.tags == None:
-            caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector, "caught": self.timestep}
-            self.diseases.append(caughtDisease)
+            caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector, "caught": infectionTimestep} 
         else:
             diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
             hammingDistance = diseaseInImmuneSystem["distance"]
@@ -185,9 +187,10 @@ class Agent:
                 return
             startIndex = diseaseInImmuneSystem["start"]
             endIndex = diseaseInImmuneSystem["end"]
-            caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex, "infector": infector, "caught": self.timestep}
-            self.diseases.append(caughtDisease)
-        disease.trigger(self, infector)
+            caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex, "infector": infector, "caught": infectionTimestep}
+
+        if initial == True or self.doInfectionAttempt(disease) == True:
+            self.triggerDisease(caughtDisease, infector)
         self.findCellsInRange()
 
     def collectResourcesAtCell(self):
@@ -231,9 +234,15 @@ class Agent:
             prey.doDeath("combat")
         self.gotoCell(cell)
 
-    def doDeath(self, causeOfDeath):
+    def doDeath(self, causeOfDeath="unknown"):
+        # TODO: Determine why some agents do not die cleanly (Sugarscape object needs to call their doDeath method)
+        if causeOfDeath == "unknown" and self.causeOfDeath != None:
+            return
         self.alive = False
         self.causeOfDeath = causeOfDeath
+        # If sick at death, consider disease a contributing factor
+        if self.isSick():
+            self.diseaseDeath = True
         self.resetCell()
         self.doInheritance()
 
@@ -277,6 +286,15 @@ class Agent:
         random.shuffle(neighbors)
         for neighbor in neighbors:
             neighbor.catchDisease(self.diseases[random.randrange(diseaseCount)]["disease"], self)
+
+    def doInfectionAttempt(self, disease):
+        diseaseAttack = random.uniform(0.0, 1.0)
+        immuneDefense = random.uniform(0.0, 1.0)
+        attackSuccess = True if diseaseAttack <= disease.transmissionChance and disease.transmissionChance != 0.0 else False
+        defenseSuccess = True if immuneDefense <= self.diseaseProtectionChance and self.diseaseProtectionChance != 0.0 else False
+        if attackSuccess == True and defenseSuccess == False:
+            return True
+        return False
 
     def doInheritance(self):
         if self.inheritancePolicy == "none":
@@ -680,6 +698,7 @@ class Agent:
         parentEndowments = {
         "aggressionFactor": [self.aggressionFactor, mate.aggressionFactor],
         "baseInterestRate": [self.baseInterestRate, mate.baseInterestRate],
+        "diseaseProtectionChance": [self.diseaseProtectionChance, mate.diseaseProtectionChance],
         "depressionFactor": [self.depressionFactor, mate.depressionFactor],
         "fertilityAge": [self.fertilityAge, mate.fertilityAge],
         "fertilityFactor": [self.fertilityFactor, mate.fertilityFactor],
@@ -1061,7 +1080,7 @@ class Agent:
         self.cell.agent = self
 
     def isAlive(self):
-        if self.spice < 0 and self.sugar < 0:
+        if self.spice < 0 or self.sugar < 0:
             self.alive = False
         return self.alive and self.spice >= 0 and self.sugar >= 0
 
@@ -1311,6 +1330,10 @@ class Agent:
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Agent(childID, birthday, cell, configuration)
+
+    def triggerDisease(self, disease, infector=None):
+        self.diseases.append(disease)
+        disease["disease"].trigger(self, infector)
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.ID
