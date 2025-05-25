@@ -5,7 +5,7 @@
         "jobUpdateFrequency": 5,
         "numParallelSimJobs": 1,
         "numSeeds": 100,
-        "plots": ["deaths", "giniCoefficient", "happiness", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "sickness", "tradeVolume", "wealth"],
+        "plots": ["deaths", "giniCoefficient", "happiness", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "sickness", "tradeVolume"],
         "plotTimesteps": 1000,
         "pythonAlias": "python"
     },

@@ -1,6 +1,7 @@
 import hashlib
 import math
 import random
+import re
 import sys
 
 class Agent:
@@ -169,11 +170,9 @@ class Agent:
 
     def catchDisease(self, disease, infector=None):
         diseaseID = disease.ID
-        for currDisease in self.diseases:
-            currDiseaseID = currDisease["disease"].ID
-            # If currently sick with this disease, do not contract it again
-            if diseaseID == currDiseaseID:
-                return
+        # If currently sick with this disease, do not contract it again
+        if self.isInfectedWithDisease(diseaseID) == True:
+            return
         # If disease cannot be recovered by immune system, contract it
         if disease.tags == None:
             caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector}
@@ -1079,10 +1078,20 @@ class Agent:
             return True
         return False
 
+    def isInfectedWithDisease(self, diseaseID):
+        for currDisease in self.diseases:
+            currDiseaseID = currDisease["disease"].ID
+            if int(diseaseID) == currDiseaseID:
+                return True
+        return False
+
     def isInGroup(self, group, notInGroup=False):
         membership = False
         if group == "depressed":
             membership = self.depressed
+        elif "disease" in group:
+            diseaseID = re.search(r"disease(?P<ID>\d+)", group).group("ID")
+            membership = self.isInfectedWithDisease(diseaseID)
         elif group == "female":
             membership = True if self.sex == "female" else False
         elif group == "male":

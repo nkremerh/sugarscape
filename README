@@ -160,6 +160,12 @@ agentDepressionPercentage: float
     Note: Valid range is [0.0, 1.0].
     Default: 0.0
 
+agentDiseaseProtectionChance: [float, float]
+    Set the chance an agent resists disease infection by another agent.
+    Note: Value of 0.0 means no protection.
+    Note: Value of 1.0 means perfect protection.
+    Default: [0.0, 0.0]
+
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
     Default: [0, 0]
@@ -311,6 +317,10 @@ diseaseFriendlinessPenalty: [float, float]
     Note: Negative values constitute a friendliness decrease.
     Default: [0, 0]
 
+diseaseIncubationPeriod: [int, int]
+    Set the number of timesteps disease symptoms can remain hidden while still being infectious.
+    Default: [0, 0]
+
 diseaseHappinessPenalty: [float, float]
     Set the impact a disease will have on an agent's happiness.
     Note: Negative values consitute a happiness decrease.
@@ -326,6 +336,12 @@ diseaseSpiceMetabolismPenalty: [float, float]
     Note: Negative values constitute a decrease in agent spice metabolism.
     Default: [0, 0]
 
+diseaseTimeframe: [int, int]
+    Set the timestep a disease can be initialized.
+    Note: Value of -1 for the start sets the start timestep to 0.
+    Note: Value of -1 for the end sets the end timestep to the end of the simulation.
+    Default: [0, 0]
+
 diseaseSugarMetabolismPenalty: [float, float]
     Set the impact a disease will have on an agent's sugar metabolism rate.
     Note: Negative values constitute a decrease in agent sugar metabolism.
@@ -335,6 +351,12 @@ diseaseTagStringLength: [int, int]
     Set the length of disease tags.
     The longer the length, the longer an agent will have the disease.
     Default: [0, 0]
+
+diseaseTransmissionChance: [float, float]
+    Set the chance a disease successfully transmits between agents.
+    Note: Value of 0.0 means no transmission.
+    Note: Value of 1.0 means perfect transmission.
+    Default: [1.0, 1.0]
 
 diseaseVisionPenalty: [int, int]
     Set the impact a disease will have on an agent's vision.
@@ -539,7 +561,8 @@ numSeeds: int
 
 plots: [string, ...]
     Set the plots to be created once data has been collected.
-    Default: ["combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "selfishness", "socialHappiness", "wealth", "wealthHappiness"]
+    Options: "combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "selfishness", "socialHappiness", "wealth", "wealthHappiness"
+    Default: ["deaths", "giniCoefficient", "happiness", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "sickness", "tradeVolume"]
 
 plotTimesteps: int
     Set the number of timesteps to plot in graphs as the X axis.
