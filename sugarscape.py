@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import random
+import re
 import sys
 
 class Sugarscape:
@@ -377,6 +378,15 @@ class Sugarscape:
         tags = [0 for i in range(zeroes)] + [1 for i in range(ones)]
         random.shuffle(tags)
         return tags
+
+    def isDiseaseExperimentalGroup(self, diseaseID):
+        if self.experimentalGroup == None:
+            return False
+        if "disease" in self.experimentalGroup:
+            experimentalDiseaseID = re.search(r"disease(?P<ID>\d+)", self.experimentalGroup).group("ID")
+            if int(diseaseID) == int(experimentalDiseaseID):
+                return True
+        return False
 
     def pauseSimulation(self):
         while self.run == False:
@@ -840,6 +850,11 @@ class Sugarscape:
         meanDeathsPercentage = 0
         sickAgentsPercentage = 0
 
+        diseaseEffectiveReproductionRate = 0
+        diseaseIncidence = 0
+        diseasePrevalence = 0
+        infectors = set()
+
         agentsBorn = 0
         agentsReplaced = 0
         tribes = {}
@@ -884,6 +899,18 @@ class Sugarscape:
                 tribes[agent.tribe] += 1
             numAgents += 1
 
+            for disease in agent.diseases:
+                # If in the experimental group for a specific disease, skip other diseases
+                if group != None and self.isDiseaseExperimentalGroup(disease["disease"].ID) == False and notInGroup == False:
+                    continue
+                # If in the control group for a specific disease, skip the experimental disease
+                elif group != None and self.isDiseaseExperimentalGroup(disease["disease"].ID) == True and notInGroup == True:
+                    continue
+                if disease["caught"] == self.timestep:
+                    diseaseIncidence += 1
+                    if self.timestep != 0:
+                        infectors.add(disease["infector"])
+
         numDeadAgents = 0
         meanAgeAtDeath = 0
         for agent in self.deadAgents:
@@ -899,19 +926,14 @@ class Sugarscape:
             numDeadAgents += 1
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
 
-        diseaseEffectiveReproductionRate = 0
-        diseaseIncidence = 0
-        diseasePrevalence = 0
-        infectors = set()
-
         for disease in self.diseases:
+            # If in the experimental group for a specific disease, skip other diseases
+            if group != None and self.isDiseaseExperimentalGroup(disease.ID) == False and notInGroup == False:
+                continue
+            # If in the control group for a specific disease, skip the experimental disease
+            elif group != None and self.isDiseaseExperimentalGroup(disease.ID) == True and notInGroup == True:
+                continue
             diseasePrevalence += len(disease.infected)
-            for infected in disease.infected:
-                diseaseRecord = infected.getDiseaseRecord(disease.ID)
-                if diseaseRecord["caught"] == self.timestep:
-                    diseaseIncidence += 1
-                    if self.timestep != 0:
-                        infectors.add(diseaseRecord["infector"])
 
         if numAgents > 0:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
