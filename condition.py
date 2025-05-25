@@ -44,6 +44,7 @@ class Disease(Condition):
         self.movementPenalty = configuration["movementPenalty"]
         self.recoverable = True
         self.spiceMetabolismPenalty = configuration["spiceMetabolismPenalty"]
+        self.startTimestep = configuration["startTimestep"]
         self.sugarMetabolismPenalty = configuration["sugarMetabolismPenalty"]
         self.tags = configuration["tags"]
         self.transmissionChance = configuration["transmissionChance"]

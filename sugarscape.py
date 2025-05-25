@@ -56,6 +56,7 @@ class Sugarscape:
         self.deadAgents = []
         self.depression = True if configuration["agentDepressionPercentage"] > 0 else False
         self.diseases = []
+        self.remainingDiseases = []
         self.agentLeader = None
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureDepression()
@@ -92,6 +93,21 @@ class Sugarscape:
     def addAgent(self, agent):
         self.bornAgents.append(agent)
         self.agents.append(agent)
+
+    def addRemainingDiseases(self):
+        infectedDiseases = []
+        for disease in self.remainingDiseases:
+            if disease.startTimestep <= self.timestep:
+                for agent in self.agents:
+                    hammingDistance = agent.findNearestHammingDistanceInDisease(disease)["distance"]
+                    if hammingDistance == 0:
+                        continue
+                    agent.catchDisease(disease, initial=True)
+                    self.diseases.append(disease)
+                    infectedDiseases.append(disease)
+                    break
+        for disease in infectedDiseases:
+            self.remainingDiseases.remove(disease)
 
     def addSpicePeak(self, startX, startY, radius, maxSpice):
         height = self.environment.height
@@ -207,20 +223,23 @@ class Sugarscape:
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
         random.shuffle(self.agents)
-        diseases = []
+        initialDiseases = []
         for i in range(numDiseases):
             diseaseID = self.generateDiseaseID()
             diseaseConfiguration = diseaseEndowments[i]
             newDisease = condition.Disease(diseaseID, diseaseConfiguration)
-            diseases.append(newDisease)
+            if diseaseConfiguration["startTimestep"] == 0:
+                initialDiseases.append(newDisease)
+            else:
+                self.remainingDiseases.append(newDisease)
 
         startingDiseases = self.configuration["startingDiseasesPerAgent"]
         minStartingDiseases = startingDiseases[0]
         maxStartingDiseases = startingDiseases[1]
         currStartingDiseases = minStartingDiseases
         for agent in self.agents:
-            random.shuffle(diseases)
-            for newDisease in diseases:
+            random.shuffle(initialDiseases)
+            for newDisease in initialDiseases:
                 if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
                     currStartingDiseases += 1
                     break
@@ -230,12 +249,12 @@ class Sugarscape:
                 agent.catchDisease(newDisease, initial=True)
                 self.diseases.append(newDisease)
                 if startingDiseases == [0, 0]:
-                    diseases.remove(newDisease)
+                    initialDiseases.remove(newDisease)
                     break
             if currStartingDiseases > maxStartingDiseases:
                 currStartingDiseases = minStartingDiseases
 
-        if startingDiseases == [0, 0] and len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
+        if startingDiseases == [0, 0] and len(initialDiseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
             print(f"Could not place {len(diseases)} diseases.")
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
@@ -270,6 +289,7 @@ class Sugarscape:
         else:
             self.environment.doTimestep(self.timestep)
             random.shuffle(self.agents)
+            self.addRemainingDiseases()
             if self.agentLeader != None:
                 self.agentLeader.doTimestep(self.timestep)
             for agent in self.agents:
@@ -576,6 +596,7 @@ class Sugarscape:
         incubationPeriod = configs["diseaseIncubationPeriod"]
         movementPenalty = configs["diseaseMovementPenalty"]
         spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
+        startTimestep = configs["diseaseTimeframe"]
         sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
         tagLength = configs["diseaseTagStringLength"]
         transmissionChance = configs["diseaseTransmissionChance"]
@@ -588,6 +609,7 @@ class Sugarscape:
                           "incubationPeriod": {"endowments": [], "curr": incubationPeriod[0], "min": incubationPeriod[0], "max": incubationPeriod[1]},
                           "movementPenalty": {"endowments": [], "curr": movementPenalty[0], "min": movementPenalty[0], "max": movementPenalty[1]},
                           "spiceMetabolismPenalty": {"endowments": [], "curr": spiceMetabolismPenalty[0], "min": spiceMetabolismPenalty[0], "max": spiceMetabolismPenalty[1]},
+                          "startTimestep": {"endowments": [], "curr": startTimestep[0], "min": startTimestep[0], "max": startTimestep[1]},
                           "sugarMetabolismPenalty": {"endowments": [], "curr": sugarMetabolismPenalty[0], "min": sugarMetabolismPenalty[0], "max": sugarMetabolismPenalty[1]},
                           "tagLength": {"endowments": [], "curr": tagLength[0], "min": tagLength[0], "max": tagLength[1]},
                           "transmissionChance": {"endowments": [], "curr": transmissionChance[0], "min": transmissionChance[0], "max": transmissionChance[1]},
