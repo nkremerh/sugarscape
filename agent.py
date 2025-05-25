@@ -133,6 +133,12 @@ class Agent:
             child.setMother(mate)
         return child
 
+    def addDisease(self, disease, infector=None):
+        self.diseases.append(disease)
+        disease["disease"].infect(self, infector)
+        if disease["incubation"] == 0:
+            disease["disease"].trigger(self)
+
     def addLoanFromAgent(self, agent, timestep, sugarLoan, spiceLoan, duration):
         agentID = agent.ID
         if agentID not in self.socialNetwork:
@@ -177,9 +183,8 @@ class Agent:
         if self.isInfectedWithDisease(diseaseID) == True:
             return
         # Handle irrecoverable diseases without tags
-        if disease.tags == None:
-            caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector, "caught": infectionTimestep} 
-        else:
+        caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector, "caught": infectionTimestep, "incubation": disease.incubationPeriod}
+        if disease.tags != None:
             diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
             hammingDistance = diseaseInImmuneSystem["distance"]
             # If immune to disease, do not contract it
@@ -187,10 +192,10 @@ class Agent:
                 return
             startIndex = diseaseInImmuneSystem["start"]
             endIndex = diseaseInImmuneSystem["end"]
-            caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex, "infector": infector, "caught": infectionTimestep}
+            caughtDisease.update({"startIndex": startIndex, "endIndex": endIndex})
 
         if initial == True or self.doInfectionAttempt(disease) == True:
-            self.triggerDisease(caughtDisease, infector)
+            self.addDisease(caughtDisease, infector)
         self.findCellsInRange()
 
     def collectResourcesAtCell(self):
@@ -259,6 +264,11 @@ class Agent:
         random.shuffle(self.diseases)
         for diseaseRecord in self.diseases:
             disease = diseaseRecord["disease"]
+            if diseaseRecord["caught"] != self.timestep and diseaseRecord["incubation"] > 0:
+                diseaseRecord["incubation"] -= 1
+            # Activate fully incubated disease
+            if diseaseRecord["incubation"] == 0:
+                disease.trigger(self)
             if disease.recoverable == False:
                 continue
             diseaseTags = diseaseRecord["disease"].tags
@@ -1330,10 +1340,6 @@ class Agent:
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Agent(childID, birthday, cell, configuration)
-
-    def triggerDisease(self, disease, infector=None):
-        self.diseases.append(disease)
-        disease["disease"].trigger(self, infector)
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.ID

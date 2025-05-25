@@ -40,6 +40,7 @@ class Disease(Condition):
         self.fertilityPenalty = configuration["fertilityPenalty"]
         self.friendlinessPenalty = configuration["friendlinessPenalty"]
         self.happinessPenalty = configuration["happinessPenalty"]
+        self.incubationPeriod = configuration["incubationPeriod"]
         self.movementPenalty = configuration["movementPenalty"]
         self.recoverable = True
         self.spiceMetabolismPenalty = configuration["spiceMetabolismPenalty"]
@@ -49,7 +50,10 @@ class Disease(Condition):
         self.visionPenalty = configuration["visionPenalty"]
         self.infected = []
 
-    def trigger(self, agent, infector=None, condition=None):
+    def infect(self, agent, infector=None, condition=None):
+        self.infected.append(agent)
+
+    def trigger(self, agent):
         agent.aggressionFactorModifier += self.aggressionPenalty
         agent.fertilityFactorModifier += self.fertilityPenalty
         agent.friendlinessModifier += self.friendlinessPenalty
@@ -58,7 +62,6 @@ class Disease(Condition):
         agent.spiceMetabolismModifier += self.spiceMetabolismPenalty
         agent.sugarMetabolismModifier += self.sugarMetabolismPenalty
         agent.visionModifier += self.visionPenalty
-        self.infected.append(agent)
 
     def recover(self, agent):
         agent.aggressionFactorModifier -= self.aggressionPenalty
