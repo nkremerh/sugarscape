@@ -109,31 +109,20 @@ class Sugarscape:
         for disease in infectedDiseases:
             self.remainingDiseases.remove(disease)
 
-    def addSpicePeak(self, startX, startY, radius, maxSpice):
+    def addResourcePeak(self, startX, startY, radius, maxValue, resource):
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
         for i in range(width):
             for j in range(height):
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
-                currDispersion = 1 + maxSpice * (1 - euclideanDistanceToStart / radialDispersion)
-                cellMaxCapacity = min(currDispersion, maxSpice)
+                currDispersion = 1 + maxValue * (1 - euclideanDistanceToStart / radialDispersion)
+                cellMaxCapacity = min(currDispersion, maxValue)
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
-                if cellMaxCapacity > self.environment.findCell(i, j).maxSpice:
+                if resource == "spice" and cellMaxCapacity > self.environment.findCell(i, j).maxSpice:
                     self.environment.findCell(i, j).maxSpice = cellMaxCapacity
                     self.environment.findCell(i, j).spice = cellMaxCapacity
-
-    def addSugarPeak(self, startX, startY, radius, maxSugar):
-        height = self.environment.height
-        width = self.environment.width
-        radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        for i in range(width):
-            for j in range(height):
-                euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
-                currDispersion = 1 + maxSugar * (1 - euclideanDistanceToStart / radialDispersion)
-                cellMaxCapacity = min(currDispersion, maxSugar)
-                cellMaxCapacity = math.ceil(cellMaxCapacity)
-                if cellMaxCapacity > self.environment.findCell(i, j).maxSugar:
+                elif resource == "sugar" and cellMaxCapacity > self.environment.findCell(i, j).maxSugar:
                     self.environment.findCell(i, j).maxSugar = cellMaxCapacity
                     self.environment.findCell(i, j).sugar = cellMaxCapacity
 
@@ -268,12 +257,12 @@ class Sugarscape:
         sugarRadiusScale = 2
         radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
         for peak in sugarPeaks:
-            self.addSugarPeak(peak[0], peak[1], radius, maxSugar)
+            self.addResourcePeak(peak[0], peak[1], radius, peak[2], "sugar")
 
         spiceRadiusScale = 2
         radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
         for peak in spicePeaks:
-            self.addSpicePeak(peak[0], peak[1], radius, maxSpice)
+            self.addResourcePeak(peak[0], peak[1], radius, peak[2], "spice")
         self.environment.findCellNeighbors()
         self.environment.findCellRanges()
 
@@ -1163,8 +1152,13 @@ def sortConfigurationTimeframes(configuration, timeframe):
 
 def verifyConfiguration(configuration):
     negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
+<<<<<<< HEAD
     negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
     negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
+=======
+    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseVisionPenalty"]
+    negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe", "environmentMaxSpice", "environmentMaxSugar"]
+>>>>>>> 6ce6b70 (Adds capability to randomize locations of sugar and spice peaks in configuration)
     negativesAllowed += ["interfaceHeight", "interfaceWidth", "seed", "timesteps"]
     timeframes = ["diseaseTimeframe", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
     negativeFlag = 0
@@ -1190,6 +1184,32 @@ def verifyConfiguration(configuration):
     if negativeFlag > 0:
         print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
 
+    if configuration["environmentMaxSpice"] < 0:
+        configuration["environmentMaxSpice"] = random.randint(1, 10)
+    if configuration["environmentMaxSugar"] < 0:
+        configuration["environmentMaxSugar"] = random.randint(1, 10)
+    for peak in configuration["environmentSpicePeaks"]:
+        if len(peak) < 3:
+            peak.append(random.randint(1, configuration["environmentMaxSpice"]))
+        if peak[0] < 0:
+            peak[0] = random.randint(0, configuration["environmentWidth"] - 1)
+        if peak[1] < 0:
+            peak[1] = random.randint(0, configuration["environmentHeight"] - 1)
+        if len(peak) < 3 or peak[2] < 0:
+            peak[2] = random.randint(1, configuration["environmentMaxSpice"])
+        elif peak[2] > configuration["environmentMaxSpice"]:
+            peak[2] = configuration["environmentMaxSpice"]
+    for peak in configuration["environmentSugarPeaks"]:
+        if len(peak) < 3:
+            peak.append(random.randint(1, configuration["environmentMaxSugar"]))
+        if peak[0] < 0:
+            peak[0] = random.randint(0, configuration["environmentWidth"] - 1)
+        if peak[1] < 0:
+            peak[1] = random.randint(0, configuration["environmentHeight"] - 1)
+        if peak[2] < 0:
+            peak[2] = random.randint(1, configuration["environmentMaxSugar"])
+        elif peak[2] > configuration["environmentMaxSugar"]:
+            peak[2] = configuration["environmentMaxSugar"]
 
     if configuration["environmentQuadrantSizeFactor"] > 1 or configuration["environmentQuadrantSizeFactor"] < 0:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
