@@ -61,7 +61,7 @@
         "diseaseSpiceMetabolismPenalty": [1, 3],
         "diseaseSugarMetabolismPenalty": [1, 3],
         "diseaseTagStringLength": [11, 21],
-        "diseaseTimeframe": [-1, -1],
+        "diseaseTimeframe": [0, 0],
         "diseaseTransmissionChance": [1.0, 1.0],
         "diseaseVisionPenalty": [-1, 1],
         "environmentEquator": -1,

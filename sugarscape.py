@@ -1179,6 +1179,12 @@ def verifyConfiguration(configuration):
     if negativeFlag > 0:
         print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
 
+    # If no specific disease is tracked, revert to generic sick experimental group
+    if configuration["experimentalGroup"] != None and "disease" in configuration["experimentalGroup"]:
+            experimentalDiseaseID = re.search(r"disease(?P<ID>\d+)", configuration["experimentalGroup"])
+            if experimentalDiseaseID == None:
+                configuration["experimentalGroup"] = "sick"
+
     if configuration["environmentMaxSpice"] < 0:
         configuration["environmentMaxSpice"] = random.randint(1, 10)
     if configuration["environmentMaxSugar"] < 0:
