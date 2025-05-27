@@ -64,6 +64,7 @@ class Environment:
                 cellSeason = self.grid[i][j].season
                 sugarRegrowth = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
                 spiceRegrowth = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
+                self.grid[i][j].timestep = self.timestep
                 if self.seasonInterval > 0:
                     if self.timestep % self.seasonInterval == 0:
                         self.grid[i][j].updateSeason()

@@ -25,20 +25,24 @@ class Cell:
         self.pollution = self.pollutionFlux
 
     def doSpiceConsumptionPollution(self, spiceConsumed):
-        consumptionPollutionFactor = self.environment.spiceConsumptionPollutionFactor
-        self.pollution += consumptionPollutionFactor * spiceConsumed
+        if self.isPollutionEnabled() == True:
+            consumptionPollutionFactor = self.environment.spiceConsumptionPollutionFactor
+            self.pollution += consumptionPollutionFactor * spiceConsumed
 
     def doSpiceProductionPollution(self, spiceProduced):
-        productionPollutionFactor = self.environment.spiceProductionPollutionFactor
-        self.pollution += productionPollutionFactor * spiceProduced
+        if self.isPollutionEnabled() == True:
+            productionPollutionFactor = self.environment.spiceProductionPollutionFactor
+            self.pollution += productionPollutionFactor * spiceProduced
 
     def doSugarConsumptionPollution(self, sugarConsumed):
-        consumptionPollutionFactor = self.environment.sugarConsumptionPollutionFactor
-        self.pollution += consumptionPollutionFactor * sugarConsumed
+        if self.isPollutionEnabled() == True:
+            consumptionPollutionFactor = self.environment.sugarConsumptionPollutionFactor
+            self.pollution += consumptionPollutionFactor * sugarConsumed
 
     def doSugarProductionPollution(self, sugarProduced):
-        productionPollutionFactor = self.environment.sugarProductionPollutionFactor
-        self.pollution += productionPollutionFactor * sugarProduced
+        if self.isPollutionEnabled() == True:
+            productionPollutionFactor = self.environment.sugarProductionPollutionFactor
+            self.pollution += productionPollutionFactor * sugarProduced
 
     def findEastNeighbor(self):
         if self.environment.wraparound == False and self.x + 1 > self.environment.width - 1:
@@ -118,6 +122,9 @@ class Cell:
 
     def isOccupied(self):
         return self.agent != None
+
+    def isPollutionEnabled(self):
+        return self.environment.pollutionStart <= self.timestep <= self.environment.pollutionEnd
 
     def resetAgent(self):
         self.agent = None
