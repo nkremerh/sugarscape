@@ -61,7 +61,7 @@ class Sugarscape:
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureDepression()
         self.configureAgents(configuration["startingAgents"])
-        self.configureDiseases(configuration["startingDiseases"])
+        self.configureDiseases(configuration["startingDiseases"], configuration["diseaseList"])
         self.gui = gui.GUI(self, self.configuration["interfaceHeight"], self.configuration["interfaceWidth"]) if configuration["headlessMode"] == False else None
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
@@ -203,12 +203,22 @@ class Sugarscape:
             self.depression = condition.Depression()
             self.diseases.append(self.depression)
 
-    def configureDiseases(self, numDiseases):
+    def configureDiseases(self, numDiseases, namedDiseases):
         numAgents = len(self.agents)
         if numAgents == 0:
             return
         elif numAgents < numDiseases:
             numDiseases = numAgents
+
+        premadeDiseases  = []
+        for disease in namedDiseases:
+            validDisease = 0
+            if "zombieVirus" in disease:
+                zombie = condition.ZombieVirus("zombieVirus", {})
+                premadeDiseases.append(zombie)
+                validDisease = 1
+            if validDisease == 1:
+                numDiseases -= 1
 
         diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
         random.shuffle(self.agents)
@@ -226,15 +236,17 @@ class Sugarscape:
         minStartingDiseases = startingDiseases[0]
         maxStartingDiseases = startingDiseases[1]
         currStartingDiseases = minStartingDiseases
+        initialDiseases.extend(premadeDiseases)
         for agent in self.agents:
             random.shuffle(initialDiseases)
             for newDisease in initialDiseases:
                 if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
                     currStartingDiseases += 1
                     break
-                hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
-                if hammingDistance == 0:
-                    continue
+                if newDisease.tags != None:
+                    hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
+                    if hammingDistance == 0:
+                        continue
                 agent.catchDisease(newDisease, initial=True)
                 self.diseases.append(newDisease)
                 if startingDiseases == [0, 0]:
@@ -1396,6 +1408,7 @@ if __name__ == "__main__":
                      "diseaseFriendlinessPenalty": [0, 0],
                      "diseaseHappinessPenalty": [0,0],
                      "diseaseIncubationPeriod": [0, 0],
+                     "diseaseList": [],
                      "diseaseMovementPenalty": [0, 0],
                      "diseaseSpiceMetabolismPenalty": [0, 0],
                      "diseaseSugarMetabolismPenalty": [0, 0],

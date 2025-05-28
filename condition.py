@@ -74,3 +74,20 @@ class Disease(Condition):
         agent.sugarMetabolismModifier -= self.sugarMetabolismPenalty
         agent.visionModifier -= self.visionPenalty
         self.infected.remove(agent)
+
+class ZombieVirus(Disease):
+    def __init__(self, diseaseID, configuration):
+        configuration["aggressionPenalty"] = 100000
+        configuration["fertilityPenalty"] = -1
+        configuration["friendlinessPenalty"] = 0
+        configuration["happinessPenalty"] = 0
+        configuration["incubationPeriod"] = 3
+        configuration["movementPenalty"] = 0
+        configuration["spiceMetabolismPenalty"] = -10
+        configuration["startTimestep"] = 0
+        configuration["sugarMetabolismPenalty"] = -10
+        configuration["tags"] = None
+        configuration["transmissionChance"] = 0.85
+        configuration["visionPenalty"] = 1
+        super().__init__(diseaseID, configuration)
+        self.recoverable = False

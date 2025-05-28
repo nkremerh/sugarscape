@@ -1120,7 +1120,7 @@ class Agent:
     def isInfectedWithDisease(self, diseaseID):
         for currDisease in self.diseases:
             currDiseaseID = currDisease["disease"].ID
-            if int(diseaseID) == currDiseaseID:
+            if diseaseID == currDiseaseID:
                 return True
         return False
 

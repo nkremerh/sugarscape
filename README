@@ -300,7 +300,7 @@ debugMode: [string, ...]
     Options: "agent", "all", "cell", "disease", "environment", "ethics", "none",  "sugarscape"
     Default: "none"
     Note: Some options may cause no output in current impementation.
-          Can select multiple debug modes simultaneously.
+    Note: Can select multiple debug modes simultaneously.
 
 diseaseAggressionPenalty: [float, float]
     Set the impact a disease will have on an agent's aggressiveness.
@@ -325,6 +325,11 @@ diseaseHappinessPenalty: [float, float]
     Set the impact a disease will have on an agent's happiness.
     Note: Negative values consitute a happiness decrease.
     Default: [0, 0]
+
+diseaseList: [string, ...]
+    Set the named diseases in the environment.
+    Options: "zombieVirus"
+    Default: []
 
 diseaseMovementPenalty: [int, int]
     Set the impact a disease will have on an agent's movement distance.
