@@ -74,7 +74,9 @@ class Sugarscape:
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
                              "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0,
-                             "sickAgentsPercentage": 0, "meanSelfishness": 0, "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0}
+                             "sickAgentsPercentage": 0, "meanSelfishness": 0, "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0,
+                             "agentLastMoveOptimalityPercentage": 0
+                             }
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
@@ -89,6 +91,18 @@ class Sugarscape:
                 groupRuntimeStats[controlGroupKey] = 0
                 groupRuntimeStats[experimentalGroupKey] = 0
             self.runtimeStats.update(groupRuntimeStats)
+            self.groupInteractionRuntimeStats = {"combatControlGroupToControlGroup": 0, "combatControlGroupToExperimentalGroup": 0,
+                                                 "combatExperimentalGroupToControlGroup": 0, "combatExperimentalGroupToExperimentalGroup": 0,
+                                                 "diseaseControlGroupToControlGroup": 0, "diseaseControlGroupToExperimentalGroup": 0,
+                                                 "diseaseExperimentalGroupToControlGroup": 0, "diseaseExperimentalGroupToExperimentalGroup": 0,
+                                                 "lendingControlGroupToControlGroup": 0, "lendingControlGroupToExperimentalGroup": 0,
+                                                 "lendingExperimentalGroupToControlGroup": 0, "lendingExperimentalGroupToExperimentalGroup": 0,
+                                                 "reproductionControlGroupToControlGroup": 0, "reproductionControlGroupToExperimentalGroup": 0,
+                                                 "reproductionExperimentalGroupToControlGroup": 0, "reproductionExperimentalGroupToExperimentalGroup": 0,
+                                                 "tradeControlGroupToControlGroup": 0, "tradeControlGroupToExperimentalGroup": 0,
+                                                 "tradeExperimentalGroupToControlGroup": 0, "tradeExperimentalGroupToExperimentalGroup": 0
+                                                 }
+            self.runtimeStats.update(self.groupInteractionRuntimeStats)
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
@@ -843,6 +857,7 @@ class Sugarscape:
         meanSocialHappiness = 0
         meanSpiceMetabolism = 0
         meanSugarMetabolism = 0
+        combinedMetabolism = 0
         meanTradePrice = 0
         meanVision = 0
         meanWealth = 0
@@ -870,6 +885,8 @@ class Sugarscape:
         agentAgingDeaths = 0
         agentCombatDeaths = 0
         agentDiseaseDeaths = 0
+        agentLastMoveOptimalityPercentage = 0
+        agentMoves = 0
         agentMeanTimeToLive = 0
         agentStarvationDeaths = 0
         agentTotalMetabolism = 0
@@ -885,8 +902,30 @@ class Sugarscape:
         diseasePrevalence = 0
         infectors = set()
 
+        combatControlToControl = 0
+        combatControlToExperimental = 0
+        combatExperimentalToControl = 0
+        combatExperimentalToExperimental = 0
+        diseaseControlToControl = 0
+        diseaseControlToExperimental = 0
+        diseaseExperimentalToControl = 0
+        diseaseExperimentalToExperimental = 0
+        lendingControlToControl = 0
+        lendingControlToExperimental = 0
+        lendingExperimentalToControl = 0
+        lendingExperimentalToExperimental = 0
+        reproductionControlToControl = 0
+        reproductionControlToExperimental = 0
+        reproductionExperimentalToControl = 0
+        reproductionExperimentalToExperimental = 0
+        tradeControlToControl = 0
+        tradeControlToExperimental = 0
+        tradeExperimentalToControl = 0
+        tradeExperimentalToExperimental = 0
+
         agentsBorn = 0
         agentsReplaced = 0
+        remainingTribes = 0
         tribes = {}
 
         for agent in self.agents:
@@ -917,6 +956,9 @@ class Sugarscape:
             agentWealthBurnRate += agentTimeToLive
             agentMeanTimeToLive += agentTimeToLiveAgeLimited
             agentTotalMetabolism += agent.sugarMetabolism + agent.spiceMetabolism
+            if agent.lastMoveOptimal == True:
+                agentLastMoveOptimalityPercentage += 1
+            agentMoves += 1
             if agent.isSick():
                 sickAgents += 1
             if agentWealth < minWealth:
@@ -927,6 +969,30 @@ class Sugarscape:
                 tribes[agent.tribe] = 1
             else:
                 tribes[agent.tribe] += 1
+            if group != None and agent.isInGroup(group):
+                combatExperimentalToControl += agent.combatWithControlGroup
+                combatExperimentalToExperimental += agent.combatWithExperimentalGroup
+                diseaseExperimentalToControl += agent.diseaseWithControlGroup
+                diseaseExperimentalToExperimental += agent.diseaseWithExperimentalGroup
+                lendingExperimentalToControl += agent.lendingWithControlGroup
+                lendingExperimentalToExperimental += agent.lendingWithExperimentalGroup
+                reproductionExperimentalToControl += agent.reproductionWithControlGroup
+                reproductionExperimentalToExperimental += agent.reproductionWithExperimentalGroup
+                tradeExperimentalToControl += agent.tradeWithControlGroup
+                tradeExperimentalToExperimental += agent.tradeWithExperimentalGroup
+                agent.resetTimestepMetrics()
+            elif group != None and agent.isInGroup(group, True):
+                combatControlToControl += agent.combatWithControlGroup
+                combatControlToExperimental += agent.combatWithExperimentalGroup
+                diseaseControlToControl += agent.diseaseWithControlGroup
+                diseaseControlToExperimental += agent.diseaseWithExperimentalGroup
+                lendingControlToControl += agent.lendingWithControlGroup
+                lendingControlToExperimental += agent.lendingWithExperimentalGroup
+                reproductionControlToControl += agent.reproductionWithControlGroup
+                reproductionControlToExperimental += agent.reproductionWithExperimentalGroup
+                tradeControlToControl += agent.tradeWithControlGroup
+                tradeControlToExperimental += agent.tradeWithExperimentalGroup
+                agent.resetTimestepMetrics()
             numAgents += 1
 
             for disease in agent.diseases:
@@ -946,6 +1012,11 @@ class Sugarscape:
         for agent in self.deadAgents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
                 continue
+            # If agent moved this timestep but died, count its movement optimality
+            if agent.timestep == self.timestep:
+                if agent.lastMoveOptimal == True:
+                    agentLastMoveOptimalityPercentage += 1
+                agentMoves += 1
             agentWealth = agent.sugar + agent.spice
             meanAgeAtDeath += agent.age
             agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
@@ -953,6 +1024,28 @@ class Sugarscape:
             agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
             agentDiseaseDeaths += 1 if agent.diseaseDeath == True else 0
             agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
+            if group != None and agent.isInGroup(group):
+                combatExperimentalToControl += agent.combatWithControlGroup
+                combatExperimentalToExperimental += agent.combatWithExperimentalGroup
+                diseaseExperimentalToControl += agent.diseaseWithControlGroup
+                diseaseExperimentalToExperimental += agent.diseaseWithExperimentalGroup
+                lendingExperimentalToControl += agent.lendingWithControlGroup
+                lendingExperimentalToExperimental += agent.lendingWithExperimentalGroup
+                reproductionExperimentalToControl += agent.reproductionWithControlGroup
+                reproductionExperimentalToExperimental += agent.reproductionWithExperimentalGroup
+                tradeExperimentalToControl += agent.tradeWithControlGroup
+                tradeExperimentalToExperimental += agent.tradeWithExperimentalGroup
+            elif group != None and agent.isInGroup(group, True):
+                combatControlToControl += agent.combatWithControlGroup
+                combatControlToExperimental += agent.combatWithExperimentalGroup
+                diseaseControlToControl += agent.diseaseWithControlGroup
+                diseaseControlToExperimental += agent.diseaseWithExperimentalGroup
+                lendingControlToControl += agent.lendingWithControlGroup
+                lendingControlToExperimental += agent.lendingWithExperimentalGroup
+                reproductionControlToControl += agent.reproductionWithControlGroup
+                reproductionControlToExperimental += agent.reproductionWithExperimentalGroup
+                tradeControlToControl += agent.tradeWithControlGroup
+                tradeControlToExperimental += agent.tradeWithExperimentalGroup
             numDeadAgents += 1
 
             for disease in agent.diseases:
@@ -1006,6 +1099,7 @@ class Sugarscape:
             meanDeathsPercentage = round((numDeadAgents / numAgents) * 100, 2)
             sickAgentsPercentage = round((sickAgents / numAgents) * 100, 2)
             diseaseEffectiveReproductionRate = round(diseaseIncidence / len(infectors), 2) if len(infectors) > 0 else 0
+            agentLastMoveOptimalityPercentage = round((agentLastMoveOptimalityPercentage / agentMoves) * 100, 2)
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
@@ -1052,7 +1146,21 @@ class Sugarscape:
                         "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
                         "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
                         "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
-                        "diseasePrevalence": diseasePrevalence}
+                        "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage}
+
+        controlInteractionStats = {"combatControlGroupToControlGroup": combatControlToControl, "combatControlGroupToExperimentalGroup": combatControlToExperimental,
+                                   "diseaseControlGroupToControlGroup": diseaseControlToControl, "diseaseControlGroupToExperimentalGroup": diseaseControlToExperimental,
+                                   "lendingControlGroupToControlGroup": lendingControlToControl, "lendingControlGroupToExperimentalGroup": lendingControlToExperimental,
+                                   "reproductionControlGroupToControlGroup": reproductionControlToControl, "reproductionControlGroupToExperimentalGroup": reproductionControlToExperimental,
+                                   "tradeControlGroupToControlGroup": tradeControlToControl, "tradeControlGroupToExperimentalGroup": tradeControlToExperimental,
+                                   }
+
+        experimentalInteractionStats = {"combatExperimentalGroupToControlGroup": combatExperimentalToControl, "combatExperimentalGroupToExperimentalGroup": combatExperimentalToExperimental,
+                                        "diseaseExperimentalGroupToControlGroup": diseaseExperimentalToControl, "diseaseExperimentalGroupToExperimentalGroup": diseaseExperimentalToExperimental,
+                                        "lendingExperimentalGroupToControlGroup": lendingExperimentalToControl, "lendingExperimentalGroupToExperimentalGroup": lendingExperimentalToExperimental,
+                                        "reproductionExperimentalGroupToControlGroup": reproductionExperimentalToControl, "reproductionExperimentalGroupToExperimentalGroup": reproductionExperimentalToExperimental,
+                                        "tradeExperimentalGroupToControlGroup": tradeExperimentalToControl, "tradeExperimentalGroupToExperimentalGroup": tradeExperimentalToExperimental
+                                        }
 
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
@@ -1070,6 +1178,10 @@ class Sugarscape:
                 groupKey = groupString + key[0].upper() + key[1:]
                 groupStats[groupKey] = runtimeStats[key]
             runtimeStats = groupStats
+            if notInGroup == True:
+                runtimeStats.update(controlInteractionStats)
+            else:
+                runtimeStats.update(experimentalInteractionStats)
 
         for key in runtimeStats.keys():
             self.runtimeStats[key] = runtimeStats[key]
