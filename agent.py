@@ -587,7 +587,6 @@ class Agent:
                 spiceSellerMRS = spiceSeller.marginalRateOfSubstitution
                 sugarSellerMRS = sugarSeller.marginalRateOfSubstitution
 
-                # TODO: Fix bug where a spice or sugar seller has a negative MRS
                 if spiceSellerMRS < 0 or sugarSellerMRS < 0:
                     spiceSeller = None
                     sugarSeller = None
@@ -985,39 +984,6 @@ class Agent:
         elif sugarNeed == 0:
             return 1 / sugarMetabolism
         return spiceNeed / sugarNeed
-
-    # TODO: Tally factors of hedons/dolors for given cell
-    def findPotentialNiceOfCell(self, cell):
-        potentialMates = []
-        # TODO: Trading nice capped at max number of resources traded to achieve MRS of 1
-        potentialTraders = []
-        # TODO: Lending nice capped at max amount of wealth agent can lend
-        potentialBorrowers = []
-        # TODO: Combat nice capped at wealth agent can score for tribe/neighborhood/etc.
-        potentialPrey = []
-        cellNeighborAgents = cell.findNeighborAgents()
-        aggression = self.findAggression()
-        for agent in cellNeighborAgents:
-            if agent.isAlive() == False:
-                continue
-            if self.isFertile() == True:
-                neighborCompatibility = self.isNeighborReproductionCompatible(agent)
-                emptyNeighborCells = agent.findEmptyNeighborCells()
-                if neighborCompatibility == True and len(emptyNeighborCells) != 0:
-                    potentialMates.append(agent)
-            if self.isLender() == True and agent.isBorrower() == True:
-                potentialBorrowers.append(agent)
-            if self.tradeFactor > 0 and agent.tradeFactor > 0 and self.canTradeWithNeighbor(agent) == True:
-                potentialTraders.append(agent)
-            if aggression > 0 and self.tribe != agent.tribe and self.sugar + self.spice >= agent.sugar + agent.spice:
-                potentialPrey.append(agent)
-        # TODO: Make nice calculation more fine-grained than just potentialities
-        reproductionSugarCost = self.startingSugar / (self.fertilityFactor * 2) if self.fertilityFactor > 0 else 0
-        reproductionSpiceCost = self.startingSpice / (self.fertilityFactor * 2) if self.fertilityFactor > 0 else 0
-        maxReproductionAttemptsByResources = min(reproductionSugarCost, reproductionSpiceCost)
-        potentialMates = min(len(potentialMates), maxReproductionAttemptsByResources)
-        potentialNice = potentialMates + len(potentialTraders + potentialBorrowers + potentialPrey)
-        return potentialNice
 
     def findRetaliatorsInVision(self):
         retaliators = {}
