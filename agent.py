@@ -672,7 +672,7 @@ class Agent:
         if self.decisionModelFactor > 0:
             bestCell = self.findBestEthicalCell(potentialCells, greedyBestCell)
         if bestCell == None:
-            bestCell = self.cell
+            bestCell = greedyBestCell
         if bestCell == greedyBestCell:
             self.lastMoveOptimal = True
         else:

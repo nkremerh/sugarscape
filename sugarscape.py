@@ -1315,7 +1315,7 @@ def verifyConfiguration(configuration):
         configuration["environmentMaxSugar"] = random.randint(1, 10)
     for peak in configuration["environmentSpicePeaks"]:
         if len(peak) < 3:
-            peak.append(random.randint(1, configuration["environmentMaxSpice"]))
+            peak.append(configuration["environmentMaxSpice"])
         if peak[0] < 0:
             peak[0] = random.randint(0, configuration["environmentWidth"] - 1)
         if peak[1] < 0:
@@ -1326,7 +1326,7 @@ def verifyConfiguration(configuration):
             peak[2] = configuration["environmentMaxSpice"]
     for peak in configuration["environmentSugarPeaks"]:
         if len(peak) < 3:
-            peak.append(random.randint(1, configuration["environmentMaxSugar"]))
+            peak.append(configuration["environmentMaxSugar"])
         if peak[0] < 0:
             peak[0] = random.randint(0, configuration["environmentWidth"] - 1)
         if peak[1] < 0:
