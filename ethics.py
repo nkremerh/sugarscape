@@ -5,6 +5,9 @@ import sys
 class Bentham(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
+        self.lastTimeToLive = 0
+        if "dynamicSelfishness" in configuration:
+            self.dynamicSelfishness = configuration["dynamicSelfishness"]
 
     def findEthicalValueOfCell(self, cell):
         happiness = 0
@@ -94,16 +97,9 @@ class Bentham(agent.Agent):
             return {"happiness": happiness, "unhappiness": unhappiness}
         return cellValue
 
-    def spawnChild(self, childID, birthday, cell, configuration):
-        return Bentham(childID, birthday, cell, configuration)
-
-class ReactiveBentham(Bentham):
-    def __init__(self, agentID, birthday, cell, configuration):
-        super().__init__(agentID, birthday, cell, configuration)
-        self.lastTimeToLive = 0
-
     def updateValues(self):
-        self.updateSelfishnessFactor()
+        if self.dynamicSelfishness == True:
+            self.updateSelfishnessFactor()
 
     def updateSelfishnessFactor(self):
         if self.timeToLive < self.lastTimeToLive and self.selfishnessFactor < 1.0:
@@ -112,6 +108,9 @@ class ReactiveBentham(Bentham):
             self.selfishnessFactor -= 0.01
         self.selfishnessFactor = round(self.selfishnessFactor, 2)
         self.lastTimeToLive = self.timeToLive
+
+    def spawnChild(self, childID, birthday, cell, configuration):
+        return Bentham(childID, birthday, cell, configuration)
 
 class Leader(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):

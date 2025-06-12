@@ -189,11 +189,9 @@ class Sugarscape:
             elif "negativeBentham" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
                 a.selfishnessFactor = -1
-            elif "reactiveBentham" in agentConfiguration["decisionModel"]:
-                a = ethics.ReactiveBentham(agentID, self.timestep, randomCell, agentConfiguration)
-                if agentConfiguration["selfishnessFactor"] < 0:
-                    a.selfishnessFactor = 0.5
 
+            if "Dynamic" in agentConfiguration["decisionModel"]:
+                a.dynamicSelfishness = True
             if "NoLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0
             elif "HalfLookahead" in agentConfiguration["decisionModel"]:

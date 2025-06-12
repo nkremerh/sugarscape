@@ -64,6 +64,7 @@ class Agent:
         self.depressed = False
         self.diseaseDeath = False
         self.diseases = []
+        self.dynamicSelfishness = False
         self.familyHappiness = 0
         self.fertile = False
         self.fertilityFactorModifier = 0
@@ -780,6 +781,7 @@ class Agent:
         "decisionModelLookaheadDiscount": [self.decisionModelLookaheadDiscount, mate.decisionModelLookaheadDiscount],
         "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
         "decisionModelTribalFactor": [self.decisionModelTribalFactor, mate.decisionModelTribalFactor],
+        "dynamicSelfishness": [self.dynamicSelfishness, mate.dynamicSelfishness],
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
         }
         childEndowment = {"seed": self.seed, "follower": self.follower}
