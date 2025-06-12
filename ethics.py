@@ -110,6 +110,7 @@ class ReactiveBentham(Bentham):
             self.selfishnessFactor += 0.01
         elif self.timeToLive > self.lastTimeToLive and self.selfishnessFactor > 0.0:
             self.selfishnessFactor -= 0.01
+        self.selfishnessFactor = round(self.selfishnessFactor, 2)
         self.lastTimeToLive = self.timeToLive
 
 class Leader(agent.Agent):
