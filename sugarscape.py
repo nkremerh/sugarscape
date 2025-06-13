@@ -50,14 +50,17 @@ class Sugarscape:
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
         self.keepAlive = configuration["keepAlivePostExtinction"]
+        self.agentEndowments = []
+        self.agentLeader = None
         self.agents = []
-        self.replacedAgents = []
         self.bornAgents = []
         self.deadAgents = []
         self.depression = True if configuration["agentDepressionPercentage"] > 0 else False
         self.diseases = []
+        self.endowmentIndex = 0
         self.remainingDiseases = []
-        self.agentLeader = None
+        self.replacedAgents = []
+
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureDepression()
         self.configureAgents(configuration["startingAgents"])
@@ -140,11 +143,15 @@ class Sugarscape:
                     self.environment.findCell(i, j).maxSugar = cellMaxCapacity
                     self.environment.findCell(i, j).sugar = cellMaxCapacity
 
-    def configureAgents(self, numAgents):
+    def configureAgents(self, numAgents, editCell=None):
         if self.environment == None:
             return
+        if editCell != None and editCell.isOccupied():
+            return
+        if editCell != None and numAgents != 1:
+            numAgents = 1
 
-        if self.configuration["agentLeader"] == True:
+        if self.configuration["agentLeader"] == True and self.agentLeader == None:
             numAgents += 1
 
         emptyCells = [[cell for cell in quadrant if cell.agent == None] for quadrant in self.activeQuadrants]
@@ -158,36 +165,42 @@ class Sugarscape:
             numAgents = totalCells
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
-        agentEndowments = self.randomizeAgentEndowments(numAgents)
-        for quadrant in emptyCells:
-            random.shuffle(quadrant)
-        quadrantIndices = [i for i in range(quadrants)]
-        random.shuffle(quadrantIndices)
+        if len(self.agentEndowments) == 0:
+            self.agentEndowments = self.randomizeAgentEndowments(numAgents)
+        quadrantIndices = []
+        if editCell == None:
+            for quadrant in emptyCells:
+                random.shuffle(quadrant)
+            quadrantIndices = [i for i in range(quadrants)]
+            random.shuffle(quadrantIndices)
 
         for i in range(numAgents):
-            quadrantIndex = quadrantIndices[i % quadrants]
-            randomCell = emptyCells[quadrantIndex].pop()
-            agentConfiguration = agentEndowments[i]
+            placementCell = editCell
+            if editCell == None:
+                quadrantIndex = quadrantIndices[i % quadrants]
+                placementCell = emptyCells[quadrantIndex].pop()
+            agentConfiguration = self.agentEndowments[self.endowmentIndex % len(self.agentEndowments)]
+            self.endowmentIndex += 1
             agentID = self.generateAgentID()
-            a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
-            if self.configuration["agentLeader"] == True and i == 0:
-                a = ethics.Leader(agentID, self.timestep, randomCell, agentConfiguration)
+            a = agent.Agent(agentID, self.timestep, placementCell, agentConfiguration)
+            if self.configuration["agentLeader"] == True and self.agentLeader == None:
+                a = ethics.Leader(agentID, self.timestep, placementCell, agentConfiguration)
                 cornerCell = self.environment.grid[0][0]
                 a.gotoCell(cornerCell)
                 self.agentLeader = a
             # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = 0
             elif "bentham" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
             elif "egoist" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = 1
             elif "negativeBentham" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = -1
 
             if "Dynamic" in agentConfiguration["decisionModel"]:
@@ -201,7 +214,7 @@ class Sugarscape:
                 tags = self.generateTribeTags(tribe)
                 a.tags = tags
                 a.tribe = a.findTribe()
-            randomCell.agent = a
+            placementCell.agent = a
             self.agents.append(a)
             if self.timestep > 0:
                 self.replacedAgents.append(a)

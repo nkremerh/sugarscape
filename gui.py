@@ -51,7 +51,7 @@ class GUI:
         self.highlightedAgent = None
         self.highlightedCell = None
         self.highlightRectangle = None
-        self.menuTrayColumns = 6
+        self.menuTrayColumns = 7
         self.siteHeight = (self.screenHeight - 2 * self.borderEdge) / self.sugarscape.environmentHeight
         self.siteWidth = (self.screenWidth - 2 * self.borderEdge) / self.sugarscape.environmentWidth
         self.stopSimulation = False
@@ -135,6 +135,20 @@ class GUI:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
         environmentColorButton.grid(row=0, column=5, sticky="nsew")
 
+        editingButton = tkinter.Menubutton(window, text="Editing Mode", relief=tkinter.RAISED)
+        editingMenu = tkinter.Menu(editingButton, tearoff=0)
+        editingButton.configure(menu=editingMenu)
+        editingModes = self.configureEditingModes()
+        editingModes.sort()
+        editingModes.insert(0, "None")
+        self.lastSelectedEditingMode = tkinter.StringVar(window)
+
+        # Use first item as default name
+        self.lastSelectedEditingMode.set(editingModes[0])
+        for mode in editingModes:
+            editingMenu.add_checkbutton(label=mode, onvalue=mode, offvalue=mode, variable=self.lastSelectedEditingMode, command=self.doEditingMenu, indicatoron=True)
+        editingButton.grid(row=0, column=6, sticky="nsew")
+
         statsLabel = tkinter.Label(window, text=self.defaultSimulationString, font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
         cellLabel = tkinter.Label(window, text=f"{self.defaultCellString}\n{self.defaultAgentString}", font="Roboto 10", justify=tkinter.CENTER)
@@ -145,6 +159,7 @@ class GUI:
         self.widgets["networkButton"] = networkButton
         self.widgets["graphButton"] = graphButton
         self.widgets["agentColorButton"] = agentColorButton
+        self.widgets["editingButton"] = editingButton
         self.widgets["environmentColorButton"] = environmentColorButton
         self.widgets["agentColorMenu"] = agentColorMenu
         self.widgets["environmentColorMenu"] = environmentColorMenu
@@ -160,6 +175,9 @@ class GUI:
             canvas.bind("<Control-Button-1>", self.doControlClick)
             self.doubleClick = False
         self.canvas = canvas
+
+    def configureEditingModes(self):
+        return ["Add Agent"]
 
     def configureEnvironment(self):
         if self.activeNetwork.get() != "None":
@@ -313,8 +331,8 @@ class GUI:
         self.canvas.after(300, self.doClickAction, event)
 
     def doClickAction(self, event):
+        cell = self.findClickedCell(event)
         if self.doubleClick == True:
-            cell = self.findClickedCell(event)
             if cell == self.highlightedCell or cell.agent == None:
                 self.clearHighlight()
             else:
@@ -323,13 +341,14 @@ class GUI:
                 self.highlightCell(cell)
             self.doubleClick = False
         else:
-            cell = self.findClickedCell(event)
             if cell == self.highlightedCell and self.highlightedAgent == None:
                 self.clearHighlight()
             else:
                 self.highlightedCell = cell
                 self.highlightedAgent = None
                 self.highlightCell(cell)
+        if self.lastSelectedEditingMode.get() != "None":
+            self.doEditAction(cell)
         self.doTimestep()
 
     def doControlClick(self, event):
@@ -351,6 +370,15 @@ class GUI:
 
     def doDoubleClick(self, event):
         self.doubleClick = True
+
+    def doEditAction(self, cell):
+        mode = self.lastSelectedEditingMode.get()
+        if mode == "Add Agent":
+            self.sugarscape.configureAgents(1, cell)
+        self.doTimestep()
+
+    def doEditingMenu(self):
+        self.doTimestep()
 
     def doEnvironmentColorMenu(self):
         self.activeColorOptions["environment"] = self.lastSelectedEnvironmentColor.get()
@@ -739,6 +767,7 @@ class GUI:
                 self.canvas.coords(labels[i], x2, y2)
 
     def updateLabels(self):
+        self.sugarscape.updateRuntimeStats()
         stats = self.sugarscape.runtimeStats
         statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats['population']} | Metabolism: {stats['meanMetabolism']} | Movement: {stats['meanMovement']} | Vision: {stats['meanVision']} | Gini: {stats['giniCoefficient']} | Trade Price: {stats['meanTradePrice']} | Trade Volume: {stats['tradeVolume']}"
         label = self.widgets["statsLabel"]
