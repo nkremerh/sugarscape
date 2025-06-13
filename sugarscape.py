@@ -47,7 +47,7 @@ class Sugarscape:
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
-        self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
+        self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"], configuration["environmentFile"])
         self.debug = configuration["debugMode"]
         self.keepAlive = configuration["keepAlivePostExtinction"]
         self.agentEndowmentIndex = 0
@@ -304,23 +304,40 @@ class Sugarscape:
             self.diseaseEndowmentIndex += 1
             selectedAgent.catchDisease(newDisease)
 
-    def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
+    def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks, environmentFile=None):
         height = self.environment.height
         width = self.environment.width
-        for i in range(width):
-            for j in range(height):
-                newCell = cell.Cell(i, j, self.environment)
-                self.environment.setCell(newCell, i, j)
+        if environmentFile == None:
+            for i in range(width):
+                for j in range(height):
+                    newCell = cell.Cell(i, j, self.environment)
+                    self.environment.setCell(newCell, i, j)
 
-        sugarRadiusScale = 2
-        radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
-        for peak in sugarPeaks:
-            self.addResourcePeak(peak[0], peak[1], radius, peak[2], "sugar")
+            sugarRadiusScale = 2
+            radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
+            for peak in sugarPeaks:
+                self.addResourcePeak(peak[0], peak[1], radius, peak[2], "sugar")
 
-        spiceRadiusScale = 2
-        radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
-        for peak in spicePeaks:
-            self.addResourcePeak(peak[0], peak[1], radius, peak[2], "spice")
+            spiceRadiusScale = 2
+            radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
+            for peak in spicePeaks:
+                self.addResourcePeak(peak[0], peak[1], radius, peak[2], "spice")
+        else:
+            environmentFile = open(environmentFile)
+            loadEnvironment = json.loads(environmentFile.read())
+            environmentFile.close()
+            height = len(loadEnvironment)
+            width = len(loadEnvironment[0])
+            self.environment.height = height
+            self.environment.width = width
+            self.environmentHeight = height
+            self.environmentWidth = width
+            for i in range(width):
+                for j in range(height):
+                    loadSpice = loadEnvironment[i][j]["spice"]
+                    loadSugar = loadEnvironment[i][j]["sugar"]
+                    newCell = cell.Cell(i, j, self.environment, loadSpice, loadSugar)
+                    self.environment.setCell(newCell, i, j)
         self.environment.findCellNeighbors()
         self.environment.findCellRanges()
 
@@ -1561,6 +1578,7 @@ if __name__ == "__main__":
                      "diseaseTransmissionChance": [1.0, 1.0],
                      "diseaseVisionPenalty": [0, 0],
                      "environmentEquator": -1,
+                     "environmentFile": None,
                      "environmentHeight": 50,
                      "environmentMaxCombatLoot": 0,
                      "environmentMaxSpice": 0,

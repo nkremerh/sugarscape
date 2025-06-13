@@ -374,6 +374,10 @@ environmentEquator: int
     Note: Value of -1 causes equator to be set at the midpoint of the environment.
     Default: -1
 
+environmentFile: string
+    Set the path to the environment description file.
+    Default: null
+
 environmentHeight: int
     Set the height in cells of the Sugarscape environment.
     Default: 50
