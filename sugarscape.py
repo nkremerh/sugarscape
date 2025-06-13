@@ -50,14 +50,16 @@ class Sugarscape:
         self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
         self.debug = configuration["debugMode"]
         self.keepAlive = configuration["keepAlivePostExtinction"]
+        self.agentEndowmentIndex = 0
         self.agentEndowments = []
         self.agentLeader = None
         self.agents = []
         self.bornAgents = []
         self.deadAgents = []
         self.depression = True if configuration["agentDepressionPercentage"] > 0 else False
+        self.diseaseEndowmentIndex = 0
+        self.diseaseEndowments = []
         self.diseases = []
-        self.endowmentIndex = 0
         self.remainingDiseases = []
         self.replacedAgents = []
 
@@ -179,8 +181,8 @@ class Sugarscape:
             if editCell == None:
                 quadrantIndex = quadrantIndices[i % quadrants]
                 placementCell = emptyCells[quadrantIndex].pop()
-            agentConfiguration = self.agentEndowments[self.endowmentIndex % len(self.agentEndowments)]
-            self.endowmentIndex += 1
+            agentConfiguration = self.agentEndowments[self.agentEndowmentIndex % len(self.agentEndowments)]
+            self.agentEndowmentIndex += 1
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, placementCell, agentConfiguration)
             if self.configuration["agentLeader"] == True and self.agentLeader == None:
@@ -228,60 +230,67 @@ class Sugarscape:
             self.depression = condition.Depression()
             self.diseases.append(self.depression)
 
-    def configureDiseases(self, numDiseases, namedDiseases):
+    def configureDiseases(self, numDiseases, namedDiseases, editCell=None):
         numAgents = len(self.agents)
         if numAgents == 0:
             return
         elif numAgents < numDiseases:
             numDiseases = numAgents
 
-        premadeDiseases  = []
-        for disease in namedDiseases:
-            validDisease = 0
-            if "zombieVirus" in disease:
-                zombie = condition.ZombieVirus("zombieVirus", {})
-                premadeDiseases.append(zombie)
-                validDisease = 1
-            if validDisease == 1:
-                numDiseases -= 1
+        if len(self.diseaseEndowments) == 0:
+            premadeDiseases  = []
+            for disease in namedDiseases:
+                validDisease = 0
+                if "zombieVirus" in disease:
+                    zombie = condition.ZombieVirus("zombieVirus", {})
+                    premadeDiseases.append(zombie)
+                    validDisease = 1
+                if validDisease == 1:
+                    numDiseases -= 1
 
-        diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
-        random.shuffle(self.agents)
-        initialDiseases = []
-        for i in range(numDiseases):
+            self.diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
+            random.shuffle(self.agents)
+            initialDiseases = []
+            for i in range(numDiseases):
+                diseaseID = self.generateDiseaseID()
+                diseaseConfiguration = self.diseaseEndowments[i]
+                newDisease = condition.Disease(diseaseID, diseaseConfiguration)
+                if diseaseConfiguration["startTimestep"] == 0:
+                    initialDiseases.append(newDisease)
+                else:
+                    self.remainingDiseases.append(newDisease)
+            initialDiseases.extend(premadeDiseases)
+
+            startingDiseases = self.configuration["startingDiseasesPerAgent"]
+            minStartingDiseases = startingDiseases[0]
+            maxStartingDiseases = startingDiseases[1]
+            currStartingDiseases = minStartingDiseases
+            for agent in self.agents:
+                random.shuffle(initialDiseases)
+                for newDisease in initialDiseases:
+                    if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
+                        currStartingDiseases += 1
+                        break
+                    if newDisease.tags != None:
+                        hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
+                        if hammingDistance == 0:
+                            continue
+                    agent.catchDisease(newDisease, initial=True)
+                    self.diseases.append(newDisease)
+                    if startingDiseases == [0, 0]:
+                        initialDiseases.remove(newDisease)
+                        break
+                if currStartingDiseases > maxStartingDiseases:
+                    currStartingDiseases = minStartingDiseases
+
+            if startingDiseases == [0, 0] and len(initialDiseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
+                print(f"Could not place {len(diseases)} diseases.")
+        elif editCell != None and editCell.isOccupied() == True:
+            selectedAgent = editCell.agent
             diseaseID = self.generateDiseaseID()
-            diseaseConfiguration = diseaseEndowments[i]
-            newDisease = condition.Disease(diseaseID, diseaseConfiguration)
-            if diseaseConfiguration["startTimestep"] == 0:
-                initialDiseases.append(newDisease)
-            else:
-                self.remainingDiseases.append(newDisease)
-
-        startingDiseases = self.configuration["startingDiseasesPerAgent"]
-        minStartingDiseases = startingDiseases[0]
-        maxStartingDiseases = startingDiseases[1]
-        currStartingDiseases = minStartingDiseases
-        initialDiseases.extend(premadeDiseases)
-        for agent in self.agents:
-            random.shuffle(initialDiseases)
-            for newDisease in initialDiseases:
-                if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
-                    currStartingDiseases += 1
-                    break
-                if newDisease.tags != None:
-                    hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
-                    if hammingDistance == 0:
-                        continue
-                agent.catchDisease(newDisease, initial=True)
-                self.diseases.append(newDisease)
-                if startingDiseases == [0, 0]:
-                    initialDiseases.remove(newDisease)
-                    break
-            if currStartingDiseases > maxStartingDiseases:
-                currStartingDiseases = minStartingDiseases
-
-        if startingDiseases == [0, 0] and len(initialDiseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-            print(f"Could not place {len(diseases)} diseases.")
+            newDisease = condition.Disease(diseaseID, self.diseaseEndowments[self.diseaseEndowmentIndex % len(self.diseaseEndowments)])
+            self.diseaseEndowmentIndex += 1
+            selectedAgent.catchDisease(newDisease)
 
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
         height = self.environment.height

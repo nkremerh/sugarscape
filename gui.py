@@ -177,7 +177,7 @@ class GUI:
         self.canvas = canvas
 
     def configureEditingModes(self):
-        return ["Add Agent"]
+        return ["Add Agent", "Add Disease"]
 
     def configureEnvironment(self):
         if self.activeNetwork.get() != "None":
@@ -375,6 +375,8 @@ class GUI:
         mode = self.lastSelectedEditingMode.get()
         if mode == "Add Agent":
             self.sugarscape.configureAgents(1, cell)
+        elif mode == "Add Disease":
+            self.sugarscape.configureDiseases(1, [], cell)
         self.doTimestep()
 
     def doEditingMenu(self):
