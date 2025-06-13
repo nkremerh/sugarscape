@@ -225,6 +225,18 @@ class Sugarscape:
             a.findCellsInRange()
             a.findNeighborhood()
 
+    def configureCell(self, cell, mode, delta):
+        if cell == None or delta == 0:
+            return
+        if mode == "currentSpice":
+            cell.spice = min(max(0, (cell.spice + delta)), self.environment.globalMaxSpice)
+        elif mode == "currentSugar":
+            cell.sugar = min(max(0, (cell.sugar + delta)), self.environment.globalMaxSugar)
+        elif mode == "maximumSpice":
+            cell.maxSpice = min(max(0, (cell.maxSpice + delta)), self.environment.globalMaxSpice)
+        elif mode == "maximumSugar":
+            cell.maxSugar = min(max(0, (cell.maxSugar + delta)), self.environment.globalMaxSugar)
+
     def configureDepression(self):
         if self.depression == True:
             self.depression = condition.Depression()

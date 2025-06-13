@@ -177,7 +177,8 @@ class GUI:
         self.canvas = canvas
 
     def configureEditingModes(self):
-        return ["Add Agent", "Add Disease"]
+        return ["Add Agent", "Add Disease", "Add Current Spice", "Add Current Sugar", "Add Maximum Spice", "Add Maximum Sugar",
+                "Remove Current Spice", "Remove Current Sugar", "Remove Maximum Spice", "Remove Maximum Sugar"]
 
     def configureEnvironment(self):
         if self.activeNetwork.get() != "None":
@@ -377,6 +378,14 @@ class GUI:
             self.sugarscape.configureAgents(1, cell)
         elif mode == "Add Disease":
             self.sugarscape.configureDiseases(1, [], cell)
+        elif "Current" in mode:
+            resourceMode = "currentSpice" if "Spice" in mode else "currentSugar"
+            delta = 1 if "Add" in mode else -1
+            self.sugarscape.configureCell(cell, resourceMode, delta)
+        elif "Maximum" in mode:
+            resourceMode = "maximumSpice" if "Spice" in mode else "maximumSugar"
+            delta = 1 if "Add" in mode else -1
+            self.sugarscape.configureCell(cell, resourceMode, delta)
         self.doTimestep()
 
     def doEditingMenu(self):
