@@ -24,7 +24,7 @@ class Bentham(agent.Agent):
         globalMaxWealth = cell.environment.globalMaxSugar + cell.environment.globalMaxSpice
         cellValue = 0
         neighborhoodSize = len(self.neighborhood)
-        futureNeighborhoodSize = len(self.findNeighborhood(cell))
+        futureNeighborhoodSize = len(self.findNeighborhood(cell)) if self.decisionModelLookaheadFactor != 0 else 1
         for neighbor in self.neighborhood:
             certainty = 1 if neighbor.canReachCell(cell) == True else 0
             # Skip if agent cannot reach cell
@@ -39,7 +39,7 @@ class Bentham(agent.Agent):
             intensity = (1 / (1 + neighbor.findTimeToLive()) / (1 + cell.pollution))
             duration = cellDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
             # Agent discount, futureDuration, and futureIntensity implement Bentham's purity and fecundity
-            discount = neighbor.decisionModelLookaheadDiscount
+            discount = neighbor.decisionModelLookaheadDiscount if neighbor.decisionModelLookaheadFactor != 0 else 0
             futureDuration = (cellSiteWealth - neighborMetabolism) / neighborMetabolism if neighborMetabolism > 0 else cellSiteWealth
             futureDuration = futureDuration / cellMaxSiteWealth if cellMaxSiteWealth > 0 else 0
             # Normalize future intensity by number of adjacent cells
@@ -51,30 +51,16 @@ class Bentham(agent.Agent):
             futureExtent = futureNeighborhoodSize / cellsInRange if cellsInRange > 0 and self.decisionModelLookaheadFactor != 0 else 1
             neighborCellValue = 0
 
+            currentReward = extent * (intensity + duration)
+            futureReward = futureExtent * (futureIntensity + futureDuration)
+            neighborCellValue = (certainty * proximity) * (currentReward + (discount * futureReward))
+
             # If not the agent moving, consider these as opportunity costs
-            if neighbor != self and cell != neighbor.cell and self.selfishnessFactor < 1:
-                duration = -1 * duration
-                intensity = -1 * intensity
-                futureDuration = -1 * futureDuration
-                futureIntensity = -1 * futureIntensity
-                if self.decisionModelLookaheadFactor == 0:
-                    neighborCellValue = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
-                else:
-                    neighborCellValue = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
-            # If move will kill this neighbor, consider this a penalty
-            elif neighbor != self and cell == neighbor.cell and self.selfishnessFactor < 1:
-                if self.decisionModelLookaheadFactor == 0:
-                    neighborCellValue = -1 * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
-                else:
-                    neighborCellValue = -1 * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
-                # If penalty is too slight, make it more severe
-                if neighborCellValue > -1:
+            if neighbor != self and self.selfishnessFactor < 1:
+                neighborCellValue = -1 * neighborCellValue
+                # If move will kill this neighbor and penalty is too slight, make it more severe
+                if cell == neighbor.cell and neighborCellValue > -1:
                     neighborCellValue = -1
-            else:
-                if self.decisionModelLookaheadFactor == 0:
-                    neighborCellValue = neighbor.decisionModelFactor * ((extent * certainty * proximity) * ((intensity + duration) + (discount * (futureIntensity + futureDuration))))
-                else:
-                    neighborCellValue = neighbor.decisionModelFactor * ((certainty * proximity) * ((extent * (intensity + duration)) + (discount * (futureExtent * (futureIntensity + futureDuration)))))
 
             if self.decisionModelTribalFactor >= 0:
                 if neighbor.findTribe() == self.findTribe():
