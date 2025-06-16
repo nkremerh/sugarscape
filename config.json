@@ -6,6 +6,7 @@
         "numParallelSimJobs": 1,
         "numSeeds": 100,
         "plots": ["deaths", "giniCoefficient", "happiness", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "sickness", "tradeVolume"],
+        "plotStatistic": "mean",
         "plotTimesteps": 1000,
         "pythonAlias": "python"
     },

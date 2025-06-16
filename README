@@ -575,6 +575,11 @@ plots: [string, ...]
     Options: "combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "selfishness", "socialHappiness", "wealth", "wealthHappiness"
     Default: ["deaths", "giniCoefficient", "happiness", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "sickness", "tradeVolume"]
 
+plotStatistic: string
+    Set the statistic to use for plotting.
+    Options: "mean", "median"
+    Default: "mean"
+
 plotTimesteps: int
     Set the number of timesteps to plot in graphs as the X axis.
     Note: This option does not control how many timesteps the simulation runs.
