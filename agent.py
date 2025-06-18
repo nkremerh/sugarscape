@@ -20,6 +20,7 @@ class Agent:
         self.decisionModelTribalFactor = configuration["decisionModelTribalFactor"]
         self.depressionFactor = configuration["depressionFactor"]
         self.diseaseProtectionChance = configuration["diseaseProtectionChance"]
+        self.dynamicSelfishness = configuration["dynamicSelfishness"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
         self.follower = configuration["follower"]
@@ -64,7 +65,6 @@ class Agent:
         self.depressed = False
         self.diseaseDeath = False
         self.diseases = []
-        self.dynamicSelfishness = False
         self.familyHappiness = 0
         self.fertile = False
         self.fertilityFactorModifier = 0

@@ -6,8 +6,6 @@ class Bentham(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
         self.lastTimeToLive = 0
-        if "dynamicSelfishness" in configuration:
-            self.dynamicSelfishness = configuration["dynamicSelfishness"]
 
     def findEthicalValueOfCell(self, cell):
         happiness = 0

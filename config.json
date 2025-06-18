@@ -22,6 +22,7 @@
         "agentDecisionModelTribalFactor": [-1, -1],
         "agentDepressionPercentage": 0,
         "agentDiseaseProtectionChance": [0.0, 0.0],
+        "agentDynamicSelfishness": false,
         "agentFemaleInfertilityAge": [40, 50],
         "agentFemaleFertilityAge": [12, 15],
         "agentFertilityFactor": [1, 1],

@@ -211,6 +211,7 @@ class Sugarscape:
                 a.decisionModelLookaheadFactor = 0
             elif "HalfLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0.5
+
             if self.configuration["environmentTribePerQuadrant"] == True:
                 tribe = quadrantIndex
                 tags = self.generateTribeTags(tribe)
@@ -488,6 +489,7 @@ class Sugarscape:
         decisionModelLookaheadFactor = configs["agentDecisionModelLookaheadFactor"]
         decisionModelTribalFactor = configs["agentDecisionModelTribalFactor"]
         diseaseProtectionChance = configs["agentDiseaseProtectionChance"]
+        dynamicSelfishness = configs["agentDynamicSelfishness"]
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -628,7 +630,8 @@ class Sugarscape:
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
                               "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
-                              "depressionFactor": depressionFactors[i], "follower": follower}
+                              "depressionFactor": depressionFactors[i], "follower": follower,
+                              "dynamicSelfishness": dynamicSelfishness}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -1533,6 +1536,7 @@ if __name__ == "__main__":
                      "agentDecisionModelTribalFactor": [-1, -1],
                      "agentDepressionPercentage": 0,
                      "agentDiseaseProtectionChance": [0.0, 0.0],
+                     "agentDynamicSelfishness": False,
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],

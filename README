@@ -147,7 +147,7 @@ agentDecisionModels: [string, ...]
     Set the agent decision models for different decisionmaking.
     Options: "altruist", "bentham", "egoist", "negativeBentham", "none", "rawSugarscape"
     Note: Adding either "HalfLookahead" or "NoLookahead" after a decision model name will enforce a particular decision model lookahead factor.
-    Note: Adding "Dynamic" after a decision model name will enforce dynamic selfishness in response to agent life circumstances.
+    Note: Adding "Dynamic" after a decision model name enforces dynamic selfishness.
     Default: ["none"]
 
 agentDecisionModelTribalFactor: [float, float]
@@ -166,6 +166,11 @@ agentDiseaseProtectionChance: [float, float]
     Note: Value of 0.0 means no protection.
     Note: Value of 1.0 means perfect protection.
     Default: [0.0, 0.0]
+
+agentDynamicSelfishness: bool
+    Set whether agents dynamically change their selfishness in response to their life circumstances.
+    Note: Only functional for certain decision models.
+    Default: false
 
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
