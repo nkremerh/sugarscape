@@ -82,14 +82,14 @@ class Bentham(agent.Agent):
         return cellValue
 
     def updateValues(self):
-        if self.dynamicSelfishness == True:
+        if self.dynamicSelfishnessFactor != 0:
             self.updateSelfishnessFactor()
 
     def updateSelfishnessFactor(self):
         if self.timeToLive < self.lastTimeToLive and self.selfishnessFactor < 1.0:
-            self.selfishnessFactor += 0.01
+            self.selfishnessFactor += self.dynamicSelfishnessFactor
         elif self.timeToLive > self.lastTimeToLive and self.selfishnessFactor > 0.0:
-            self.selfishnessFactor -= 0.01
+            self.selfishnessFactor -= self.dynamicSelfishnessFactor
         self.selfishnessFactor = round(self.selfishnessFactor, 2)
         self.lastTimeToLive = self.timeToLive
 

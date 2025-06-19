@@ -205,8 +205,9 @@ class Sugarscape:
                 a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = -1
 
-            if "Dynamic" in agentConfiguration["decisionModel"]:
-                a.dynamicSelfishness = True
+            # If dynamic selfishness is desired but not defined, give a small degree of dynamic selfishness
+            if "Dynamic" in agentConfiguration["decisionModel"] and self.configuration["agentDynamicSelfishnessFactor"] == [0.0, 0.0]:
+                a.dynamicSelfishnessFactor = 0.01
             if "NoLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0
             elif "HalfLookahead" in agentConfiguration["decisionModel"]:
@@ -489,7 +490,7 @@ class Sugarscape:
         decisionModelLookaheadFactor = configs["agentDecisionModelLookaheadFactor"]
         decisionModelTribalFactor = configs["agentDecisionModelTribalFactor"]
         diseaseProtectionChance = configs["agentDiseaseProtectionChance"]
-        dynamicSelfishness = configs["agentDynamicSelfishness"]
+        dynamicSelfishnessFactor = configs["agentDynamicSelfishnessFactor"]
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -531,6 +532,7 @@ class Sugarscape:
                           "decisionModelLookaheadDiscount": {"endowments": [], "curr": decisionModelLookaheadDiscount[0], "min": decisionModelLookaheadDiscount[0], "max": decisionModelLookaheadDiscount[1]},
                           "decisionModelTribalFactor": {"endowments": [], "curr": decisionModelTribalFactor[0], "min": decisionModelTribalFactor[0], "max": decisionModelTribalFactor[1]},
                           "diseaseProtectionChance": {"endowments": [], "curr": diseaseProtectionChance[0], "min": diseaseProtectionChance[0], "max": diseaseProtectionChance[1]},
+                          "dynamicSelfishnessFactor": {"endowments": [], "curr": dynamicSelfishnessFactor[0], "min": dynamicSelfishnessFactor[0], "max": dynamicSelfishnessFactor[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
@@ -630,8 +632,7 @@ class Sugarscape:
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
                               "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
-                              "depressionFactor": depressionFactors[i], "follower": follower,
-                              "dynamicSelfishness": dynamicSelfishness}
+                              "depressionFactor": depressionFactors[i], "follower": follower}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
                 if sexes[i] == "female" and config == "femaleFertilityAge":
@@ -1536,7 +1537,7 @@ if __name__ == "__main__":
                      "agentDecisionModelTribalFactor": [-1, -1],
                      "agentDepressionPercentage": 0,
                      "agentDiseaseProtectionChance": [0.0, 0.0],
-                     "agentDynamicSelfishness": False,
+                     "agentDynamicSelfishnessFactor": [0.0, 0.0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
