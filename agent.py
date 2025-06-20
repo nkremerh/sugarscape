@@ -1136,7 +1136,9 @@ class Agent:
 
     def isInGroup(self, group, notInGroup=False):
         membership = False
-        if group == "depressed":
+        if group == self.decisionModel:
+            membership = True
+        elif group == "depressed":
             membership = self.depressed
         elif "disease" in group:
             diseaseID = re.search(r"disease(?P<ID>\d+)", group).group("ID")

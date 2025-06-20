@@ -499,7 +499,7 @@ environmentWraparound: bool
 
 experimentalGroup: string
     Set the experimental group of agents under study for finer-grained logging.
-    Options: "depressed", "disease", "female", "male", "sick"
+    Options: "depressed", "disease", "female", "male", "sick", decision model names
     Note: Add an integer after "disease" such as "disease1" to track a specific disease.
     Default: null
 

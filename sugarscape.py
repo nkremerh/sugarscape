@@ -1475,14 +1475,6 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
         configuration["environmentMaxTribes"] = maxColors
 
-    # Ensure experimental group is properly defined or otherwise ignored
-    if configuration["experimentalGroup"] == "":
-        configuration["experimentalGroup"] = None
-    elif configuration["experimentalGroup"] != None and configuration["experimentalGroup"] not in ["depressed", "female", "male", "sick"] and "disease" not in configuration["experimentalGroup"]:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot provide separate log stats for experimental group {configuration['experimentalGroup']}. Disabling separate log stats.")
-        configuration["experimentalGroup"] = None
-
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
         startingDiseasesPerAgent = sorted(configuration["startingDiseasesPerAgent"])
@@ -1523,6 +1515,19 @@ def verifyConfiguration(configuration):
             configuration["agentDecisionModels"] = configuration["agentDecisionModel"]
     if type(configuration["agentDecisionModels"]) == str:
             configuration["agentDecisionModels"] = [configuration["agentDecisionModels"]]
+
+    # Ensure experimental group is properly defined or otherwise ignored
+    if configuration["experimentalGroup"] == "":
+        configuration["experimentalGroup"] = None
+    groupList = ["depressed", "female", "male", "sick"]
+    if type(configuration["agentDecisionModels"]) == str:
+        groupList.append(configuration["agentDecisionModels"])
+    else:
+        groupList += configuration["agentDecisionModels"]
+    if configuration["experimentalGroup"] != None and configuration["experimentalGroup"] not in groupList and "disease" not in configuration["experimentalGroup"]:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot provide separate log stats for experimental group {configuration['experimentalGroup']}. Disabling separate log stats.")
+        configuration["experimentalGroup"] = None
     return configuration
 
 if __name__ == "__main__":
