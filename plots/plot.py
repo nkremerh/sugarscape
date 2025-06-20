@@ -111,11 +111,11 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, lab
             controlGroupColumn = "control" + column[0].upper() + column[1:]
             controlGroupLabel = f"Control {modelStrings[modelString]}"
             y = [dataset[model]["aggregates"][controlGroupColumn][i] for i in range(totalTimesteps + 1)]
-            axes.plot(x, y, color=colors[model], label=controlGroupLabel)
+            axes.plot(x, y, color=colors[modelString], label=controlGroupLabel)
             experimentalGroupColumn = experimentalGroup + column[0].upper() + column[1:]
             experimentalGroupLabel = experimentalGroup[0].upper() + experimentalGroup[1:] + f" {modelStrings[modelString]}"
             y = [dataset[model]["aggregates"][experimentalGroupColumn][i] for i in range(totalTimesteps + 1)]
-            axes.plot(x, y, color=colors[model], label=experimentalGroupLabel, linestyle="dotted")
+            axes.plot(x, y, color=colors[modelString], label=experimentalGroupLabel, linestyle="dotted")
         else:
             y = [dataset[model]["aggregates"][column][i] for i in range(totalTimesteps + 1)]
             axes.plot(x, y, color=colors[modelString], label=modelStrings[modelString])
