@@ -63,7 +63,7 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
         generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_health_happiness.pdf", "meanHealthHappiness", f"{titleStatistic} Health Happiness", "center right", False, experimentalGroup)
     if "lifeExpectancy" in config["plots"]:
         print(f"Generating {statistic} life expectancy plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_life_expectancy.pdf", "meanAgeAtDeath", f"{titleStatistic} Age at Death", "lower right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_life_expectancy.pdf", "meanAgeAtDeath", f"{titleStatistic} Life Expectancy", "lower right", False, experimentalGroup)
     if "population" in config["plots"]:
         print(f"Generating {statistic} population plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_population.pdf", "population", f"{titleStatistic} Population", "lower right", False, experimentalGroup)
