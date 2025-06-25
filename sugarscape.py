@@ -777,7 +777,11 @@ class Sugarscape:
             t += 1
             if self.gui != None and self.run == False:
                 self.pauseSimulation()
-        self.endSimulation()
+        if self.configuration.get("keepAliveAtEnd", False):
+            self.run = False
+            self.pauseSimulation()
+        else:
+            self.endSimulation()
 
     def startLog(self):
         if self.log == None:
