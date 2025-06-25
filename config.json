@@ -99,6 +99,7 @@
         "interfaceHeight": 1400,
         "interfaceWidth": 1200,
         "keepAlivePostExtinction": false,
+        "keepAliveAtEnd": false,
         "logfile": "log.json",
         "logfileFormat": "json",
         "neighborhoodMode": "vonNeumann",
