@@ -1619,7 +1619,7 @@ if __name__ == "__main__":
                      "interfaceHeight": 1000,
                      "interfaceWidth": 900,
                      "keepAlivePostExtinction": False,
-                     "keepAliveAtEnd": True,
+                     "keepAliveAtEnd": False,
                      "logfile": None,
                      "logfileFormat": "json",
                      "neighborhoodMode": "vonNeumann",
