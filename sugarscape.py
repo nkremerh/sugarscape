@@ -777,7 +777,11 @@ class Sugarscape:
             t += 1
             if self.gui != None and self.run == False:
                 self.pauseSimulation()
-        self.endSimulation()
+        if self.configuration["keepAliveAtEnd"] == True and self.gui != None:
+            self.run = False
+            self.pauseSimulation()
+        else:
+            self.endSimulation()
 
     def startLog(self):
         if self.log == None:
@@ -1619,6 +1623,7 @@ if __name__ == "__main__":
                      "interfaceHeight": 1000,
                      "interfaceWidth": 900,
                      "keepAlivePostExtinction": False,
+                     "keepAliveAtEnd": False,
                      "logfile": None,
                      "logfileFormat": "json",
                      "neighborhoodMode": "vonNeumann",
