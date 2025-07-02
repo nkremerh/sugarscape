@@ -16,10 +16,14 @@ DATASET = $(DATACHECK) \
 PLOTS = $(PLOTCHECK) \
 		plots/*.pdf
 
+TESTS = tests/*.config \
+        tests/*.log
+
 CLEAN = $(DATASET) \
 		$(LOGS) \
 		$(PLOTS) \
-		$(SCREENSHOTS)
+		$(SCREENSHOTS) \
+		$(TESTS)
 
 # Change to python3 (or other alias) if needed
 PYTHON = python
@@ -63,7 +67,7 @@ else
 endif
 
 test:
-	cd tests && $(PYTHON) $(TEST) -c ../$(CONFIG)
+	cd tests && $(PYTHON) $(TEST) --conf ../$(CONFIG)
 
 clean:
 	rm -rf $(CLEAN) || true
@@ -72,3 +76,4 @@ lean:
 	rm -rf $(PLOTS) || true
 
 .PHONY: all clean data lean plots run seeds setup test
+# vim: set noexpandtab tabstop=4:
