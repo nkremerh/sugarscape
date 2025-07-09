@@ -317,7 +317,7 @@ class Temperance(agent.Agent):
     
     # Should somehow include the agent's ethical value of the cell to influence the effects on the agent
     def addHerbConsumptionEffectsToAgent(self) -> None:
-        # Can have cascading effects on happiness, temperance, herb desire, metaobolism, etc. depdening how far we want to take it
+        # Can have cascading effects on happiness, temperance, herb desire, metabolism, etc. depending how far we want to take it
         if self.herb == 0:
             self.herbDesireFactor += 0.2
             # May need to decrease effect on happiness based on timestamp or prioritizing spice/sugar
@@ -359,3 +359,31 @@ class Temperance(agent.Agent):
     def spawnChild(self, childID, birthday, cell, configuration) -> "Temperance":
         # Child inherits parent's temperance factor, but is initialized with a temperance factor of 0.5
         return Temperance(childID, birthday, cell, configuration, temperanceFactor=self.temperanceFactor)
+    
+    
+
+#TODO: Pause on the herb stuff for now, implement the simple alogrithm for temperance from the paper first, complete the simple way
+
+class SimpleTemperance(agent.Agent):
+    def __init__(self, agentID, birthday, cell, configuration):
+        super().__init__(agentID, birthday, cell, configuration)
+        self.temperanceChangeRate = configuration.get("temperanceChangeRate", 0.5)
+        self.temperanceFactor = configuration.get("temperanceFactor", 0.5)
+        
+    def doTemperanceDecision(self):
+        randomValue = random.random()
+        
+        if (randomValue >= self.temperanceFactor):
+            self.doIntemperanceAction()
+        else:
+            self.doTemperanceAction()
+            
+    def doIntemperanceAction(self):
+        self.temperanceFactor -= self.temperanceChangeRate
+    
+    def doTemperanceAction(self):
+        self.temperanceFactor += self.temperanceChangeRate
+
+    
+    def spawnChild(self, childID, birthday, cell, configuration):
+        return SimpleTemperance(childID, birthday, cell, configuration)

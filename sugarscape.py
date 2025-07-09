@@ -529,7 +529,10 @@ class Sugarscape:
         universalSugar = configs["agentUniversalSugar"]
         vision = configs["agentVision"]
         visionMode = configs["agentVisionMode"]
+        temperanceFactor = configs["agentTemperanceFactor"]
+        temperanceChangeRate = configs["agentTemperanceChangeFactor"]
 
+               
         numDepressedAgents = int(math.ceil(numAgents * configs["agentDepressionPercentage"]))
         depressionFactors = [1 for i in range(numDepressedAgents)] + [0 for i in range(numAgents - numDepressedAgents)]
         random.shuffle(depressionFactors)
@@ -560,7 +563,8 @@ class Sugarscape:
                           "tradeFactor": {"endowments": [], "curr": tradeFactor[0], "min": tradeFactor[0], "max": tradeFactor[1]},
                           "universalSpice": {"endowments": [], "curr": universalSpice[0], "min": universalSpice[0], "max": universalSugar[1]},
                           "universalSugar": {"endowments": [], "curr": universalSugar[0], "min": universalSugar[0], "max": universalSugar[1]},
-                          "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]}
+                          "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]},
+                          "temperanceFactor"
                           }
 
         if self.agentConfigHashes == None:
@@ -1495,6 +1499,27 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have agent maximum selfishness factor of {configuration['agentSelfishnessFactor'][1]}. Setting agent maximum selfishness factor to 1.0.")
         configuration["agentSelfishnessFactor"][1] = 1
+    
+    # Ensure agent temperance is properly set
+    if configuration["agentTemperanceFactor"][0] < 0:
+        if configuration["agentTemperanceFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(f"Cannot have agent temperance range of  {configuration['agentTemperanceFactor']}. Disabling agent temperance.")
+        configuration["agentTemperanceFactor"] = [-1,-1]
+    elif configuration["agentTemperanceFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have agent maximum temperance factor of {configuration['agentTemperanceFactor'][1]}. Setting agent maximum temperance factor to 0.5.")
+        configuration["agentTemperanceFactor"][1] = 0.5
+    
+    if configuration["agentTemperanceChangeFactor"][0] < 0:
+        if configuration["agentTemperanceFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(f"Cannot have agent temperance change range of  {configuration['agentTemperanceChangeFactor']}. Disabling agent temperance.")
+        configuration["agentTemperanceChangeFactor"] = [-1,-1]
+    elif configuration["agentTemperanceChangeFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have agent maximum temperance change factor of {configuration['agentTemperanceChangeFactor'][1]}. Setting agent maximum temperance change factor to 0.5.")
+        configuration["agentTemperanceChangeFactor"][1] = 0.5
 
     if configuration["agentTagStringLength"] < 0:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
@@ -1626,6 +1651,8 @@ if __name__ == "__main__":
                      "agentUniversalSugar": [0,0],
                      "agentVision": [1, 6],
                      "agentVisionMode": "cardinal",
+                     "agentTemperanceFactor": [0,1],
+                     "agentTemperanceChangeFactor": [0,1],
                      "debugMode": ["none"],
                      "diseaseAggressionPenalty": [0, 0],
                      "diseaseFertilityPenalty": [0, 0],
