@@ -362,17 +362,14 @@ class Temperance(agent.Agent):
     
     
 
-#TODO: Pause on the herb stuff for now, implement the simple alogrithm for temperance from the paper first, complete the simple way
-
 class SimpleTemperance(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
-        self.temperanceChangeRate = configuration.get("temperanceChangeRate", 0.5)
-        self.temperanceFactor = configuration.get("temperanceFactor", 0.5)
+        self.temperanceChangeRate = configuration["agentTemperanceChangeFactor"]
+        self.temperanceFactor = configuration["agentTemperanceFactor"]
         
     def doTemperanceDecision(self):
         randomValue = random.random()
-        
         if (randomValue >= self.temperanceFactor):
             self.doIntemperanceAction()
         else:
