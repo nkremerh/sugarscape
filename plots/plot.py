@@ -9,7 +9,7 @@ import re
 import sys
 
 def findMeans(dataset):
-    print("Finding mean values across {0} timesteps".format(totalTimesteps))
+    print(f"Finding mean values across {totalTimesteps} timesteps")
     for model in dataset:
         for column in dataset[model]["metrics"]:
             for i in range(len(dataset[model]["metrics"][column])):
@@ -19,7 +19,7 @@ def findMeans(dataset):
     return dataset
 
 def findMedians(dataset):
-    print("Finding median values across {0} timesteps".format(totalTimesteps))
+    print(f"Finding median values across {totalTimesteps} timesteps")
     for model in dataset:
         for column in dataset[model]["metrics"]:
             for i in range(len(dataset[model]["metrics"][column])):
@@ -98,6 +98,7 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, lab
     figure, axes = matplotlib.pyplot.subplots()
     axes.set(xlabel = "Timestep", ylabel = label, xlim = [0, totalTimesteps])
     x = [i for i in range(totalTimesteps + 1)]
+    y = [0 for i in range(totalTimesteps + 1)]
     lines = []
     modelStrings = {"bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape", "multiple": "Multiple", "unknown": "Unknown"}
     colors = {"bentham": "magenta", "egoist": "cyan", "altruist": "gold", "none": "black", "rawSugarscape": "black ", "multiple": "red", "unknown": "green"}
@@ -110,13 +111,16 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, lab
         if experimentalGroup != None:
             controlGroupColumn = "control" + column[0].upper() + column[1:]
             controlGroupLabel = f"Control {modelStrings[modelString]}"
-            y = [dataset[model]["aggregates"][controlGroupColumn][i] for i in range(totalTimesteps + 1)]
-            axes.plot(x, y, color=colors[modelString], label=controlGroupLabel)
             experimentalGroupColumn = experimentalGroup + column[0].upper() + column[1:]
             experimentalGroupLabel = experimentalGroup[0].upper() + experimentalGroup[1:] + f" {modelStrings[modelString]}"
-            y = [dataset[model]["aggregates"][experimentalGroupColumn][i] for i in range(totalTimesteps + 1)]
-            axes.plot(x, y, color=colors[modelString], label=experimentalGroupLabel, linestyle="dotted")
-        else:
+            # Prevent key error if all seeds went extinct for model
+            if column in dataset[model]["aggregates"]:
+                y = [dataset[model]["aggregates"][controlGroupColumn][i] for i in range(totalTimesteps + 1)]
+                axes.plot(x, y, color=colors[modelString], label=controlGroupLabel)
+                y = [dataset[model]["aggregates"][experimentalGroupColumn][i] for i in range(totalTimesteps + 1)]
+                axes.plot(x, y, color=colors[modelString], label=experimentalGroupLabel, linestyle="dotted")
+        # Prevent key error if all seeds went extinct for model
+        elif column in dataset[model]["aggregates"]:
             y = [dataset[model]["aggregates"][column][i] for i in range(totalTimesteps + 1)]
             axes.plot(x, y, color=colors[modelString], label=modelStrings[modelString])
         axes.legend(loc=positioning, labelspacing=0.1, frameon=False, fontsize=16)
@@ -140,7 +144,7 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
             continue
         seed = fileSearch.group(2)
         log = open(filePath)
-        print("Reading log {0}".format(filePath))
+        print(f"Reading log {filePath}")
         rawData = None
         if filename.endswith(".json"):
             rawData = json.loads(log.read())
@@ -148,7 +152,7 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
             rawData = list(csv.DictReader(log))
 
         if int(rawData[-1]["population"]) == 0:
-            dataset[model]["died"] += 1
+            dataset[model]["extinct"] += 1
             if skipExtinct == True:
                 continue
         elif int(rawData[-1]["population"]) <= int(rawData[0]["population"]):
@@ -225,9 +229,9 @@ def printHelp():
     exit(0)
 
 def printSummaryStats(dataset):
-    print("Model population performance:\n{0:^30} {1:^5} {2:^5} {3:^5}".format("Decision Model", "Extinct", "Worse", "Better"))
+    print(f"Model population performance:\n{'Decision Model':^30} {'Extinct':^5} {'Worse':^5} {'Better':^5}")
     for model in dataset:
-        print("{0:^30}: {1:^5} {2:^5} {3:^5}".format(model, dataset[model]["died"], dataset[model]["worse"], dataset[model]["better"]))
+        print(f"{model:^30} {dataset[model]['extinct']:^5} {dataset[model]['worse']:^5} {dataset[model]['better']:^5}")
 
 if __name__ == "__main__":
     options = parseOptions()
@@ -247,7 +251,7 @@ if __name__ == "__main__":
         modelString = model
         if type(model) == list:
             modelString = '_'.join(model)
-        dataset[modelString] = {"runs": 0, "died": 0, "worse": 0, "better": 0, "timesteps": 0, "aggregates": {}, "firstQuartiles": {}, "thirdQuartiles": {}, "metrics": {}}
+        dataset[modelString] = {"runs": 0, "extinct": 0, "worse": 0, "better": 0, "timesteps": 0, "aggregates": {}, "firstQuartiles": {}, "thirdQuartiles": {}, "metrics": {}}
 
     if not os.path.exists(path):
         print(f"Path {path} not recognized.")
