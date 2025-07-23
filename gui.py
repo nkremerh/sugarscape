@@ -92,7 +92,7 @@ class GUI:
         self.activeNetwork.set(networkNames[0])
         for network in networkNames:
             networkMenu.add_checkbutton(label=network, onvalue=network, offvalue=network, variable=self.activeNetwork, command=self.doNetworkMenu, indicatoron=True)
-        networkButton.grid(row=0, column=2, sticky="nsew") 
+        networkButton.grid(row=0, column=2, sticky="nsew")
 
         graphButton = tkinter.Menubutton(window, text="Graphs", relief=tkinter.RAISED)
         graphMenu = tkinter.Menu(graphButton, tearoff=0)
@@ -105,7 +105,7 @@ class GUI:
         self.activeGraph.set(graphNames[0])
         for graph in graphNames:
             graphMenu.add_checkbutton(label=graph, onvalue=graph, offvalue=graph, variable=self.activeGraph, command=self.doGraphMenu, indicatoron=True)
-        graphButton.grid(row=0, column=3, sticky="nsew") 
+        graphButton.grid(row=0, column=3, sticky="nsew")
 
         agentColorButton = tkinter.Menubutton(window, text="Agent Coloring", relief=tkinter.RAISED)
         agentColorMenu = tkinter.Menu(agentColorButton, tearoff=0)
@@ -618,7 +618,7 @@ class GUI:
             subval = hexval[i:i + 2]
             intvals.append(int(subval, 16))
         return intvals
-    
+
     def highlightCell(self, cell):
         x = cell.x
         y = cell.y
@@ -645,7 +645,7 @@ class GUI:
     def lookupFillColor(self, cell):
         if self.activeNetwork.get() != "None":
             return self.lookupNetworkColor(cell)
-        
+
         agent = cell.agent
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
