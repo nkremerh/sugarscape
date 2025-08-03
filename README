@@ -27,6 +27,9 @@ make plots
     Generate graph plots from any JSON files in the data subdirectory.
     Note: Plots are dependent on a dataset existing and will create it if necessary.
 
+make run
+    Run the simulation using the default config.json file and storing a local log in the log.json file.
+
 make seeds
     Generate a set of random seeds comparing selected decision models.
     Note: Results will be saved in the data subdirectory.
@@ -36,7 +39,8 @@ make setup
     Note: Changed settings may alter Makefile and configuration file in-place.
 
 make test
-    Run the simulation using the default config.json file and storing a local log in the log.json file.
+    Run a testing suite in the tests directory using the configuration files in the examples directory.
+    Note: It is suggested to run make test after modifying or adding Sugarscape features.
 
 Preconfigured Examples from Growing Artificial Societies:
 A selection of examples can be found in the examples directory.
