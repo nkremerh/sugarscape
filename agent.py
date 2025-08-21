@@ -1042,6 +1042,18 @@ class Agent:
         tribe = min(math.ceil((self.tagZeroes + 1) / tribeSize) - 1, numTribes - 1)
         return tribe
 
+    def findViableCells(self):
+        self.findCellsInRange()
+        viable_cells = []
+        sugar_meta = self.findSugarMetabolism()
+        spice_meta = self.findSpiceMetabolism()
+        for cell in self.cellsInRange.keys():
+            sim_sugar = self.sugar + cell.sugar - sugar_meta
+            sim_spice = self.spice + cell.spice - spice_meta
+            if sim_sugar >0 and sim_spice>0:
+                viable_cells.append(cell)
+        return viable_cells
+
     def findVision(self):
         return max(0, self.vision + self.visionModifier)
 
