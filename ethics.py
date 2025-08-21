@@ -102,7 +102,7 @@ class Leader(agent.Agent):
         # Special leader agent should be configured to be immortal and omniscient
         self.fertilityFactor = 0.0
         self.follower = False
-        self.grid = [[None for j in range(self.cell.environment.height) ] for i in range(self.cell.environment.width)]
+        self.grid = [[[] for j in range(self.cell.environment.height)] for i in range(self.cell.environment.width)]
         self.agentPlacements = {}
         self.leader = True
         self.maxAge = -1
@@ -120,47 +120,6 @@ class Leader(agent.Agent):
         if len(agents) == 1 and agents[0] == self:
             self.doDeath("aging")
 
-    # helper function for findBestCell method
-    # this helper function assigns an "urgency score" to each agent based on
-    # different strategies. The score is calculated using up to three factors:
-    # TTL, happiness, and disease status.
-    # The Leader then uses these scores to prioritize which agents need the most help first.
-    def urgencyScore(self, agent, strategy="ttl+happiness+disease"):
-        # 1. Time to Live (TTL): the less TTL, the more urgent
-        ttl = agent.findTimeToLive()
-        ttl = max(0, ttl)  # make sure ttl is not less than 0
-
-        # 2. happiness (normalized to [0, 1])
-        happiness = agent.findHappiness()
-        happiness = max(0.0, min(1.0, happiness))  # keep value between 0 and 1
-
-        # 3. Disease: if agent is sick, add extra urgency
-        diseaseScore = 1.0 if agent.isSick() else 0.0
-
-        # Combine scores
-        # totalUrgency = ttl + happiness + diseaseScore
-
-        # If the strategy is only based on ttl, then compute
-        # the urgency score using 10 / (ttl + 1) to give higher scores to agents
-        # who are close to dying (lower ttl).
-        if strategy == "ttl":
-            return 10 / (ttl + 1)
-
-        # This strategy adds both ttl and (1 - happiness).
-        # If the agent is unhappy (happiness closer to 0), the score increases.
-        # lower ttl gives higher score.
-        elif strategy == "ttl+happiness":
-            return 10 / (ttl + 1) + (1 - happiness)
-
-        # This strategy includes disease status as well. If the agent is sick,
-        # diseased should be 1; if healthy, it’s 0. So sick agents get higher urgency scores.
-        elif strategy == "ttl+happiness+disease":
-            return 10 / (ttl + 1) + (1 - happiness) + diseaseScore
-
-        # If an unknown strategy is passed, just return 0 to indicate no urgency
-        else:
-            return 0
-
     def moveAgentsToCells(self):
         self.resetForTimestep()
         env = self.cell.environment
@@ -171,27 +130,31 @@ class Leader(agent.Agent):
         agents = self.cell.environment.sugarscape.agents
         agentsByNeed = []
         for agent in agents:
-            # For each agent, store:
-            # - reference to the agent
-            # - urgency score (calculated using helper function)
-            # - list of ranked cells the agent can move to
-            agentsByNeed.append({"agent": agent, "urgency": self.urgencyScore(agent,"ttl+happiness+disease"), "cells": agent.rankCellsInRange()})
+            if agent.isAlive() == False or agent == self:
+                continue
+            urgency = self.findUrgencyForAgent(agent)
+            viableCells = self.findViableCellsForAgent(agent)
+            for cell in viableCells:
+                self.grid[cell.x][cell.y].append({"agent": agent, "urgency": urgency})
 
-        # Sort all agents by urgency score, highest first
-        agentsByNeed = sorted(agentsByNeed, key=lambda r: r["urgency"], reverse=True)
+        width = self.cell.environment.width
+        height = self.cell.environment.height
 
-        # Assign cells to agents in order of urgency
-        for agentRecord in agentsByNeed:
-            agent = agentRecord["agent"]
-            for cellRecord in agentRecord["cells"]:
-                cell = cellRecord["cell"]
-                if self.grid[cell.x][cell.y] == None:
-                    self.grid[cell.x][cell.y] = agent
-                    self.agentPlacements[agent.ID] = self.cell.environment.grid[cell.x][cell.y]
-                    break
-        # Default to remain at cell if agent cannot find a new cell
-        if agent.ID not in self.agentPlacements:
-            self.agentPlacements[agent.ID] = agent.cell
+        placedAgents = []
+        for i in range(width):
+            for j in range(height):
+                if len(self.grid[i][j]) == 0:
+                    continue
+                sorted(self.grid[i][j], key=lambda agentRecord: agentRecord["urgency"])
+                agent = self.grid[i][j].pop()["agent"]
+                cell = self.cell.environment.grid[i][j]
+                invalidCell = cell.isOccupied() and agent.isNeighborValidPrey(cell.agent) == False
+                while len(self.grid[i][j]) > 0 and (agent in placedAgents or agent.isAlive() == False or invalidCell == True) and len(self.grid[i][j]):
+                    agent = self.grid[i][j].pop()["agent"]
+                    invalidCell = cell.isOccupied() and agent.isNeighborValidPrey(cell.agent) == False
+                self.agentPlacements[agent.ID] = cell
+
+        # Leader agent should not move
         return self.cell
 
     def findBestCellForAgent(self, agent):
@@ -199,12 +162,31 @@ class Leader(agent.Agent):
             return agent.cell
         return self.agentPlacements[agent.ID]
 
+    def findUrgencyForAgent(self, agent):
+        diseased = 0 if agent.isSick() else 1
+        happiness = agent.findHappiness()
+        timeToLive = agent.findTimeToLive()
+        # Lower score yields higher urgency
+        return diseased + happiness + timeToLive
+
+    def findViableCellsForAgent(self, agent):
+        agent.findCellsInRange()
+        viableCells = []
+        spiceMetabolism = agent.findSpiceMetabolism()
+        sugarMetabolism = agent.findSugarMetabolism()
+        for cell in agent.cellsInRange:
+            viableSpice = agent.spice + cell.spice - spiceMetabolism
+            viableSugar = agent.sugar + cell.sugar - sugarMetabolism
+            if viableSpice > 0 and viableSugar > 0:
+                viableCells.append(cell)
+        return viableCells
+
     def resetForTimestep(self):
         # Always ensure leader has maximum resources each timestep
         self.spice = sys.maxsize
         self.sugar = sys.maxsize
-        self.grid = [[None for j in range(self.cell.environment.height) ] for i in range(self.cell.environment.width)]
-        self.grid[self.cell.x][self.cell.y] = self
+        self.grid = [[[] for j in range(self.cell.environment.height) ] for i in range(self.cell.environment.width)]
+        #self.grid[self.cell.x][self.cell.y] = self
         self.agentPlacements = {self.ID: self.cell}
 
     def spawnChild(self, childID, birthday, cell, configuration):
