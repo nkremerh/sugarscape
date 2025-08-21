@@ -120,6 +120,47 @@ class Leader(agent.Agent):
         if len(agents) == 1 and agents[0] == self:
             self.doDeath("aging")
 
+    # helper function for findBestCell method
+    # this helper function assigns an "urgency score" to each agent based on
+    # different strategies. The score is calculated using up to three factors:
+    # TTL, happiness, and disease status.
+    # The Leader then uses these scores to prioritize which agents need the most help first.
+    def urgencyScore(self, agent, strategy="ttl+happiness+disease"):
+        # 1. Time to Live (TTL): the less TTL, the more urgent
+        ttl = agent.findTimeToLive()
+        ttl = max(0, ttl)  # make sure ttl is not less than 0
+
+        # 2. happiness (normalized to [0, 1])
+        happiness = agent.findHappiness()
+        happiness = max(0.0, min(1.0, happiness))  # keep value between 0 and 1
+
+        # 3. Disease: if agent is sick, add extra urgency
+        diseaseScore = 1.0 if agent.isSick() else 0.0
+
+        # Combine scores
+        # totalUrgency = ttl + happiness + diseaseScore
+
+        # If the strategy is only based on ttl, then compute
+        # the urgency score using 10 / (ttl + 1) to give higher scores to agents
+        # who are close to dying (lower ttl).
+        if strategy == "ttl":
+            return 10 / (ttl + 1)
+
+        # This strategy adds both ttl and (1 - happiness).
+        # If the agent is unhappy (happiness closer to 0), the score increases.
+        # lower ttl gives higher score.
+        elif strategy == "ttl+happiness":
+            return 10 / (ttl + 1) + (1 - happiness)
+
+        # This strategy includes disease status as well. If the agent is sick,
+        # diseased should be 1; if healthy, it’s 0. So sick agents get higher urgency scores.
+        elif strategy == "ttl+happiness+disease":
+            return 10 / (ttl + 1) + (1 - happiness) + diseaseScore
+
+        # If an unknown strategy is passed, just return 0 to indicate no urgency
+        else:
+            return 0
+
     def findBestCell(self):
         self.resetForTimestep()
         agents = self.cell.environment.sugarscape.agents
