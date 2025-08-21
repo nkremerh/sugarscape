@@ -161,6 +161,11 @@ class Leader(agent.Agent):
         else:
             return 0
 
+    def moveAgentsToCells(self):
+        self.resetForTimestep()
+        env = self.cell.environment
+        agents = env.sugarscape.agents
+
     def findBestCell(self):
         self.resetForTimestep()
         agents = self.cell.environment.sugarscape.agents
