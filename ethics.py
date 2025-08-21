@@ -166,8 +166,16 @@ class Leader(agent.Agent):
         agents = self.cell.environment.sugarscape.agents
         agentsByNeed = []
         for agent in agents:
-            agentsByNeed.append({"agent": agent, "ttl": agent.findTimeToLive(), "cells": agent.rankCellsInRange()})
-        agentsByNeed = sorted(agentsByNeed, key=lambda agent: agent["ttl"])
+            # For each agent, store:
+            # - reference to the agent
+            # - urgency score (calculated using helper function)
+            # - list of ranked cells the agent can move to
+            agentsByNeed.append({"agent": agent, "urgency": self.urgencyScore(agent,"ttl+happiness+disease"), "cells": agent.rankCellsInRange()})
+
+        # Sort all agents by urgency score, highest first
+        agentsByNeed = sorted(agentsByNeed, key=lambda r: r["urgency"], reverse=True)
+
+        # Assign cells to agents in order of urgency
         for agentRecord in agentsByNeed:
             agent = agentRecord["agent"]
             for cellRecord in agentRecord["cells"]:
