@@ -73,7 +73,8 @@ class Agent:
         self.happinessUnit = 1
         self.happinessModifier = 0
         self.healthHappiness = 0
-        self.lastDoneCombat = -1
+        self.lastDoneCombat = [-1, None]
+        self.lastTraded = [-1, None]
         self.lastMoved = -1
         self.lastMoveOptimal = True
         self.lastReproduced = -1
@@ -246,7 +247,7 @@ class Agent:
             spiceLoot = min(maxCombatLoot, preySpice)
             self.sugar += sugarLoot
             self.spice += spiceLoot
-            self.lastDoneCombat = self.cell.environment.sugarscape.timestep
+            self.lastDoneCombat = [self.cell.environment.sugarscape.timestep, prey.ID]
             prey.sugar -= sugarLoot
             prey.spice -= spiceLoot
             prey.doDeath("combat")
@@ -642,9 +643,15 @@ class Agent:
                 self.tradeVolume += 1
                 self.sugarPrice += sugarPrice
                 self.spicePrice += spicePrice
+                if transactions > 0:
+                    if self.lastTraded[0] == self.timestep:
+                        self.lastTraded.append(trader.ID)
+                    else:
+                        self.lastTraded = [self.timestep, trader.ID]
                 trader.updateTimesTradedWithAgent(self, self.lastMoved, transactions)
                 self.updateTimesTradedWithAgent(trader, self.lastMoved, transactions)
                 sugarscape = self.cell.environment.sugarscape
+                
                 if sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup):
                     self.tradeWithExperimentalGroup += 1
                 elif sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup, True):
@@ -862,7 +869,7 @@ class Agent:
         return childEndowment
 
     def findConflictHappiness(self):
-        if self.lastDoneCombat == self.cell.environment.sugarscape.timestep:
+        if self.lastDoneCombat[1] == self.cell.environment.sugarscape.timestep:
             if(self.findAggression() > 1):
                 return self.happinessUnit
             else:
@@ -1093,6 +1100,43 @@ class Agent:
             if int(diseaseID) == currDiseaseID:
                 return currDisease
         return None
+    
+    def getAgentLog(self):
+        sick = False
+        mated = False
+        traded = None
+        x = None
+        y = None
+        victim = None
+        if self.isSick():
+            sick = []
+            for currDisease in self.diseases:
+                sick.append(currDisease["disease"].ID)
+        if self.lastReproduced == self.timestep:
+            mated = {"mate": [], "child": []}
+            for currMate in self.socialNetwork["mates"]:
+                mateInfo = self.socialNetwork[currMate.ID]
+                if mateInfo["lastSeen"] == self.timestep:
+                    mated["mate"].append(currMate.ID)
+            for currChild in self.socialNetwork["children"]:
+                childInfo = self.socialNetwork[currChild.ID]
+                if currChild.age < 2 and currChild.ID not in mated["mate"]:
+                    mated["child"].append(currChild.ID)
+        if self.alive == True:
+            x = self.cell.x
+            y = self.cell.y
+        if self.lastDoneCombat[0] == self.timestep:
+            victim = self.lastDoneCombat[-1]
+        if self.lastTraded[0] == self.timestep:
+            traded = self.lastTraded[1:]
+
+                
+        return {"ID": self.ID, "age": self.age, "x-coordinate": x, "y-coordinate": y, "wealth": round(self.sugar + self.spice),
+                "sugar": round(self.sugar), "spice": round(self.spice), "sugar gained": round(self.sugar - self.lastSugar), "spice gained": round(self.spice - self.lastSpice),
+                "movement": self.movement, "ttl": round(self.timeToLive, 1), "depression": self.depressed, "composit happiness": round(self.happiness, 1), 
+                "conflict happiness": self.conflictHappiness, "family happiness": round(self.familyHappiness, 1), "health happiness": self.healthHappiness, "social happiness": round(self.socialHappiness, 1), "wealth happiness": round(self.wealthHappiness, 1),
+                "cause of death:": self.causeOfDeath, "agent killed": victim, "traded": traded,
+                "disease": sick, "mated": mated}
 
     def gotoCell(self, cell):
         self.resetCell()
