@@ -64,7 +64,7 @@ class Sugarscape:
         self.replacedAgents = []
 
         self.activeQuadrants = self.findActiveQuadrants()
-        self.agentStats = {}
+        self.agentRuntimeStats = []
         self.configureDepression()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"], configuration["diseaseList"])
@@ -86,7 +86,7 @@ class Sugarscape:
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
-        self.agentLog = open(configuration["logfileagent"], 'a') if configuration["logfileagent"] != None else None
+        self.agentLog = open(configuration["agentLogfile"], 'a') if configuration["agentLogfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
         self.experimentalGroup = configuration["experimentalGroup"]
         if self.experimentalGroup != None:
@@ -364,9 +364,7 @@ class Sugarscape:
                 if self.agentLeader != None and agent == self.agentLeader:
                     continue
                 agent.doTimestep(self.timestep)
-            self.updateAgentLog()
-            if self.timestep != self.maxTimestep and len(self.agents) > 0:
-                self.writeToLogAgent()
+            self.updateAgentRuntimeStats()
             self.removeDeadAgents()
             self.replaceDeadAgents()
             self.updateRuntimeStats()
@@ -375,55 +373,55 @@ class Sugarscape:
                 self.gui.doTimestep()
             # If final timestep, do not write to log to cleanly close JSON array log structure
             if self.timestep != self.maxTimestep and len(self.agents) > 0:
-                self.writeToLog()
+                self.writeToLog(self.log)
+                # Start recording agent actions only after agents have started acting
+                if self.timestep == 1:
+                    self.startLog(self.agentLog)
+                self.writeToLog(self.agentLog)
 
-    def endLog(self):
-        if self.log == None:
+    def endLog(self, log):
+        if log == None:
             return
         # Update total wealth accumulation to include still living agents at simulation end
-        environmentWealthCreated = 0
-        environmentWealthTotal = 0
-        for i in range(self.environment.width):
-            for j in range(self.environment.height):
-                environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
-                environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
-        self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
-        self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
-        logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
+        stats = self.runtimeStats
+        if log == self.agentLog:
+            stats = sorted(self.agentRuntimeStats, key=lambda agentStats: agentStats["ID"])
+        if log == self.log:
+            environmentWealthCreated = 0
+            environmentWealthTotal = 0
+            for i in range(self.environment.width):
+                for j in range(self.environment.height):
+                    environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
+                    environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
+            self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
+            self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
+        logString = '\t' + json.dumps(stats) + "\n]"
         if self.logFormat == "csv":
             logString = ""
             # Ensure consistent ordering for CSV format
-            for stat in sorted(self.runtimeStats):
-                if logString == "":
-                    logString += f"{self.runtimeStats[stat]}"
-                else:
-                    logString += f",{self.runtimeStats[stat]}"
-            logString += "\n"
-        self.log.write(logString)
-        self.log.flush()
-        self.log.close()
-
-    def endLogAgent(self):
-        if self.agentLog == None:
-            return
-        logString = '\t' + "\n]"
-        if self.logFormat == "csv":
-            logString = ""
-            # Ensure consistent ordering for CSV format
-            for stat in sorted(self.runtimeStats):
-                if logString == "":
-                    logString += f"{self.runtimeStats[stat]}"
-                else:
-                    logString += f",{self.runtimeStats[stat]}"
-            logString += "\n"
-        self.agentLog.write(logString)
-        self.agentLog.flush()
-        self.agentLog.close()
+            if log == self.agentLog:
+                for agentStats in stats:
+                    for stat in agentStats:
+                        if logString == "":
+                            logString += f"{agentStats[stat]}"
+                        else:
+                            logString += f",{agentStats[stat]}"
+                    logString += "\n"
+            else:
+                for stat in sorted(stats):
+                    if logString == "":
+                        logString += f"{stats[stat]}"
+                    else:
+                        logString += f",{stats[stat]}"
+                logString += "\n"
+        log.write(logString)
+        log.flush()
+        log.close()
 
     def endSimulation(self):
         self.removeDeadAgents()
-        self.endLogAgent()
-        self.endLog()
+        self.endLog(self.log)
+        self.endLog(self.agentLog)
         if "all" in self.debug or "sugarscape" in self.debug:
             print(str(self))
         exit(0)
@@ -780,9 +778,7 @@ class Sugarscape:
             self.configureAgents(numReplacements)
 
     def runSimulation(self, timesteps=5):
-        self.startLogAgent()
-        self.startLog()
-        
+        self.startLog(self.log)
         self.updateRuntimeStats()
         if self.gui != None:
             # Simulation begins paused until start button in GUI pressed
@@ -807,40 +803,25 @@ class Sugarscape:
         else:
             self.endSimulation()
 
-    def startLog(self):
-        if self.log == None:
+    def startLog(self, log):
+        if log == None:
             return
+        stats = sorted(self.runtimeStats)
+        if log == self.agentLog:
+            stats = sorted(self.agentRuntimeStats, key=lambda agentStats: agentStats["ID"])[0]
         if self.logFormat == "csv":
             header = ""
             # Ensure consistent ordering for CSV format
-            for stat in sorted(self.runtimeStats):
+            for stat in stats:
                 if header == "":
                     header += f"{stat}"
                 else:
                     header += f",{stat}"
             header += "\n"
-            self.log.write(header)
+            log.write(header)
         else:
-            self.log.write("[\n")
-        self.writeToLog()
-
-    def startLogAgent(self):
-        if self.agentLog == None:
-            return
-        if self.logFormat == "csv":
-            header = ""
-            # Ensure consistent ordering for CSV format
-            for stat in self.agentStats:
-                if header == "":
-                    header += f"{stat}"
-                else:
-                    header += f",{stat}"
-            header += "\n"
-            self.agentLog.write(header)
-        else:
-            self.agentLog.write("[\n")
-        # self.updateRuntimeStats()
-        self.writeToLogAgent()
+            log.write("[\n")
+        self.writeToLog(log)
 
     def toggleEnd(self):
         self.end = True
@@ -848,13 +829,14 @@ class Sugarscape:
     def toggleRun(self):
         self.run = not self.run
 
-    def updateAgentLog(self):
-        if self.agentLog == None: return
-        agentList = []
+    def updateAgentRuntimeStats(self):
+        if self.agentLog == None:
+            return
+        agentStats = []
         for agent in self.agents:
-            agentList.append(agent.getAgentLog())
-        self.agentStats = agentList
-    
+            agentStats.append(agent.updateRuntimeStats())
+        self.agentRuntimeStats = agentStats
+
     def updateGiniCoefficient(self):
         if len(self.agents) == 0:
             return 0
@@ -1291,30 +1273,32 @@ class Sugarscape:
         for key in runtimeStats.keys():
             self.runtimeStats[key] = runtimeStats[key]
 
-    def writeToLog(self):
-        if self.log == None:
+    def writeToLog(self, log):
+        if log == None:
             return
-        logString = '\t' + json.dumps(self.runtimeStats) + ",\n"
+        stats = self.runtimeStats
+        if log == self.agentLog:
+            stats = sorted(self.agentRuntimeStats, key=lambda agentStats: agentStats["ID"])
+        logString = '\t' + json.dumps(stats) + ",\n"
         if self.logFormat == "csv":
             logString = ""
             # Ensure consistent ordering for CSV format
-            for stat in sorted(self.runtimeStats):
-                if logString == "":
-                    logString += f"{self.runtimeStats[stat]}"
-                else:
-                    logString += f",{self.runtimeStats[stat]}"
-            logString += "\n"
-        self.log.write(logString)
-
-    def writeToLogAgent(self): 
-        if self.agentLog == None:
-            return
-        agentStatList = self.agentStats
-        agentLogString = "\"timestep: " + json.dumps(self.timestep) + "\",\n" #+ '\t' #+ json.dumps(self.agentStats) + ",\n"
-        for stat in agentStatList:
-            writeStat = json.dumps(stat)
-            agentLogString += f"\t {writeStat}, \n"
-        self.agentLog.write(agentLogString)
+            if log == self.agentLog:
+                for agentStats in stats:
+                    for stat in agentStats:
+                        if logString == "":
+                            logString += f"{agentStats[stat]}"
+                        else:
+                            logString += f",{agentStats[stat]}"
+                    logString += "\n"
+            else:
+                for stat in sorted(stats):
+                    if logString == "":
+                        logString += f"{stats[stat]}"
+                    else:
+                        logString += f",{stats[stat]}"
+                logString += "\n"
+        log.write(logString)
 
     def __str__(self):
         string = f"{str(self.environment)}Seed: {self.seed}\nTimestep: {self.timestep}\nLiving Agents: {len(self.agents)}"
@@ -1550,8 +1534,8 @@ def verifyConfiguration(configuration):
     if configuration["logfile"] == "":
         configuration["logfile"] = None
 
-    if configuration["logfileagent"] == "" or configuration["logfileagent"] == "none":
-        configuration["logfileagent"] = None
+    if configuration["agentLogfile"] == "":
+        configuration["agentLogfile"] = None
 
     if configuration["seed"] == -1:
         configuration["seed"] = random.randrange(sys.maxsize)
@@ -1616,6 +1600,7 @@ if __name__ == "__main__":
                      "agentLeader": False,
                      "agentLendingFactor": [0, 0],
                      "agentLoanDuration": [0, 0],
+                     "agentLogfile": None,
                      "agentLookaheadFactor": [0, 0],
                      "agentMaleInfertilityAge": [0, 0],
                      "agentMaleFertilityAge": [0, 0],
@@ -1686,7 +1671,6 @@ if __name__ == "__main__":
                      "keepAlivePostExtinction": False,
                      "keepAliveAtEnd": False,
                      "logfile": None,
-                     "logfileagent": None,
                      "logfileFormat": "json",
                      "neighborhoodMode": "vonNeumann",
                      "profileMode": False,

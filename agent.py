@@ -270,8 +270,6 @@ class Agent:
         self.resetCell()
         self.doInheritance()
 
-        # Keep only debtors and children in social network to handle outstanding loans
-        self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
         self.neighbors = []
         self.neighborhood = []
         for disease in self.diseases:
@@ -1100,43 +1098,6 @@ class Agent:
             if int(diseaseID) == currDiseaseID:
                 return currDisease
         return None
-    
-    def getAgentLog(self):
-        sick = False
-        mated = False
-        traded = None
-        x = None
-        y = None
-        victim = None
-        if self.isSick():
-            sick = []
-            for currDisease in self.diseases:
-                sick.append(currDisease["disease"].ID)
-        if self.lastReproduced == self.timestep:
-            mated = {"mate": [], "child": []}
-            for currMate in self.socialNetwork["mates"]:
-                mateInfo = self.socialNetwork[currMate.ID]
-                if mateInfo["lastSeen"] == self.timestep:
-                    mated["mate"].append(currMate.ID)
-            for currChild in self.socialNetwork["children"]:
-                childInfo = self.socialNetwork[currChild.ID]
-                if currChild.age < 2 and currChild.ID not in mated["mate"]:
-                    mated["child"].append(currChild.ID)
-        if self.alive == True:
-            x = self.cell.x
-            y = self.cell.y
-        if self.lastDoneCombat[0] == self.timestep:
-            victim = self.lastDoneCombat[-1]
-        if self.lastTraded[0] == self.timestep:
-            traded = self.lastTraded[1:]
-
-                
-        return {"ID": self.ID, "age": self.age, "x-coordinate": x, "y-coordinate": y, "wealth": round(self.sugar + self.spice),
-                "sugar": round(self.sugar), "spice": round(self.spice), "sugar gained": round(self.sugar - self.lastSugar), "spice gained": round(self.spice - self.lastSpice),
-                "movement": self.movement, "ttl": round(self.timeToLive, 1), "depression": self.depressed, "composit happiness": round(self.happiness, 1), 
-                "conflict happiness": self.conflictHappiness, "family happiness": round(self.familyHappiness, 1), "health happiness": self.healthHappiness, "social happiness": round(self.socialHappiness, 1), "wealth happiness": round(self.wealthHappiness, 1),
-                "cause of death:": self.causeOfDeath, "agent killed": victim, "traded": traded,
-                "disease": sick, "mated": mated}
 
     def gotoCell(self, cell):
         self.resetCell()
@@ -1473,6 +1434,46 @@ class Agent:
     def updateNeighbors(self):
         self.neighbors = [neighborCell.agent for neighborCell in self.cell.neighbors.values() if neighborCell.agent != None]
         self.updateSocialNetwork()
+
+    def updateRuntimeStats(self):
+        sick = False
+        mated = False
+        traded = None
+        x = None
+        y = None
+        victim = None
+        if self.isSick():
+            sick = []
+            for currDisease in self.diseases:
+                sick.append(currDisease["disease"].ID)
+        if self.lastReproduced == self.timestep:
+            mated = {"mate": [], "child": []}
+            if "mates" not in self.socialNetwork:
+                print(self.socialNetwork)
+                exit(0)
+            for currMate in self.socialNetwork["mates"]:
+                mateInfo = self.socialNetwork[currMate.ID]
+                if mateInfo["lastSeen"] == self.timestep:
+                    mated["mate"].append(currMate.ID)
+            for currChild in self.socialNetwork["children"]:
+                childInfo = self.socialNetwork[currChild.ID]
+                if currChild.age < 2 and currChild.ID not in mated["mate"]:
+                    mated["child"].append(currChild.ID)
+        if self.alive == True:
+            x = self.cell.x
+            y = self.cell.y
+        if self.lastDoneCombat[0] == self.timestep:
+            victim = self.lastDoneCombat[-1]
+        if self.lastTraded[0] == self.timestep:
+            traded = self.lastTraded[1:]
+
+        runtimeStats = {"ID": self.ID, "age": self.age, "x": x, "y": y, "wealth": round(self.sugar + self.spice), "sugar": round(self.sugar), "spice": round(self.spice),
+                        "sugarGained": round(self.sugar - self.lastSugar), "spiceGained": round(self.spice - self.lastSpice), "movement": self.movement,
+                        "timeToLive": round(self.timeToLive, 1), "depression": self.depressed, "compositHappiness": round(self.happiness, 1),
+                        "conflictHappiness": self.conflictHappiness, "familyHappiness": round(self.familyHappiness, 1), "healthHappiness": self.healthHappiness,
+                        "socialHappiness": round(self.socialHappiness, 1), "wealthHappiness": round(self.wealthHappiness, 1), "causeOfDeath:": self.causeOfDeath,
+                        "agentKilled": victim, "traded": traded, "disease": sick, "mated": mated}
+        return runtimeStats
 
     def updateSocialNetwork(self):
         for neighbor in self.neighbors:

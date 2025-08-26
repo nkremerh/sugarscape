@@ -1,6 +1,6 @@
 CONFIG = config.json
 DATACHECK = data/data.complete
-LOGS = log.csv log.json
+LOGS = agents.log.csv agents.log.json log.csv log.json
 PLOT = plot.py
 PLOTCHECK = plots/plots.complete
 RUN = run.py

@@ -26,13 +26,13 @@ def createConfigurations(config, path, mode="json"):
                 simOpts["seed"] = seed
                 if mode == "json":
                     simOpts["logfile"] = f"{path}{modelString}{seed}.json"
-                    if simOpts["logfileagent"] != "none":
-                        simOpts["logfileagent"] = f"{path}agent-{modelString}{seed}.json"
+                    if simOpts["agentLogfile"] != None:
+                        simOpts["agentLogfile"] = f"{path}agents.{modelString}{seed}.json"
                     simOpts["logfileFormat"] = "json"
                 else:
                     simOpts["logfile"] = f"{path}{modelString}{seed}.csv"
-                    if simOpts["logfileagent"] != "none":
-                        simOpts["logfileagent"] = f"{path}agent-{modelString}{seed}.csv"
+                    if simOpts["agentLogfile"] != "none":
+                        simOpts["agentLogfile"] = f"{path}agents.{modelString}{seed}.csv"
                     simOpts["logfileFormat"] = "csv"
                 # Enforce noninteractive, no-output mode
                 simOpts["headlessMode"] = True
@@ -75,7 +75,7 @@ def getJobsToDo(config, path):
         configFile = open(config)
         rawConf = json.loads(configFile.read())
         log = rawConf["logfile"]
-        agentlog = rawConf["logfileagent"]
+        agentLog = rawConf["agentLogfile"]
         configFile.close()
         if os.path.exists(log) == False:
             print(f"Configuration file {config} has no matching log. Adding it to be rerun.")
@@ -97,25 +97,8 @@ def getJobsToDo(config, path):
             print(f"Existing log {log} is incomplete. Adding it to be rerun.")
             os.remove(log)
             continue
-        if agentlog != "none" and os.path.exists(agentlog) == False:
+        if agentLog != None and os.path.exists(agentLog) == False:
             print(f"Configuration file {config} has no matching log. Adding it to be rerun.")
-            continue
-        try:
-            logfileagent = open(agentlog)
-            agentlastEntry = None
-            if agentlog.endswith(".json"):
-                agentlastEntry = json.loads(logfileagent.read())[-1]
-            else:
-                agentlastEntry = list(csv.DictReader(logfileagent))[-1]
-            logfileagent.close()
-            if int(lastEntry["timestep"]) == int(rawConf["timesteps"]) or int(agentlastEntry["population"]) == 0:
-                completedRuns.append(config)
-            else:
-                print(f"Existing log {agentlog} is incomplete. Adding it to be rerun.")
-                os.remove(log)
-        except:
-            print(f"Existing log {agentlog} is incomplete. Adding it to be rerun.")
-            os.remove(log)
             continue
     for run in completedRuns:
         configs.remove(run)
