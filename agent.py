@@ -73,8 +73,10 @@ class Agent:
         self.happinessUnit = 1
         self.happinessModifier = 0
         self.healthHappiness = 0
-        self.lastDoneCombat = [-1, None]
-        self.lastTraded = [-1, None]
+        self.lastDoneCombat = -1
+        self.lastPrey = None
+        self.lastTraded = -1
+        self.lastTradePartners = []
         self.lastMoved = -1
         self.lastMoveOptimal = True
         self.lastReproduced = -1
@@ -247,7 +249,8 @@ class Agent:
             spiceLoot = min(maxCombatLoot, preySpice)
             self.sugar += sugarLoot
             self.spice += spiceLoot
-            self.lastDoneCombat = [self.cell.environment.sugarscape.timestep, prey.ID]
+            self.lastDoneCombat = self.cell.environment.sugarscape.timestep
+            self.lastPrey = prey.ID
             prey.sugar -= sugarLoot
             prey.spice -= spiceLoot
             prey.doDeath("combat")
@@ -642,10 +645,8 @@ class Agent:
                 self.sugarPrice += sugarPrice
                 self.spicePrice += spicePrice
                 if transactions > 0:
-                    if self.lastTraded[0] == self.timestep:
-                        self.lastTraded.append(trader.ID)
-                    else:
-                        self.lastTraded = [self.timestep, trader.ID]
+                    if self.lastTraded == self.timestep:
+                        self.lastTradePartners.append(trader.ID)
                 trader.updateTimesTradedWithAgent(self, self.lastMoved, transactions)
                 self.updateTimesTradedWithAgent(trader, self.lastMoved, transactions)
                 sugarscape = self.cell.environment.sugarscape
@@ -867,7 +868,7 @@ class Agent:
         return childEndowment
 
     def findConflictHappiness(self):
-        if self.lastDoneCombat[1] == self.cell.environment.sugarscape.timestep:
+        if self.lastDoneCombat == self.cell.environment.sugarscape.timestep:
             if(self.findAggression() > 1):
                 return self.happinessUnit
             else:
@@ -1354,6 +1355,9 @@ class Agent:
         self.tradeWithControlGroup = 0
         self.tradeWithExperimentalGroup = 0
 
+        self.lastPrey = None
+        self.lastTradePartners = []
+
     def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
         i = 0
@@ -1462,10 +1466,10 @@ class Agent:
         if self.alive == True:
             x = self.cell.x
             y = self.cell.y
-        if self.lastDoneCombat[0] == self.timestep:
-            victim = self.lastDoneCombat[-1]
-        if self.lastTraded[0] == self.timestep:
-            traded = self.lastTraded[1:]
+        if self.lastDoneCombat == self.timestep:
+            victim = self.lastPrey
+        if self.lastTraded == self.timestep:
+            traded = self.lastTradePartners
 
         runtimeStats = {"ID": self.ID, "age": self.age, "x": x, "y": y, "wealth": round(self.sugar + self.spice), "sugar": round(self.sugar), "spice": round(self.spice),
                         "sugarGained": round(self.sugar - self.lastSugar), "spiceGained": round(self.spice - self.lastSpice), "movement": self.movement,
