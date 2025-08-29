@@ -73,10 +73,11 @@ class Agent:
         self.happinessUnit = 1
         self.happinessModifier = 0
         self.healthHappiness = 0
-        self.lastDoneCombat = -1
-        self.lastPrey = None
-        self.lastTraded = -1
-        self.lastTradePartners = []
+        self.lastCombat = -1
+        self.lastPreyWealth = 0
+        self.lastTrade = -1
+        self.lastTradePartners = 0
+        self.lastMates = 0
         self.lastMoved = -1
         self.lastMoveOptimal = True
         self.lastReproduced = -1
@@ -249,8 +250,8 @@ class Agent:
             spiceLoot = min(maxCombatLoot, preySpice)
             self.sugar += sugarLoot
             self.spice += spiceLoot
-            self.lastDoneCombat = self.cell.environment.sugarscape.timestep
-            self.lastPrey = prey.ID
+            self.lastCombat = self.cell.environment.sugarscape.timestep
+            self.lastPreyWealth = sugarLoot + spiceLoot
             prey.sugar -= sugarLoot
             prey.spice -= spiceLoot
             prey.doDeath("combat")
@@ -460,6 +461,7 @@ class Agent:
         neighborCells = list(self.cell.neighbors.values())
         random.shuffle(neighborCells)
         emptyCells = self.findEmptyNeighborCells()
+        mates = []
         for neighborCell in neighborCells:
             neighbor = neighborCell.agent
             if neighbor != None and neighbor.isAlive() == True:
@@ -487,7 +489,6 @@ class Agent:
                     neighbor.updateTimesVisitedWithAgent(self, self.lastMoved)
                     neighbor.updateTimesReproducedWithAgent(self, self.lastMoved)
                     self.updateTimesReproducedWithAgent(neighbor, self.lastMoved)
-                    self.lastReproduced += 1
 
                     sugarCost = self.startingSugar / (self.fertilityFactor * 2)
                     spiceCost = self.startingSpice / (self.fertilityFactor * 2)
@@ -497,7 +498,9 @@ class Agent:
                     self.spice -= spiceCost
                     neighbor.sugar = neighbor.sugar - mateSugarCost
                     neighbor.spice = neighbor.spice - mateSpiceCost
-                    self.lastReproduced = self.cell.environment.sugarscape.timestep
+                    self.lastReproduced = self.timestep
+                    if neighbor not in mates:
+                        mates.append(neighbor)
                     sugarscape = self.cell.environment.sugarscape
                     if sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup):
                         self.reproductionWithExperimentalGroup += 1
@@ -505,6 +508,7 @@ class Agent:
                         self.reproductionWithControlGroup += 1
                     if "all" in self.debug or "agent" in self.debug:
                         print(f"Agent {self.ID} reproduced with agent {str(neighbor)} at cell ({emptyCell.x},{emptyCell.y})")
+        self.lastMates = len(mates)
 
     def doTagging(self):
         if self.tags == None or self.isAlive() == False or self.tagging == False:
@@ -559,15 +563,16 @@ class Agent:
         self.spicePrice = 0
         self.findMarginalRateOfSubstitution()
         neighborCells = self.cell.neighbors.values()
-        traders = []
+        potentialTraders = []
         for neighborCell in neighborCells:
             neighbor = neighborCell.agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighborMRS = neighbor.marginalRateOfSubstitution
                 if neighborMRS != self.marginalRateOfSubstitution:
-                    traders.append(neighbor)
-        random.shuffle(traders)
-        for trader in traders:
+                    potentialTraders.append(neighbor)
+        random.shuffle(potentialTraders)
+        tradePartners = []
+        for trader in potentialTraders:
             spiceSeller = None
             sugarSeller = None
             tradeFlag = True
@@ -644,17 +649,18 @@ class Agent:
                 self.tradeVolume += 1
                 self.sugarPrice += sugarPrice
                 self.spicePrice += spicePrice
-                if transactions > 0:
-                    if self.lastTraded == self.timestep:
-                        self.lastTradePartners.append(trader.ID)
                 trader.updateTimesTradedWithAgent(self, self.lastMoved, transactions)
                 self.updateTimesTradedWithAgent(trader, self.lastMoved, transactions)
+                self.lastTrade = self.timestep
                 sugarscape = self.cell.environment.sugarscape
-                
+                if trader not in tradePartners:
+                        tradePartners.append(trader)
                 if sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup):
                     self.tradeWithExperimentalGroup += 1
                 elif sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup, True):
                     self.tradeWithControlGroup += 1
+        if self.lastTrade == self.timestep:
+            self.lastTradePartners = len(tradePartners)
 
     def doUniversalIncome(self):
         if (self.timestep - self.lastUniversalSpiceIncomeTimestep) >= self.cell.environment.universalSpiceIncomeInterval:
@@ -868,7 +874,7 @@ class Agent:
         return childEndowment
 
     def findConflictHappiness(self):
-        if self.lastDoneCombat == self.cell.environment.sugarscape.timestep:
+        if self.lastCombat == self.cell.environment.sugarscape.timestep:
             if(self.findAggression() > 1):
                 return self.happinessUnit
             else:
@@ -1355,9 +1361,6 @@ class Agent:
         self.tradeWithControlGroup = 0
         self.tradeWithExperimentalGroup = 0
 
-        self.lastPrey = None
-        self.lastTradePartners = []
-
     def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
         i = 0
@@ -1440,43 +1443,28 @@ class Agent:
         self.updateSocialNetwork()
 
     def updateRuntimeStats(self):
-        sick = False
-        mated = False
-        traded = None
+        diseases = len(self.diseases)
+        mates = 0
+        tradePartners = 0
         x = None
         y = None
-        victim = None
-        if self.isSick():
-            sick = []
-            for currDisease in self.diseases:
-                sick.append(currDisease["disease"].ID)
+        preyWealth = 0
         if self.lastReproduced == self.timestep:
-            mated = {"mate": [], "child": []}
-            if "mates" not in self.socialNetwork:
-                print(self.socialNetwork)
-                exit(0)
-            for currMate in self.socialNetwork["mates"]:
-                mateInfo = self.socialNetwork[currMate.ID]
-                if mateInfo["lastSeen"] == self.timestep:
-                    mated["mate"].append(currMate.ID)
-            for currChild in self.socialNetwork["children"]:
-                childInfo = self.socialNetwork[currChild.ID]
-                if currChild.age < 2 and currChild.ID not in mated["mate"]:
-                    mated["child"].append(currChild.ID)
+            mates = self.lastMates
         if self.alive == True:
             x = self.cell.x
             y = self.cell.y
-        if self.lastDoneCombat == self.timestep:
-            victim = self.lastPrey
-        if self.lastTraded == self.timestep:
-            traded = self.lastTradePartners
+        if self.lastCombat == self.timestep:
+            preyWealth = self.lastPreyWealth
+        if self.lastTrade == self.timestep:
+            tradePartners = self.lastTradePartners
 
         runtimeStats = {"ID": self.ID, "age": self.age, "x": x, "y": y, "wealth": round(self.sugar + self.spice), "sugar": round(self.sugar), "spice": round(self.spice),
                         "sugarGained": round(self.sugar - self.lastSugar), "spiceGained": round(self.spice - self.lastSpice), "movement": self.movement,
                         "timeToLive": round(self.timeToLive, 1), "depression": self.depressed, "compositHappiness": round(self.happiness, 1),
                         "conflictHappiness": self.conflictHappiness, "familyHappiness": round(self.familyHappiness, 1), "healthHappiness": self.healthHappiness,
                         "socialHappiness": round(self.socialHappiness, 1), "wealthHappiness": round(self.wealthHappiness, 1), "causeOfDeath:": self.causeOfDeath,
-                        "agentKilled": victim, "traded": traded, "disease": sick, "mated": mated}
+                        "preyWealth": preyWealth, "tradePartners": tradePartners, "diseases": diseases, "mates": mates}
         return runtimeStats
 
     def updateSocialNetwork(self):
