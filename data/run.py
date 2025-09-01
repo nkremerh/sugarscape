@@ -132,11 +132,13 @@ def printHelp():
     print("Usage:\n\tpython run.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-m,--mode\tUse the specified file format for simulation logs.\n\t-p,--path\tUse the specified directory path to store dataset JSON files.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
-def printProgress(lastJob, jobsFinished, totalJobs, jobLength, decimals=2, barLength=80):
+def printProgress(lastJob, jobsFinished, totalJobs, jobLength, decimals=2):
+    barLength = os.get_terminal_size().columns // 2
     progress = round(((jobsFinished / totalJobs) * 100), decimals)
     filledLength = (barLength * jobsFinished) // totalJobs
     bar = '█' * filledLength + '-' * (barLength - filledLength)
-    print(f"\rRunning {lastJob:>{jobLength}}: |{bar}| {jobsFinished} / {totalJobs} ({progress}%)", end = '\r')
+    printString = f"\rRunning {lastJob:>{jobLength}}: |{bar}| {jobsFinished} / {totalJobs} ({progress}%)"
+    print(f"\r{printString}", end='\r')
 
 def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, count, printFileLength):
     os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
@@ -167,7 +169,8 @@ def runSimulations(config, configFiles):
     # Clean up job pool
     pool.close()
     pool.join()
-    print("\nAll jobs completed.")
+    print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
+    print("All jobs completed.")
 
 def verifyConfiguration(configuration):
     # Check if number of parallel jobs is greater than number of CPU cores
