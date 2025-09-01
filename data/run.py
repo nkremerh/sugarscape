@@ -41,11 +41,6 @@ def createConfigurations(config, path, mode="json"):
         return confFiles
     return configs
 
-def finishSimulations():
-    # Sleep to prevent printing from occurring out of order with final job submission
-    time.sleep(1)
-    print("Waiting for jobs to finish up.")
-
 def generateSeeds(config):
     seeds = []
     for i in range(config["numSeeds"]):
@@ -137,38 +132,42 @@ def printHelp():
     print("Usage:\n\tpython run.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-m,--mode\tUse the specified file format for simulation logs.\n\t-p,--path\tUse the specified directory path to store dataset JSON files.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
-def runSimulation(configFile, pythonAlias, jobNumber, totalJobs):
-    print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
+def printProgress(lastJob, jobsFinished, totalJobs, jobLength, decimals=2, barLength=80):
+    progress = round(((jobsFinished / totalJobs) * 100), decimals)
+    filledLength = (barLength * jobsFinished) // totalJobs
+    bar = '█' * filledLength + '-' * (barLength - filledLength)
+    print(f"\rRunning {lastJob:>{jobLength}}: |{bar}| {jobsFinished} / {totalJobs} ({progress}%)", end = '\r')
+
+def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, count, printFileLength):
     os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
+    count.value += 1
+    printProgress(configFile, count.value, totalJobs, printFileLength)
 
 def runSimulations(config, configFiles):
     dataOpts = config["dataCollectionOptions"]
     pythonAlias = dataOpts["pythonAlias"]
     totalSimJobs = len(configFiles)
-    jobUpdateFrequency = dataOpts["jobUpdateFrequency"]
 
     # Submit simulation jobs to local worker pool
+    manager = multiprocessing.Manager()
+    counter = manager.Value('i', 0)
+    printFileLength = len(max(configFiles, key=len))
     pool = multiprocessing.Pool(processes = dataOpts["numParallelSimJobs"])
-    results = [pool.apply_async(runSimulation, args = (configFile, pythonAlias, i + 1, totalSimJobs)) for i, configFile in enumerate(configFiles)]
+    results = [pool.apply_async(runSimulation, args=(configFile, pythonAlias, i + 1, totalSimJobs, counter, printFileLength)) for i, configFile in enumerate(configFiles)]
 
     # Wait for jobs to finish
-    pool.apply(finishSimulations)
-    lastUpdate = 0
     while len(results) > 0:
         waitingResults = []
         for result in results:
             ready = result.ready()
             if ready == False:
                 waitingResults.append(result)
-        outstanding = len(waitingResults)
-        if outstanding != 0 and outstanding != lastUpdate and outstanding % jobUpdateFrequency == 0:
-            print(f"{outstanding} jobs remaining.")
-            lastUpdate = outstanding
         results = waitingResults
 
     # Clean up job pool
     pool.close()
     pool.join()
+    print("\nAll jobs completed.")
 
 def verifyConfiguration(configuration):
     # Check if number of parallel jobs is greater than number of CPU cores
