@@ -190,7 +190,8 @@ class Sugarscape:
                 cornerCell = self.environment.grid[0][0]
                 a.gotoCell(cornerCell)
                 self.agentLeader = a
-            # If using a different decision model, replace new agent with instance of child class
+
+            # If using a consequentialist decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = 0
@@ -212,6 +213,10 @@ class Sugarscape:
                 a.decisionModelLookaheadFactor = 0
             elif "HalfLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0.5
+
+            # If using a deontological decision model, replace new agent with instance of child class
+            if "asimov" in agentConfiguration["decisionModel"]:
+                a = ethics.Asimov(agentID, self.timestep, placementCell, agentConfiguration)
 
             if self.configuration["environmentTribePerQuadrant"] == True:
                 tribe = quadrantIndex

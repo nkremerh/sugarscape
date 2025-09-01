@@ -2,10 +2,122 @@ import agent
 
 import sys
 
+class Asimov(agent.Agent):
+    def __init__(self, agentID, birthday, cell, configuration):
+        super().__init__(agentID, birthday, cell, configuration)
+        self.lastTimeToLive = 0
+
+    def findBestEthicalCell(self, cells, greedyBestCell=None):
+        if len(cells) == 0:
+            return None
+        bestCell = None
+        if "all" in self.debug or "agent" in self.debug:
+            self.printCellScores(cells)
+
+        for cell in cells:
+            cell["wealth"] = self.findEthicalValueOfCell(cell["cell"])
+        cells = self.sortCellsByWealth(cells)
+        for cell in cells:
+            if cell["wealth"] > 0:
+                bestCell = cell["cell"]
+                break
+
+        if bestCell == None:
+            bestCell = self.cell
+            if "all" in self.debug or "agent" in self.debug:
+                print(f"Agent {self.ID} could not find an ethical cell")
+        return bestCell
+
+    def findEthicalValueOfCell(self, cell):
+        cellValue = cell.sugar + cell.spice
+        # Max combat loot for sugar and spice
+        globalMaxCombatLoot = cell.environment.maxCombatLoot * 2
+        if cell.agent != None:
+            agentWealth = cell.agent.sugar + cell.agent.spice
+            cellValue += min(agentWealth, globalMaxCombatLoot)
+        lawThreeScore = self.scoreLawThree(cell)
+        scoreModifier = lawThreeScore
+        for neighbor in self.neighborhood:
+            lawOneScore = self.scoreLawOne(neighbor, cell)
+            # If the first law would be broken, immediately stop consideration
+            if lawOneScore < 0:
+                return lawOneScore
+            lawScores = lawOneScore + self.scoreLawTwo(neighbor)
+            scoreModifier += lawScores
+        cellValue = scoreModifier * cellValue
+        return cellValue
+
+    def scoreLawOne(self, neighbor, cell):
+        nonRobot = self.decisionModel != neighbor.decisionModel
+        starvation = cell.spice + neighbor.spice - neighbor.findSpiceMetabolism() <= 0 or cell.sugar + neighbor.sugar - neighbor.findSugarMetabolism() <= 0
+        # A robot may not injure a human being
+        if cell.isOccupied() == True and neighbor == cell.agent and nonRobot == True:
+            return -1 * sys.maxsize
+        if neighbor.canReachCell(cell) == False:
+            return 1
+        # Through inaction, a robot may not allow a human being to come to harm
+        elif nonRobot == True and starvation == True:
+            return -1 * sys.maxsize
+        return 0
+
+    def scoreLawTwo(self, neighbor):
+        # A robot must obey the orders given it by human beings except where such orders would conflict with the first law
+        # Robots are fully autonomous, thus implicitly always conform to the second law
+        return 0
+
+    def scoreLawThree(self, cell):
+        spiceIncrease = cell.spice + self.spice - self.findSpiceMetabolism() > 0
+        sugarIncrease = cell.sugar + self.sugar - self.findSugarMetabolism() > 0
+        # A robot must protect its own existence as such protection does not conflict with the first or second law
+        if spiceIncrease == True and sugarIncrease == True:
+            return 1
+        elif spiceIncrease == False and sugarIncrease == False:
+            return -1
+        return 0
+
+    def spawnChild(self, childID, birthday, cell, configuration):
+        return Asimov(childID, birthday, cell, configuration)
+
 class Bentham(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
         self.lastTimeToLive = 0
+
+    def findBestEthicalCell(self, cells, greedyBestCell=None):
+        if len(cells) == 0:
+            return None
+        bestCell = None
+        cells = self.sortCellsByWealth(cells)
+        if "all" in self.debug or "agent" in self.debug:
+            self.printCellScores(cells)
+
+        for cell in cells:
+            cell["wealth"] = self.findEthicalValueOfCell(cell["cell"])
+        if self.selfishnessFactor >= 0:
+            for cell in cells:
+                if cell["wealth"] > 0:
+                    bestCell = cell["cell"]
+                    break
+        else:
+            # Negative utilitarian model uses positive and negative utility to find minimum harm
+            cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]), reverse = True)
+            bestCell = cells[0]["cell"]
+
+        # If additional ordering consideration, select new best cell
+        if "Top" in self.decisionModel:
+            cells = self.sortCellsByWealth(cells)
+            if "all" in self.debug or "agent" in self.debug:
+                self.printEthicalCellScores(cells)
+            bestCell = cells[0]["cell"]
+
+        if bestCell == None:
+            if greedyBestCell == None:
+                bestCell = cells[0]["cell"]
+            else:
+                bestCell = greedyBestCell
+            if "all" in self.debug or "agent" in self.debug:
+                print(f"Agent {self.ID} could not find an ethical cell")
+        return bestCell
 
     def findEthicalValueOfCell(self, cell):
         happiness = 0
