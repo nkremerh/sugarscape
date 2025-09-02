@@ -68,7 +68,6 @@ def getJobsToDo(config, path):
         log = rawConf["logfile"]
         configFile.close()
         if os.path.exists(log) == False:
-            print(f"Configuration file {config} has no matching log. Adding it to be rerun.")
             continue
         try:
             logFile = open(log)
@@ -81,16 +80,16 @@ def getJobsToDo(config, path):
             if int(lastEntry["timestep"]) == int(rawConf["timesteps"]) or int(lastEntry["population"]) == 0:
                 completedRuns.append(config)
             else:
-                print(f"Existing log {log} is incomplete. Adding it to be rerun.")
                 os.remove(log)
         except:
-            print(f"Existing log {log} is incomplete. Adding it to be rerun.")
             os.remove(log)
             continue
     for run in completedRuns:
         configs.remove(run)
     if len(configs) == 0:
         print("No incomplete logs found.")
+    else:
+        print(f"Found {len(configs)} incomplete logs to rerun.")
     return configs
 
 def parseOptions():
