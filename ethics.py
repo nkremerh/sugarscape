@@ -78,6 +78,8 @@ class Asimov(agent.Agent):
     def spawnChild(self, childID, birthday, cell, configuration):
         return Asimov(childID, birthday, cell, configuration)
 
+
+#TODO: does agentID actuall work here? the parent class uses self.ID not self.agentID
 class Bentham(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
@@ -363,10 +365,10 @@ class Temperance(agent.Agent):
     
 
 class SimpleTemperance(agent.Agent):
-    def __init__(self, agentID, birthday, cell, configuration):
-        super().__init__(agentID, birthday, cell, configuration)
-        self.temperanceChangeRate = configuration["agentTemperanceChangeFactor"]
-        self.temperanceFactor = configuration["agentTemperanceFactor"]
+    def __init__(self, ID, birthday, cell, configuration):
+        super().__init__(ID, birthday, cell, configuration)
+        self.temperanceChangeRate = configuration["temperanceChangeFactor"]
+        self.temperanceFactor = configuration["temperanceFactor"]
         
     def doTemperanceDecision(self):
         randomValue = random.random()
@@ -374,13 +376,17 @@ class SimpleTemperance(agent.Agent):
             self.doIntemperanceAction()
         else:
             self.doTemperanceAction()
-            
+    
     def doIntemperanceAction(self):
-        self.temperanceFactor -= self.temperanceChangeRate
+        # self.temperanceFactor -= self.temperanceChangeRate
+        print(f"Agent {self.ID} took Intemperance action. Temperance factor is now {self.temperanceFactor}")
     
     def doTemperanceAction(self):
-        self.temperanceFactor += self.temperanceChangeRate
-
+        # self.temperanceFactor += self.temperanceChangeRate
+        print(f"Agent {self.ID} took temperance action. Temperance facotor is now {self.temperanceFactor}")
+    
+    def updateValues(self):
+        self.doTemperanceDecision()
     
     def spawnChild(self, childID, birthday, cell, configuration):
         return SimpleTemperance(childID, birthday, cell, configuration)

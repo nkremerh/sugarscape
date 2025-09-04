@@ -193,8 +193,9 @@ class Sugarscape:
                 cornerCell = self.environment.grid[0][0]
                 a.gotoCell(cornerCell)
                 self.agentLeader = a
-
-            # If using a consequentialist decision model, replace new agent with instance of child class
+            if self.configuration["agentTemperanceEnabled"]:
+                a = ethics.SimpleTemperance(agentID, self.timestep, randomCell, agentConfiguration)
+            # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = 0
@@ -529,8 +530,8 @@ class Sugarscape:
         universalSugar = configs["agentUniversalSugar"]
         vision = configs["agentVision"]
         visionMode = configs["agentVisionMode"]
-        temperanceFactor = configs["agentTemperanceFactor"]
-        temperanceChangeRate = configs["agentTemperanceChangeFactor"]
+        agentTemperanceFactor = configs["agentTemperanceFactor"]
+        agentTemperanceChangeFactor = configs["agentTemperanceChangeFactor"]
 
                
         numDepressedAgents = int(math.ceil(numAgents * configs["agentDepressionPercentage"]))
@@ -564,7 +565,9 @@ class Sugarscape:
                           "universalSpice": {"endowments": [], "curr": universalSpice[0], "min": universalSpice[0], "max": universalSugar[1]},
                           "universalSugar": {"endowments": [], "curr": universalSugar[0], "min": universalSugar[0], "max": universalSugar[1]},
                           "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]},
-                          "temperanceFactor"
+                          #TODO: not sure how to generate a random value between 0 and 1 for temperance factor
+                          "temperanceFactor": {"endowments": [], "curr": agentTemperanceFactor[0], "min": agentTemperanceFactor[0], "max": agentTemperanceFactor[1]},
+                          "temperanceChangeFactor": {"endowments": [], "curr": agentTemperanceChangeFactor[0], "min": agentTemperanceChangeFactor[0], "max": agentTemperanceChangeFactor[1]}
                           }
 
         if self.agentConfigHashes == None:
@@ -1646,13 +1649,14 @@ if __name__ == "__main__":
                      "agentTagging": False,
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
+                     "agentTemperanceFactor": [0,1],
+                     "agentTemperanceChangeFactor": [0,1],
+                     "agentTemperanceEnabled": True,
                      "agentTradeFactor": [0, 0],
                      "agentUniversalSpice": [0,0],
                      "agentUniversalSugar": [0,0],
                      "agentVision": [1, 6],
                      "agentVisionMode": "cardinal",
-                     "agentTemperanceFactor": [0,1],
-                     "agentTemperanceChangeFactor": [0,1],
                      "debugMode": ["none"],
                      "diseaseAggressionPenalty": [0, 0],
                      "diseaseFertilityPenalty": [0, 0],
