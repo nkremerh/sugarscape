@@ -20,7 +20,6 @@ def createConfigurations(path):
     for file in os.listdir(encodedDir):
         filename = os.fsdecode(file)
         if not filename.endswith(".json"):
-            print(f"Skipping file {filename} in testing.")
             continue
         filePath = path + filename
         fileShortName = re.compile(r"^([A-z_]*)(\d*)\.json")
@@ -42,11 +41,6 @@ def createConfigurations(path):
         configFile.close()
         configs.append(configFileName)
     return configs
-
-def finishSimulations():
-    # Sleep to prevent printing from occurring out of order with final job submission
-    time.sleep(1)
-    print("Waiting for jobs to finish up.")
 
 def parseOptions():
     commandLineArgs = sys.argv[1:]
@@ -75,43 +69,50 @@ def printHelp():
     print("Usage:\n\tpython test.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
-def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, failures):
-    print(f"Running test {configFile} ({jobNumber}/{totalJobs})")
+def printProgress(lastJob, jobsFinished, totalJobs, jobLength, decimals=2):
+    barLength = os.get_terminal_size().columns // 2
+    progress = round(((jobsFinished / totalJobs) * 100), decimals)
+    filledLength = (barLength * jobsFinished) // totalJobs
+    bar = '█' * filledLength + '-' * (barLength - filledLength)
+    printString = f"\rRunning {lastJob:>{jobLength}}: |{bar}| {jobsFinished} / {totalJobs} ({progress}%)"
+    print(f"\r{printString}", end='\r')
+
+def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, count, printFileLength, failures):
     result = os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
     if result != 0:
-        print(f"Test {configFile} failed - {result}.")
         failures[configFile] = result
+    count.value += 1
+    printProgress(configFile, count.value, totalJobs, printFileLength)
 
 def runSimulations(config, configFiles):
     dataOpts = config["dataCollectionOptions"]
     pythonAlias = dataOpts["pythonAlias"]
     totalSimJobs = len(configFiles)
-    jobUpdateFrequency = dataOpts["jobUpdateFrequency"]
-    manager = multiprocessing.Manager()
-    failures = manager.dict()
 
     # Submit simulation jobs to local worker pool
+    manager = multiprocessing.Manager()
+    counter = manager.Value('i', 0)
+    failures = manager.dict()
+    printFileLength = len(max(configFiles, key=len))
     pool = multiprocessing.Pool(processes = dataOpts["numParallelSimJobs"])
-    results = [pool.apply_async(runSimulation, args = (configFile, pythonAlias, i + 1, totalSimJobs, failures)) for i, configFile in enumerate(configFiles)]
+    results = [pool.apply_async(runSimulation, args=(configFile, pythonAlias, i + 1, totalSimJobs, counter, printFileLength, failures)) for i, configFile in enumerate(configFiles)]
 
     # Wait for jobs to finish
-    pool.apply(finishSimulations)
-    lastUpdate = 0
     while len(results) > 0:
         waitingResults = []
         for result in results:
             ready = result.ready()
             if ready == False:
                 waitingResults.append(result)
-        outstanding = len(waitingResults)
-        if outstanding != 0 and outstanding != lastUpdate and outstanding % jobUpdateFrequency == 0:
-            print(f"{outstanding} jobs remaining.")
-            lastUpdate = outstanding
         results = waitingResults
 
     # Clean up job pool
     pool.close()
     pool.join()
+    print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
+    print("All jobs completed.")
+    for failure in failures:
+        print(f"Test {failure} failed, got result {failures[failure]}.")
     return failures
 
 def verifyConfiguration(configuration):

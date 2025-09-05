@@ -1130,6 +1130,9 @@ class Sugarscape:
             # If in the control group for a specific disease, skip the experimental disease
             elif group != None and self.isDiseaseExperimentalGroup(disease.ID) == True and notInGroup == True:
                 continue
+            # Depression does not have an infection mechanism for transmission
+            if disease.ID == "depression":
+                continue
             diseasePrevalence += len(disease.infected)
 
         if numAgents > 0:
@@ -1338,7 +1341,8 @@ def sortConfigurationTimeframes(configuration, timeframe):
 
 def verifyConfiguration(configuration):
     negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
-    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
+    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseFriendlinessPenalty", "diseaseHappinessPenalty", "diseaseMovementPenalty"]
+    negativesAllowed += ["diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
     negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe", "environmentMaxSpice", "environmentMaxSugar"]
     negativesAllowed += ["interfaceHeight", "interfaceWidth", "seed", "timesteps"]
     timeframes = ["diseaseTimeframe", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
