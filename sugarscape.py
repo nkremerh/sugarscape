@@ -80,7 +80,8 @@ class Sugarscape:
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
                              "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0,
                              "sickAgentsPercentage": 0, "meanSelfishness": 0, "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0,
-                             "agentLastMoveOptimalityPercentage": 0
+                             "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0, "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0,
+                             "meanValidMoves": 0
                              }
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
@@ -108,6 +109,8 @@ class Sugarscape:
                                                  "tradeExperimentalGroupToControlGroup": 0, "tradeExperimentalGroupToExperimentalGroup": 0
                                                  }
             self.runtimeStats.update(self.groupInteractionRuntimeStats)
+            self.groupMovementStats = {"meanControlNeighbors": 0, "meanExperimentalNeighbors": 0}
+            self.runtimeStats.update(self.groupMovementStats)
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
@@ -989,6 +992,13 @@ class Sugarscape:
         agentsReplaced = 0
         remainingTribes = 0
         tribes = {}
+        
+        meanNeighbors = 0
+        meanControlNeighbors = 0
+        meanExperimentalNeighbors = 0
+        meanValidMoves = 0
+        meanMoveRank = 0
+        meanMoveDifferenceFromOptimal = 0
 
         for agent in self.agents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
@@ -1021,6 +1031,18 @@ class Sugarscape:
             if agent.lastMoveOptimal == True:
                 agentLastMoveOptimalityPercentage += 1
             agentMoves += 1
+
+            meanNeighbors += len(agent.movementNeighborhood)
+            if self.experimentalGroup != None:
+                meanControlNeighbors += len([x for x in agent.movementNeighborhood if x.isInGroup(self.experimentalGroup, True)])
+                meanExperimentalNeighbors += len([x for x in agent.movementNeighborhood if x.isInGroup(self.experimentalGroup)])
+            meanValidMoves += len(agent.validMoves)
+            for i in range(len(agent.validMoves)):
+                cell = agent.validMoves[i]["cell"]
+                if cell == agent.cell:
+                    meanMoveDifferenceFromOptimal += agent.validMoves[0]["wealth"] - agent.validMoves[i]["wealth"]
+                    break
+
             if agent.isSick():
                 sickAgents += 1
             if agentWealth < minWealth:
@@ -1165,6 +1187,14 @@ class Sugarscape:
             sickAgentsPercentage = round((sickAgents / numAgents) * 100, 2)
             diseaseEffectiveReproductionRate = round(diseaseIncidence / len(infectors), 2) if len(infectors) > 0 else 0
             agentLastMoveOptimalityPercentage = round((agentLastMoveOptimalityPercentage / agentMoves) * 100, 2)
+            
+            meanNeighbors = round(meanNeighbors / numAgents, 2)
+            meanControlNeighbors = round(meanControlNeighbors / numAgents, 2)
+            meanExperimentalNeighbors = round(meanExperimentalNeighbors / numAgents, 2)
+            meanValidMoves = round(meanValidMoves / numAgents, 2)
+            meanMoveRank = round(meanMoveRank / numAgents, 2)
+            meanMoveDifferenceFromOptimal = round(meanMoveDifferenceFromOptimal / meanNeighbors, 2) if meanNeighbors > 0 else 0
+            
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
@@ -1205,13 +1235,15 @@ class Sugarscape:
                         "carryingCapacity": carryingCapacity, "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
                         "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
                         "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
-                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSelfishness": meanSelfishness,
+                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanMoveDifferenceFromOptimal": meanMoveDifferenceFromOptimal,
+                        "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanSelfishness": meanSelfishness,
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
-                        "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision, "minWealth": minWealth, "population": numAgents,
-                        "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
+                        "meanWealthHappiness": meanWealthHappiness, "meanValidMoves": meanValidMoves, "meanVision": meanVision, "minWealth": minWealth,
+                        "population": numAgents, "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
                         "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
                         "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
-                        "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage}
+                        "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage
+                        }
 
         controlInteractionStats = {"combatControlGroupToControlGroup": combatControlToControl, "combatControlGroupToExperimentalGroup": combatControlToExperimental,
                                    "diseaseControlGroupToControlGroup": diseaseControlToControl, "diseaseControlGroupToExperimentalGroup": diseaseControlToExperimental,
@@ -1226,6 +1258,10 @@ class Sugarscape:
                                         "reproductionExperimentalGroupToControlGroup": reproductionExperimentalToControl, "reproductionExperimentalGroupToExperimentalGroup": reproductionExperimentalToExperimental,
                                         "tradeExperimentalGroupToControlGroup": tradeExperimentalToControl, "tradeExperimentalGroupToExperimentalGroup": tradeExperimentalToExperimental
                                         }
+
+        groupMovementStats = {"meanControlNeighbors": meanControlNeighbors, "meanExperimentalNeighbors": meanExperimentalNeighbors}
+        if self.experimentalGroup != None:
+            runtimeStats.update(groupMovementStats)
 
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated

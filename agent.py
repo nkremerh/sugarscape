@@ -83,6 +83,7 @@ class Agent:
         self.lastUniversalSugarIncomeTimestep = 0
         self.marginalRateOfSubstitution = 1
         self.movementModifier = 0
+        self.movementNeighborhood = []
         self.neighborhood = []
         self.neighbors = []
         self.nice = 0
@@ -101,6 +102,7 @@ class Agent:
         self.tribe = self.findTribe()
         self.visionModifier = 0
         self.wealthHappiness = 0
+        self.validMoves = []
 
         self.combatWithControlGroup = 0
         self.combatWithExperimentalGroup = 0
@@ -1235,6 +1237,7 @@ class Agent:
 
     def rankCellsInRange(self):
         self.findNeighborhood()
+
         if len(self.cellsInRange) == 0:
             return [{"cell": self.cell, "wealth": 0, "range": 0}]
         cellsInRange = list(self.cellsInRange.items())
@@ -1279,6 +1282,8 @@ class Agent:
 
         if len(potentialCells) == 0:
             potentialCells.append({"cell": self.cell, "wealth": 0, "range": 0})
+
+        self.updateMovementStats(potentialCells)
         rankedCells = self.sortCellsByWealth(potentialCells)
         return rankedCells
 
@@ -1292,18 +1297,6 @@ class Agent:
         self.cell.resetAgent()
         self.cell = None
 
-    def setFather(self, father):
-        fatherID = father.ID
-        if fatherID not in self.socialNetwork:
-            self.addAgentToSocialNetwork(father)
-        self.socialNetwork["father"] = father
-
-    def setMother(self, mother):
-        motherID = mother.ID
-        if motherID not in self.socialNetwork:
-            self.addAgentToSocialNetwork(mother)
-        self.socialNetwork["mother"] = mother
-
     def resetTimestepMetrics(self):
         self.combatWithControlGroup = 0
         self.combatWithExperimentalGroup = 0
@@ -1315,6 +1308,18 @@ class Agent:
         self.reproductionWithExperimentalGroup = 0
         self.tradeWithControlGroup = 0
         self.tradeWithExperimentalGroup = 0
+
+    def setFather(self, father):
+        fatherID = father.ID
+        if fatherID not in self.socialNetwork:
+            self.addAgentToSocialNetwork(father)
+        self.socialNetwork["father"] = father
+
+    def setMother(self, mother):
+        motherID = mother.ID
+        if motherID not in self.socialNetwork:
+            self.addAgentToSocialNetwork(mother)
+        self.socialNetwork["mother"] = mother
 
     def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
@@ -1392,6 +1397,11 @@ class Agent:
         alpha = 0.05
         self.sugarMeanIncome = (alpha * sugarIncome) + ((1 - alpha) * self.sugarMeanIncome)
         self.spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome)
+
+    def updateMovementStats(self, cells):
+        validCells = cells[:]
+        self.validMoves = self.sortCellsByWealth(validCells)
+        self.movementNeighborhood = self.neighborhood[:]
 
     def updateNeighbors(self):
         self.neighbors = [neighborCell.agent for neighborCell in self.cell.neighbors.values() if neighborCell.agent != None]
