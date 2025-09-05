@@ -904,7 +904,7 @@ class Sugarscape:
         # Log separate stats for experimental and control groups
         if self.experimentalGroup != None:
             self.updateRuntimeStatsPerGroup(self.experimentalGroup)
-            self.updateRuntimeStatsPerGroup(self.experimentalGroup, True)
+            self.updateRuntimeStatsPerGroup(self.experimentalGroup, notInGroup=True)
         self.updateRuntimeStatsPerGroup()
 
     def updateRuntimeStatsPerGroup(self, group=None, notInGroup=False):
@@ -1034,8 +1034,11 @@ class Sugarscape:
 
             meanNeighbors += len(agent.movementNeighborhood)
             if self.experimentalGroup != None:
-                meanControlNeighbors += len([x for x in agent.movementNeighborhood if x.isInGroup(self.experimentalGroup, True)])
-                meanExperimentalNeighbors += len([x for x in agent.movementNeighborhood if x.isInGroup(self.experimentalGroup)])
+                for neighbor in agent.movementNeighborhood:
+                    if neighbor.isInGroup(self.experimentalGroup, notInGroup=True):
+                        meanControlNeighbors += 1
+                    else:
+                        meanExperimentalNeighbors += 1
             meanValidMoves += len(agent.validMoves)
             for i in range(len(agent.validMoves)):
                 cell = agent.validMoves[i]["cell"]
@@ -1065,7 +1068,7 @@ class Sugarscape:
                 tradeExperimentalToControl += agent.tradeWithControlGroup
                 tradeExperimentalToExperimental += agent.tradeWithExperimentalGroup
                 agent.resetTimestepMetrics()
-            elif group != None and agent.isInGroup(group, True):
+            elif group != None and agent.isInGroup(group, notInGroup=True):
                 combatControlToControl += agent.combatWithControlGroup
                 combatControlToExperimental += agent.combatWithExperimentalGroup
                 diseaseControlToControl += agent.diseaseWithControlGroup
@@ -1119,7 +1122,7 @@ class Sugarscape:
                 reproductionExperimentalToExperimental += agent.reproductionWithExperimentalGroup
                 tradeExperimentalToControl += agent.tradeWithControlGroup
                 tradeExperimentalToExperimental += agent.tradeWithExperimentalGroup
-            elif group != None and agent.isInGroup(group, True):
+            elif group != None and agent.isInGroup(group, notInGroup=True):
                 combatControlToControl += agent.combatWithControlGroup
                 combatControlToExperimental += agent.combatWithExperimentalGroup
                 diseaseControlToControl += agent.diseaseWithControlGroup
