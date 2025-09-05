@@ -80,7 +80,8 @@ class Sugarscape:
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
                              "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0,
                              "sickAgentsPercentage": 0, "meanSelfishness": 0, "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0,
-                             "agentLastMoveOptimalityPercentage": 0
+                             "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0, "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0,
+                             "meanValidMoves": 0
                              }
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
@@ -108,12 +109,8 @@ class Sugarscape:
                                                  "tradeExperimentalGroupToControlGroup": 0, "tradeExperimentalGroupToExperimentalGroup": 0
                                                  }
             self.runtimeStats.update(self.groupInteractionRuntimeStats)
-            
-        self.onMoveRuntimeStats = {"onMoveAllNeighborCount": 0, "onMoveControlNeighborCount": 0, "onMoveExperimentalNeighborCount": 0, 
-                                   "onMoveNumValidActions": 0, "onMoveActionRank": 0, "onMoveDiffWithGreedyBestCell": 0
-                                   }    
-        self.runtimeStats.update(self.onMoveRuntimeStats)
-                      
+            self.groupMovementStats = {"meanControlNeighbors": 0, "meanExperimentalNeighbors": 0}
+            self.runtimeStats.update(self.groupMovementStats)
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
@@ -996,13 +993,12 @@ class Sugarscape:
         remainingTribes = 0
         tribes = {}
         
-        # Ankur
-        onMoveAllNeighborCount = 0
-        onMoveControlNeighborCount = 0
-        onMoveExperimentalNeighborCount = 0
-        onMoveNumValidActions = 0
-        onMoveActionRank = 0
-        onMoveDiffWithGreedyBestCell = 0
+        meanNeighbors = 0
+        meanControlNeighbors = 0
+        meanExperimentalNeighbors = 0
+        meanValidMoves = 0
+        meanMoveRank = 0
+        meanMoveDifferenceFromOptimal = 0
 
         for agent in self.agents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
@@ -1035,24 +1031,18 @@ class Sugarscape:
             if agent.lastMoveOptimal == True:
                 agentLastMoveOptimalityPercentage += 1
             agentMoves += 1
-            
-            # Ankur
-            # += is a bit wonky for the overall aggregate for a coup of these stats. . . onMoveActionRank doesn't make much sense without the context
-            # of how many options there are. This may need to be represented as a percentage before we get the full log file solution.
-            # Do we aggregate ratios? Is that a smart idea in math terms?
-            
-            sugarscape = agent.cell.environment.sugarscape
-            onMoveAllNeighborCount += len(agent.onMoveNeighborhood)
-            if (sugarscape.experimentalGroup != None):
-                onMoveControlNeighborCount += len([x for x in agent.onMoveNeighborhood if x.isInGroup(sugarscape.experimentalGroup, True)])
-                onMoveExperimentalNeighborCount += len([x for x in agent.onMoveNeighborhood if x.isInGroup(sugarscape.experimentalGroup)])
-            onMoveNumValidActions += len(agent.onMoveValidActions)
-            for cellRecordOnMove in agent.onMoveValidActions:
-                if (cellRecordOnMove.get("cell") == agent.cell):
-                    onMoveActionRank += agent.onMoveValidActions.index(cellRecordOnMove)
-                    onMoveDiffWithGreedyBestCell += agent.onMoveValidActions[0]["wealth"] - agent.onMoveValidActions[onMoveActionRank]["wealth"]
+
+            meanNeighbors += len(agent.movementNeighborhood)
+            if self.experimentalGroup != None:
+                meanControlNeighbors += len([x for x in agent.movementNeighborhood if x.isInGroup(self.experimentalGroup, True)])
+                meanExperimentalNeighbors += len([x for x in agent.movementNeighborhood if x.isInGroup(self.experimentalGroup)])
+            meanValidMoves += len(agent.validMoves)
+            for i in range(len(agent.validMoves)):
+                cell = agent.validMoves[i]["cell"]
+                if cell == agent.cell:
+                    meanMoveDifferenceFromOptimal += agent.validMoves[0]["wealth"] - agent.validMoves[i]["wealth"]
                     break
-            
+
             if agent.isSick():
                 sickAgents += 1
             if agentWealth < minWealth:
@@ -1162,6 +1152,9 @@ class Sugarscape:
             # If in the control group for a specific disease, skip the experimental disease
             elif group != None and self.isDiseaseExperimentalGroup(disease.ID) == True and notInGroup == True:
                 continue
+            # Depression does not have an infection mechanism for transmission
+            if disease.ID == "depression":
+                continue
             diseasePrevalence += len(disease.infected)
 
         if numAgents > 0:
@@ -1195,13 +1188,12 @@ class Sugarscape:
             diseaseEffectiveReproductionRate = round(diseaseIncidence / len(infectors), 2) if len(infectors) > 0 else 0
             agentLastMoveOptimalityPercentage = round((agentLastMoveOptimalityPercentage / agentMoves) * 100, 2)
             
-            # Ankur
-            onMoveAllNeighborCount = round(onMoveAllNeighborCount / numAgents, 2)
-            onMoveControlNeighborCount = round(onMoveControlNeighborCount / numAgents, 2)
-            onMoveExperimentalNeighborCount = round(onMoveExperimentalNeighborCount / numAgents, 2)
-            onMoveNumValidActions = round(onMoveNumValidActions / numAgents, 2)
-            onMoveActionRank = round(onMoveActionRank / numAgents, 2)
-            onMoveDiffWithGreedyBestCell = round(onMoveDiffWithGreedyBestCell / numAgents, 2)
+            meanNeighbors = round(meanNeighbors / numAgents, 2)
+            meanControlNeighbors = round(meanControlNeighbors / numAgents, 2)
+            meanExperimentalNeighbors = round(meanExperimentalNeighbors / numAgents, 2)
+            meanValidMoves = round(meanValidMoves / numAgents, 2)
+            meanMoveRank = round(meanMoveRank / numAgents, 2)
+            meanMoveDifferenceFromOptimal = round(meanMoveDifferenceFromOptimal / meanNeighbors, 2) if meanNeighbors > 0 else 0
             
         else:
             agentMeanTimeToLive = 0
@@ -1225,12 +1217,6 @@ class Sugarscape:
             tradeVolume = 0
             diseaseEffectiveReproductionRate = 0
 
-        # Ankur -- create a cleanup for ALL agents that resets the per action data for an agent. Make these for loops if statements in that global scan.
-        # I didn't turn this into a single loop only because I'm not sure why the booleans are written as they are. Ask Nate.
-        for agent in self.agents:
-            agent.onMoveValidActions = []
-            agent.onMoveNeighborhood = []
-           
         for agent in self.replacedAgents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
                 continue
@@ -1249,13 +1235,15 @@ class Sugarscape:
                         "carryingCapacity": carryingCapacity, "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
                         "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
                         "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
-                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSelfishness": meanSelfishness,
+                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanMoveDifferenceFromOptimal": meanMoveDifferenceFromOptimal,
+                        "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanSelfishness": meanSelfishness,
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
-                        "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision, "minWealth": minWealth, "population": numAgents,
-                        "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
+                        "meanWealthHappiness": meanWealthHappiness, "meanValidMoves": meanValidMoves, "meanVision": meanVision, "minWealth": minWealth,
+                        "population": numAgents, "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
                         "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
                         "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
-                        "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage}
+                        "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage
+                        }
 
         controlInteractionStats = {"combatControlGroupToControlGroup": combatControlToControl, "combatControlGroupToExperimentalGroup": combatControlToExperimental,
                                    "diseaseControlGroupToControlGroup": diseaseControlToControl, "diseaseControlGroupToExperimentalGroup": diseaseControlToExperimental,
@@ -1271,10 +1259,10 @@ class Sugarscape:
                                         "tradeExperimentalGroupToControlGroup": tradeExperimentalToControl, "tradeExperimentalGroupToExperimentalGroup": tradeExperimentalToExperimental
                                         }
 
-        onMoveRuntimeStats = {"onMoveAllNeighborCount": onMoveAllNeighborCount, "onMoveControlNeighborCount": onMoveControlNeighborCount, "onMoveExperimentalNeighborCount": onMoveExperimentalNeighborCount, 
-                               "onMoveNumValidActions": onMoveNumValidActions, "onMoveActionRank": onMoveActionRank, "onMoveDiffWithGreedyBestCell": onMoveDiffWithGreedyBestCell
-                               }
-                               
+        groupMovementStats = {"meanControlNeighbors": meanControlNeighbors, "meanExperimentalNeighbors": meanExperimentalNeighbors}
+        if self.experimentalGroup != None:
+            runtimeStats.update(groupMovementStats)
+
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
             self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
@@ -1295,7 +1283,6 @@ class Sugarscape:
                 runtimeStats.update(controlInteractionStats)
             else:
                 runtimeStats.update(experimentalInteractionStats)
-            runtimeStats.update(onMoveRuntimeStats)
 
         for key in runtimeStats.keys():
             self.runtimeStats[key] = runtimeStats[key]
@@ -1390,7 +1377,8 @@ def sortConfigurationTimeframes(configuration, timeframe):
 
 def verifyConfiguration(configuration):
     negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
-    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
+    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseFriendlinessPenalty", "diseaseHappinessPenalty", "diseaseMovementPenalty"]
+    negativesAllowed += ["diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
     negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe", "environmentMaxSpice", "environmentMaxSugar"]
     negativesAllowed += ["interfaceHeight", "interfaceWidth", "seed", "timesteps"]
     timeframes = ["diseaseTimeframe", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
