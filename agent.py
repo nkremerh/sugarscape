@@ -113,12 +113,6 @@ class Agent:
         self.tradeWithControlGroup = 0
         self.tradeWithExperimentalGroup = 0
 
-        # Will record action taken in this timestep
-        # FIXME Ask Nate what happens if agent dies before or after its turn.
-        # I think it still counts it in the runTimeStats, but I need to confirm.
-        self.onMoveValidActions = []
-        self.onMoveNeighborhood = []
-        
         # Change metrics for depressed agents
         if self.depressionFactor == 1:
             self.depressed = True
@@ -1240,8 +1234,7 @@ class Agent:
             i += 1
 
     def rankCellsInRange(self):
-        self.onMoveNeighborhood = self.findNeighborhood()
-        
+        self.findNeighborhood()
         if len(self.cellsInRange) == 0:
             return [{"cell": self.cell, "wealth": 0, "range": 0}]
         cellsInRange = list(self.cellsInRange.items())
@@ -1283,16 +1276,10 @@ class Agent:
 
             cellRecord = {"cell": cell, "wealth": welfare, "range": travelDistance}
             potentialCells.append(cellRecord)
-            
-            # Used for onMoveStats
-            cellRecordOnMove = {"cell": cell, "wealth": welfare, "range": travelDistance}
-            self.onMoveValidActions.append(cellRecordOnMove)
 
         if len(potentialCells) == 0:
             potentialCells.append({"cell": self.cell, "wealth": 0, "range": 0})
-            self.onMoveValidActions.append({"cell": self.cell, "wealth": 0, "range": 0})
-        rankedCells = self.sortCellsByWealthAndRange(potentialCells)
-        self.onMoveValidActions = self.sortCellsByWealthAndRange(self.onMoveValidActions)
+        rankedCells = self.sortCellsByWealth(potentialCells)
         return rankedCells
 
     def removeDebt(self, loan):
@@ -1329,7 +1316,7 @@ class Agent:
         self.tradeWithControlGroup = 0
         self.tradeWithExperimentalGroup = 0
 
-    def sortCellsByWealthAndRange(self, cells):
+    def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
         i = 0
         while i < len(cells):

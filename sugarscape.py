@@ -108,12 +108,6 @@ class Sugarscape:
                                                  "tradeExperimentalGroupToControlGroup": 0, "tradeExperimentalGroupToExperimentalGroup": 0
                                                  }
             self.runtimeStats.update(self.groupInteractionRuntimeStats)
-            
-        self.onMoveRuntimeStats = {"onMoveAllNeighborCount": 0, "onMoveControlNeighborCount": 0, "onMoveExperimentalNeighborCount": 0, 
-                                   "onMoveNumValidActions": 0, "onMoveActionRank": 0, "onMoveDiffWithGreedyBestCell": 0
-                                   }    
-        self.runtimeStats.update(self.onMoveRuntimeStats)
-                      
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
@@ -995,14 +989,6 @@ class Sugarscape:
         agentsReplaced = 0
         remainingTribes = 0
         tribes = {}
-        
-        # Ankur
-        onMoveAllNeighborCount = 0
-        onMoveControlNeighborCount = 0
-        onMoveExperimentalNeighborCount = 0
-        onMoveNumValidActions = 0
-        onMoveActionRank = 0
-        onMoveDiffWithGreedyBestCell = 0
 
         for agent in self.agents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
@@ -1035,24 +1021,6 @@ class Sugarscape:
             if agent.lastMoveOptimal == True:
                 agentLastMoveOptimalityPercentage += 1
             agentMoves += 1
-            
-            # Ankur
-            # += is a bit wonky for the overall aggregate for a coup of these stats. . . onMoveActionRank doesn't make much sense without the context
-            # of how many options there are. This may need to be represented as a percentage before we get the full log file solution.
-            # Do we aggregate ratios? Is that a smart idea in math terms?
-            
-            sugarscape = agent.cell.environment.sugarscape
-            onMoveAllNeighborCount += len(agent.onMoveNeighborhood)
-            if (sugarscape.experimentalGroup != None):
-                onMoveControlNeighborCount += len([x for x in agent.onMoveNeighborhood if x.isInGroup(sugarscape.experimentalGroup, True)])
-                onMoveExperimentalNeighborCount += len([x for x in agent.onMoveNeighborhood if x.isInGroup(sugarscape.experimentalGroup)])
-            onMoveNumValidActions += len(agent.onMoveValidActions)
-            for cellRecordOnMove in agent.onMoveValidActions:
-                if (cellRecordOnMove.get("cell") == agent.cell):
-                    onMoveActionRank += agent.onMoveValidActions.index(cellRecordOnMove)
-                    onMoveDiffWithGreedyBestCell += agent.onMoveValidActions[0]["wealth"] - agent.onMoveValidActions[onMoveActionRank]["wealth"]
-                    break
-            
             if agent.isSick():
                 sickAgents += 1
             if agentWealth < minWealth:
@@ -1194,15 +1162,6 @@ class Sugarscape:
             sickAgentsPercentage = round((sickAgents / numAgents) * 100, 2)
             diseaseEffectiveReproductionRate = round(diseaseIncidence / len(infectors), 2) if len(infectors) > 0 else 0
             agentLastMoveOptimalityPercentage = round((agentLastMoveOptimalityPercentage / agentMoves) * 100, 2)
-            
-            # Ankur
-            onMoveAllNeighborCount = round(onMoveAllNeighborCount / numAgents, 2)
-            onMoveControlNeighborCount = round(onMoveControlNeighborCount / numAgents, 2)
-            onMoveExperimentalNeighborCount = round(onMoveExperimentalNeighborCount / numAgents, 2)
-            onMoveNumValidActions = round(onMoveNumValidActions / numAgents, 2)
-            onMoveActionRank = round(onMoveActionRank / numAgents, 2)
-            onMoveDiffWithGreedyBestCell = round(onMoveDiffWithGreedyBestCell / numAgents, 2)
-            
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
@@ -1225,12 +1184,6 @@ class Sugarscape:
             tradeVolume = 0
             diseaseEffectiveReproductionRate = 0
 
-        # Ankur -- create a cleanup for ALL agents that resets the per action data for an agent. Make these for loops if statements in that global scan.
-        # I didn't turn this into a single loop only because I'm not sure why the booleans are written as they are. Ask Nate.
-        for agent in self.agents:
-            agent.onMoveValidActions = []
-            agent.onMoveNeighborhood = []
-           
         for agent in self.replacedAgents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
                 continue
@@ -1271,10 +1224,6 @@ class Sugarscape:
                                         "tradeExperimentalGroupToControlGroup": tradeExperimentalToControl, "tradeExperimentalGroupToExperimentalGroup": tradeExperimentalToExperimental
                                         }
 
-        onMoveRuntimeStats = {"onMoveAllNeighborCount": onMoveAllNeighborCount, "onMoveControlNeighborCount": onMoveControlNeighborCount, "onMoveExperimentalNeighborCount": onMoveExperimentalNeighborCount, 
-                               "onMoveNumValidActions": onMoveNumValidActions, "onMoveActionRank": onMoveActionRank, "onMoveDiffWithGreedyBestCell": onMoveDiffWithGreedyBestCell
-                               }
-                               
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
             self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
@@ -1295,7 +1244,6 @@ class Sugarscape:
                 runtimeStats.update(controlInteractionStats)
             else:
                 runtimeStats.update(experimentalInteractionStats)
-            runtimeStats.update(onMoveRuntimeStats)
 
         for key in runtimeStats.keys():
             self.runtimeStats[key] = runtimeStats[key]
