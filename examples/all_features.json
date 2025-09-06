@@ -55,7 +55,6 @@
     "diseaseTransmissionChance": [1.0, 1.0],
     "diseaseVisionPenalty": [-1, 1],
     "environmentEquator": -1,
-    "environmentFile": null,
     "environmentHeight": 50,
     "environmentMaxCombatLoot": 2,
     "environmentMaxSpice": 4,
