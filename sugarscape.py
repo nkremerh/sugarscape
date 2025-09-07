@@ -89,6 +89,8 @@ class Sugarscape:
         self.logFormat = configuration["logfileFormat"]
         self.experimentalGroup = configuration["experimentalGroup"]
         if self.experimentalGroup != None:
+            self.groupMovementStats = {"meanControlNeighbors": 0, "meanExperimentalNeighbors": 0}
+            self.runtimeStats.update(self.groupMovementStats)
             # Convert keys to Pythonic case scheme and initialize values
             groupRuntimeStats = {}
             for key in self.runtimeStats.keys():
@@ -109,8 +111,6 @@ class Sugarscape:
                                                  "tradeExperimentalGroupToControlGroup": 0, "tradeExperimentalGroupToExperimentalGroup": 0
                                                  }
             self.runtimeStats.update(self.groupInteractionRuntimeStats)
-            self.groupMovementStats = {"meanControlNeighbors": 0, "meanExperimentalNeighbors": 0}
-            self.runtimeStats.update(self.groupMovementStats)
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
