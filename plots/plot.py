@@ -186,6 +186,7 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
                 elif statistic == "median":
                     dataset[model]["metrics"][entry][i-1].append(float(item[entry]))
             i += 1
+    print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
     for model in dataset:
         if dataset[model]["runs"] == 0:
             print(f"No simulation runs found for the {model} decision model")
