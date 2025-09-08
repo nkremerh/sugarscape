@@ -1283,8 +1283,8 @@ class Agent:
         if len(potentialCells) == 0:
             potentialCells.append({"cell": self.cell, "wealth": 0, "range": 0})
 
-        self.updateMovementStats(potentialCells)
         rankedCells = self.sortCellsByWealth(potentialCells)
+        self.updateMovementStats(rankedCells)
         return rankedCells
 
     def removeDebt(self, loan):
@@ -1399,8 +1399,11 @@ class Agent:
         self.spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome)
 
     def updateMovementStats(self, cells):
-        validCells = cells[:]
-        self.validMoves = self.sortCellsByWealth(validCells)
+        validCells = []
+        for cell in cells:
+            newRecord = {"cell": cell["cell"], "wealth": cell["wealth"]}
+            validCells.append(newRecord)
+        self.validMoves = validCells
         self.movementNeighborhood = self.neighborhood[:]
 
     def updateNeighbors(self):
