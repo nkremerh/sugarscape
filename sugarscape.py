@@ -1044,6 +1044,7 @@ class Sugarscape:
                 cell = agent.validMoves[i]["cell"]
                 if cell == agent.cell:
                     meanMoveDifferenceFromOptimal += agent.validMoves[0]["wealth"] - agent.validMoves[i]["wealth"]
+                    meanMoveRank += i
                     break
 
             if agent.isSick():

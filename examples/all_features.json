@@ -1,5 +1,5 @@
 {
-    "__README__": "Default values for Sugarscape simulation provided here. Details can be found in the README.",
+    "__README__": "Almost all agent and environment features especially those not found in Growing Artificial Societies (excluding mutually incompatible ones).",
     "agentAggressionFactor": [1, 1],
     "agentBaseInterestRate": [0.05, 0.10],
     "agentConditions": ["none"],
