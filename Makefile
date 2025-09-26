@@ -5,6 +5,7 @@ PLOT = plot.py
 PLOTCHECK = plots/plots.complete
 RUN = run.py
 SCREENSHOTS = *.ps
+TEST = test.py
 
 DATASET = $(DATACHECK) \
 		data/*[[:digit:]]*.config \
@@ -15,10 +16,14 @@ DATASET = $(DATACHECK) \
 PLOTS = $(PLOTCHECK) \
 		plots/*.pdf
 
+TESTS = tests/*.config \
+        tests/*.log
+
 CLEAN = $(DATASET) \
 		$(LOGS) \
 		$(PLOTS) \
-		$(SCREENSHOTS)
+		$(SCREENSHOTS) \
+		$(TESTS)
 
 # Change to python3 (or other alias) if needed
 PYTHON = python
@@ -42,6 +47,9 @@ data: $(DATACHECK)
 
 plots: $(PLOTCHECK)
 
+run:
+	$(PYTHON) $(SUGARSCAPE) --conf $(CONFIG)
+
 seeds:
 	cd data && $(PYTHON) $(RUN) --conf ../$(CONFIG) --mode csv --seeds
 
@@ -59,7 +67,7 @@ else
 endif
 
 test:
-	$(PYTHON) $(SUGARSCAPE) --conf $(CONFIG)
+	cd tests && $(PYTHON) $(TEST) --conf ../$(CONFIG)
 
 clean:
 	rm -rf $(CLEAN) || true
@@ -67,6 +75,5 @@ clean:
 lean:
 	rm -rf $(PLOTS) || true
 
-.PHONY: all clean data lean plots setup
-
+.PHONY: all clean data lean plots run seeds setup test
 # vim: set noexpandtab tabstop=4:

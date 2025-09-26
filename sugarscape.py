@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import random
+import re
 import sys
 
 class Sugarscape:
@@ -46,20 +47,26 @@ class Sugarscape:
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
         self.environmentWidth = configuration["environmentWidth"]
-        self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"])
+        self.configureEnvironment(configuration["environmentMaxSugar"], configuration["environmentMaxSpice"], configuration["environmentSugarPeaks"], configuration["environmentSpicePeaks"], configuration["environmentFile"])
         self.debug = configuration["debugMode"]
         self.keepAlive = configuration["keepAlivePostExtinction"]
+        self.agentEndowmentIndex = 0
+        self.agentEndowments = []
+        self.agentLeader = None
         self.agents = []
-        self.replacedAgents = []
         self.bornAgents = []
         self.deadAgents = []
         self.depression = True if configuration["agentDepressionPercentage"] > 0 else False
+        self.diseaseEndowmentIndex = 0
+        self.diseaseEndowments = []
         self.diseases = []
-        self.agentLeader = None
+        self.remainingDiseases = []
+        self.replacedAgents = []
+
         self.activeQuadrants = self.findActiveQuadrants()
         self.configureDepression()
         self.configureAgents(configuration["startingAgents"])
-        self.configureDiseases(configuration["startingDiseases"])
+        self.configureDiseases(configuration["startingDiseases"], configuration["diseaseList"])
         self.gui = gui.GUI(self, self.configuration["interfaceHeight"], self.configuration["interfaceWidth"]) if configuration["headlessMode"] == False else None
         self.run = False # Simulation start flag
         self.end = False # Simulation end flag
@@ -72,13 +79,18 @@ class Sugarscape:
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
                              "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0,
-                             "sickAgentsPercentage": 0, "meanSelfishness": 0}
+                             "sickAgentsPercentage": 0, "meanSelfishness": 0, "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0,
+                             "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0, "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0,
+                             "meanValidMoves": 0
+                             }
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
         self.experimentalGroup = configuration["experimentalGroup"]
         if self.experimentalGroup != None:
+            self.groupMovementStats = {"meanControlNeighbors": 0, "meanExperimentalNeighbors": 0}
+            self.runtimeStats.update(self.groupMovementStats)
             # Convert keys to Pythonic case scheme and initialize values
             groupRuntimeStats = {}
             for key in self.runtimeStats.keys():
@@ -87,44 +99,64 @@ class Sugarscape:
                 groupRuntimeStats[controlGroupKey] = 0
                 groupRuntimeStats[experimentalGroupKey] = 0
             self.runtimeStats.update(groupRuntimeStats)
+            self.groupInteractionRuntimeStats = {"combatControlGroupToControlGroup": 0, "combatControlGroupToExperimentalGroup": 0,
+                                                 "combatExperimentalGroupToControlGroup": 0, "combatExperimentalGroupToExperimentalGroup": 0,
+                                                 "diseaseControlGroupToControlGroup": 0, "diseaseControlGroupToExperimentalGroup": 0,
+                                                 "diseaseExperimentalGroupToControlGroup": 0, "diseaseExperimentalGroupToExperimentalGroup": 0,
+                                                 "lendingControlGroupToControlGroup": 0, "lendingControlGroupToExperimentalGroup": 0,
+                                                 "lendingExperimentalGroupToControlGroup": 0, "lendingExperimentalGroupToExperimentalGroup": 0,
+                                                 "reproductionControlGroupToControlGroup": 0, "reproductionControlGroupToExperimentalGroup": 0,
+                                                 "reproductionExperimentalGroupToControlGroup": 0, "reproductionExperimentalGroupToExperimentalGroup": 0,
+                                                 "tradeControlGroupToControlGroup": 0, "tradeControlGroupToExperimentalGroup": 0,
+                                                 "tradeExperimentalGroupToControlGroup": 0, "tradeExperimentalGroupToExperimentalGroup": 0
+                                                 }
+            self.runtimeStats.update(self.groupInteractionRuntimeStats)
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
         self.agents.append(agent)
 
-    def addSpicePeak(self, startX, startY, radius, maxSpice):
+    def addRemainingDiseases(self):
+        infectedDiseases = []
+        for disease in self.remainingDiseases:
+            if disease.startTimestep <= self.timestep:
+                for agent in self.agents:
+                    hammingDistance = agent.findNearestHammingDistanceInDisease(disease)["distance"]
+                    if hammingDistance == 0:
+                        continue
+                    agent.catchDisease(disease, initial=True)
+                    self.diseases.append(disease)
+                    infectedDiseases.append(disease)
+                    break
+        for disease in infectedDiseases:
+            self.remainingDiseases.remove(disease)
+
+    def addResourcePeak(self, startX, startY, radius, maxValue, resource):
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
         for i in range(width):
             for j in range(height):
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
-                currDispersion = 1 + maxSpice * (1 - euclideanDistanceToStart / radialDispersion)
-                cellMaxCapacity = min(currDispersion, maxSpice)
+                currDispersion = 1 + maxValue * (1 - euclideanDistanceToStart / radialDispersion)
+                cellMaxCapacity = min(currDispersion, maxValue)
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
-                if cellMaxCapacity > self.environment.findCell(i, j).maxSpice:
+                if resource == "spice" and cellMaxCapacity > self.environment.findCell(i, j).maxSpice:
                     self.environment.findCell(i, j).maxSpice = cellMaxCapacity
                     self.environment.findCell(i, j).spice = cellMaxCapacity
-
-    def addSugarPeak(self, startX, startY, radius, maxSugar):
-        height = self.environment.height
-        width = self.environment.width
-        radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
-        for i in range(width):
-            for j in range(height):
-                euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
-                currDispersion = 1 + maxSugar * (1 - euclideanDistanceToStart / radialDispersion)
-                cellMaxCapacity = min(currDispersion, maxSugar)
-                cellMaxCapacity = math.ceil(cellMaxCapacity)
-                if cellMaxCapacity > self.environment.findCell(i, j).maxSugar:
+                elif resource == "sugar" and cellMaxCapacity > self.environment.findCell(i, j).maxSugar:
                     self.environment.findCell(i, j).maxSugar = cellMaxCapacity
                     self.environment.findCell(i, j).sugar = cellMaxCapacity
 
-    def configureAgents(self, numAgents):
+    def configureAgents(self, numAgents, editCell=None):
         if self.environment == None:
             return
+        if editCell != None and editCell.isOccupied():
+            return
+        if editCell != None and numAgents != 1:
+            numAgents = 1
 
-        if self.configuration["agentLeader"] == True:
+        if self.configuration["agentLeader"] == True and self.agentLeader == None:
             numAgents += 1
 
         emptyCells = [[cell for cell in quadrant if cell.agent == None] for quadrant in self.activeQuadrants]
@@ -138,52 +170,63 @@ class Sugarscape:
             numAgents = totalCells
 
         # Ensure agent endowments are randomized across initial agent count to make replacements follow same distributions
-        agentEndowments = self.randomizeAgentEndowments(numAgents)
-        for quadrant in emptyCells:
-            random.shuffle(quadrant)
-        quadrantIndices = [i for i in range(quadrants)]
-        random.shuffle(quadrantIndices)
+        if len(self.agentEndowments) == 0:
+            self.agentEndowments = self.randomizeAgentEndowments(numAgents)
+        quadrantIndices = []
+        if editCell == None:
+            for quadrant in emptyCells:
+                random.shuffle(quadrant)
+            quadrantIndices = [i for i in range(quadrants)]
+            random.shuffle(quadrantIndices)
 
         for i in range(numAgents):
-            quadrantIndex = quadrantIndices[i % quadrants]
-            randomCell = emptyCells[quadrantIndex].pop()
-            agentConfiguration = agentEndowments[i]
+            placementCell = editCell
+            if editCell == None:
+                quadrantIndex = quadrantIndices[i % quadrants]
+                placementCell = emptyCells[quadrantIndex].pop()
+            agentConfiguration = self.agentEndowments[self.agentEndowmentIndex % len(self.agentEndowments)]
+            self.agentEndowmentIndex += 1
             agentID = self.generateAgentID()
-            a = agent.Agent(agentID, self.timestep, randomCell, agentConfiguration)
-            if self.configuration["agentLeader"] == True and i == 0:
-                a = ethics.Leader(agentID, self.timestep, randomCell, agentConfiguration)
+            a = agent.Agent(agentID, self.timestep, placementCell, agentConfiguration)
+            if self.configuration["agentLeader"] == True and self.agentLeader == None:
+                a = ethics.Leader(agentID, self.timestep, placementCell, agentConfiguration)
                 cornerCell = self.environment.grid[0][0]
                 a.gotoCell(cornerCell)
                 self.agentLeader = a
-            # If using a different decision model, replace new agent with instance of child class
+
+            # If using a consequentialist decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = 0
             elif "bentham" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 if agentConfiguration["selfishnessFactor"] < 0:
                     a.selfishnessFactor = 0.5
             elif "egoist" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = 1
             elif "negativeBentham" in agentConfiguration["decisionModel"]:
-                a = ethics.Bentham(agentID, self.timestep, randomCell, agentConfiguration)
+                a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = -1
-            elif "reactiveBentham" in agentConfiguration["decisionModel"]:
-                a = ethics.ReactiveBentham(agentID, self.timestep, randomCell, agentConfiguration)
-                if agentConfiguration["selfishnessFactor"] < 0:
-                    a.selfishnessFactor = 0.5
 
+            # If dynamic selfishness is desired but not defined, give a small degree of dynamic selfishness
+            if "Dynamic" in agentConfiguration["decisionModel"] and self.configuration["agentDynamicSelfishnessFactor"] == [0.0, 0.0]:
+                a.dynamicSelfishnessFactor = 0.01
             if "NoLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0
             elif "HalfLookahead" in agentConfiguration["decisionModel"]:
                 a.decisionModelLookaheadFactor = 0.5
+
+            # If using a deontological decision model, replace new agent with instance of child class
+            if "asimov" in agentConfiguration["decisionModel"]:
+                a = ethics.Asimov(agentID, self.timestep, placementCell, agentConfiguration)
+
             if self.configuration["environmentTribePerQuadrant"] == True:
                 tribe = quadrantIndex
                 tags = self.generateTribeTags(tribe)
                 a.tags = tags
                 a.tribe = a.findTribe()
-            randomCell.agent = a
+            placementCell.agent = a
             self.agents.append(a)
             if self.timestep > 0:
                 self.replacedAgents.append(a)
@@ -192,68 +235,119 @@ class Sugarscape:
             a.findCellsInRange()
             a.findNeighborhood()
 
+    def configureCell(self, cell, mode, delta):
+        if cell == None or delta == 0:
+            return
+        if mode == "currentSpice":
+            cell.spice = min(max(0, (cell.spice + delta)), self.environment.globalMaxSpice)
+        elif mode == "currentSugar":
+            cell.sugar = min(max(0, (cell.sugar + delta)), self.environment.globalMaxSugar)
+        elif mode == "maximumSpice":
+            cell.maxSpice = min(max(0, (cell.maxSpice + delta)), self.environment.globalMaxSpice)
+        elif mode == "maximumSugar":
+            cell.maxSugar = min(max(0, (cell.maxSugar + delta)), self.environment.globalMaxSugar)
+
     def configureDepression(self):
         if self.depression == True:
             self.depression = condition.Depression()
             self.diseases.append(self.depression)
 
-    def configureDiseases(self, numDiseases):
+    def configureDiseases(self, numDiseases, namedDiseases, editCell=None):
         numAgents = len(self.agents)
         if numAgents == 0:
             return
         elif numAgents < numDiseases:
             numDiseases = numAgents
 
-        diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
-        random.shuffle(self.agents)
-        diseases = []
-        for i in range(numDiseases):
+        if len(self.diseaseEndowments) == 0:
+            premadeDiseases  = []
+            for disease in namedDiseases:
+                validDisease = 0
+                if "zombieVirus" in disease:
+                    zombie = condition.ZombieVirus("zombieVirus", {})
+                    premadeDiseases.append(zombie)
+                    validDisease = 1
+                if validDisease == 1:
+                    numDiseases -= 1
+
+            self.diseaseEndowments = self.randomizeDiseaseEndowments(numDiseases)
+            random.shuffle(self.agents)
+            initialDiseases = []
+            for i in range(numDiseases):
+                diseaseID = self.generateDiseaseID()
+                diseaseConfiguration = self.diseaseEndowments[i]
+                newDisease = condition.Disease(diseaseID, diseaseConfiguration)
+                if diseaseConfiguration["startTimestep"] == 0:
+                    initialDiseases.append(newDisease)
+                else:
+                    self.remainingDiseases.append(newDisease)
+            initialDiseases.extend(premadeDiseases)
+
+            startingDiseases = self.configuration["startingDiseasesPerAgent"]
+            minStartingDiseases = startingDiseases[0]
+            maxStartingDiseases = startingDiseases[1]
+            currStartingDiseases = minStartingDiseases
+            for agent in self.agents:
+                random.shuffle(initialDiseases)
+                for newDisease in initialDiseases:
+                    if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
+                        currStartingDiseases += 1
+                        break
+                    if newDisease.tags != None:
+                        hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
+                        if hammingDistance == 0:
+                            continue
+                    agent.catchDisease(newDisease, initial=True)
+                    self.diseases.append(newDisease)
+                    if startingDiseases == [0, 0]:
+                        initialDiseases.remove(newDisease)
+                        break
+                if currStartingDiseases > maxStartingDiseases:
+                    currStartingDiseases = minStartingDiseases
+
+            if startingDiseases == [0, 0] and len(initialDiseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
+                print(f"Could not place {len(diseases)} diseases.")
+        elif editCell != None and editCell.isOccupied() == True:
+            selectedAgent = editCell.agent
             diseaseID = self.generateDiseaseID()
-            diseaseConfiguration = diseaseEndowments[i]
-            newDisease = condition.Disease(diseaseID, diseaseConfiguration)
-            diseases.append(newDisease)
+            newDisease = condition.Disease(diseaseID, self.diseaseEndowments[self.diseaseEndowmentIndex % len(self.diseaseEndowments)])
+            self.diseaseEndowmentIndex += 1
+            selectedAgent.catchDisease(newDisease)
 
-        startingDiseases = self.configuration["startingDiseasesPerAgent"]
-        minStartingDiseases = startingDiseases[0]
-        maxStartingDiseases = startingDiseases[1]
-        currStartingDiseases = minStartingDiseases
-        for agent in self.agents:
-            random.shuffle(diseases)
-            for newDisease in diseases:
-                if len(agent.diseases) >= currStartingDiseases and startingDiseases != [0, 0]:
-                    currStartingDiseases += 1
-                    break
-                hammingDistance = agent.findNearestHammingDistanceInDisease(newDisease)["distance"]
-                if hammingDistance == 0:
-                    continue
-                agent.catchDisease(newDisease)
-                self.diseases.append(newDisease)
-                if startingDiseases == [0, 0]:
-                    diseases.remove(newDisease)
-                    break
-            if currStartingDiseases > maxStartingDiseases:
-                currStartingDiseases = minStartingDiseases
-
-        if startingDiseases == [0, 0] and len(diseases) > 0 and ("all" in self.debug or "sugarscape" in self.debug):
-            print(f"Could not place {len(diseases)} diseases.")
-
-    def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks):
+    def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks, environmentFile=None):
         height = self.environment.height
         width = self.environment.width
-        for i in range(width):
-            for j in range(height):
-                newCell = cell.Cell(i, j, self.environment)
-                self.environment.setCell(newCell, i, j)
+        if environmentFile == None:
+            for i in range(width):
+                for j in range(height):
+                    newCell = cell.Cell(i, j, self.environment)
+                    self.environment.setCell(newCell, i, j)
 
-        sugarRadiusScale = 2
-        radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
-        for peak in sugarPeaks:
-            self.addSugarPeak(peak[0], peak[1], radius, maxSugar)
+            sugarRadiusScale = 2
+            radius = math.ceil(math.sqrt(sugarRadiusScale * (height + width)))
+            for peak in sugarPeaks:
+                self.addResourcePeak(peak[0], peak[1], radius, peak[2], "sugar")
 
-        spiceRadiusScale = 2
-        radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
-        for peak in spicePeaks:
-            self.addSpicePeak(peak[0], peak[1], radius, maxSpice)
+            spiceRadiusScale = 2
+            radius = math.ceil(math.sqrt(spiceRadiusScale * (height + width)))
+            for peak in spicePeaks:
+                self.addResourcePeak(peak[0], peak[1], radius, peak[2], "spice")
+        else:
+            environmentFile = open(environmentFile)
+            loadEnvironment = json.loads(environmentFile.read())
+            environmentFile.close()
+            height = len(loadEnvironment)
+            width = len(loadEnvironment[0])
+            self.environment.height = height
+            self.environment.width = width
+            self.environmentHeight = height
+            self.environmentWidth = width
+            for i in range(width):
+                for j in range(height):
+                    loadSpice = loadEnvironment[i][j]["spice"]
+                    loadSugar = loadEnvironment[i][j]["sugar"]
+                    newCell = cell.Cell(i, j, self.environment, loadSpice, loadSugar)
+                    self.environment.setCell(newCell, i, j)
         self.environment.findCellNeighbors()
         self.environment.findCellRanges()
 
@@ -269,6 +363,7 @@ class Sugarscape:
         else:
             self.environment.doTimestep(self.timestep)
             random.shuffle(self.agents)
+            self.addRemainingDiseases()
             if self.agentLeader != None:
                 self.agentLeader.doTimestep(self.timestep)
             for agent in self.agents:
@@ -378,6 +473,15 @@ class Sugarscape:
         random.shuffle(tags)
         return tags
 
+    def isDiseaseExperimentalGroup(self, diseaseID):
+        if self.experimentalGroup == None:
+            return False
+        if "disease" in self.experimentalGroup:
+            experimentalDiseaseID = re.search(r"disease(?P<ID>\d+)", self.experimentalGroup).group("ID")
+            if int(diseaseID) == int(experimentalDiseaseID):
+                return True
+        return False
+
     def pauseSimulation(self):
         while self.run == False:
             if self.gui != None and self.end == False:
@@ -393,6 +497,8 @@ class Sugarscape:
         decisionModelLookaheadDiscount = configs["agentDecisionModelLookaheadDiscount"]
         decisionModelLookaheadFactor = configs["agentDecisionModelLookaheadFactor"]
         decisionModelTribalFactor = configs["agentDecisionModelTribalFactor"]
+        diseaseProtectionChance = configs["agentDiseaseProtectionChance"]
+        dynamicSelfishnessFactor = configs["agentDynamicSelfishnessFactor"]
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -433,6 +539,8 @@ class Sugarscape:
                           "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
                           "decisionModelLookaheadDiscount": {"endowments": [], "curr": decisionModelLookaheadDiscount[0], "min": decisionModelLookaheadDiscount[0], "max": decisionModelLookaheadDiscount[1]},
                           "decisionModelTribalFactor": {"endowments": [], "curr": decisionModelTribalFactor[0], "min": decisionModelTribalFactor[0], "max": decisionModelTribalFactor[1]},
+                          "diseaseProtectionChance": {"endowments": [], "curr": diseaseProtectionChance[0], "min": diseaseProtectionChance[0], "max": diseaseProtectionChance[1]},
+                          "dynamicSelfishnessFactor": {"endowments": [], "curr": dynamicSelfishnessFactor[0], "min": dynamicSelfishnessFactor[0], "max": dynamicSelfishnessFactor[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
@@ -561,20 +669,26 @@ class Sugarscape:
         fertilityPenalty = configs["diseaseFertilityPenalty"]
         friendlinessPenalty = configs["diseaseFriendlinessPenalty"]
         happinessPenalty = configs["diseaseHappinessPenalty"]
+        incubationPeriod = configs["diseaseIncubationPeriod"]
         movementPenalty = configs["diseaseMovementPenalty"]
         spiceMetabolismPenalty = configs["diseaseSpiceMetabolismPenalty"]
+        startTimestep = configs["diseaseTimeframe"]
         sugarMetabolismPenalty = configs["diseaseSugarMetabolismPenalty"]
         tagLength = configs["diseaseTagStringLength"]
+        transmissionChance = configs["diseaseTransmissionChance"]
         visionPenalty = configs["diseaseVisionPenalty"]
 
         configurations = {"aggressionPenalty": {"endowments": [], "curr": aggressionPenalty[0], "min": aggressionPenalty[0], "max": aggressionPenalty[1]},
                           "fertilityPenalty": {"endowments": [], "curr": fertilityPenalty[0], "min": fertilityPenalty[0], "max": fertilityPenalty[1]},
                           "friendlinessPenalty": {"endowments": [], "curr": friendlinessPenalty[0], "min": friendlinessPenalty[0], "max": friendlinessPenalty[1]},
                           "happinessPenalty": {"endowments": [], "curr": happinessPenalty[0], "min": happinessPenalty[0], "max": happinessPenalty[1]},
+                          "incubationPeriod": {"endowments": [], "curr": incubationPeriod[0], "min": incubationPeriod[0], "max": incubationPeriod[1]},
                           "movementPenalty": {"endowments": [], "curr": movementPenalty[0], "min": movementPenalty[0], "max": movementPenalty[1]},
                           "spiceMetabolismPenalty": {"endowments": [], "curr": spiceMetabolismPenalty[0], "min": spiceMetabolismPenalty[0], "max": spiceMetabolismPenalty[1]},
+                          "startTimestep": {"endowments": [], "curr": startTimestep[0], "min": startTimestep[0], "max": startTimestep[1]},
                           "sugarMetabolismPenalty": {"endowments": [], "curr": sugarMetabolismPenalty[0], "min": sugarMetabolismPenalty[0], "max": sugarMetabolismPenalty[1]},
                           "tagLength": {"endowments": [], "curr": tagLength[0], "min": tagLength[0], "max": tagLength[1]},
+                          "transmissionChance": {"endowments": [], "curr": transmissionChance[0], "min": transmissionChance[0], "max": transmissionChance[1]},
                           "visionPenalty": {"endowments": [], "curr": visionPenalty[0], "min": visionPenalty[0], "max": visionPenalty[1]}
                           }
 
@@ -641,6 +755,7 @@ class Sugarscape:
                 deadAgents.append(agent)
         self.deadAgents += deadAgents
         for agent in deadAgents:
+            agent.doDeath()
             self.agents.remove(agent)
 
     def replaceDeadAgents(self):
@@ -670,7 +785,11 @@ class Sugarscape:
             t += 1
             if self.gui != None and self.run == False:
                 self.pauseSimulation()
-        self.endSimulation()
+        if self.configuration["keepAliveAtEnd"] == True and self.gui != None:
+            self.run = False
+            self.pauseSimulation()
+        else:
+            self.endSimulation()
 
     def startLog(self):
         if self.log == None:
@@ -718,7 +837,7 @@ class Sugarscape:
         equalityLineArea = 0.5
         giniCoefficient = round((equalityLineArea - lorenzCurveArea) / equalityLineArea, 3)
         return giniCoefficient
-    
+
     def updateGraphStats(self):
         histogramBins = self.gui.xTicks
 
@@ -785,7 +904,7 @@ class Sugarscape:
         # Log separate stats for experimental and control groups
         if self.experimentalGroup != None:
             self.updateRuntimeStatsPerGroup(self.experimentalGroup)
-            self.updateRuntimeStatsPerGroup(self.experimentalGroup, True)
+            self.updateRuntimeStatsPerGroup(self.experimentalGroup, notInGroup=True)
         self.updateRuntimeStatsPerGroup()
 
     def updateRuntimeStatsPerGroup(self, group=None, notInGroup=False):
@@ -803,6 +922,7 @@ class Sugarscape:
         meanSocialHappiness = 0
         meanSpiceMetabolism = 0
         meanSugarMetabolism = 0
+        combinedMetabolism = 0
         meanTradePrice = 0
         meanVision = 0
         meanWealth = 0
@@ -830,6 +950,8 @@ class Sugarscape:
         agentAgingDeaths = 0
         agentCombatDeaths = 0
         agentDiseaseDeaths = 0
+        agentLastMoveOptimalityPercentage = 0
+        agentMoves = 0
         agentMeanTimeToLive = 0
         agentStarvationDeaths = 0
         agentTotalMetabolism = 0
@@ -840,9 +962,43 @@ class Sugarscape:
         meanDeathsPercentage = 0
         sickAgentsPercentage = 0
 
+        diseaseEffectiveReproductionRate = 0
+        diseaseIncidence = 0
+        diseasePrevalence = 0
+        infectors = set()
+
+        combatControlToControl = 0
+        combatControlToExperimental = 0
+        combatExperimentalToControl = 0
+        combatExperimentalToExperimental = 0
+        diseaseControlToControl = 0
+        diseaseControlToExperimental = 0
+        diseaseExperimentalToControl = 0
+        diseaseExperimentalToExperimental = 0
+        lendingControlToControl = 0
+        lendingControlToExperimental = 0
+        lendingExperimentalToControl = 0
+        lendingExperimentalToExperimental = 0
+        reproductionControlToControl = 0
+        reproductionControlToExperimental = 0
+        reproductionExperimentalToControl = 0
+        reproductionExperimentalToExperimental = 0
+        tradeControlToControl = 0
+        tradeControlToExperimental = 0
+        tradeExperimentalToControl = 0
+        tradeExperimentalToExperimental = 0
+
         agentsBorn = 0
         agentsReplaced = 0
+        remainingTribes = 0
         tribes = {}
+        
+        meanNeighbors = 0
+        meanControlNeighbors = 0
+        meanExperimentalNeighbors = 0
+        meanValidMoves = 0
+        meanMoveRank = 0
+        meanMoveDifferenceFromOptimal = 0
 
         for agent in self.agents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
@@ -872,6 +1028,25 @@ class Sugarscape:
             agentWealthBurnRate += agentTimeToLive
             agentMeanTimeToLive += agentTimeToLiveAgeLimited
             agentTotalMetabolism += agent.sugarMetabolism + agent.spiceMetabolism
+            if agent.lastMoveOptimal == True:
+                agentLastMoveOptimalityPercentage += 1
+            agentMoves += 1
+
+            meanNeighbors += len(agent.movementNeighborhood)
+            if self.experimentalGroup != None:
+                for neighbor in agent.movementNeighborhood:
+                    if neighbor.isInGroup(self.experimentalGroup, notInGroup=True):
+                        meanControlNeighbors += 1
+                    else:
+                        meanExperimentalNeighbors += 1
+            meanValidMoves += len(agent.validMoves)
+            for i in range(len(agent.validMoves)):
+                cell = agent.validMoves[i]["cell"]
+                if cell == agent.cell:
+                    meanMoveDifferenceFromOptimal += agent.validMoves[0]["wealth"] - agent.validMoves[i]["wealth"]
+                    meanMoveRank += i
+                    break
+
             if agent.isSick():
                 sickAgents += 1
             if agentWealth < minWealth:
@@ -882,22 +1057,109 @@ class Sugarscape:
                 tribes[agent.tribe] = 1
             else:
                 tribes[agent.tribe] += 1
+            if group != None and agent.isInGroup(group):
+                combatExperimentalToControl += agent.combatWithControlGroup
+                combatExperimentalToExperimental += agent.combatWithExperimentalGroup
+                diseaseExperimentalToControl += agent.diseaseWithControlGroup
+                diseaseExperimentalToExperimental += agent.diseaseWithExperimentalGroup
+                lendingExperimentalToControl += agent.lendingWithControlGroup
+                lendingExperimentalToExperimental += agent.lendingWithExperimentalGroup
+                reproductionExperimentalToControl += agent.reproductionWithControlGroup
+                reproductionExperimentalToExperimental += agent.reproductionWithExperimentalGroup
+                tradeExperimentalToControl += agent.tradeWithControlGroup
+                tradeExperimentalToExperimental += agent.tradeWithExperimentalGroup
+                agent.resetTimestepMetrics()
+            elif group != None and agent.isInGroup(group, notInGroup=True):
+                combatControlToControl += agent.combatWithControlGroup
+                combatControlToExperimental += agent.combatWithExperimentalGroup
+                diseaseControlToControl += agent.diseaseWithControlGroup
+                diseaseControlToExperimental += agent.diseaseWithExperimentalGroup
+                lendingControlToControl += agent.lendingWithControlGroup
+                lendingControlToExperimental += agent.lendingWithExperimentalGroup
+                reproductionControlToControl += agent.reproductionWithControlGroup
+                reproductionControlToExperimental += agent.reproductionWithExperimentalGroup
+                tradeControlToControl += agent.tradeWithControlGroup
+                tradeControlToExperimental += agent.tradeWithExperimentalGroup
+                agent.resetTimestepMetrics()
             numAgents += 1
+
+            for disease in agent.diseases:
+                # If in the experimental group for a specific disease, skip other diseases
+                if group != None and self.isDiseaseExperimentalGroup(disease["disease"].ID) == False and notInGroup == False:
+                    continue
+                # If in the control group for a specific disease, skip the experimental disease
+                elif group != None and self.isDiseaseExperimentalGroup(disease["disease"].ID) == True and notInGroup == True:
+                    continue
+                if disease["caught"] == self.timestep:
+                    diseaseIncidence += 1
+                    if self.timestep != 0:
+                        infectors.add(disease["infector"])
 
         numDeadAgents = 0
         meanAgeAtDeath = 0
         for agent in self.deadAgents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
                 continue
+            # If agent moved this timestep but died, count its movement optimality
+            if agent.timestep == self.timestep:
+                if agent.lastMoveOptimal == True:
+                    agentLastMoveOptimalityPercentage += 1
+                agentMoves += 1
             agentWealth = agent.sugar + agent.spice
             meanAgeAtDeath += agent.age
             agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
             agentAgingDeaths += 1 if agent.causeOfDeath == "aging" else 0
             agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
-            agentDiseaseDeaths += 1 if agent.causeOfDeath == "disease" else 0
+            agentDiseaseDeaths += 1 if agent.diseaseDeath == True else 0
             agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
+            if group != None and agent.isInGroup(group):
+                combatExperimentalToControl += agent.combatWithControlGroup
+                combatExperimentalToExperimental += agent.combatWithExperimentalGroup
+                diseaseExperimentalToControl += agent.diseaseWithControlGroup
+                diseaseExperimentalToExperimental += agent.diseaseWithExperimentalGroup
+                lendingExperimentalToControl += agent.lendingWithControlGroup
+                lendingExperimentalToExperimental += agent.lendingWithExperimentalGroup
+                reproductionExperimentalToControl += agent.reproductionWithControlGroup
+                reproductionExperimentalToExperimental += agent.reproductionWithExperimentalGroup
+                tradeExperimentalToControl += agent.tradeWithControlGroup
+                tradeExperimentalToExperimental += agent.tradeWithExperimentalGroup
+            elif group != None and agent.isInGroup(group, notInGroup=True):
+                combatControlToControl += agent.combatWithControlGroup
+                combatControlToExperimental += agent.combatWithExperimentalGroup
+                diseaseControlToControl += agent.diseaseWithControlGroup
+                diseaseControlToExperimental += agent.diseaseWithExperimentalGroup
+                lendingControlToControl += agent.lendingWithControlGroup
+                lendingControlToExperimental += agent.lendingWithExperimentalGroup
+                reproductionControlToControl += agent.reproductionWithControlGroup
+                reproductionControlToExperimental += agent.reproductionWithExperimentalGroup
+                tradeControlToControl += agent.tradeWithControlGroup
+                tradeControlToExperimental += agent.tradeWithExperimentalGroup
             numDeadAgents += 1
+
+            for disease in agent.diseases:
+                # If in the experimental group for a specific disease, skip other diseases
+                if group != None and self.isDiseaseExperimentalGroup(disease["disease"].ID) == False and notInGroup == False:
+                    continue
+                # If in the control group for a specific disease, skip the experimental disease
+                elif group != None and self.isDiseaseExperimentalGroup(disease["disease"].ID) == True and notInGroup == True:
+                    continue
+                if disease["caught"] == self.timestep:
+                    diseaseIncidence += 1
+                    if self.timestep != 0:
+                        infectors.add(disease["infector"])
         meanAgeAtDeath = round(meanAgeAtDeath / numDeadAgents, 2) if numDeadAgents > 0 else 0
+
+        for disease in self.diseases:
+            # If in the experimental group for a specific disease, skip other diseases
+            if group != None and self.isDiseaseExperimentalGroup(disease.ID) == False and notInGroup == False:
+                continue
+            # If in the control group for a specific disease, skip the experimental disease
+            elif group != None and self.isDiseaseExperimentalGroup(disease.ID) == True and notInGroup == True:
+                continue
+            # Depression does not have an infection mechanism for transmission
+            if disease.ID == "depression":
+                continue
+            diseasePrevalence += len(disease.infected)
 
         if numAgents > 0:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
@@ -925,8 +1187,18 @@ class Sugarscape:
             minWealth = round(minWealth, 2)
             remainingTribes = len(tribes)
             tradeVolume = round(tradeVolume, 2)
-            meanDeathsPercentage = round(numDeadAgents / numAgents, 2) * 100
-            sickAgentsPercentage = round(sickAgents / numAgents, 2) * 100
+            meanDeathsPercentage = round((numDeadAgents / numAgents) * 100, 2)
+            sickAgentsPercentage = round((sickAgents / numAgents) * 100, 2)
+            diseaseEffectiveReproductionRate = round(diseaseIncidence / len(infectors), 2) if len(infectors) > 0 else 0
+            agentLastMoveOptimalityPercentage = round((agentLastMoveOptimalityPercentage / agentMoves) * 100, 2)
+            
+            meanNeighbors = round(meanNeighbors / numAgents, 2)
+            meanControlNeighbors = round(meanControlNeighbors / numAgents, 2)
+            meanExperimentalNeighbors = round(meanExperimentalNeighbors / numAgents, 2)
+            meanValidMoves = round(meanValidMoves / numAgents, 2)
+            meanMoveRank = round(meanMoveRank / numAgents, 2)
+            meanMoveDifferenceFromOptimal = round(meanMoveDifferenceFromOptimal / meanNeighbors, 2) if meanNeighbors > 0 else 0
+            
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
@@ -947,6 +1219,7 @@ class Sugarscape:
             minWealth = 0
             remainingTribes = 0
             tradeVolume = 0
+            diseaseEffectiveReproductionRate = 0
 
         for agent in self.replacedAgents:
             if group != None and agent.isInGroup(group, notInGroup) == False:
@@ -966,11 +1239,33 @@ class Sugarscape:
                         "carryingCapacity": carryingCapacity, "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
                         "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
                         "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
-                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanSelfishness": meanSelfishness,
+                        "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanMoveDifferenceFromOptimal": meanMoveDifferenceFromOptimal,
+                        "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanSelfishness": meanSelfishness,
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
-                        "meanWealthHappiness": meanWealthHappiness, "meanVision": meanVision, "minWealth": minWealth, "population": numAgents,
-                        "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
-                        "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage}
+                        "meanWealthHappiness": meanWealthHappiness, "meanValidMoves": meanValidMoves, "meanVision": meanVision, "minWealth": minWealth,
+                        "population": numAgents, "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
+                        "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
+                        "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
+                        "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage
+                        }
+
+        controlInteractionStats = {"combatControlGroupToControlGroup": combatControlToControl, "combatControlGroupToExperimentalGroup": combatControlToExperimental,
+                                   "diseaseControlGroupToControlGroup": diseaseControlToControl, "diseaseControlGroupToExperimentalGroup": diseaseControlToExperimental,
+                                   "lendingControlGroupToControlGroup": lendingControlToControl, "lendingControlGroupToExperimentalGroup": lendingControlToExperimental,
+                                   "reproductionControlGroupToControlGroup": reproductionControlToControl, "reproductionControlGroupToExperimentalGroup": reproductionControlToExperimental,
+                                   "tradeControlGroupToControlGroup": tradeControlToControl, "tradeControlGroupToExperimentalGroup": tradeControlToExperimental,
+                                   }
+
+        experimentalInteractionStats = {"combatExperimentalGroupToControlGroup": combatExperimentalToControl, "combatExperimentalGroupToExperimentalGroup": combatExperimentalToExperimental,
+                                        "diseaseExperimentalGroupToControlGroup": diseaseExperimentalToControl, "diseaseExperimentalGroupToExperimentalGroup": diseaseExperimentalToExperimental,
+                                        "lendingExperimentalGroupToControlGroup": lendingExperimentalToControl, "lendingExperimentalGroupToExperimentalGroup": lendingExperimentalToExperimental,
+                                        "reproductionExperimentalGroupToControlGroup": reproductionExperimentalToControl, "reproductionExperimentalGroupToExperimentalGroup": reproductionExperimentalToExperimental,
+                                        "tradeExperimentalGroupToControlGroup": tradeExperimentalToControl, "tradeExperimentalGroupToExperimentalGroup": tradeExperimentalToExperimental
+                                        }
+
+        groupMovementStats = {"meanControlNeighbors": meanControlNeighbors, "meanExperimentalNeighbors": meanExperimentalNeighbors}
+        if self.experimentalGroup != None:
+            runtimeStats.update(groupMovementStats)
 
         if group == None:
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
@@ -988,6 +1283,10 @@ class Sugarscape:
                 groupKey = groupString + key[0].upper() + key[1:]
                 groupStats[groupKey] = runtimeStats[key]
             runtimeStats = groupStats
+            if notInGroup == True:
+                runtimeStats.update(controlInteractionStats)
+            else:
+                runtimeStats.update(experimentalInteractionStats)
 
         for key in runtimeStats.keys():
             self.runtimeStats[key] = runtimeStats[key]
@@ -1082,10 +1381,11 @@ def sortConfigurationTimeframes(configuration, timeframe):
 
 def verifyConfiguration(configuration):
     negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
-    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseMovementPenalty", "diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseVisionPenalty"]
-    negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
+    negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseFriendlinessPenalty", "diseaseHappinessPenalty", "diseaseMovementPenalty"]
+    negativesAllowed += ["diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
+    negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe", "environmentMaxSpice", "environmentMaxSugar"]
     negativesAllowed += ["interfaceHeight", "interfaceWidth", "seed", "timesteps"]
-    timeframes = ["environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
+    timeframes = ["diseaseTimeframe", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe"]
     negativeFlag = 0
     for configName, configValue in configuration.items():
         if isinstance(configValue, list):
@@ -1109,6 +1409,38 @@ def verifyConfiguration(configuration):
     if negativeFlag > 0:
         print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
 
+    # If no specific disease is tracked, revert to generic sick experimental group
+    if configuration["experimentalGroup"] != None and "disease" in configuration["experimentalGroup"]:
+            experimentalDiseaseID = re.search(r"disease(?P<ID>\d+)", configuration["experimentalGroup"])
+            if experimentalDiseaseID == None:
+                configuration["experimentalGroup"] = "sick"
+
+    if configuration["environmentMaxSpice"] < 0:
+        configuration["environmentMaxSpice"] = random.randint(1, 10)
+    if configuration["environmentMaxSugar"] < 0:
+        configuration["environmentMaxSugar"] = random.randint(1, 10)
+    for peak in configuration["environmentSpicePeaks"]:
+        if len(peak) < 3:
+            peak.append(configuration["environmentMaxSpice"])
+        if peak[0] < 0 or peak[0] > configuration["environmentWidth"]:
+            peak[0] = random.randint(0, configuration["environmentWidth"] - 1)
+        if peak[1] < 0 or peak[1] > configuration["environmentHeight"]:
+            peak[1] = random.randint(0, configuration["environmentHeight"] - 1)
+        if len(peak) < 3 or peak[2] < 0:
+            peak[2] = random.randint(1, configuration["environmentMaxSpice"])
+        elif peak[2] > configuration["environmentMaxSpice"]:
+            peak[2] = configuration["environmentMaxSpice"]
+    for peak in configuration["environmentSugarPeaks"]:
+        if len(peak) < 3:
+            peak.append(configuration["environmentMaxSugar"])
+        if peak[0] < 0 or peak[0] > configuration["environmentWidth"]:
+            peak[0] = random.randint(0, configuration["environmentWidth"] - 1)
+        if peak[1] < 0 or peak[1] > configuration["environmentHeight"]:
+            peak[1] = random.randint(0, configuration["environmentHeight"] - 1)
+        if peak[2] < 0:
+            peak[2] = random.randint(1, configuration["environmentMaxSugar"])
+        elif peak[2] > configuration["environmentMaxSugar"]:
+            peak[2] = configuration["environmentMaxSugar"]
 
     if configuration["environmentQuadrantSizeFactor"] > 1 or configuration["environmentQuadrantSizeFactor"] < 0:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
@@ -1173,7 +1505,7 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
             print(f"Cannot have a negative number of tribes. Setting number of tribes to 0.")
         configuration["environmentMaxTribes"] = 0
-    
+
     # Ensure at most number of tribes is equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
@@ -1196,14 +1528,6 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
         configuration["environmentMaxTribes"] = maxColors
 
-    # Ensure experimental group is properly defined or otherwise ignored
-    if configuration["experimentalGroup"] == "":
-        configuration["experimentalGroup"] = None
-    elif configuration["experimentalGroup"] != None and configuration["experimentalGroup"] not in ["depressed", "female", "male", "sick"]:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot provide separate log stats for experimental group {configuration['experimentalGroup']}. Disabling separate log stats.")
-        configuration["experimentalGroup"] = None
-
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
         startingDiseasesPerAgent = sorted(configuration["startingDiseasesPerAgent"])
@@ -1213,48 +1537,6 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "disease" in configuration["debugMode"] and startingDiseasesPerAgent != configuration["startingDiseasesPerAgent"]:
             print(f"Range of starting diseases per agent exceeds {startingDiseases} starting diseases. Setting range to {startingDiseasesPerAgent}.")
         configuration["startingDiseasesPerAgent"] = startingDiseasesPerAgent
-
-    # Ensure the pollution diffusion start and end timesteps are in the proper order
-    if configuration["environmentPollutionDiffusionTimeframe"] != [0, 0]:
-        pollutionDiffusionStart, pollutionDiffusionEnd = configuration["environmentPollutionDiffusionTimeframe"]
-        if pollutionDiffusionStart > pollutionDiffusionEnd and pollutionDiffusionEnd >= 0:
-            swap = pollutionDiffusionStart
-            pollutionDiffusionStart = pollutionDiffusionEnd
-            pollutionDiffusionEnd = swap
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion start and end values provided in incorrect order. Switching values around.")
-        # If provided a negative value, assume the start timestep is the very first of the simulation
-        if pollutionDiffusionStart < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion start timestep {pollutionDiffusionStart} is invalid. Setting pollution diffusion start timestep to 0.")
-            pollutionDiffusionStart = 0
-        # If provided a negative value, assume the end timestep is the very end of the simulation
-        if pollutionDiffusionEnd < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution diffusion end timestep {pollutionDiffusionEnd} is invalid. Setting pollution diffusion end timestep to {configuration['timesteps']}.")
-            pollutionDiffusionEnd = configuration["timesteps"]
-        configuration["environmentPollutionDiffusionTimeframe"] = [pollutionDiffusionStart, pollutionDiffusionEnd]
-
-    # Ensure the pollution start and end timesteps are in the proper order
-    if configuration["environmentPollutionTimeframe"] != [0, 0]:
-        pollutionStart, pollutionEnd = configuration["environmentPollutionTimeframe"]
-        if pollutionStart > pollutionEnd and pollutionEnd >= 0:
-            swap = pollutionStart
-            pollutionStart = pollutionEnd
-            pollutionEnd = swap
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution start and end values provided in incorrect order. Switching values around.")
-        # If provided a negative value, assume the start timestep is the very first of the simulation
-        if pollutionStart < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution start timestep {pollutionStart} is invalid. Setting pollution start timestep to 0.")
-            pollutionStart = 0
-        # If provided a negative value, assume the end timestep is the very end of the simulation
-        if pollutionEnd < 0:
-            if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Pollution end timestep {pollutionEnd} is invalid. Setting pollution end timestep to {configuration['timesteps']}.")
-            pollutionEnd = configuration["timesteps"]
-        configuration["environmentPollutionTimeframe"] = [pollutionStart, pollutionEnd]
 
     if configuration["logfile"] == "":
         configuration["logfile"] = None
@@ -1286,6 +1568,19 @@ def verifyConfiguration(configuration):
             configuration["agentDecisionModels"] = configuration["agentDecisionModel"]
     if type(configuration["agentDecisionModels"]) == str:
             configuration["agentDecisionModels"] = [configuration["agentDecisionModels"]]
+
+    # Ensure experimental group is properly defined or otherwise ignored
+    if configuration["experimentalGroup"] == "":
+        configuration["experimentalGroup"] = None
+    groupList = ["depressed", "female", "male", "sick"]
+    if type(configuration["agentDecisionModels"]) == str:
+        groupList.append(configuration["agentDecisionModels"])
+    else:
+        groupList += configuration["agentDecisionModels"]
+    if configuration["experimentalGroup"] != None and configuration["experimentalGroup"] not in groupList and "disease" not in configuration["experimentalGroup"]:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot provide separate log stats for experimental group {configuration['experimentalGroup']}. Disabling separate log stats.")
+        configuration["experimentalGroup"] = None
     return configuration
 
 if __name__ == "__main__":
@@ -1299,6 +1594,8 @@ if __name__ == "__main__":
                      "agentDecisionModelLookaheadFactor": [0],
                      "agentDecisionModelTribalFactor": [-1, -1],
                      "agentDepressionPercentage": 0,
+                     "agentDiseaseProtectionChance": [0.0, 0.0],
+                     "agentDynamicSelfishnessFactor": [0.0, 0.0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
@@ -1334,12 +1631,17 @@ if __name__ == "__main__":
                      "diseaseFertilityPenalty": [0, 0],
                      "diseaseFriendlinessPenalty": [0, 0],
                      "diseaseHappinessPenalty": [0,0],
+                     "diseaseIncubationPeriod": [0, 0],
+                     "diseaseList": [],
                      "diseaseMovementPenalty": [0, 0],
                      "diseaseSpiceMetabolismPenalty": [0, 0],
                      "diseaseSugarMetabolismPenalty": [0, 0],
                      "diseaseTagStringLength": [0, 0],
+                     "diseaseTimeframe": [0, 0],
+                     "diseaseTransmissionChance": [1.0, 1.0],
                      "diseaseVisionPenalty": [0, 0],
                      "environmentEquator": -1,
+                     "environmentFile": None,
                      "environmentHeight": 50,
                      "environmentMaxCombatLoot": 0,
                      "environmentMaxSpice": 0,
@@ -1352,12 +1654,12 @@ if __name__ == "__main__":
                      "environmentSeasonalGrowbackDelay": 0,
                      "environmentSeasonInterval": 0,
                      "environmentSpiceConsumptionPollutionFactor": 0,
-                     "environmentSpicePeaks": [[35, 35], [15, 15]],
+                     "environmentSpicePeaks": [[35, 35, 4], [15, 15, 4]],
                      "environmentSpiceProductionPollutionFactor": 0,
                      "environmentSpiceRegrowRate": 0,
                      "environmentStartingQuadrants": [1, 2, 3, 4],
                      "environmentSugarConsumptionPollutionFactor": 0,
-                     "environmentSugarPeaks": [[35, 15], [15, 35]],
+                     "environmentSugarPeaks": [[35, 15, 4], [15, 35, 4]],
                      "environmentSugarProductionPollutionFactor": 0,
                      "environmentSugarRegrowRate": 1,
                      "environmentTribePerQuadrant": False,
@@ -1370,6 +1672,7 @@ if __name__ == "__main__":
                      "interfaceHeight": 1000,
                      "interfaceWidth": 900,
                      "keepAlivePostExtinction": False,
+                     "keepAliveAtEnd": False,
                      "logfile": None,
                      "logfileFormat": "json",
                      "neighborhoodMode": "vonNeumann",

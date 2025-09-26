@@ -51,7 +51,7 @@ class GUI:
         self.highlightedAgent = None
         self.highlightedCell = None
         self.highlightRectangle = None
-        self.menuTrayColumns = 6
+        self.menuTrayColumns = 7
         self.siteHeight = (self.screenHeight - 2 * self.borderEdge) / self.sugarscape.environmentHeight
         self.siteWidth = (self.screenWidth - 2 * self.borderEdge) / self.sugarscape.environmentWidth
         self.stopSimulation = False
@@ -92,7 +92,7 @@ class GUI:
         self.activeNetwork.set(networkNames[0])
         for network in networkNames:
             networkMenu.add_checkbutton(label=network, onvalue=network, offvalue=network, variable=self.activeNetwork, command=self.doNetworkMenu, indicatoron=True)
-        networkButton.grid(row=0, column=2, sticky="nsew") 
+        networkButton.grid(row=0, column=2, sticky="nsew")
 
         graphButton = tkinter.Menubutton(window, text="Graphs", relief=tkinter.RAISED)
         graphMenu = tkinter.Menu(graphButton, tearoff=0)
@@ -105,7 +105,7 @@ class GUI:
         self.activeGraph.set(graphNames[0])
         for graph in graphNames:
             graphMenu.add_checkbutton(label=graph, onvalue=graph, offvalue=graph, variable=self.activeGraph, command=self.doGraphMenu, indicatoron=True)
-        graphButton.grid(row=0, column=3, sticky="nsew") 
+        graphButton.grid(row=0, column=3, sticky="nsew")
 
         agentColorButton = tkinter.Menubutton(window, text="Agent Coloring", relief=tkinter.RAISED)
         agentColorMenu = tkinter.Menu(agentColorButton, tearoff=0)
@@ -135,6 +135,20 @@ class GUI:
             environmentColorMenu.add_checkbutton(label=name, onvalue=name, offvalue=name, variable=self.lastSelectedEnvironmentColor, command=self.doEnvironmentColorMenu, indicatoron=True)
         environmentColorButton.grid(row=0, column=5, sticky="nsew")
 
+        editingButton = tkinter.Menubutton(window, text="Editing Mode", relief=tkinter.RAISED)
+        editingMenu = tkinter.Menu(editingButton, tearoff=0)
+        editingButton.configure(menu=editingMenu)
+        editingModes = self.configureEditingModes()
+        editingModes.sort()
+        editingModes.insert(0, "None")
+        self.lastSelectedEditingMode = tkinter.StringVar(window)
+
+        # Use first item as default name
+        self.lastSelectedEditingMode.set(editingModes[0])
+        for mode in editingModes:
+            editingMenu.add_checkbutton(label=mode, onvalue=mode, offvalue=mode, variable=self.lastSelectedEditingMode, command=self.doEditingMenu, indicatoron=True)
+        editingButton.grid(row=0, column=6, sticky="nsew")
+
         statsLabel = tkinter.Label(window, text=self.defaultSimulationString, font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
         cellLabel = tkinter.Label(window, text=f"{self.defaultCellString}\n{self.defaultAgentString}", font="Roboto 10", justify=tkinter.CENTER)
@@ -145,6 +159,7 @@ class GUI:
         self.widgets["networkButton"] = networkButton
         self.widgets["graphButton"] = graphButton
         self.widgets["agentColorButton"] = agentColorButton
+        self.widgets["editingButton"] = editingButton
         self.widgets["environmentColorButton"] = environmentColorButton
         self.widgets["agentColorMenu"] = agentColorMenu
         self.widgets["environmentColorMenu"] = environmentColorMenu
@@ -160,6 +175,10 @@ class GUI:
             canvas.bind("<Control-Button-1>", self.doControlClick)
             self.doubleClick = False
         self.canvas = canvas
+
+    def configureEditingModes(self):
+        return ["Add Agent", "Add Disease", "Add Current Spice", "Add Current Sugar", "Add Maximum Spice", "Add Maximum Sugar",
+                "Remove Current Spice", "Remove Current Sugar", "Remove Maximum Spice", "Remove Maximum Sugar"]
 
     def configureEnvironment(self):
         if self.activeNetwork.get() != "None":
@@ -313,8 +332,8 @@ class GUI:
         self.canvas.after(300, self.doClickAction, event)
 
     def doClickAction(self, event):
+        cell = self.findClickedCell(event)
         if self.doubleClick == True:
-            cell = self.findClickedCell(event)
             if cell == self.highlightedCell or cell.agent == None:
                 self.clearHighlight()
             else:
@@ -323,13 +342,14 @@ class GUI:
                 self.highlightCell(cell)
             self.doubleClick = False
         else:
-            cell = self.findClickedCell(event)
             if cell == self.highlightedCell and self.highlightedAgent == None:
                 self.clearHighlight()
             else:
                 self.highlightedCell = cell
                 self.highlightedAgent = None
                 self.highlightCell(cell)
+        if self.lastSelectedEditingMode.get() != "None":
+            self.doEditAction(cell)
         self.doTimestep()
 
     def doControlClick(self, event):
@@ -351,6 +371,25 @@ class GUI:
 
     def doDoubleClick(self, event):
         self.doubleClick = True
+
+    def doEditAction(self, cell):
+        mode = self.lastSelectedEditingMode.get()
+        if mode == "Add Agent":
+            self.sugarscape.configureAgents(1, cell)
+        elif mode == "Add Disease":
+            self.sugarscape.configureDiseases(1, [], cell)
+        elif "Current" in mode:
+            resourceMode = "currentSpice" if "Spice" in mode else "currentSugar"
+            delta = 1 if "Add" in mode else -1
+            self.sugarscape.configureCell(cell, resourceMode, delta)
+        elif "Maximum" in mode:
+            resourceMode = "maximumSpice" if "Spice" in mode else "maximumSugar"
+            delta = 1 if "Add" in mode else -1
+            self.sugarscape.configureCell(cell, resourceMode, delta)
+        self.doTimestep()
+
+    def doEditingMenu(self):
+        self.doTimestep()
 
     def doEnvironmentColorMenu(self):
         self.activeColorOptions["environment"] = self.lastSelectedEnvironmentColor.get()
@@ -579,7 +618,7 @@ class GUI:
             subval = hexval[i:i + 2]
             intvals.append(int(subval, 16))
         return intvals
-    
+
     def highlightCell(self, cell):
         x = cell.x
         y = cell.y
@@ -606,7 +645,7 @@ class GUI:
     def lookupFillColor(self, cell):
         if self.activeNetwork.get() != "None":
             return self.lookupNetworkColor(cell)
-        
+
         agent = cell.agent
         if agent == None:
             if self.activeColorOptions["environment"] == "Pollution":
@@ -619,7 +658,7 @@ class GUI:
         elif self.activeColorOptions["agent"] == "Depression":
             return self.colors["sick"] if agent.depressed == True else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Disease":
-            return self.colors["sick"] if len(agent.diseases) > 0 else self.colors["healthy"]
+            return self.colors["sick"] if agent.isSick() == True else self.colors["healthy"]
         elif self.activeColorOptions["agent"] == "Metabolism":
             return self.colors["metabolism"][self.clamp(agent.sugarMetabolism + agent.spiceMetabolism, self.minMetabolism, self.maxMetabolism)]
         elif self.activeColorOptions["agent"] == "Movement":
@@ -739,6 +778,7 @@ class GUI:
                 self.canvas.coords(labels[i], x2, y2)
 
     def updateLabels(self):
+        self.sugarscape.updateRuntimeStats()
         stats = self.sugarscape.runtimeStats
         statsString = f"Timestep: {self.sugarscape.timestep} | Agents: {stats['population']} | Metabolism: {stats['meanMetabolism']} | Movement: {stats['meanMovement']} | Vision: {stats['meanVision']} | Gini: {stats['giniCoefficient']} | Trade Price: {stats['meanTradePrice']} | Trade Volume: {stats['tradeVolume']}"
         label = self.widgets["statsLabel"]

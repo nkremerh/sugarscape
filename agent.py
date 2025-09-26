@@ -1,6 +1,7 @@
 import hashlib
 import math
 import random
+import re
 import sys
 
 class Agent:
@@ -18,6 +19,8 @@ class Agent:
         self.decisionModelLookaheadFactor = configuration["decisionModelLookaheadFactor"]
         self.decisionModelTribalFactor = configuration["decisionModelTribalFactor"]
         self.depressionFactor = configuration["depressionFactor"]
+        self.diseaseProtectionChance = configuration["diseaseProtectionChance"]
+        self.dynamicSelfishnessFactor = configuration["dynamicSelfishnessFactor"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
         self.follower = configuration["follower"]
@@ -60,6 +63,7 @@ class Agent:
         self.childEndowmentHashes = None
         self.conflictHappiness = 0
         self.depressed = False
+        self.diseaseDeath = False
         self.diseases = []
         self.familyHappiness = 0
         self.fertile = False
@@ -71,6 +75,7 @@ class Agent:
         self.healthHappiness = 0
         self.lastDoneCombat = -1
         self.lastMoved = -1
+        self.lastMoveOptimal = True
         self.lastReproduced = -1
         self.lastSpice = 0
         self.lastSugar = 0
@@ -78,6 +83,7 @@ class Agent:
         self.lastUniversalSugarIncomeTimestep = 0
         self.marginalRateOfSubstitution = 1
         self.movementModifier = 0
+        self.movementNeighborhood = []
         self.neighborhood = []
         self.neighbors = []
         self.nice = 0
@@ -96,12 +102,31 @@ class Agent:
         self.tribe = self.findTribe()
         self.visionModifier = 0
         self.wealthHappiness = 0
+        self.validMoves = []
+
+        self.combatWithControlGroup = 0
+        self.combatWithExperimentalGroup = 0
+        self.diseaseWithControlGroup = 0
+        self.diseaseWithExperimentalGroup = 0
+        self.lendingWithControlGroup = 0
+        self.lendingWithExperimentalGroup = 0
+        self.reproductionWithControlGroup = 0
+        self.reproductionWithExperimentalGroup = 0
+        self.tradeWithControlGroup = 0
+        self.tradeWithExperimentalGroup = 0
 
         # Change metrics for depressed agents
         if self.depressionFactor == 1:
             self.depressed = True
             depression = cell.environment.sugarscape.depression
             depression.trigger(self)
+
+    def addAgentToSocialNetwork(self, agent):
+        agentID = agent.ID
+        if agentID in self.socialNetwork:
+            return
+        self.socialNetwork[agentID] = {"agent": agent, "lastSeen": self.lastMoved, "timesVisited": 1, "timesReproduced": 0,
+                                         "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
@@ -123,12 +148,11 @@ class Agent:
             child.setMother(mate)
         return child
 
-    def addAgentToSocialNetwork(self, agent):
-        agentID = agent.ID
-        if agentID in self.socialNetwork:
-            return
-        self.socialNetwork[agentID] = {"agent": agent, "lastSeen": self.lastMoved, "timesVisited": 1, "timesReproduced": 0,
-                                         "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
+    def addDisease(self, disease, infector=None):
+        self.diseases.append(disease)
+        disease["disease"].infect(self, infector)
+        if disease["incubation"] == 0:
+            disease["disease"].trigger(self)
 
     def addLoanFromAgent(self, agent, timestep, sugarLoan, spiceLoan, duration):
         agentID = agent.ID
@@ -167,18 +191,15 @@ class Agent:
         elif neighbor.marginalRateOfSubstitution == self.marginalRateOfSubstitution:
             return False
 
-    def catchDisease(self, disease, infector=None):
+    def catchDisease(self, disease, infector=None, initial=False):
         diseaseID = disease.ID
-        for currDisease in self.diseases:
-            currDiseaseID = currDisease["disease"].ID
-            # If currently sick with this disease, do not contract it again
-            if diseaseID == currDiseaseID:
-                return
-        # If disease cannot be recovered by immune system, contract it
-        if disease.tags == None:
-            caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector}
-            self.diseases.append(caughtDisease)
-        else:
+        infectionTimestep = infector.timestep if infector != None else self.cell.environment.sugarscape.timestep
+        # If currently sick with this disease, do not contract it again
+        if self.isInfectedWithDisease(diseaseID) == True:
+            return
+        # Handle irrecoverable diseases without tags
+        caughtDisease = {"disease": disease, "startIndex": None, "endIndex": None, "infector": infector, "caught": infectionTimestep, "incubation": disease.incubationPeriod}
+        if disease.tags != None:
             diseaseInImmuneSystem = self.findNearestHammingDistanceInDisease(disease)
             hammingDistance = diseaseInImmuneSystem["distance"]
             # If immune to disease, do not contract it
@@ -186,9 +207,10 @@ class Agent:
                 return
             startIndex = diseaseInImmuneSystem["start"]
             endIndex = diseaseInImmuneSystem["end"]
-            caughtDisease = {"disease": disease, "startIndex": startIndex, "endIndex": endIndex, "infector": infector}
-            self.diseases.append(caughtDisease)
-        disease.trigger(self, infector)
+            caughtDisease.update({"startIndex": startIndex, "endIndex": endIndex})
+
+        if initial == True or self.doInfectionAttempt(disease) == True:
+            self.addDisease(caughtDisease, infector)
         self.findCellsInRange()
 
     def collectResourcesAtCell(self):
@@ -230,11 +252,22 @@ class Agent:
             prey.sugar -= sugarLoot
             prey.spice -= spiceLoot
             prey.doDeath("combat")
+            sugarscape = self.cell.environment.sugarscape
+            if sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup):
+                self.combatWithExperimentalGroup += 1
+            elif sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup, True):
+                self.combatWithControlGroup += 1
         self.gotoCell(cell)
 
-    def doDeath(self, causeOfDeath):
+    def doDeath(self, causeOfDeath="unknown"):
+        # TODO: Determine why some agents do not die cleanly (Sugarscape object needs to call their doDeath method)
+        if causeOfDeath == "unknown" and self.causeOfDeath != None:
+            return
         self.alive = False
         self.causeOfDeath = causeOfDeath
+        # If sick at death, consider disease a contributing factor
+        if self.isSick():
+            self.diseaseDeath = True
         self.resetCell()
         self.doInheritance()
 
@@ -242,12 +275,20 @@ class Agent:
         self.socialNetwork = {"debtors": self.socialNetwork["debtors"], "children": self.socialNetwork["children"]}
         self.neighbors = []
         self.neighborhood = []
+        for disease in self.diseases:
+            diseaseRecord = disease["disease"]
+            diseaseRecord.recover(self)
         self.diseases = []
 
     def doDisease(self):
         random.shuffle(self.diseases)
         for diseaseRecord in self.diseases:
             disease = diseaseRecord["disease"]
+            if diseaseRecord["caught"] != self.timestep and diseaseRecord["incubation"] > 0:
+                diseaseRecord["incubation"] -= 1
+            # Activate fully incubated disease
+            if diseaseRecord["incubation"] == 0:
+                disease.trigger(self)
             if disease.recoverable == False:
                 continue
             diseaseTags = diseaseRecord["disease"].tags
@@ -275,6 +316,20 @@ class Agent:
         random.shuffle(neighbors)
         for neighbor in neighbors:
             neighbor.catchDisease(self.diseases[random.randrange(diseaseCount)]["disease"], self)
+            sugarscape = self.cell.environment.sugarscape
+            if sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup):
+                self.diseaseWithExperimentalGroup += 1
+            elif sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup, True):
+                self.diseaseWithControlGroup += 1
+
+    def doInfectionAttempt(self, disease):
+        diseaseAttack = random.uniform(0.0, 1.0)
+        immuneDefense = random.uniform(0.0, 1.0)
+        attackSuccess = True if diseaseAttack <= disease.transmissionChance and disease.transmissionChance != 0.0 else False
+        defenseSuccess = True if immuneDefense <= self.diseaseProtectionChance and self.diseaseProtectionChance != 0.0 else False
+        if attackSuccess == True and defenseSuccess == False:
+            return True
+        return False
 
     def doInheritance(self):
         if self.inheritancePolicy == "none":
@@ -377,6 +432,11 @@ class Agent:
                 if "all" in self.debug or "agent" in self.debug:
                     print(f"Agent {self.ID} lending [{sugarLoanAmount},{spiceLoanAmount}]")
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
+                sugarscape = self.cell.environment.sugarscape
+                if sugarscape.experimentalGroup != None and borrower.isInGroup(sugarscape.experimentalGroup):
+                    self.lendingWithExperimentalGroup += 1
+                elif sugarscape.experimentalGroup != None and borrower.isInGroup(sugarscape.experimentalGroup, True):
+                    self.lendingWithControlGroup += 1
 
     def doMetabolism(self):
         if self.isAlive() == False:
@@ -438,6 +498,11 @@ class Agent:
                     neighbor.sugar = neighbor.sugar - mateSugarCost
                     neighbor.spice = neighbor.spice - mateSpiceCost
                     self.lastReproduced = self.cell.environment.sugarscape.timestep
+                    sugarscape = self.cell.environment.sugarscape
+                    if sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup):
+                        self.reproductionWithExperimentalGroup += 1
+                    elif sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup, True):
+                        self.reproductionWithControlGroup += 1
                     if "all" in self.debug or "agent" in self.debug:
                         print(f"Agent {self.ID} reproduced with agent {str(neighbor)} at cell ({emptyCell.x},{emptyCell.y})")
 
@@ -525,7 +590,6 @@ class Agent:
                 spiceSellerMRS = spiceSeller.marginalRateOfSubstitution
                 sugarSellerMRS = sugarSeller.marginalRateOfSubstitution
 
-                # TODO: Fix bug where a spice or sugar seller has a negative MRS
                 if spiceSellerMRS < 0 or sugarSellerMRS < 0:
                     spiceSeller = None
                     sugarSeller = None
@@ -582,6 +646,11 @@ class Agent:
                 self.spicePrice += spicePrice
                 trader.updateTimesTradedWithAgent(self, self.lastMoved, transactions)
                 self.updateTimesTradedWithAgent(trader, self.lastMoved, transactions)
+                sugarscape = self.cell.environment.sugarscape
+                if sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup):
+                    self.tradeWithExperimentalGroup += 1
+                elif sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup, True):
+                    self.tradeWithControlGroup += 1
 
     def doUniversalIncome(self):
         if (self.timestep - self.lastUniversalSpiceIncomeTimestep) >= self.cell.environment.universalSpiceIncomeInterval:
@@ -599,53 +668,25 @@ class Agent:
         if self.follower == True and leader != None:
             return leader.findBestCellForAgent(self)
 
+        bestCell = None
         potentialCells = self.rankCellsInRange()
-        bestCell = potentialCells[0]["cell"]
+        greedyBestCell = potentialCells[0]["cell"]
 
         if self.decisionModelFactor > 0:
-            bestCell = self.findBestEthicalCell(potentialCells, bestCell)
+            bestCell = self.findBestEthicalCell(potentialCells, greedyBestCell)
         if bestCell == None:
-            bestCell = self.cell
+            bestCell = greedyBestCell
+        if bestCell == greedyBestCell:
+            self.lastMoveOptimal = True
+        else:
+            self.lastMoveOptimal = False
         return bestCell
 
     def findBestEthicalCell(self, cells, greedyBestCell=None):
         if len(cells) == 0:
             return None
-        bestCell = None
-        cells = self.sortCellsByWealth(cells)
-        if "all" in self.debug or "agent" in self.debug:
-            self.printCellScores(cells)
         # If not an ethical agent, return top selfish choice
-        if self.decisionModel == "none":
-            return greedyBestCell
-
-        for cell in cells:
-            cell["wealth"] = self.findEthicalValueOfCell(cell["cell"])
-        if self.selfishnessFactor >= 0:
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-        else:
-            # Negative utilitarian model uses positive and negative utility to find minimum harm
-            cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]), reverse = True)
-            bestCell = cells[0]["cell"]
-
-        # If additional ordering consideration, select new best cell
-        if "Top" in self.decisionModel:
-            cells = self.sortCellsByWealth(cells)
-            if "all" in self.debug or "agent" in self.debug:
-                self.printEthicalCellScores(cells)
-            bestCell = cells[0]["cell"]
-
-        if bestCell == None:
-            if greedyBestCell == None:
-                bestCell = cells[0]["cell"]
-            else:
-                bestCell = greedyBestCell
-            if "all" in self.debug or "agent" in self.debug:
-                print(f"Agent {self.ID} could not find an ethical cell")
-        return bestCell
+        return greedyBestCell
 
     def findBestFriend(self):
         if self.tags == None:
@@ -678,6 +719,7 @@ class Agent:
         parentEndowments = {
         "aggressionFactor": [self.aggressionFactor, mate.aggressionFactor],
         "baseInterestRate": [self.baseInterestRate, mate.baseInterestRate],
+        "diseaseProtectionChance": [self.diseaseProtectionChance, mate.diseaseProtectionChance],
         "depressionFactor": [self.depressionFactor, mate.depressionFactor],
         "fertilityAge": [self.fertilityAge, mate.fertilityAge],
         "fertilityFactor": [self.fertilityFactor, mate.fertilityFactor],
@@ -708,6 +750,7 @@ class Agent:
         "decisionModelLookaheadDiscount": [self.decisionModelLookaheadDiscount, mate.decisionModelLookaheadDiscount],
         "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
         "decisionModelTribalFactor": [self.decisionModelTribalFactor, mate.decisionModelTribalFactor],
+        "dynamicSelfishnessFactor": [self.dynamicSelfishnessFactor, mate.dynamicSelfishnessFactor],
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
         }
         childEndowment = {"seed": self.seed, "follower": self.follower}
@@ -913,39 +956,6 @@ class Agent:
             return 1 / sugarMetabolism
         return spiceNeed / sugarNeed
 
-    # TODO: Tally factors of hedons/dolors for given cell
-    def findPotentialNiceOfCell(self, cell):
-        potentialMates = []
-        # TODO: Trading nice capped at max number of resources traded to achieve MRS of 1
-        potentialTraders = []
-        # TODO: Lending nice capped at max amount of wealth agent can lend
-        potentialBorrowers = []
-        # TODO: Combat nice capped at wealth agent can score for tribe/neighborhood/etc.
-        potentialPrey = []
-        cellNeighborAgents = cell.findNeighborAgents()
-        aggression = self.findAggression()
-        for agent in cellNeighborAgents:
-            if agent.isAlive() == False:
-                continue
-            if self.isFertile() == True:
-                neighborCompatibility = self.isNeighborReproductionCompatible(agent)
-                emptyNeighborCells = agent.findEmptyNeighborCells()
-                if neighborCompatibility == True and len(emptyNeighborCells) != 0:
-                    potentialMates.append(agent)
-            if self.isLender() == True and agent.isBorrower() == True:
-                potentialBorrowers.append(agent)
-            if self.tradeFactor > 0 and agent.tradeFactor > 0 and self.canTradeWithNeighbor(agent) == True:
-                potentialTraders.append(agent)
-            if aggression > 0 and self.tribe != agent.tribe and self.sugar + self.spice >= agent.sugar + agent.spice:
-                potentialPrey.append(agent)
-        # TODO: Make nice calculation more fine-grained than just potentialities
-        reproductionSugarCost = self.startingSugar / (self.fertilityFactor * 2) if self.fertilityFactor > 0 else 0
-        reproductionSpiceCost = self.startingSpice / (self.fertilityFactor * 2) if self.fertilityFactor > 0 else 0
-        maxReproductionAttemptsByResources = min(reproductionSugarCost, reproductionSpiceCost)
-        potentialMates = min(len(potentialMates), maxReproductionAttemptsByResources)
-        potentialNice = potentialMates + len(potentialTraders + potentialBorrowers + potentialPrey)
-        return potentialNice
-
     def findRetaliatorsInVision(self):
         retaliators = {}
         for cell in self.cellsInRange.keys():
@@ -1046,13 +1056,20 @@ class Agent:
     def flipTag(self, position, value):
         self.tags[position] = value
 
+    def getDiseaseRecord(self, diseaseID):
+        for currDisease in self.diseases:
+            currDiseaseID = currDisease["disease"].ID
+            if int(diseaseID) == currDiseaseID:
+                return currDisease
+        return None
+
     def gotoCell(self, cell):
         self.resetCell()
         self.cell = cell
         self.cell.agent = self
 
     def isAlive(self):
-        if self.spice < 0 and self.sugar < 0:
+        if self.spice < 0 or self.sugar < 0:
             self.alive = False
         return self.alive and self.spice >= 0 and self.sugar >= 0
 
@@ -1079,10 +1096,22 @@ class Agent:
             return True
         return False
 
+    def isInfectedWithDisease(self, diseaseID):
+        for currDisease in self.diseases:
+            currDiseaseID = currDisease["disease"].ID
+            if diseaseID == currDiseaseID:
+                return True
+        return False
+
     def isInGroup(self, group, notInGroup=False):
         membership = False
-        if group == "depressed":
+        if group == self.decisionModel:
+            membership = True
+        elif group == "depressed":
             membership = self.depressed
+        elif "disease" in group:
+            diseaseID = re.search(r"disease(?P<ID>\d+)", group).group("ID")
+            membership = self.isInfectedWithDisease(diseaseID)
         elif group == "female":
             membership = True if self.sex == "female" else False
         elif group == "male":
@@ -1208,6 +1237,7 @@ class Agent:
 
     def rankCellsInRange(self):
         self.findNeighborhood()
+
         if len(self.cellsInRange) == 0:
             return [{"cell": self.cell, "wealth": 0, "range": 0}]
         cellsInRange = list(self.cellsInRange.items())
@@ -1252,7 +1282,9 @@ class Agent:
 
         if len(potentialCells) == 0:
             potentialCells.append({"cell": self.cell, "wealth": 0, "range": 0})
+
         rankedCells = self.sortCellsByWealth(potentialCells)
+        self.updateMovementStats(rankedCells)
         return rankedCells
 
     def removeDebt(self, loan):
@@ -1264,6 +1296,18 @@ class Agent:
     def resetCell(self):
         self.cell.resetAgent()
         self.cell = None
+
+    def resetTimestepMetrics(self):
+        self.combatWithControlGroup = 0
+        self.combatWithExperimentalGroup = 0
+        self.diseaseWithControlGroup = 0
+        self.diseaseWithExperimentalGroup = 0
+        self.lendingWithControlGroup = 0
+        self.lendingWithExperimentalGroup = 0
+        self.reproductionWithControlGroup = 0
+        self.reproductionWithExperimentalGroup = 0
+        self.tradeWithControlGroup = 0
+        self.tradeWithExperimentalGroup = 0
 
     def setFather(self, father):
         fatherID = father.ID
@@ -1292,6 +1336,10 @@ class Agent:
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Agent(childID, birthday, cell, configuration)
+
+    def triggerDisease(self, disease, infector=None):
+        self.diseases.append(disease)
+        disease["disease"].trigger(self, infector)
 
     def updateFriends(self, neighbor):
         neighborID = neighbor.ID
@@ -1349,6 +1397,14 @@ class Agent:
         alpha = 0.05
         self.sugarMeanIncome = (alpha * sugarIncome) + ((1 - alpha) * self.sugarMeanIncome)
         self.spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome)
+
+    def updateMovementStats(self, cells):
+        validCells = []
+        for cell in cells:
+            newRecord = {"cell": cell["cell"], "wealth": cell["wealth"]}
+            validCells.append(newRecord)
+        self.validMoves = validCells
+        self.movementNeighborhood = self.neighborhood[:]
 
     def updateNeighbors(self):
         self.neighbors = [neighborCell.agent for neighborCell in self.cell.neighbors.values() if neighborCell.agent != None]

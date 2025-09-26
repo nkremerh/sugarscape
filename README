@@ -27,6 +27,9 @@ make plots
     Generate graph plots from any JSON files in the data subdirectory.
     Note: Plots are dependent on a dataset existing and will create it if necessary.
 
+make run
+    Run the simulation using the default config.json file and storing a local log in the log.json file.
+
 make seeds
     Generate a set of random seeds comparing selected decision models.
     Note: Results will be saved in the data subdirectory.
@@ -36,7 +39,8 @@ make setup
     Note: Changed settings may alter Makefile and configuration file in-place.
 
 make test
-    Run the simulation using the default config.json file and storing a local log in the log.json file.
+    Run a testing suite in the tests directory using the configuration files in the examples directory.
+    Note: It is suggested to run make test after modifying or adding Sugarscape features.
 
 Preconfigured Examples from Growing Artificial Societies:
 A selection of examples can be found in the examples directory.
@@ -145,8 +149,9 @@ agentDecisionModelFactor: [float, float]
 
 agentDecisionModels: [string, ...]
     Set the agent decision models for different decisionmaking.
-    Options: "altruistBinary", "altruistTop", "benthamBinary", "benthamTop", "egoistBinary", "egoistTop", "negativeBentham", "none", "rawSugarscape"
-    Note: Adding either "HalfLookahead" or "NoLookahead" after a decision model name will enforce a particular decision model lookahead factor.
+    Options: "altruist", "asimov", "bentham", "egoist", "negativeBentham", "none", "rawSugarscape"
+    Note: Adding either "HalfLookahead" or "NoLookahead" after some decision model names will enforce a particular decision model lookahead factor.
+    Note: Adding "Dynamic" after some decision model names enforces dynamic selfishness.
     Default: ["none"]
 
 agentDecisionModelTribalFactor: [float, float]
@@ -159,6 +164,17 @@ agentDepressionPercentage: float
     Note: The starting agent population will have this same percentage of depressed agents.
     Note: Valid range is [0.0, 1.0].
     Default: 0.0
+
+agentDiseaseProtectionChance: [float, float]
+    Set the chance an agent resists disease infection by another agent.
+    Note: Value of 0.0 means no protection.
+    Note: Value of 1.0 means perfect protection.
+    Default: [0.0, 0.0]
+
+agentDynamicSelfishnessFactor: [float, float]
+    Set the amount the agent dynamically changes their selfishness in response to life circumstances.
+    Note: Only functional for certain decision models.
+    Default: [0.0, 0.0]
 
 agentFemaleInfertilityAge: [int, int]
     Set the timestep age at which female agents become infertile.
@@ -294,7 +310,7 @@ debugMode: [string, ...]
     Options: "agent", "all", "cell", "disease", "environment", "ethics", "none",  "sugarscape"
     Default: "none"
     Note: Some options may cause no output in current impementation.
-          Can select multiple debug modes simultaneously.
+    Note: Can select multiple debug modes simultaneously.
 
 diseaseAggressionPenalty: [float, float]
     Set the impact a disease will have on an agent's aggressiveness.
@@ -311,10 +327,19 @@ diseaseFriendlinessPenalty: [float, float]
     Note: Negative values constitute a friendliness decrease.
     Default: [0, 0]
 
+diseaseIncubationPeriod: [int, int]
+    Set the number of timesteps disease symptoms can remain hidden while still being infectious.
+    Default: [0, 0]
+
 diseaseHappinessPenalty: [float, float]
     Set the impact a disease will have on an agent's happiness.
     Note: Negative values consitute a happiness decrease.
     Default: [0, 0]
+
+diseaseList: [string, ...]
+    Set the named diseases in the environment.
+    Options: "zombieVirus"
+    Default: []
 
 diseaseMovementPenalty: [int, int]
     Set the impact a disease will have on an agent's movement distance.
@@ -324,6 +349,12 @@ diseaseMovementPenalty: [int, int]
 diseaseSpiceMetabolismPenalty: [float, float]
     Set the impact a disease will have on an agent's spice metabolism rate.
     Note: Negative values constitute a decrease in agent spice metabolism.
+    Default: [0, 0]
+
+diseaseTimeframe: [int, int]
+    Set the timestep a disease can be initialized.
+    Note: Value of -1 for the start sets the start timestep to 0.
+    Note: Value of -1 for the end sets the end timestep to the end of the simulation.
     Default: [0, 0]
 
 diseaseSugarMetabolismPenalty: [float, float]
@@ -336,6 +367,12 @@ diseaseTagStringLength: [int, int]
     The longer the length, the longer an agent will have the disease.
     Default: [0, 0]
 
+diseaseTransmissionChance: [float, float]
+    Set the chance a disease successfully transmits between agents.
+    Note: Value of 0.0 means no transmission.
+    Note: Value of 1.0 means perfect transmission.
+    Default: [1.0, 1.0]
+
 diseaseVisionPenalty: [int, int]
     Set the impact a disease will have on an agent's vision.
     Note: Negative values constitute a decrease in agent vision.
@@ -345,6 +382,10 @@ environmentEquator: int
     Set the equator of the environment for seasonal changes.
     Note: Value of -1 causes equator to be set at the midpoint of the environment.
     Default: -1
+
+environmentFile: string
+    Set the path to the environment description file.
+    Default: null
 
 environmentHeight: int
     Set the height in cells of the Sugarscape environment.
@@ -401,9 +442,9 @@ environmentSpiceConsumptionPollutionFactor: float
     Set the amount of pollution generated by an agent consuming spice at a cell.
     Default: 0
 
-environmentSpicePeaks: [[int, int], ...]
-    Set the coordinates for spice peaks in the environment.
-    Default: [[15, 15], [35, 35]]
+environmentSpicePeaks: [[int, int, int], ...]
+    Set the coordinates and maximum spice for spice peaks in the environment.
+    Default: [[15, 15, 4], [35, 35, 4]]
 
 environmentSpiceProductionPollutionFactor: float
     Set the amount of pollution generated by an agent collecting spice at a cell.
@@ -426,9 +467,9 @@ environmentSugarConsumptionPollutionFactor: float
     Set the amount of pollution generated by an agent consuming sugar at a cell.
     Default: 0
 
-environmentSugarPeaks: [[int, int], ...]
-    Set the coordinates for sugar peaks in the environment.
-    Default: [[15, 35], [35, 15]]
+environmentSugarPeaks: [[int, int, int], ...]
+    Set the coordinates and maximum sugar for sugar peaks in the environment.
+    Default: [[15, 35, 4], [35, 15, 4]]
 
 environmentSugarProductionPollutionFactor: float
     Set the amount of pollution generated by an agent collecting sugar at a cell.
@@ -462,7 +503,8 @@ environmentWraparound: bool
 
 experimentalGroup: string
     Set the experimental group of agents under study for finer-grained logging.
-    Options: "depressed", "female", "male", "sick"
+    Options: "depressed", "disease", "female", "male", "sick", decision model names
+    Note: Add an integer after "disease" such as "disease1" to track a specific disease.
     Default: null
 
 headlessMode: bool
@@ -525,10 +567,6 @@ decisionModels: [[string, ...], ...]
     Set the agent decision models to be tested in data collection.
     Default: [["none"]]
 
-jobUpdateFrequency: int
-    Set the frequency at which the number of remaining jobs is reported.
-    Default: 5
-
 numParallelSimJobs: int
     Set the number of simulations to run in parallel during data collection.
     Default: 1
@@ -539,7 +577,13 @@ numSeeds: int
 
 plots: [string, ...]
     Set the plots to be created once data has been collected.
-    Default: ["deaths", "meanAgeAtDeath", "meanttl", "meanWealth", "population", "wealth"]
+    Options: "combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "lifeExpectancy", "population", "selfishness", "socialHappiness", "totalWealth", "ttl", "wealth", "wealthHappiness"
+    Default: ["deaths", "giniCoefficient", "happiness", "lifeExpectancy", "population", "sickness", "tradeVolume", "ttl", "wealth"]
+
+plotStatistic: string
+    Set the statistic to use for plotting.
+    Options: "mean", "median"
+    Default: "mean"
 
 plotTimesteps: int
     Set the number of timesteps to plot in graphs as the X axis.

@@ -7,7 +7,6 @@
     "agentSugarMetabolism": [0, 0],
     "environmentMaxSugar": 0,
     "environmentSugarRegrowRate": 0,
-    "logfile": "log.json",
     "seed": 12345,
     "startingAgents": 500,
     "timesteps": 500
