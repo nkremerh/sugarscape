@@ -549,6 +549,7 @@ class Agent:
             self.findCellsInRange()
             self.updateHappiness()
             self.updateValues()
+
     def doTrading(self):
         # If not a trader, skip trading
         if self.tradeFactor == 0:
@@ -686,36 +687,6 @@ class Agent:
             return None
         # If not an ethical agent, return top selfish choice
         return greedyBestCell
-
-        for cell in cells:
-            cell["wealth"] = self.findEthicalValueOfCell(cell["cell"])
-        if self.selfishnessFactor >= 0:
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-        else:
-            # Negative utilitarian model uses positive and negative utility to find minimum harm
-            cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]), reverse = True)
-            bestCell = cells[0]["cell"]
-        
-        print(self)
-
-        # If additional ordering consideration, select new best cell
-        if "Top" in self.decisionModel:
-            cells = self.sortCellsByWealth(cells)
-            if "all" in self.debug or "agent" in self.debug:
-                self.printEthicalCellScores(cells)
-            bestCell = cells[0]["cell"]
-
-        if bestCell == None:
-            if greedyBestCell == None:
-                bestCell = cells[0]["cell"]
-            else:
-                bestCell = greedyBestCell
-            if "all" in self.debug or "agent" in self.debug:
-                print(f"Agent {self.ID} could not find an ethical cell")
-        return bestCell
 
     def findBestFriend(self):
         if self.tags == None:
