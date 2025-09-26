@@ -1,3 +1,4 @@
+import random
 import agent
 
 import sys
@@ -365,8 +366,8 @@ class Leader(agent.Agent):
     
 
 class SimpleTemperance(agent.Agent):
-    def __init__(self, ID, birthday, cell, configuration):
-        super().__init__(ID, birthday, cell, configuration)
+    def __init__(self, agentID, birthday, cell, configuration):
+        super().__init__(agentID, birthday, cell, configuration)
         # change rate should be a percentage of temperance factor
         self.temperanceChangeRate = configuration["temperanceChangeFactor"]
         self.temperanceFactor = configuration["temperanceFactor"]

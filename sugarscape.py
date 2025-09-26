@@ -195,7 +195,7 @@ class Sugarscape:
                 a.gotoCell(cornerCell)
                 self.agentLeader = a
             if self.configuration["agentTemperanceEnabled"]:
-                a = ethics.SimpleTemperance(agentID, self.timestep, randomCell, agentConfiguration)
+                a = ethics.SimpleTemperance(agentID, self.timestep, placementCell, agentConfiguration)
             # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
