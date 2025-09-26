@@ -1649,8 +1649,9 @@ if __name__ == "__main__":
                      "agentTagging": False,
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
-                     "agentTemperanceFactor": [0,1],
-                     "agentTemperanceChangeFactor": [0,1],
+                     #TODO: change default value to use float instead of int -- this is an issue with seeding the random values
+                     "agentTemperanceFactor": [0.0,1],
+                     "agentTemperanceChangeFactor": [0.0,1],
                      "agentTemperanceEnabled": True,
                      "agentTradeFactor": [0, 0],
                      "agentUniversalSpice": [0,0],
