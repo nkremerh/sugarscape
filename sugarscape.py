@@ -193,6 +193,7 @@ class Sugarscape:
                 cornerCell = self.environment.grid[0][0]
                 a.gotoCell(cornerCell)
                 self.agentLeader = a
+
             # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
@@ -1504,8 +1505,7 @@ def verifyConfiguration(configuration):
     if configuration["agentTemperanceFactor"][0] < 0:
         if configuration["agentTemperanceFactor"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(f"Cannot have agent temperance range of  {configuration['agentTemperanceFactor']}. Disabling agent temperance.")
-                #TODO: does this actually disable temperance feature?
+                print(f"Cannot have agent temperance factor range of  {configuration['agentTemperanceFactor']}. Disabling agent temperance.")
         configuration["agentTemperanceFactor"] = [-1,-1]
     elif configuration["agentTemperanceFactor"][1] > 1:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
@@ -1648,7 +1648,6 @@ if __name__ == "__main__":
                      "agentTagging": False,
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
-                     #TODO: change default value to use float instead of int -- this is an issue with seeding the random values
                      "agentTemperanceFactor": [0,0],
                      "agentTradeFactor": [0, 0],
                      "agentUniversalSpice": [0,0],

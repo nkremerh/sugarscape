@@ -1,6 +1,6 @@
-import random
 import agent
 
+import random
 import sys
 
 class Asimov(agent.Agent):
