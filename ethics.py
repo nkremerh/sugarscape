@@ -317,12 +317,12 @@ class Temperance(agent.Agent):
             self.doTemperanceAction()
 
     def doIntemperanceAction(self):
-        newTemperanceFactor = round(self.temperanceFactor - self.temperanceChangeFactor, 2)
-        self.temperanceFactor = newTemperanceFactor if newTemperanceFactor >=0 else 0
+        newTemperanceFactor = round(self.temperanceFactor - self.dynamicTemperanceFactor, 2)
+        self.temperanceFactor = newTemperanceFactor if newTemperanceFactor >= 0 else 0
 
     def doTemperanceAction(self):
-        newTemperanceFactor = round(self.temperanceFactor + self.temperanceChangeFactor, 2)
-        self.temperanceFactor = newTemperanceFactor if newTemperanceFactor <=1 else 1
+        newTemperanceFactor = round(self.temperanceFactor + self.dynamicTemperanceFactor, 2)
+        self.temperanceFactor = newTemperanceFactor if newTemperanceFactor <= 1 else 1
 
     def updateValues(self):
         self.doTemperanceDecision()
