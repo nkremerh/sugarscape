@@ -186,7 +186,6 @@ class Sugarscape:
                 placementCell = emptyCells[quadrantIndex].pop()
             agentConfiguration = self.agentEndowments[self.agentEndowmentIndex % len(self.agentEndowments)]
             self.agentEndowmentIndex += 1
-            print(agentConfiguration)
             agentID = self.generateAgentID()
             a = agent.Agent(agentID, self.timestep, placementCell, agentConfiguration)
             if self.configuration["agentLeader"] == True and self.agentLeader == None:
@@ -194,8 +193,6 @@ class Sugarscape:
                 cornerCell = self.environment.grid[0][0]
                 a.gotoCell(cornerCell)
                 self.agentLeader = a
-            if self.configuration["agentTemperanceEnabled"]:
-                a = ethics.SimpleTemperance(agentID, self.timestep, placementCell, agentConfiguration)
             # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
@@ -210,6 +207,8 @@ class Sugarscape:
             elif "negativeBentham" in agentConfiguration["decisionModel"]:
                 a = ethics.Bentham(agentID, self.timestep, placementCell, agentConfiguration)
                 a.selfishnessFactor = -1
+            elif "temperance" in agentConfiguration["decisionModel"]:
+                a = ethics.Temperance(agentID, self.timestep, placementCell, agentConfiguration)
 
             # If dynamic selfishness is desired but not defined, give a small degree of dynamic selfishness
             if "Dynamic" in agentConfiguration["decisionModel"] and self.configuration["agentDynamicSelfishnessFactor"] == [0.0, 0.0]:
@@ -534,7 +533,6 @@ class Sugarscape:
         agentTemperanceFactor = configs["agentTemperanceFactor"]
         agentTemperanceChangeFactor = configs["agentTemperanceChangeFactor"]
 
-               
         numDepressedAgents = int(math.ceil(numAgents * configs["agentDepressionPercentage"]))
         depressionFactors = [1 for i in range(numDepressedAgents)] + [0 for i in range(numAgents - numDepressedAgents)]
         random.shuffle(depressionFactors)
@@ -566,7 +564,6 @@ class Sugarscape:
                           "universalSpice": {"endowments": [], "curr": universalSpice[0], "min": universalSpice[0], "max": universalSugar[1]},
                           "universalSugar": {"endowments": [], "curr": universalSugar[0], "min": universalSugar[0], "max": universalSugar[1]},
                           "vision": {"endowments": [], "curr": vision[0], "min": vision[0], "max": vision[1]},
-                          #TODO: not sure how to generate a random value between 0 and 1 for temperance factor
                           "temperanceFactor": {"endowments": [], "curr": agentTemperanceFactor[0], "min": agentTemperanceFactor[0], "max": agentTemperanceFactor[1]},
                           "temperanceChangeFactor": {"endowments": [], "curr": agentTemperanceChangeFactor[0], "min": agentTemperanceChangeFactor[0], "max": agentTemperanceChangeFactor[1]}
                           }
@@ -1652,9 +1649,8 @@ if __name__ == "__main__":
                      "agentTagPreferences": False,
                      "agentTagStringLength": 0,
                      #TODO: change default value to use float instead of int -- this is an issue with seeding the random values
-                     "agentTemperanceFactor": [0.0,1],
-                     "agentTemperanceChangeFactor": [0.0,1],
-                     "agentTemperanceEnabled": False,
+                     "agentTemperanceFactor": [0,0],
+                     "agentTemperanceChangeFactor": [0,0],
                      "agentTradeFactor": [0, 0],
                      "agentUniversalSpice": [0,0],
                      "agentUniversalSugar": [0,0],

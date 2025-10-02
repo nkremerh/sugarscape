@@ -49,6 +49,8 @@ class Agent:
         self.tagging = configuration["tagging"]
         self.tagPreferences = configuration["tagPreferences"]
         self.tags = configuration["tags"]
+        self.temperanceFactor = configuration["temperanceFactor"]
+        self.temperanceChangeFactor = configuration["temperanceChangeFactor"]
         self.tradeFactor = configuration["tradeFactor"]
         self.universalSpice = configuration["universalSpice"]
         self.universalSugar = configuration["universalSugar"]
@@ -751,7 +753,9 @@ class Agent:
         "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
         "decisionModelTribalFactor": [self.decisionModelTribalFactor, mate.decisionModelTribalFactor],
         "dynamicSelfishnessFactor": [self.dynamicSelfishnessFactor, mate.dynamicSelfishnessFactor],
-        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
+        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
+        "temperanceFactor" : [self.temperanceFactor, mate.temperanceFactor],
+        "temperanceChangeFactor" : [self.temperanceChangeFactor, mate.temperanceChangeFactor]
         }
         childEndowment = {"seed": self.seed, "follower": self.follower}
         randomNumberReset = random.getstate()

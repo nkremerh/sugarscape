@@ -79,8 +79,6 @@ class Asimov(agent.Agent):
     def spawnChild(self, childID, birthday, cell, configuration):
         return Asimov(childID, birthday, cell, configuration)
 
-
-#TODO: does agentID actually work here? the parent class uses self.ID not self.agentID
 class Bentham(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
@@ -307,99 +305,27 @@ class Leader(agent.Agent):
     def spawnChild(self, childID, birthday, cell, configuration):
         return Leader(childID, birthday, cell, configuration)
 
-# # Temperance agents consume herb, but also have a innate desire to have a certain amount of herb for trade and consumption
-# # TODO: Should there be two different modifiers for deciding temperance?
-# class Temperance(agent.Agent):
-#     def __init__(self, agentID, birthday, cell, configuration, temperanceFactor=0.5):
-#         super().__init__(agentID, birthday, cell, configuration)
-#         # Temperance agents consume herb in addition to sugar and spice
-#         self.herb = 0
-#         self.herbConsumptionRate = 0.25
-#         self.herbDesireFactor = 0.5  # How much the agent desires holding herb, 0.5 is neutral. This is separate from temperance as trade and prioritizing herb over spice/sugar can influence their decision
-#         self.temperanceFactor = temperanceFactor
-    
-#     # Should somehow include the agent's ethical value of the cell to influence the effects on the agent
-#     def addHerbConsumptionEffectsToAgent(self) -> None:
-#         # Can have cascading effects on happiness, temperance, herb desire, metabolism, etc. depending how far we want to take it
-#         if self.herb == 0:
-#             self.herbDesireFactor += 0.2
-#             # May need to decrease effect on happiness based on timestamp or prioritizing spice/sugar
-#             self.happiness -= 0.2
-#             # Agent would have taken it if they could, so they lose temperance at a reduced rate since they didnt have any
-#             self.temperanceFactor -= 0.05
-#         else:
-#             self.sugarMetabolism += 0.1
-#             self.spiceMetabolism += 0.1
-#             self.herb -= self.herbConsumptionRate
-#             self.happiness += 0.1
-            
-#             if self.temperanceFactor == 0:
-#                 # Do something special if the agent has no temperance, like decreasing happiness or health?
-#                 pass
-#             else:
-#                 self.temperanceFactor -= 0.1
-        
-        
-
-#     def doHerbConsumption(self) -> None:
-#         random = random.random()
-#         if self.temperanceFactor == 1:
-#             # NOOP
-#             return 
-#         # TODO: figure out the logic for if a temperance agent that has a high desire for herb should consume it
-#         elif self.temperanceFactor == 0 or (self.temperanceFactor <= random and self.temperanceFactor <= self.herbDesireFactor):
-#                 self.addHerbConsumptionEffectsToAgent()
-#         else:
-#             # If temperance factor is low, so if the agent chooses to NOT consume herb, their temperance should increase slightly more
-#             # than if their temperance factor is high
-#             # Could limit temperanceFactor affects based on desire for herb as well, so if the agent has a high desire for herb, their temperance factor increases less
-#             if self.temperanceFactor < 0.5:
-#                 self.temperanceFactor += 0.1
-#             else:
-#                 self.temperanceFactor += 0.05 
-            
-  
-#     def spawnChild(self, childID, birthday, cell, configuration) -> "Temperance":
-#         # Child inherits parent's temperance factor, but is initialized with a temperance factor of 0.5
-#         return Temperance(childID, birthday, cell, configuration, temperanceFactor=self.temperanceFactor)
-    
-    
-
-class SimpleTemperance(agent.Agent):
+class Temperance(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
-        # change rate should be a percentage of temperance factor
-        self.temperanceChangeRate = configuration["temperanceChangeFactor"]
-        self.temperanceFactor = configuration["temperanceFactor"]
-        print(self.temperanceFactor, self.temperanceChangeRate)
-        
+
     def doTemperanceDecision(self):
         randomValue = random.random()
-        print(f"randomValue: {randomValue} , temperanceFactor: {self.temperanceFactor}, temperancChange: {self.temperanceChangeRate}, agent: {self.ID})")
         if (randomValue >= self.temperanceFactor):
             self.doIntemperanceAction()
         else:
             self.doTemperanceAction()
-    
+
     def doIntemperanceAction(self):
-        newTemperanceFactor = self.temperanceFactor - self.temperanceChangeRate
-        print(newTemperanceFactor)
-        
-        print(f"Intemperant action -- Agent {self.ID}. Current temperance factor: {self.temperanceFactor}, new temperance factor: {newTemperanceFactor}")
-        
+        newTemperanceFactor = round(self.temperanceFactor - self.temperanceChangeFactor, 2)
         self.temperanceFactor = newTemperanceFactor if newTemperanceFactor >=0 else 0
-        
-    
+
     def doTemperanceAction(self):
-        newTemperanceFactor = self.temperanceFactor + self.temperanceChangeRate
-        print(newTemperanceFactor)
-
-        print(f"Temperant action -- Agent {self.ID}. Current temperance factor: {self.temperanceFactor}, new temperance factor: {newTemperanceFactor}")
-
+        newTemperanceFactor = round(self.temperanceFactor + self.temperanceChangeFactor, 2)
         self.temperanceFactor = newTemperanceFactor if newTemperanceFactor <=1 else 1
-    
+
     def updateValues(self):
         self.doTemperanceDecision()
-    
+
     def spawnChild(self, childID, birthday, cell, configuration):
-        return SimpleTemperance(childID, birthday, cell, configuration)
+        return Temperance(childID, birthday, cell, configuration)
