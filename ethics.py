@@ -1,5 +1,6 @@
 import agent
 
+import random
 import sys
 
 class Asimov(agent.Agent):
@@ -303,3 +304,28 @@ class Leader(agent.Agent):
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Leader(childID, birthday, cell, configuration)
+
+class Temperance(agent.Agent):
+    def __init__(self, agentID, birthday, cell, configuration):
+        super().__init__(agentID, birthday, cell, configuration)
+
+    def doTemperanceDecision(self):
+        randomValue = random.random()
+        if (randomValue >= self.temperanceFactor):
+            self.doIntemperanceAction()
+        else:
+            self.doTemperanceAction()
+
+    def doIntemperanceAction(self):
+        newTemperanceFactor = round(self.temperanceFactor - self.dynamicTemperanceFactor, 2)
+        self.temperanceFactor = newTemperanceFactor if newTemperanceFactor >= 0 else 0
+
+    def doTemperanceAction(self):
+        newTemperanceFactor = round(self.temperanceFactor + self.dynamicTemperanceFactor, 2)
+        self.temperanceFactor = newTemperanceFactor if newTemperanceFactor <= 1 else 1
+
+    def updateValues(self):
+        self.doTemperanceDecision()
+
+    def spawnChild(self, childID, birthday, cell, configuration):
+        return Temperance(childID, birthday, cell, configuration)
