@@ -364,7 +364,6 @@ class Sugarscape:
                 if self.agentLeader != None and agent == self.agentLeader:
                     continue
                 agent.doTimestep(self.timestep)
-            self.updateAgentRuntimeStats()
             self.removeDeadAgents()
             self.replaceDeadAgents()
             self.updateRuntimeStats()
@@ -378,15 +377,22 @@ class Sugarscape:
                 if self.timestep == 1:
                     self.startLog(self.agentLog)
                 self.writeToLog(self.agentLog)
+                self.agentRuntimeStats = []
 
     def endLog(self, log):
         if log == None:
             return
         # Update total wealth accumulation to include still living agents at simulation end
         stats = self.runtimeStats
+        logString = ""
         if log == self.agentLog:
-            stats = sorted(self.agentRuntimeStats, key=lambda agentStats: agentStats["ID"])
-        if log == self.log:
+            stats = self.agentRuntimeStats
+            for agentStats in stats:
+                if agentStats == stats[-1]:
+                    logString += f"\t{json.dumps(agentStats)}\n]"
+                else:
+                    logString += f"\t{json.dumps(agentStats)},\n"
+        else:
             environmentWealthCreated = 0
             environmentWealthTotal = 0
             for i in range(self.environment.width):
@@ -395,7 +401,7 @@ class Sugarscape:
                     environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
             self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
             self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
-        logString = '\t' + json.dumps(stats) + "\n]"
+            logString = f"\t{json.dumps(stats)}\n]"
         if self.logFormat == "csv":
             logString = ""
             # Ensure consistent ordering for CSV format
@@ -808,7 +814,7 @@ class Sugarscape:
             return
         stats = sorted(self.runtimeStats)
         if log == self.agentLog:
-            stats = sorted(self.agentRuntimeStats, key=lambda agentStats: agentStats["ID"])[0]
+            stats = self.agentRuntimeStats[0]
         if self.logFormat == "csv":
             header = ""
             # Ensure consistent ordering for CSV format
@@ -828,14 +834,6 @@ class Sugarscape:
 
     def toggleRun(self):
         self.run = not self.run
-
-    def updateAgentRuntimeStats(self):
-        if self.agentLog == None:
-            return
-        agentStats = []
-        for agent in self.agents:
-            agentStats.append(agent.updateRuntimeStats())
-        self.agentRuntimeStats = agentStats
 
     def updateGiniCoefficient(self):
         if len(self.agents) == 0:
@@ -1278,8 +1276,12 @@ class Sugarscape:
             return
         stats = self.runtimeStats
         if log == self.agentLog:
-            stats = sorted(self.agentRuntimeStats, key=lambda agentStats: agentStats["ID"])
-        logString = '\t' + json.dumps(stats) + ",\n"
+            stats = self.agentRuntimeStats
+            logString = ""
+            for agentStats in stats:
+                logString += f"\t{json.dumps(agentStats)},\n"
+        else:
+            logString = f"\t{json.dumps(stats)},\n"
         if self.logFormat == "csv":
             logString = ""
             # Ensure consistent ordering for CSV format

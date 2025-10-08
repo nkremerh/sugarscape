@@ -552,6 +552,7 @@ class Agent:
                 return
             self.findCellsInRange()
             self.updateHappiness()
+            self.updateRuntimeStats()
             self.updateValues()
 
     def doTrading(self):
@@ -1459,13 +1460,12 @@ class Agent:
         if self.lastTrade == self.timestep:
             tradePartners = self.lastTradePartners
 
-        runtimeStats = {"ID": self.ID, "age": self.age, "x": x, "y": y, "wealth": round(self.sugar + self.spice), "sugar": round(self.sugar), "spice": round(self.spice),
-                        "sugarGained": round(self.sugar - self.lastSugar), "spiceGained": round(self.spice - self.lastSpice), "movement": self.movement,
-                        "timeToLive": round(self.timeToLive, 1), "depression": self.depressed, "compositHappiness": round(self.happiness, 1),
-                        "conflictHappiness": self.conflictHappiness, "familyHappiness": round(self.familyHappiness, 1), "healthHappiness": self.healthHappiness,
-                        "socialHappiness": round(self.socialHappiness, 1), "wealthHappiness": round(self.wealthHappiness, 1), "causeOfDeath:": self.causeOfDeath,
+        runtimeStats = {"timestep": self.timestep, "ID": self.ID, "age": self.age, "x": x, "y": y, "wealth": round(self.sugar + self.spice),
+                        "sugar": round(self.sugar), "spice": round(self.spice), "sugarGained": round(self.sugar - self.lastSugar),
+                        "spiceGained": round(self.spice - self.lastSpice), "movement": self.movement, "timeToLive": round(self.timeToLive, 1),
+                        "depression": self.depressed, "compositeHappiness": round(self.happiness, 1), "causeOfDeath:": self.causeOfDeath,
                         "preyWealth": preyWealth, "tradePartners": tradePartners, "diseases": diseases, "mates": mates}
-        return runtimeStats
+        self.cell.environment.sugarscape.agentRuntimeStats.append(runtimeStats)
 
     def updateSocialNetwork(self):
         for neighbor in self.neighbors:
