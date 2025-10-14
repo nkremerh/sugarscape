@@ -45,52 +45,52 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
     titleStatistic = statistic.title()
     if "conflictHappiness" in config["plots"]:
         print(f"Generating {statistic} conflict happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_conflict_happiness.pdf", "meanConflictHappiness", f"{titleStatistic} Conflict Happiness", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_conflict_happiness.pdf", "meanConflictHappiness", f"{titleStatistic} Conflict Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
     if "deaths" in config["plots"]:
         print(f"Generating {statistic} deaths plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_deaths.pdf", "meanDeathsPercentage", f"{titleStatistic} Deaths", "center right", True, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_deaths.pdf", "meanDeathsPercentage", f"{titleStatistic} Deaths", "center right", percentage=True, experimentalGroup=experimentalGroup)
     if "familyHappiness" in config["plots"]:
         print(f"Generating {statistic} family happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_family_happiness.pdf", "meanFamilyHappiness", f"{titleStatistic} Family Happiness", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_family_happiness.pdf", "meanFamilyHappiness", f"{titleStatistic} Family Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
     if "giniCoefficient" in config["plots"]:
         print(f"Generating {statistic} Gini coefficient plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_gini.pdf", "giniCoefficient", f"{titleStatistic} Gini Coefficient", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_gini.pdf", "giniCoefficient", f"{titleStatistic} Gini Coefficient", "center right", percentage=False, experimentalGroup=experimentalGroup)
     if "happiness" in config["plots"]:
         print(f"Generating {statistic} happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_happiness.pdf", "meanHappiness", f"{titleStatistic} Happiness", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_happiness.pdf", "meanHappiness", f"{titleStatistic} Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
     if "healthHappiness" in config["plots"]:
         print(f"Generating {statistic} health happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_health_happiness.pdf", "meanHealthHappiness", f"{titleStatistic} Health Happiness", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_health_happiness.pdf", "meanHealthHappiness", f"{titleStatistic} Health Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
     if "lifeExpectancy" in config["plots"]:
         print(f"Generating {statistic} life expectancy plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_life_expectancy.pdf", "meanAgeAtDeath", f"{titleStatistic} Life Expectancy", "lower right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_life_expectancy.pdf", "meanAgeAtDeath", f"{titleStatistic} Life Expectancy", "lower right", percentage=False, experimentalGroup=experimentalGroup)
     if "population" in config["plots"]:
         print(f"Generating {statistic} population plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_population.pdf", "population", f"{titleStatistic} Population", "lower right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_population.pdf", "population", f"{titleStatistic} Population", "lower right", percentage=False, experimentalGroup=experimentalGroup)
     if "selfishness" in config["plots"]:
         print(f"Generating {statistic} selfishness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_selfishness.pdf", "meanSelfishness", f"{titleStatistic} Selfishness Factor", "lower center", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_selfishness.pdf", "meanSelfishness", f"{titleStatistic} Selfishness Factor", "lower center", percentage=False, experimentalGroup=experimentalGroup)
     if "sickness" in config["plots"]:
         print(f"Generating {statistic} sick percentage plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_sickness.pdf", "sickAgentsPercentage", f"{titleStatistic} Diseased Agents", "center right", True, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_sickness.pdf", "sickAgentsPercentage", f"{titleStatistic} Diseased Agents", "center right", percentage=True, experimentalGroup=experimentalGroup)
     if "socialHappiness" in config["plots"]:
         print(f"Generating {statistic} social happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_social_happiness.pdf", "meanSocialHappiness", f"{titleStatistic} Social Happiness", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_social_happiness.pdf", "meanSocialHappiness", f"{titleStatistic} Social Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
     if "totalWealth" in config["plots"]:
         print(f"Generating {statistic} total wealth plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_wealth.pdf", "agentWealthTotal", f"{titleStatistic} Total Wealth", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_wealth.pdf", "agentWealthTotal", f"{titleStatistic} Total Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup)
     if "tradeVolume" in config["plots"]:
         print(f"Generating {statistic} trade volume plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_trades.pdf", "tradeVolume", f"{titleStatistic} Trade Volume", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_trades.pdf", "tradeVolume", f"{titleStatistic} Trade Volume", "center right", percentage=False, experimentalGroup=experimentalGroup)
     if "ttl" in config["plots"]:
         print(f"Generating {statistic} time to live plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_ttl.pdf", "agentMeanTimeToLive", f"{titleStatistic} Time to Live", "upper right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_ttl.pdf", "agentMeanTimeToLive", f"{titleStatistic} Time to Live", "upper right", percentage=False, experimentalGroup=experimentalGroup)
     if "wealth" in config["plots"]:
         print(f"Generating {statistic} wealth plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_wealth.pdf", "meanWealth", f"{titleStatistic} Wealth", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_wealth.pdf", "meanWealth", f"{titleStatistic} Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup)
     if "wealthHappiness" in config["plots"]:
         print(f"Generating {statistic} wealth happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_total_wealth_happiness.pdf", "meanWealthHappiness", f"{titleStatistic} Wealth Happiness", "center right", False, experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_total_wealth_happiness.pdf", "meanWealthHappiness", f"{titleStatistic} Wealth Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
 
 def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, label, positioning, percentage=False, experimentalGroup=None):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
@@ -100,8 +100,8 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, lab
     x = [i for i in range(totalTimesteps + 1)]
     y = [0 for i in range(totalTimesteps + 1)]
     lines = []
-    modelStrings = {"bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape", "multiple": "Multiple", "unknown": "Unknown"}
-    colors = {"bentham": "magenta", "egoist": "cyan", "altruist": "gold", "none": "black", "rawSugarscape": "black ", "multiple": "red", "unknown": "green"}
+    modelStrings = {"asimov": "Asimov's Robot", "bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape", "multiple": "Multiple", "unknown": "Unknown"}
+    colors = {"asimov": "blue", "bentham": "magenta", "egoist": "cyan", "altruist": "gold", "none": "black", "rawSugarscape": "black ", "multiple": "red", "unknown": "green"}
     for model in dataset:
         modelString = model
         if '_' in model:
@@ -130,10 +130,12 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, lab
 
 def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
     encodedDir = os.fsencode(path)
-    for file in os.listdir(encodedDir):
+    files = [f for f in os.listdir(encodedDir) if os.fsdecode(f).endswith("json") or os.fsdecode(f).endswith(".csv")]
+    printFileLength = len(max(files, key=len))
+    fileCount = 1
+    totalFiles = len(files)
+    for file in files:
         filename = os.fsdecode(file)
-        if not (filename.endswith(".json") or filename.endswith(".csv")):
-            continue
         filePath = path + filename
         fileDecisionModel = re.compile(r"^([A-z]*)(\d*)\.(json|csv)")
         fileSearch = re.search(fileDecisionModel, filename)
@@ -144,7 +146,8 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
             continue
         seed = fileSearch.group(2)
         log = open(filePath)
-        print(f"Reading log {filePath}")
+        printProgress(filename, fileCount, totalFiles, printFileLength)
+        fileCount += 1
         rawData = None
         if filename.endswith(".json"):
             rawData = json.loads(log.read())
@@ -183,6 +186,7 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
                 elif statistic == "median":
                     dataset[model]["metrics"][entry][i-1].append(float(item[entry]))
             i += 1
+    print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
     for model in dataset:
         if dataset[model]["runs"] == 0:
             print(f"No simulation runs found for the {model} decision model")
@@ -227,6 +231,17 @@ def parseOptions():
 def printHelp():
     print("Usage:\n\tpython plot.py --path /path/to/data --conf /path/to/config > results.dat\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-p,--path\tUse the specified path to find dataset JSON files.\n\t-s,--skip\tSkip including extinct societies in produced graphs.\n\t-h,--help\tDisplay this message.")
     exit(0)
+
+def printProgress(filename, filesParsed, totalFiles, fileLength, decimals=2):
+    barLength = os.get_terminal_size().columns // 2
+    progress = round(((filesParsed / totalFiles) * 100), decimals)
+    filledLength = (barLength * filesParsed) // totalFiles
+    bar = '█' * filledLength + '-' * (barLength - filledLength)
+    printString = f"\rParsing {filename:>{fileLength}}: |{bar}| {filesParsed} / {totalFiles} ({progress}%)"
+    if filesParsed == totalFiles:
+        print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
+    else:
+        print(f"\r{printString}", end='\r')
 
 def printSummaryStats(dataset):
     print(f"Model population performance:\n{'Decision Model':^30} {'Extinct':^5} {'Worse':^5} {'Better':^5}")

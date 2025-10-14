@@ -21,6 +21,7 @@ class Agent:
         self.depressionFactor = configuration["depressionFactor"]
         self.diseaseProtectionChance = configuration["diseaseProtectionChance"]
         self.dynamicSelfishnessFactor = configuration["dynamicSelfishnessFactor"]
+        self.dynamicTemperanceFactor = configuration["dynamicTemperanceFactor"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
         self.follower = configuration["follower"]
@@ -49,6 +50,7 @@ class Agent:
         self.tagging = configuration["tagging"]
         self.tagPreferences = configuration["tagPreferences"]
         self.tags = configuration["tags"]
+        self.temperanceFactor = configuration["temperanceFactor"]
         self.tradeFactor = configuration["tradeFactor"]
         self.universalSpice = configuration["universalSpice"]
         self.universalSugar = configuration["universalSugar"]
@@ -87,6 +89,7 @@ class Agent:
         self.lastUniversalSugarIncomeTimestep = 0
         self.marginalRateOfSubstitution = 1
         self.movementModifier = 0
+        self.movementNeighborhood = []
         self.neighborhood = []
         self.neighbors = []
         self.nice = 0
@@ -105,6 +108,7 @@ class Agent:
         self.tribe = self.findTribe()
         self.visionModifier = 0
         self.wealthHappiness = 0
+        self.validMoves = []
 
         self.combatWithControlGroup = 0
         self.combatWithExperimentalGroup = 0
@@ -696,41 +700,8 @@ class Agent:
     def findBestEthicalCell(self, cells, greedyBestCell=None):
         if len(cells) == 0:
             return None
-        bestCell = None
-        cells = self.sortCellsByWealth(cells)
-        if "all" in self.debug or "agent" in self.debug:
-            self.printCellScores(cells)
         # If not an ethical agent, return top selfish choice
-        if self.decisionModel == "none":
-            return greedyBestCell
-
-        for cell in cells:
-            cell["wealth"] = self.findEthicalValueOfCell(cell["cell"])
-        if self.selfishnessFactor >= 0:
-            for cell in cells:
-                if cell["wealth"] > 0:
-                    bestCell = cell["cell"]
-                    break
-        else:
-            # Negative utilitarian model uses positive and negative utility to find minimum harm
-            cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]), reverse = True)
-            bestCell = cells[0]["cell"]
-
-        # If additional ordering consideration, select new best cell
-        if "Top" in self.decisionModel:
-            cells = self.sortCellsByWealth(cells)
-            if "all" in self.debug or "agent" in self.debug:
-                self.printEthicalCellScores(cells)
-            bestCell = cells[0]["cell"]
-
-        if bestCell == None:
-            if greedyBestCell == None:
-                bestCell = cells[0]["cell"]
-            else:
-                bestCell = greedyBestCell
-            if "all" in self.debug or "agent" in self.debug:
-                print(f"Agent {self.ID} could not find an ethical cell")
-        return bestCell
+        return greedyBestCell
 
     def findBestFriend(self):
         if self.tags == None:
@@ -795,7 +766,9 @@ class Agent:
         "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
         "decisionModelTribalFactor": [self.decisionModelTribalFactor, mate.decisionModelTribalFactor],
         "dynamicSelfishnessFactor": [self.dynamicSelfishnessFactor, mate.dynamicSelfishnessFactor],
-        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor]
+        "dynamicTemperanceFactor" : [self.dynamicTemperanceFactor, mate.dynamicTemperanceFactor],
+        "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
+        "temperanceFactor" : [self.temperanceFactor, mate.temperanceFactor]
         }
         childEndowment = {"seed": self.seed, "follower": self.follower}
         randomNumberReset = random.getstate()
@@ -1281,6 +1254,7 @@ class Agent:
 
     def rankCellsInRange(self):
         self.findNeighborhood()
+
         if len(self.cellsInRange) == 0:
             return [{"cell": self.cell, "wealth": 0, "range": 0}]
         cellsInRange = list(self.cellsInRange.items())
@@ -1325,7 +1299,9 @@ class Agent:
 
         if len(potentialCells) == 0:
             potentialCells.append({"cell": self.cell, "wealth": 0, "range": 0})
+
         rankedCells = self.sortCellsByWealth(potentialCells)
+        self.updateMovementStats(rankedCells)
         return rankedCells
 
     def removeDebt(self, loan):
@@ -1338,18 +1314,6 @@ class Agent:
         self.cell.resetAgent()
         self.cell = None
 
-    def setFather(self, father):
-        fatherID = father.ID
-        if fatherID not in self.socialNetwork:
-            self.addAgentToSocialNetwork(father)
-        self.socialNetwork["father"] = father
-
-    def setMother(self, mother):
-        motherID = mother.ID
-        if motherID not in self.socialNetwork:
-            self.addAgentToSocialNetwork(mother)
-        self.socialNetwork["mother"] = mother
-
     def resetTimestepMetrics(self):
         self.combatWithControlGroup = 0
         self.combatWithExperimentalGroup = 0
@@ -1361,6 +1325,18 @@ class Agent:
         self.reproductionWithExperimentalGroup = 0
         self.tradeWithControlGroup = 0
         self.tradeWithExperimentalGroup = 0
+
+    def setFather(self, father):
+        fatherID = father.ID
+        if fatherID not in self.socialNetwork:
+            self.addAgentToSocialNetwork(father)
+        self.socialNetwork["father"] = father
+
+    def setMother(self, mother):
+        motherID = mother.ID
+        if motherID not in self.socialNetwork:
+            self.addAgentToSocialNetwork(mother)
+        self.socialNetwork["mother"] = mother
 
     def sortCellsByWealth(self, cells):
         # Insertion sort of cells by wealth in descending order with range as a tiebreaker
@@ -1438,6 +1414,14 @@ class Agent:
         alpha = 0.05
         self.sugarMeanIncome = (alpha * sugarIncome) + ((1 - alpha) * self.sugarMeanIncome)
         self.spiceMeanIncome = (alpha * spiceIncome) + ((1 - alpha) * self.spiceMeanIncome)
+
+    def updateMovementStats(self, cells):
+        validCells = []
+        for cell in cells:
+            newRecord = {"cell": cell["cell"], "wealth": cell["wealth"]}
+            validCells.append(newRecord)
+        self.validMoves = validCells
+        self.movementNeighborhood = self.neighborhood[:]
 
     def updateNeighbors(self):
         self.neighbors = [neighborCell.agent for neighborCell in self.cell.neighbors.values() if neighborCell.agent != None]

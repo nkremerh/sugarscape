@@ -149,9 +149,9 @@ agentDecisionModelFactor: [float, float]
 
 agentDecisionModels: [string, ...]
     Set the agent decision models for different decisionmaking.
-    Options: "altruist", "bentham", "egoist", "negativeBentham", "none", "rawSugarscape"
-    Note: Adding either "HalfLookahead" or "NoLookahead" after a decision model name will enforce a particular decision model lookahead factor.
-    Note: Adding "Dynamic" after a decision model name enforces dynamic selfishness.
+    Options: "altruist", "asimov", "bentham", "egoist", "negativeBentham", "none", "rawSugarscape"
+    Note: Adding either "HalfLookahead" or "NoLookahead" after some decision model names will enforce a particular decision model lookahead factor.
+    Note: Adding "Dynamic" after some decision model names enforces dynamic selfishness.
     Default: ["none"]
 
 agentDecisionModelTribalFactor: [float, float]
@@ -566,10 +566,6 @@ Other JSON Configurable Options:
 decisionModels: [[string, ...], ...]
     Set the agent decision models to be tested in data collection.
     Default: [["none"]]
-
-jobUpdateFrequency: int
-    Set the frequency at which the number of remaining jobs is reported.
-    Default: 5
 
 numParallelSimJobs: int
     Set the number of simulations to run in parallel during data collection.

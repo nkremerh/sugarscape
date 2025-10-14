@@ -45,11 +45,6 @@ def createConfigurations(config, path, mode="json"):
         return confFiles
     return configs
 
-def finishSimulations():
-    # Sleep to prevent printing from occurring out of order with final job submission
-    time.sleep(1)
-    print("Waiting for jobs to finish up.")
-
 def generateSeeds(config):
     seeds = []
     for i in range(config["numSeeds"]):
@@ -78,7 +73,6 @@ def getJobsToDo(config, path):
         agentLog = rawConf["agentLogfile"]
         configFile.close()
         if os.path.exists(log) == False:
-            print(f"Configuration file {config} has no matching log. Adding it to be rerun.")
             continue
         try:
             logFile = open(log)
@@ -91,10 +85,8 @@ def getJobsToDo(config, path):
             if int(lastEntry["timestep"]) == int(rawConf["timesteps"]) or int(lastEntry["population"]) == 0:
                 completedRuns.append(config)
             else:
-                print(f"Existing log {log} is incomplete. Adding it to be rerun.")
                 os.remove(log)
         except:
-            print(f"Existing log {log} is incomplete. Adding it to be rerun.")
             os.remove(log)
             continue
         if agentLog != None and os.path.exists(agentLog) == False:
@@ -104,6 +96,8 @@ def getJobsToDo(config, path):
         configs.remove(run)
     if len(configs) == 0:
         print("No incomplete logs found.")
+    else:
+        print(f"Found {len(configs)} incomplete logs to rerun.")
     return configs
 
 def parseOptions():
@@ -145,38 +139,45 @@ def printHelp():
     print("Usage:\n\tpython run.py --conf /path/to/config\n\nOptions:\n\t-c,--conf\tUse the specified path to configurable settings file.\n\t-m,--mode\tUse the specified file format for simulation logs.\n\t-p,--path\tUse the specified directory path to store dataset JSON files.\n\t-h,--help\tDisplay this message.")
     exit(0)
 
-def runSimulation(configFile, pythonAlias, jobNumber, totalJobs):
-    print(f"Running decision model {configFile} ({jobNumber}/{totalJobs})")
+def printProgress(lastJob, jobsFinished, totalJobs, jobLength, decimals=2):
+    barLength = os.get_terminal_size().columns // 2
+    progress = round(((jobsFinished / totalJobs) * 100), decimals)
+    filledLength = (barLength * jobsFinished) // totalJobs
+    bar = '█' * filledLength + '-' * (barLength - filledLength)
+    printString = f"\rRunning {lastJob:>{jobLength}}: |{bar}| {jobsFinished} / {totalJobs} ({progress}%)"
+    print(f"\r{printString}", end='\r')
+
+def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, count, printFileLength):
     os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
+    count.value += 1
+    printProgress(configFile, count.value, totalJobs, printFileLength)
 
 def runSimulations(config, configFiles):
     dataOpts = config["dataCollectionOptions"]
     pythonAlias = dataOpts["pythonAlias"]
     totalSimJobs = len(configFiles)
-    jobUpdateFrequency = dataOpts["jobUpdateFrequency"]
 
     # Submit simulation jobs to local worker pool
+    manager = multiprocessing.Manager()
+    counter = manager.Value('i', 0)
+    printFileLength = len(max(configFiles, key=len))
     pool = multiprocessing.Pool(processes = dataOpts["numParallelSimJobs"])
-    results = [pool.apply_async(runSimulation, args = (configFile, pythonAlias, i + 1, totalSimJobs)) for i, configFile in enumerate(configFiles)]
+    results = [pool.apply_async(runSimulation, args=(configFile, pythonAlias, i + 1, totalSimJobs, counter, printFileLength)) for i, configFile in enumerate(configFiles)]
 
     # Wait for jobs to finish
-    pool.apply(finishSimulations)
-    lastUpdate = 0
     while len(results) > 0:
         waitingResults = []
         for result in results:
             ready = result.ready()
             if ready == False:
                 waitingResults.append(result)
-        outstanding = len(waitingResults)
-        if outstanding != 0 and outstanding != lastUpdate and outstanding % jobUpdateFrequency == 0:
-            print(f"{outstanding} jobs remaining.")
-            lastUpdate = outstanding
         results = waitingResults
 
     # Clean up job pool
     pool.close()
     pool.join()
+    print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
+    print("All jobs completed.")
 
 def verifyConfiguration(configuration):
     # Check if number of parallel jobs is greater than number of CPU cores
