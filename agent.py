@@ -76,17 +76,25 @@ class Agent:
         self.happinessModifier = 0
         self.healthHappiness = 0
         self.lastCombat = -1
-        self.lastPreyWealth = 0
-        self.lastTrade = -1
-        self.lastTradePartners = 0
+        self.lastDiseasesSpread = 0
+        self.lastLended = -1
+        self.lastLoans = 0
         self.lastMates = 0
         self.lastMoved = -1
         self.lastMoveOptimal = True
+        self.lastMoveRank = 0
+        self.lastPollution = 0
+        self.lastPreyWealth = 0
         self.lastReproduced = -1
         self.lastSpice = 0
+        self.lastSpreadDisease = -1
         self.lastSugar = 0
+        self.lastTimeToLive = 0
+        self.lastTrade = -1
+        self.lastTradePartners = 0
         self.lastUniversalSpiceIncomeTimestep = 0
         self.lastUniversalSugarIncomeTimestep = 0
+        self.lastValidMoves = 0
         self.marginalRateOfSubstitution = 1
         self.movementModifier = 0
         self.movementNeighborhood = []
@@ -126,6 +134,15 @@ class Agent:
             self.depressed = True
             depression = cell.environment.sugarscape.depression
             depression.trigger(self)
+
+        self.runtimeStats = {"timestep": self.born, "ID": self.ID, "age": self.age, "wealth": round(self.sugar + self.spice, 2),
+                             "sugar": round(self.sugar, 2), "spice": round(self.spice, 2), "sugarGained": 0,
+                             "spiceGained": 0, "wealthGained": 0, "movement": self.findMovement(), "timeToLive": 0,
+                             "depression": self.depressed, "compositeHappiness": 0, "preyKilled": False,
+                             "preyWealth": 0, "tradePartners": 0, "diseasesSpread": 0, "mates": 0,
+                             "neighbors": 0, "validMoves": 0, "moveRank": 0, "lendingPartners": 0,
+                             "pollutionDifference": 0, "timeToLiveDifference": 0, "neighborsInTribe": 0,
+                             "neighborsNotInTribe": 0, "experimentalGroupNeighbors": 0, "controlGroupNeighbors": 0}
 
     def addAgentToSocialNetwork(self, agent):
         agentID = agent.ID
@@ -318,14 +335,21 @@ class Agent:
             neighbor = neighborCell.agent
             if neighbor != None and neighbor.isAlive() == True:
                 neighbors.append(neighbor)
+        diseasesSpread = 0
         random.shuffle(neighbors)
         for neighbor in neighbors:
-            neighbor.catchDisease(self.diseases[random.randrange(diseaseCount)]["disease"], self)
+            disease = self.diseases[random.randrange(diseaseCount)]["disease"]
+            neighbor.catchDisease(disease, self)
+            if neighbor.isInfectedWithDisease(disease.ID) == True:
+                diseasesSpread += 1
             sugarscape = self.cell.environment.sugarscape
             if sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup):
                 self.diseaseWithExperimentalGroup += 1
             elif sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup, True):
                 self.diseaseWithControlGroup += 1
+        if diseasesSpread > 0:
+            self.lastSpreadDisease = self.timestep
+            self.lastDiseasesSpread = diseasesSpread
 
     def doInfectionAttempt(self, disease):
         diseaseAttack = random.uniform(0.0, 1.0)
@@ -411,6 +435,7 @@ class Agent:
         random.shuffle(borrowers)
         spiceMetabolism = self.findSpiceMetabolism()
         sugarMetabolism = self.findSugarMetabolism()
+        loans = 0
         for borrower in borrowers:
             maxSugarLoan = self.sugar / 2
             maxSpiceLoan = self.spice / 2
@@ -437,11 +462,15 @@ class Agent:
                 if "all" in self.debug or "agent" in self.debug:
                     print(f"Agent {self.ID} lending [{sugarLoanAmount},{spiceLoanAmount}]")
                 self.addLoanToAgent(borrower, self.lastMoved, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
+                loans += 1
                 sugarscape = self.cell.environment.sugarscape
                 if sugarscape.experimentalGroup != None and borrower.isInGroup(sugarscape.experimentalGroup):
                     self.lendingWithExperimentalGroup += 1
                 elif sugarscape.experimentalGroup != None and borrower.isInGroup(sugarscape.experimentalGroup, True):
                     self.lendingWithControlGroup += 1
+        if loans > 0:
+            self.lastLended = self.timestep
+            self.lastLoans = loans
 
     def doMetabolism(self):
         if self.isAlive() == False:
@@ -533,7 +562,6 @@ class Agent:
             # Bookkeeping before performing actions
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
-            self.lastMoved = self.timestep
             # Beginning of timestep actions
             self.moveToBestCell()
             self.updateNeighbors()
@@ -688,13 +716,21 @@ class Agent:
         greedyBestCell = potentialCells[0]["cell"]
 
         if self.decisionModelFactor > 0:
-            bestCell = self.findBestEthicalCell(potentialCells, greedyBestCell)
+            bestCell = self.findBestEthicalCell(potentialCells[:], greedyBestCell)
         if bestCell == None:
             bestCell = greedyBestCell
         if bestCell == greedyBestCell:
             self.lastMoveOptimal = True
         else:
             self.lastMoveOptimal = False
+        bestCellRank = 0
+        for cell in potentialCells:
+            if cell["cell"] != bestCell:
+                bestCellRank += 1
+            else:
+                break
+        self.lastMoveRank = bestCellRank
+        self.lastValidMoves = len(potentialCells)
         return bestCell
 
     def findBestEthicalCell(self, cells, greedyBestCell=None):
@@ -1081,6 +1117,9 @@ class Agent:
         return None
 
     def gotoCell(self, cell):
+        if cell != None:
+            self.lastMoved = self.timestep
+            self.lastPollution = self.cell.pollution
         self.resetCell()
         self.cell = cell
         self.cell.agent = self
@@ -1428,11 +1467,13 @@ class Agent:
         self.updateSocialNetwork()
 
     def updateRuntimeStats(self):
-        diseases = len(self.diseases)
+        diseasesSpread = 0
+        loans = 0
         mates = 0
         tradePartners = 0
         x = None
         y = None
+        preyKilled = False
         preyWealth = 0
         if self.lastReproduced == self.timestep:
             mates = self.lastMates
@@ -1440,16 +1481,46 @@ class Agent:
             x = self.cell.x
             y = self.cell.y
         if self.lastCombat == self.timestep:
+            preyKilled = True
             preyWealth = self.lastPreyWealth
         if self.lastTrade == self.timestep:
             tradePartners = self.lastTradePartners
+        if self.lastSpreadDisease == self.timestep:
+            diseasesSpread = self.lastDiseasesSpread
+        if self.lastLended == self.timestep:
+            loans = self.lastLoans
+        spiceGained = self.spice - self.lastSpice
+        sugarGained = self.sugar - self.lastSugar
+        wealthGained = spiceGained + sugarGained
 
-        runtimeStats = {"timestep": self.timestep, "ID": self.ID, "age": self.age, "x": x, "y": y, "wealth": round(self.sugar + self.spice),
-                        "sugar": round(self.sugar), "spice": round(self.spice), "sugarGained": round(self.sugar - self.lastSugar),
-                        "spiceGained": round(self.spice - self.lastSpice), "movement": self.movement, "timeToLive": round(self.timeToLive, 1),
-                        "depression": self.depressed, "compositeHappiness": round(self.happiness, 1), "causeOfDeath:": self.causeOfDeath,
-                        "preyWealth": preyWealth, "tradePartners": tradePartners, "diseases": diseases, "mates": mates}
-        self.cell.environment.sugarscape.agentRuntimeStats.append(runtimeStats)
+        controlNeighbors = 0
+        experimentalNeighbors = 0
+        sugarscape = self.cell.environment.sugarscape
+        neighborsInTribe = 0
+        for neighbor in self.neighbors:
+            if neighbor.tribe == self.tribe:
+                neighborsInTribe += 1
+            if sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup):
+                experimentalNeighbors += 1
+            elif sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup, True):
+                controlNeighbors += 1
+
+        self.lastTimeToLive = self.timeToLive
+        self.findTimeToLive()
+        timeToLiveDifference = self.timeToLive - self.lastTimeToLive
+        pollutionDifference = self.cell.pollution - self.lastPollution
+
+        self.runtimeStats = {"timestep": self.timestep, "ID": self.ID, "age": self.age, "wealth": round(self.sugar + self.spice, 2),
+                             "sugar": round(self.sugar, 2), "spice": round(self.spice, 2), "sugarGained": round(sugarGained, 2),
+                             "spiceGained": round(spiceGained, 2), "wealthGained": round(wealthGained, 2), "movement": self.findMovement(), "timeToLive": round(self.timeToLive, 1),
+                             "depression": self.depressed, "compositeHappiness": round(self.happiness, 1), "preyKilled": preyKilled,
+                             "preyWealth": preyWealth, "tradePartners": tradePartners, "diseasesSpread": diseasesSpread, "mates": mates,
+                             "neighbors": len(self.neighbors), "validMoves": self.lastValidMoves, "moveRank": self.lastMoveRank, "lendingPartners": loans,
+                             "pollutionDifference": pollutionDifference, "timeToLiveDifference": timeToLiveDifference, "neighborsInTribe": neighborsInTribe,
+                             "neighborsNotInTribe": len(self.neighbors) - neighborsInTribe, "experimentalGroupNeighbors": experimentalNeighbors,
+                             "controlGroupNeighbors": controlNeighbors}
+
+        sugarscape.agentRuntimeStats.append(self.runtimeStats)
 
     def updateSocialNetwork(self):
         for neighbor in self.neighbors:
