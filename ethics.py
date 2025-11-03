@@ -309,13 +309,6 @@ class Temperance(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
 
-    def doTemperanceDecision(self):
-        randomValue = random.random()
-        if (randomValue >= self.temperanceFactor):
-            self.doIntemperanceAction()
-        else:
-            self.doTemperanceAction()
-
     def doIntemperanceAction(self):
         newTemperanceFactor = round(self.temperanceFactor - self.dynamicTemperanceFactor, 2)
         self.temperanceFactor = newTemperanceFactor if newTemperanceFactor >= 0 else 0
@@ -324,8 +317,88 @@ class Temperance(agent.Agent):
         newTemperanceFactor = round(self.temperanceFactor + self.dynamicTemperanceFactor, 2)
         self.temperanceFactor = newTemperanceFactor if newTemperanceFactor <= 1 else 1
 
-    def updateValues(self):
-        self.doTemperanceDecision()
+    def findBestEthicalCell(self, cells, greedyBestCell=None):
+
+        if len(cells) == 0:
+            return None
+        bestCell = None
+        #TODO: Sort cells by total resources, select that one if there's no proper temperance option??
+        totalMetabolicNeed = self.findSugarMetabolism() + self.findSpiceMetabolism()
+        if "all" in self.debug or "agent" in self.debug:
+            self.printCellScores(cells)
+        
+        # Determine if temperance or intemperance action (simple for now)
+        randomValue = random.random()
+        if (randomValue >= self.temperanceFactor):
+            # Intemperance action, seek cell with that maximizes excess over metabolic needs
+            bestCell = self.findWorstTemperanceCell(cells, totalMetabolicNeed)
+        else:
+            # Temperance action, seek cell closest to metabolic needs
+            bestCell = self.findBestTemperanceCell(cells, totalMetabolicNeed)
+
+        if bestCell is None:
+            if greedyBestCell is None:
+                #TODO: consider combat here -- what if that cell is occupied?
+                bestCell = cells[0]["cell"]
+            else:
+                bestCell = greedyBestCell
+            if "all" in self.debug or "agent" in self.debug:
+                print(f"Agent {self.ID} could not find an ethical cell")
+        return bestCell
+
+    def findWorstTemperanceCell(self, cells, totalMetabolicNeed):
+        cells.sort(key = lambda cell: abs((cell["cell"].sugar + cell["cell"].spice) - totalMetabolicNeed), reverse = True)
+        
+        """
+            TODO: consider combat here and figure out if there's factors of intemperance that would affect either the cell, the selection, or some factor about the the agent differently than just being greedy.
+            Primarily, this is based on the value of the cell relative to agent's metabolic need, regardless of the occupation status of the cell
+        
+        """
+        # For intemperance, the worst cell to choose is simply the one that is most greedy
+        worstCell = cells[0]["cell"]
+
+        if worstCell.agent == None:
+            # Cell required no combat, but the agent was still greedy for moving here -- standard intemperance
+            self.doIntemperanceAction()
+            
+        else:
+            # Agent had to perform combat to move here, intemperance should add a modifier?
+            # TODO: figure out how combat would affect temperance differently
+            self.doIntemperanceAction()
+        return worstCell
+
+    def findBestTemperanceCell(self, cells, totalMetabolicNeed):
+        cells.sort(key = lambda cell: abs((cell["cell"].sugar + cell["cell"].spice) - totalMetabolicNeed))
+        bestCell = None
+        for cell in cells:
+                # There's no agent present, this is the best temperance cell
+            if cell["cell"].agent == None:
+                bestCell = cell["cell"]
+                if bestCell["cell"].sugar + bestCell["cell"].spice >= totalMetabolicNeed:
+                        # Agent avoided combat, selected cell closest to its need. Standard temperance action
+                    self.doTemperanceAction()
+                else:
+                    # Agent avoided combat, but selected cell that does NOT meet metabolic need.
+                    """
+                        TODO: figure out how this affects the agent differently than standard temperance action
+                        
+                        
+                        There's a couple of options for us to consider when doing the temperance action here:
+                        1. If the agent selected a cell that does not meet metabolic need, can relate the effects
+                            to the number of cells it decided to forgo to select this one. The more cells it avoided, the more temperate it was?
+                        2. We could consider the degree to which the "best" cell fails to meet metabolic need, and if it is sufficiently large,
+                            the agent could engage in combat. It shouldn't WANT to starve itself, after all. If the first cell (best in the list)
+                            is occupied and the agent is already starving, is it more temperate to fight for the resource to preserve oneself?
+                        3. Some combination of the above two options. This is likely to be the option as we increase the complexity to include
+                            more factors like physical condition, age, combat strength, etc.
+                    
+                    """
+                    self.doTemperanceAction()                    
+                break
+            else:
+                # Agent would need to doCombat, skip for temperance action
+                continue
+        return bestCell
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Temperance(childID, birthday, cell, configuration)
