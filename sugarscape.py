@@ -64,6 +64,7 @@ class Sugarscape:
         self.replacedAgents = []
 
         self.activeQuadrants = self.findActiveQuadrants()
+        self.agentRuntimeStats = []
         self.configureDepression()
         self.configureAgents(configuration["startingAgents"])
         self.configureDiseases(configuration["startingDiseases"], configuration["diseaseList"])
@@ -86,6 +87,7 @@ class Sugarscape:
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
+        self.agentLog = open(configuration["agentLogfile"], 'a') if configuration["agentLogfile"] != None else None
         self.logFormat = configuration["logfileFormat"]
         self.experimentalGroup = configuration["experimentalGroup"]
         if self.experimentalGroup != None:
@@ -380,37 +382,62 @@ class Sugarscape:
                 self.gui.doTimestep()
             # If final timestep, do not write to log to cleanly close JSON array log structure
             if self.timestep != self.maxTimestep and len(self.agents) > 0:
-                self.writeToLog()
+                self.writeToLog(self.log)
+                # Start recording agent actions only after agents have started acting
+                if self.timestep == 1:
+                    self.startLog(self.agentLog)
+                self.writeToLog(self.agentLog)
+                self.agentRuntimeStats = []
 
-    def endLog(self):
-        if self.log == None:
+    def endLog(self, log):
+        if log == None:
             return
         # Update total wealth accumulation to include still living agents at simulation end
-        environmentWealthCreated = 0
-        environmentWealthTotal = 0
-        for i in range(self.environment.width):
-            for j in range(self.environment.height):
-                environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
-                environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
-        self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
-        self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
-        logString = '\t' + json.dumps(self.runtimeStats) + "\n]"
+        stats = self.runtimeStats
+        logString = ""
+        if log == self.agentLog:
+            stats = self.agentRuntimeStats
+            for agentStats in stats:
+                if agentStats == stats[-1]:
+                    logString += f"\t{json.dumps(agentStats)}\n]"
+                else:
+                    logString += f"\t{json.dumps(agentStats)},\n"
+        else:
+            environmentWealthCreated = 0
+            environmentWealthTotal = 0
+            for i in range(self.environment.width):
+                for j in range(self.environment.height):
+                    environmentWealthCreated += self.environment.grid[i][j].sugarLastProduced + self.environment.grid[i][j].spiceLastProduced
+                    environmentWealthTotal += self.environment.grid[i][j].sugar + self.environment.grid[i][j].spice
+            self.runtimeStats["environmentWealthCreated"] = environmentWealthCreated
+            self.runtimeStats["environmentWealthTotal"] = environmentWealthTotal
+            logString = f"\t{json.dumps(stats)}\n]"
         if self.logFormat == "csv":
             logString = ""
             # Ensure consistent ordering for CSV format
-            for stat in sorted(self.runtimeStats):
-                if logString == "":
-                    logString += f"{self.runtimeStats[stat]}"
-                else:
-                    logString += f",{self.runtimeStats[stat]}"
-            logString += "\n"
-        self.log.write(logString)
-        self.log.flush()
-        self.log.close()
+            if log == self.agentLog:
+                for agentStats in stats:
+                    for stat in agentStats:
+                        if logString == "":
+                            logString += f"{agentStats[stat]}"
+                        else:
+                            logString += f",{agentStats[stat]}"
+                    logString += "\n"
+            else:
+                for stat in sorted(stats):
+                    if logString == "":
+                        logString += f"{stats[stat]}"
+                    else:
+                        logString += f",{stats[stat]}"
+                logString += "\n"
+        log.write(logString)
+        log.flush()
+        log.close()
 
     def endSimulation(self):
         self.removeDeadAgents()
-        self.endLog()
+        self.endLog(self.log)
+        self.endLog(self.agentLog)
         if "all" in self.debug or "sugarscape" in self.debug:
             print(str(self))
         exit(0)
@@ -770,9 +797,8 @@ class Sugarscape:
             self.configureAgents(numReplacements)
 
     def runSimulation(self, timesteps=5):
-        self.startLog()
-        if self.log == None:
-            self.updateRuntimeStats()
+        self.startLog(self.log)
+        self.updateRuntimeStats()
         if self.gui != None:
             # Simulation begins paused until start button in GUI pressed
             self.gui.updateLabels()
@@ -796,23 +822,25 @@ class Sugarscape:
         else:
             self.endSimulation()
 
-    def startLog(self):
-        if self.log == None:
+    def startLog(self, log):
+        if log == None:
             return
+        stats = sorted(self.runtimeStats)
+        if log == self.agentLog:
+            stats = self.agentRuntimeStats[0]
         if self.logFormat == "csv":
             header = ""
             # Ensure consistent ordering for CSV format
-            for stat in sorted(self.runtimeStats):
+            for stat in stats:
                 if header == "":
                     header += f"{stat}"
                 else:
                     header += f",{stat}"
             header += "\n"
-            self.log.write(header)
+            log.write(header)
         else:
-            self.log.write("[\n")
-        self.updateRuntimeStats()
-        self.writeToLog()
+            log.write("[\n")
+        self.writeToLog(log)
 
     def toggleEnd(self):
         self.end = True
@@ -1296,20 +1324,36 @@ class Sugarscape:
         for key in runtimeStats.keys():
             self.runtimeStats[key] = runtimeStats[key]
 
-    def writeToLog(self):
-        if self.log == None:
+    def writeToLog(self, log):
+        if log == None:
             return
-        logString = '\t' + json.dumps(self.runtimeStats) + ",\n"
+        stats = self.runtimeStats
+        if log == self.agentLog:
+            stats = self.agentRuntimeStats
+            logString = ""
+            for agentStats in stats:
+                logString += f"\t{json.dumps(agentStats)},\n"
+        else:
+            logString = f"\t{json.dumps(stats)},\n"
         if self.logFormat == "csv":
             logString = ""
             # Ensure consistent ordering for CSV format
-            for stat in sorted(self.runtimeStats):
-                if logString == "":
-                    logString += f"{self.runtimeStats[stat]}"
-                else:
-                    logString += f",{self.runtimeStats[stat]}"
-            logString += "\n"
-        self.log.write(logString)
+            if log == self.agentLog:
+                for agentStats in stats:
+                    for stat in agentStats:
+                        if logString == "":
+                            logString += f"{agentStats[stat]}"
+                        else:
+                            logString += f",{agentStats[stat]}"
+                    logString += "\n"
+            else:
+                for stat in sorted(stats):
+                    if logString == "":
+                        logString += f"{stats[stat]}"
+                    else:
+                        logString += f",{stats[stat]}"
+                logString += "\n"
+        log.write(logString)
 
     def __str__(self):
         string = f"{str(self.environment)}Seed: {self.seed}\nTimestep: {self.timestep}\nLiving Agents: {len(self.agents)}"
@@ -1567,6 +1611,9 @@ def verifyConfiguration(configuration):
     if configuration["logfile"] == "":
         configuration["logfile"] = None
 
+    if configuration["agentLogfile"] == "":
+        configuration["agentLogfile"] = None
+
     if configuration["seed"] == -1:
         configuration["seed"] = random.randrange(sys.maxsize)
 
@@ -1631,6 +1678,7 @@ if __name__ == "__main__":
                      "agentLeader": False,
                      "agentLendingFactor": [0, 0],
                      "agentLoanDuration": [0, 0],
+                     "agentLogfile": None,
                      "agentLookaheadFactor": [0, 0],
                      "agentMaleInfertilityAge": [0, 0],
                      "agentMaleFertilityAge": [0, 0],

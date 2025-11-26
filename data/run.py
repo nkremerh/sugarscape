@@ -26,9 +26,13 @@ def createConfigurations(config, path, mode="json"):
                 simOpts["seed"] = seed
                 if mode == "json":
                     simOpts["logfile"] = f"{path}{modelString}{seed}.json"
+                    if simOpts["agentLogfile"] != None:
+                        simOpts["agentLogfile"] = f"{path}agents.{modelString}{seed}.json"
                     simOpts["logfileFormat"] = "json"
                 else:
                     simOpts["logfile"] = f"{path}{modelString}{seed}.csv"
+                    if simOpts["agentLogfile"] != "none":
+                        simOpts["agentLogfile"] = f"{path}agents.{modelString}{seed}.csv"
                     simOpts["logfileFormat"] = "csv"
                 # Enforce noninteractive, no-output mode
                 simOpts["headlessMode"] = True
@@ -66,6 +70,7 @@ def getJobsToDo(config, path):
         configFile = open(config)
         rawConf = json.loads(configFile.read())
         log = rawConf["logfile"]
+        agentLog = rawConf["agentLogfile"]
         configFile.close()
         if os.path.exists(log) == False:
             continue
@@ -83,6 +88,9 @@ def getJobsToDo(config, path):
                 os.remove(log)
         except:
             os.remove(log)
+            continue
+        if agentLog != None and os.path.exists(agentLog) == False:
+            print(f"Configuration file {config} has no matching log. Adding it to be rerun.")
             continue
     for run in completedRuns:
         configs.remove(run)
@@ -201,5 +209,4 @@ if __name__ == "__main__":
     configFiles = createConfigurations(config, path, mode)
     if seedsOnly == False:
         runSimulations(config, configFiles)
-
     exit(0)
