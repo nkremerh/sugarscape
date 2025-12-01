@@ -308,7 +308,7 @@ class Leader(agent.Agent):
 class Temperance(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
-
+        
     def doIntemperanceAction(self):
         newTemperanceFactor = round(self.temperanceFactor - self.dynamicTemperanceFactor, 2)
         self.temperanceFactor = newTemperanceFactor if newTemperanceFactor >= 0 else 0
@@ -322,23 +322,52 @@ class Temperance(agent.Agent):
     def findBestEthicalCell(self, cells, greedyBestCell=None):
         if len(cells) == 0:
             return None
-        totalMetabolicNeed = self.findSugarMetabolism() + self.findSpiceMetabolism()
         if "all" in self.debug or "agent" in self.debug:
             self.printCellScores(cells)
         
-        # Determine if temperance or intemperance action (simple for now)
+        totalMetabolicNeed = self.findSugarMetabolism() + self.findSpiceMetabolism()
+
+        #TODO: do we want to sort these cells by PECS score (low -> high)
+        self._setCellPECSValues(cells, totalMetabolicNeed)
+        
+        #TODO: Figure out social pressure implementation (this may use the socialNetwork attribute. Will opinions of agents influence other agents' opinions of those agents as well?
+        # For example, if agent 1 and agent 2 are friends, agent 1 hates agent 3, will agent 2's opinion of agent 3 reflect that influence?)
         randomValue = random.random()
         if (randomValue >= self.temperanceFactor):
             self.doIntemperanceAction()
+            #TODO: Is there a concern if greedybestcell is None?
             return greedyBestCell
         else:
             self.doTemperanceAction()
             # Temperance action, seek cell closest to metabolic needs
-            return self.findBestTemperanceCell(cells, totalMetabolicNeed)
+            cells.sort(key = lambda cell: abs(cell["wealth"] - totalMetabolicNeed))
 
-    def findBestTemperanceCell(self, cells, totalMetabolicNeed):
-        cells.sort(key = lambda cell: abs(cell["wealth"] - totalMetabolicNeed))
-        return cells[0]["cell"]
+            return cells[0]["cell"]
+    
+    def _setCellPECSValues(self, weightedCells, totalMetabolicNeed):
+
+        physicalScore, emotionalScore, cognitiveScore, socialScore = 0,0,0,0
+        if totalMetabolicNeed == 0:
+            print(f"Agent {self.ID} has zero metabolic need, cannot compute cell PECS values")
+            return 
+        
+        for weightedCell in weightedCells:
+            
+            #Get physical score
+            #TODO: not sure how well this will scale
+            physicalScore = abs((weightedCell["wealth"] - totalMetabolicNeed))
+            
+            #Get emotional score
+            emotionalScore = 0 
+            
+            #Get cognitive score
+            cognitiveScore = 0
+            
+            #Get social score
+            socialScore = 0
+            
+            weightedCell["PECSScore"] = sum([physicalScore, emotionalScore, cognitiveScore, socialScore])
+        weightedCells.sort(key = lambda cell: cell["PECSScore"])
                 
 
     def spawnChild(self, childID, birthday, cell, configuration):
