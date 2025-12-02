@@ -308,6 +308,15 @@ class Leader(agent.Agent):
 class Temperance(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
+        #Taken from the existing PECS implementation
+        self.rules = {"rule1": False, "rule1weight": 0,
+                "rule2": False, "rule2weight": 0,
+                "rule3": False, "rule3weight": 0,
+                "rule4": False, "rule4weight": 0,
+                "rule5": False, "rule5weight": 0}
+        self.timesPunished2 = 0
+        self.timesPunished3 = 0
+        self.socialPressure = 0
         
     def doIntemperanceAction(self):
         newTemperanceFactor = round(self.temperanceFactor - self.dynamicTemperanceFactor, 2)
@@ -352,19 +361,45 @@ class Temperance(agent.Agent):
             return 
         
         for weightedCell in weightedCells:
+            cellWealth = weightedCell["wealth"]
             
             #Get physical score
             #TODO: not sure how well this will scale
-            physicalScore = abs((weightedCell["wealth"] - totalMetabolicNeed))
+            physicalScore = abs(cellWealth - totalMetabolicNeed)
             
             #Get emotional score
-            emotionalScore = 0 
+            if cellWealth == 0:
+                emotionalScore = -1
+            elif cellWealth < totalMetabolicNeed:
+                emotionalScore = 1
+            elif cellWealth == totalMetabolicNeed:
+                emotionalScore = 2
+            else:
+                emotionalScore = 3
             
             #Get cognitive score
-            cognitiveScore = 0
+            #TODO: direct rip off at this point, need to figure out how the agent learns the rules to update the weights
+            if cellWealth == 0 and self.rules['rule1']:
+                cognitiveScore = agent.rules["rule1weight"]            
+            elif (cellWealth == 2 and agent.rules["rule2"]):
+                cognitiveScore = agent.rules["rule2weight"]
+            elif (cellWealth == 2 and agent.rules["rule3"]):
+                cognitiveScore -= agent.rules["rule3weight"]
+            elif (cellWealth == 3 and agent.rules["rule4"]):
+                cognitiveScore -= agent.rules["rule4weight"]
+            elif (cellWealth == 3 and agent.rules["rule5"]):
+                cognitiveScore -= agent.rules ["rule5weight"]
             
             #Get social score
-            socialScore = 0
+            cellWealthToAgentNeedRatio = cellWealth / totalMetabolicNeed
+            if (cellWealthToAgentNeedRatio) <= 1:
+                socialScore = 1
+            elif cellWealthToAgentNeedRatio > 1 and cellWealthToAgentNeedRatio <= 2:
+                socialScore -= self.timesPunished2
+            elif cellWealthToAgentNeedRatio > 2:
+                socialScore -= self.timesPunished3
+            
+            socialScore = int(round((socialScore * self.socialPressure), 1))
             
             weightedCell["PECSScore"] = sum([physicalScore, emotionalScore, cognitiveScore, socialScore])
         weightedCells.sort(key = lambda cell: cell["PECSScore"])
