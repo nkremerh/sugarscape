@@ -321,6 +321,7 @@ class Temperance(agent.Agent):
             }
         self.timesPunished2 = 0
         self.timesPunished3 = 0
+        self.lastSelectedCellWealthToNeedRatio = 0
     
     def doTemperanceDecision(self, cells, greedyBestCell):
         randomValue = random.random()
@@ -401,29 +402,30 @@ class Temperance(agent.Agent):
         return emotionalScore
     
     def findCellCognitiveScore(self, cell, cellWealth):
-        #TODO: compare cellWealth to metabolic need, establish the rules accordingly
-        #TODO: cellWealth isnt necessarily discrete values of 0,1,2,3... need to establish ranges?
+        #TODO: use wealth to need ratio instead of raw wealth
         cognitiveScore = 0
+        
         if cellWealth == 0: 
             cognitiveScore = -1
-        elif cellWealth == 1 and self.rules['rule1']:
+        elif cellWealth == 1 and self.rules['rule1Known']:
             cognitiveScore = self.rules["rule1weight"]   
         elif cellWealth == 2:
-            if self.rules["rule2"]:
+            if self.rules["rule2Known"]:
                 cognitiveScore = self.rules["rule2weight"]
-            if self.rules["rule3"]:
+            if self.rules["rule3Known"]:
                 cognitiveScore -= self.rules["rule3weight"]
         elif cellWealth == 3:
-            if self.rules["rule4"]:
+            if self.rules["rule4Known"]:
                 cognitiveScore -= self.rules["rule4weight"]
-            elif self.rules["rule5"]:
+            elif self.rules["rule5Known"]:
                 cognitiveScore -= self.rules ["rule5weight"]  
         return cognitiveScore
     
     def findCellSocialScore(self, cell, cellWealth):
         socialPressure = self.findAgentSocialPressure(cell)
-
+        socialScore = 0
         cellWealthToAgentNeedRatio = cellWealth / self.totalMetabolicNeed
+        
         if (cellWealthToAgentNeedRatio) <= 1:
             socialScore = 1
         elif cellWealthToAgentNeedRatio > 1 and cellWealthToAgentNeedRatio <= 2:
@@ -445,7 +447,41 @@ class Temperance(agent.Agent):
         elif numAgentsInNeighborhood > 0:
             self.socialPressure += self.configuration["maxAgentSocialPressure"]
             return self.socialPressure
+    
+    def updateAgentTemperanceRules(self):
+        wealthToMetabolicNeedRatio = cell.wealth / self.totalMetabolicNeed
+        #TODO: may need to review this -- if they consistently pick cells with lower wealth, they'll 
+        # eventually run out of food, so how do they determine this? If their TTL is less than 2 is it bad for them to choose
+        # the low-wealth cell? Do we just say if the metabolic ratio is 0.9-1.1 its good for this rule?
+        # Otherwise, rule 2 applies?
+        if wealthToMetabolicNeedRatio > 0 and wealthToMetabolicNeedRatio <= 1: 
+            # Consuming up to 1x metabolic need is good for the agent
+            self.rules["rule1Known"] = True
+            self.rules["rule1weight"] += 1
+            
+        elif wealthToMetabolicNeedRatio > 1 and wealthToMetabolicNeedRatio <= 2:
+            # Consuming 1-2x metablic is is great for the agent, but bad for the community
+            self.rules["rule2Known"] = True
+            self.rules["rule2weight"] += 1
+            
+            self.timesPunished2 += 1
+            self.rules["rule3Known"] = True
+            self.rules["rule3weight"] += 1
+            
+        elif wealthToMetabolicNeedRatio > 2:
+            # Consuming more than 2x metabolic need is bad for both the agent and the community
+            self.rules["rule4Known"] = True
+            self.rules["rule4weight"] += 1
+            
+            self.timesPunished3 += 1 
+            self.rules["rule5Known"] = True
+            self.rules["rule5weight"] += 1
+            
+    
+    def gotoCell(self, cell):
+        super().gotoCell(cell)
         
+        self.updateAgentTemperanceRules()
         
     def spawnChild(self, childID, birthday, cell, configuration):
         return Temperance(childID, birthday, cell, configuration)
