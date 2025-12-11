@@ -308,8 +308,10 @@ class Leader(agent.Agent):
 class Temperance(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
+        
+        self.totalMetabolicNeed = self.findSugarMetabolism() + self.findSpiceMetabolism()
         #Taken from the existing PECS implementation
-        #TODO: need to update rules weight based on agent 
+        #TODO: need to update rules weight based on agent's discovery and number of times consuming a certain amount of resources/moving to a place with certain wealth?
         self.rules = {
                 "rule1Known": False, "rule1weight": 0,
                 "rule2Known": False, "rule2weight": 0,
@@ -320,7 +322,19 @@ class Temperance(agent.Agent):
         self.timesPunished2 = 0
         self.timesPunished3 = 0
         self.socialPressure = 0
-        
+    
+    def doTemperanceDecision(self, cells, greedyBestCell):
+        randomValue = random.random()
+        if (randomValue >= self.temperanceFactor):
+            self.doIntemperanceAction()
+            return greedyBestCell
+        else:
+            self.doTemperanceAction()
+            # Temperance action, seek cell closest to metabolic needs
+            cells.sort(key = lambda cell: abs(cell["wealth"] - self.totalMetabolicNeed))
+
+            return cells[0]["cell"]
+      
     def doIntemperanceAction(self):
         newTemperanceFactor = round(self.temperanceFactor - self.dynamicTemperanceFactor, 2)
         self.temperanceFactor = newTemperanceFactor if newTemperanceFactor >= 0 else 0
@@ -337,80 +351,82 @@ class Temperance(agent.Agent):
         if "all" in self.debug or "agent" in self.debug:
             self.printCellScores(cells)
         
-        totalMetabolicNeed = self.findSugarMetabolism() + self.findSpiceMetabolism()
-
-        #TODO: do we want to sort these cells by PECS score (low -> high)
-        self._setCellPECSValues(cells, totalMetabolicNeed)
+        self.findPECSValueOfCells(cells)
         
-        #TODO: Figure out social pressure implementation (this may use the socialNetwork attribute. Will opinions of agents influence other agents' opinions of those agents as well?
-        # For example, if agent 1 and agent 2 are friends, agent 1 hates agent 3, will agent 2's opinion of agent 3 reflect that influence?)
-        randomValue = random.random()
-        if (randomValue >= self.temperanceFactor):
-            self.doIntemperanceAction()
-            #TODO: Is there a concern if greedybestcell is None?
-            return greedyBestCell
-        else:
-            self.doTemperanceAction()
-            # Temperance action, seek cell closest to metabolic needs
-            cells.sort(key = lambda cell: abs(cell["wealth"] - totalMetabolicNeed))
-
-            return cells[0]["cell"]
+        return self.doTemperanceDecision(cells, greedyBestCell)
     
-    def _setCellPECSValues(self, weightedCells, totalMetabolicNeed):
+    def findPECSValueOfCells(self, weightedCells):
 
-        physicalScore, emotionalScore, cognitiveScore, socialScore = 0,0,0,0
-        if totalMetabolicNeed == 0:
+        if self.totalMetabolicNeed == 0:
             print(f"Agent {self.ID} has zero metabolic need, cannot compute cell PECS values")
             return 
         
         for weightedCell in weightedCells:
             cellWealth = weightedCell["wealth"]
             
-            #Get physical score
-            #TODO: not sure how well this will scale
-            physicalScore = abs(cellWealth - totalMetabolicNeed)
+            physicalScore = self.findCellPhysicalScore(weightedCell, cellWealth)
+            emotionalScore = self.findCellEmotionalScore(weightedCell, cellWealth)  
+            cognitiveScore = self.findCellCognitiveScore(weightedCell, cellWealth)   
+            socialScore = self.findCellSocialScore(weightedCell, cellWealth)
             
-            #Get emotional score
-            if cellWealth == 0:
-                emotionalScore = -1
-            elif cellWealth < totalMetabolicNeed:
-                emotionalScore = 1
-            elif cellWealth == totalMetabolicNeed:
-                emotionalScore = 2
-            else:
-                emotionalScore = 3
-            
-            #Get cognitive 
-            #TODO: unsure if cellWealth is the right comparison or we should compare to the metabolic need?
-            if cellWealth == 0: 
-                cognitiveScore = -1
-            elif cellWealth == 1 and self.rules['rule1']:
-                cognitiveScore = agent.rules["rule1weight"]   
-            elif cellWealth == 2:
-                if agent.rules["rule2"]:
-                    cognitiveScore = agent.rules["rule2weight"]
-                if agent.rules["rule3"]:
-                    cognitiveScore -= agent.rules["rule3weight"]
-            elif cellWealth == 3:
-                if agent.rules["rule4"]:
-                    cognitiveScore -= agent.rules["rule4weight"]
-                elif agent.rules["rule5"]:
-                    cognitiveScore -= agent.rules ["rule5weight"]
-            
-            #Get social score
-            cellWealthToAgentNeedRatio = cellWealth / totalMetabolicNeed
-            if (cellWealthToAgentNeedRatio) <= 1:
-                socialScore = 1
-            elif cellWealthToAgentNeedRatio > 1 and cellWealthToAgentNeedRatio <= 2:
-                socialScore -= self.timesPunished2
-            elif cellWealthToAgentNeedRatio > 2:
-                socialScore -= self.timesPunished3
-            
-            socialScore = int(round((socialScore * self.socialPressure), 1))
-            
-            weightedCell["PECSScore"] = sum([physicalScore, emotionalScore, cognitiveScore, socialScore])
-        weightedCells.sort(key = lambda cell: cell["PECSScore"])
-                
+            weightedCell["wealth"] = sum(physicalScore, emotionalScore, cognitiveScore, socialScore)
+        
+        weightedCells.sort(key = lambda cell: cell["wealth"])
+        
+    def findCellPhysicalScore(self, cell, cellWealth):
+        #TODO: TTL may be a better comparison here -- if TTL increases/decreases?
+        return abs(cellWealth - self.totalMetabolicNeed)
+    
+    def findCellEmotionalScore(self, cell, cellWealth):
+        emotionalScore = 0            
+        environmentMaxSugar = self.cell.environment.sugarscape.configuration["environmentMaxSugar"]
+        environmentMaxSpice = self.cell.environment.sugarscape.configuration["environmentMaxSpice"]
+        meanMaxWealth = (environmentMaxSugar + environmentMaxSpice) / 2
+        #TODO: figure out the ranges (Nate failed me in the moment)
+
+        if cellWealth == 0:
+            emotionalScore = -1
+        elif cellWealth > 0 and cellWealth < meanMaxWealth:
+            emotionalScore = 1
+        elif cellWealth >= meanMaxWealth and cellWealth < max(environmentMaxSugar, environmentMaxSpice):
+            emotionalScore = 2
+        # else:
+        #     #TODO: this should have a factor based on number of times the agent is punished
+        #     emotionalScore = 3 - numtimesSelectedCellMoreThanMetabolicNeed #TODO: fix
+        return emotionalScore
+    
+    def findCellCognitiveScore(self, cell, cellWealth):
+        #TODO: compare cellWealth to metabolic need, establish the rules accordingly
+        #TODO: cellWealth isnt necessarily discrete values of 0,1,2,3... need to establish ranges?
+        cognitiveScore = 0
+        if cellWealth == 0: 
+            cognitiveScore = -1
+        elif cellWealth == 1 and self.rules['rule1']:
+            cognitiveScore = self.rules["rule1weight"]   
+        elif cellWealth == 2:
+            if self.rules["rule2"]:
+                cognitiveScore = self.rules["rule2weight"]
+            if self.rules["rule3"]:
+                cognitiveScore -= self.rules["rule3weight"]
+        elif cellWealth == 3:
+            if self.rules["rule4"]:
+                cognitiveScore -= self.rules["rule4weight"]
+            elif self.rules["rule5"]:
+                cognitiveScore -= self.rules ["rule5weight"]  
+        return cognitiveScore
+    
+    def findCellSocialScore(self, cell, cellWealth):
+        #TODO: implement socialPressure, write a decay function to alter pressure from distant agents that can be seen 
+        #stepwise function up to agent's vision (use self.findVision)
+        cellWealthToAgentNeedRatio = cellWealth / self.totalMetabolicNeed
+        if (cellWealthToAgentNeedRatio) <= 1:
+            socialScore = 1
+        elif cellWealthToAgentNeedRatio > 1 and cellWealthToAgentNeedRatio <= 2:
+            socialScore -= self.timesPunished2
+        elif cellWealthToAgentNeedRatio > 2:
+            socialScore -= self.timesPunished3
+        
+        return int(round((socialScore * self.socialPressure), 1))
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Temperance(childID, birthday, cell, configuration)
