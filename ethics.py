@@ -374,21 +374,27 @@ class Temperance(agent.Agent):
         weightedCells.sort(key = lambda cell: cell["wealth"])
         
     def findCellPhysicalScore(self, cell, cellWealth):
-        #TODO: TTL may be a better comparison here -- if TTL increases/decreases?
-        return abs(cellWealth - self.totalMetabolicNeed)
-    
+        if self.timeToLive == 0:
+            return 4
+        elif self.timeToLive > 0 and self.timeToLive <= 1:
+            return 3
+        elif self.timeToLive > 1 and self.timeToLive <=2:
+            return 2
+        else:
+            return 1
+        
     def findCellEmotionalScore(self, cell, cellWealth):
         emotionalScore = 0            
         environmentMaxSugar = self.cell.environment.sugarscape.configuration["environmentMaxSugar"]
         environmentMaxSpice = self.cell.environment.sugarscape.configuration["environmentMaxSpice"]
-        meanMaxWealth = (environmentMaxSugar + environmentMaxSpice) / 2
+        meanMaxCellWealth = (environmentMaxSugar + environmentMaxSpice) / 2
         #TODO: figure out the ranges (Nate failed me in the moment)
 
         if cellWealth == 0:
             emotionalScore = -1
-        elif cellWealth > 0 and cellWealth < meanMaxWealth:
+        elif cellWealth > 0 and cellWealth < meanMaxCellWealth:
             emotionalScore = 1
-        elif cellWealth >= meanMaxWealth and cellWealth < max(environmentMaxSugar, environmentMaxSpice):
+        elif cellWealth >= meanMaxCellWealth and cellWealth < max(environmentMaxSugar, environmentMaxSpice):
             emotionalScore = 2
         # else:
         #     #TODO: this should have a factor based on number of times the agent is punished
@@ -416,8 +422,8 @@ class Temperance(agent.Agent):
         return cognitiveScore
     
     def findCellSocialScore(self, cell, cellWealth):
-        #TODO: implement socialPressure, write a decay function to alter pressure from distant agents that can be seen 
-        #stepwise function up to agent's vision (use self.findVision)
+        socialPressure = self.findAgentSocialPressure(cell)
+
         cellWealthToAgentNeedRatio = cellWealth / self.totalMetabolicNeed
         if (cellWealthToAgentNeedRatio) <= 1:
             socialScore = 1
@@ -426,7 +432,21 @@ class Temperance(agent.Agent):
         elif cellWealthToAgentNeedRatio > 2:
             socialScore -= self.timesPunished3
         
-        return int(round((socialScore * self.socialPressure), 1))
-
+        return int(round((socialScore * socialPressure), 1))
+    
+    def findAgentSocialPressure(self, cell):
+        neighborhood = self.findNeighborhood(cell)
+        numAgentsInNeighborhood = len(neighborhood)
+        
+        if numAgentsInNeighborhood == 0:
+            return 0
+        #TODO: modify this to be dynamic based on number of agents and distance from current agent
+        # That is, farther agents have less social pressure, closer ones have more (up to configured maxSocialPressure)
+        # @Nate, this is also why its an "elif" instead of "else." Dont yell at me
+        elif numAgentsInNeighborhood > 0:
+            self.socialPressure += self.configuration["maxAgentSocialPressure"]
+            return self.socialPressure
+        
+        
     def spawnChild(self, childID, birthday, cell, configuration):
         return Temperance(childID, birthday, cell, configuration)
