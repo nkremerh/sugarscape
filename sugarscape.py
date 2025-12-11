@@ -520,6 +520,7 @@ class Sugarscape:
         movementMode = configs["agentMovementMode"]
         neighborhoodMode = configs["neighborhoodMode"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
+        socialPressure = configs["agentDynamicSocialPressureFactor"]
         spiceMetabolism = configs["agentSpiceMetabolism"]
         startingSpice = configs["agentStartingSpice"]
         startingSugar = configs["agentStartingSugar"]
@@ -557,6 +558,7 @@ class Sugarscape:
                           "maxFriends": {"endowments": [], "curr": maxFriends[0], "min": maxFriends[0], "max": maxFriends[1]},
                           "movement": {"endowments": [], "curr": movement[0], "min": movement[0], "max": movement[1]},
                           "selfishnessFactor": {"endowments": [], "curr": selfishnessFactor[0], "min": selfishnessFactor[0], "max": selfishnessFactor[1]},
+                          "socialPressure": {"endowments": [], "curr": socialPressure[0], "min": socialPressure[0], "max": socialPressure[1]},
                           "spice": {"endowments": [], "curr": startingSpice[0], "min": startingSpice[0], "max": startingSpice[1]},
                           "spiceMetabolism": {"endowments": [], "curr": spiceMetabolism[0], "min": spiceMetabolism[0], "max": spiceMetabolism[1]},
                           "sugar": {"endowments": [], "curr": startingSugar[0], "min": startingSugar[0], "max": startingSugar[1]},
@@ -1521,6 +1523,16 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have agent maximum dynamic temperance factor of {configuration['agentDynamicTemperanceFactor'][1]}. Setting agent maximum dynamic temperance change to 1.0.")
         configuration["agentDynamicTemperanceFactor"][1] = 1.0
+    
+    if configuration["agentDynamicSocialPressureFactor"][0] < 0:
+        if configuration["agentTemperanceFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(f"Cannot have agent dynamic social pressure factor of {configuration['agentDynamicSocialPressureFactor']}. Disabling agent social pressure.")
+        configuration["agentDynamicSocialPressureFactor"] = [-1,-1]
+    elif configuration["agentDynamicSocialPressureFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have agent maximum dynamic social pressure factor of {configuration['agentDynamicSocialPressureFactor'][1]}. Setting agent maximum dynamic social pressure change to 1.0.")
+        configuration["agentDynamicSocialPressureFactor"][1] = 1.0
 
     if configuration["agentTagStringLength"] < 0:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
@@ -1637,6 +1649,7 @@ if __name__ == "__main__":
                      "agentMaleToFemaleRatio": 1.0,
                      "agentMaxAge": [-1, -1],
                      "agentMaxFriends": [0, 0],
+                     "agentDynamicSocialPressureFactor": [0,1.0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
                      "agentReplacements": 0,

@@ -321,7 +321,6 @@ class Temperance(agent.Agent):
             }
         self.timesPunished2 = 0
         self.timesPunished3 = 0
-        self.socialPressure = 0
     
     def doTemperanceDecision(self, cells, greedyBestCell):
         randomValue = random.random()

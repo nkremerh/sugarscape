@@ -40,6 +40,7 @@ class Agent:
         self.seed = configuration["seed"]
         self.selfishnessFactor = configuration["selfishnessFactor"]
         self.sex = configuration["sex"]
+        self.socialPressure = configuration["socialPressure"]
         self.spice = configuration["spice"]
         self.spiceMetabolism = configuration["spiceMetabolism"]
         self.startingImmuneSystem = configuration["immuneSystem"]
@@ -127,8 +128,13 @@ class Agent:
         agentID = agent.ID
         if agentID in self.socialNetwork:
             return
+        #TODO: update this to include an "opinion" metric if temperance is enabled for the agent
         self.socialNetwork[agentID] = {"agent": agent, "lastSeen": self.lastMoved, "timesVisited": 1, "timesReproduced": 0,
                                          "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
+        
+        if self.decisionModel == "temperance":
+            # If this is a temperance agent, initialize opinion to neutral (0.5)
+            self.socialNetwork[agentID]["opinion"] = 0.5
 
     def addChildToCell(self, mate, cell, childConfiguration):
         sugarscape = self.cell.environment.sugarscape
