@@ -2,6 +2,7 @@ import agent
 
 import random
 import sys
+from math import erf
 
 class Asimov(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
@@ -308,7 +309,7 @@ class Leader(agent.Agent):
 class Temperance(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
-        self.totalMetabolicNeed = self.findSugarMetabolism() + self.findSpiceMetabolism()
+        self.totalMetabolism = self.findSugarMetabolism() + self.findSpiceMetabolism()
         self.rules = {
                 "agentConsumedAdequateResources": 0,
                 "agentConsumedAmpleResources": 0,
@@ -329,7 +330,7 @@ class Temperance(agent.Agent):
         else:
             self.doTemperanceAction()
             # Temperance action, seek cell closest to metabolic needs
-            cells.sort(key = lambda cell: abs(cell["wealth"] - self.totalMetabolicNeed))
+            cells.sort(key = lambda cell: abs(cell["wealth"] - self.totalMetabolism))
 
             return cells[0]["cell"]
       
@@ -351,12 +352,11 @@ class Temperance(agent.Agent):
         
         self.findPECSValueOfCells(cells)
         
-         
         return self.doTemperanceDecision(cells, greedyBestCell)
     
     def findPECSValueOfCells(self, weightedCells):
 
-        if self.totalMetabolicNeed == 0:
+        if self.totalMetabolism == 0:
             print(f"Agent {self.ID} has zero metabolic need, cannot compute cell PECS values")
             return 
         
@@ -368,7 +368,9 @@ class Temperance(agent.Agent):
             cognitiveScore = self.findCellCognitiveScore(cellWealth)   
             socialScore = self.findCellSocialScore(weightedCell, cellWealth)
             
-            weightedCell["wealth"] = physicalScore + emotionalScore + cognitiveScore + socialScore
+            #TODO: are we SURE that wealth should be updated to the PECS score? 
+            #We sort on the wealth value, but what if PECS scores are all the same? Do they just choose one?
+            weightedCell["wealth"] = round((erf(physicalScore) + erf(emotionalScore) + erf(cognitiveScore) + erf(socialScore)), 2)
             print(f"Agent {self.ID} evaluated cell at ({weightedCell['cell'].x},{weightedCell['cell'].y}) with wealth {cellWealth} has PECS score {weightedCell['wealth']} (P:{physicalScore},E:{emotionalScore},C:{cognitiveScore},S:{socialScore})")
         
         weightedCells.sort(key = lambda cell: cell["wealth"])
@@ -423,47 +425,47 @@ class Temperance(agent.Agent):
         return cognitiveScore
     
     def findCellSocialScore(self, cell, cellWealth):
-        socialPressure = self.findAgentSocialPressure(cell["cell"])
         socialScore = 0
-        cellWealthToAgentMetabolicNeedRatio = cellWealth / self.totalMetabolicNeed
+        wealthToTotalMetabolismRatio = cellWealth / self.totalMetabolism
         
-        if cellWealthToAgentMetabolicNeedRatio <= 1:
+        if wealthToTotalMetabolismRatio <= 1:
             socialScore = 1
-        elif cellWealthToAgentMetabolicNeedRatio > 1 and cellWealthToAgentMetabolicNeedRatio <= 2:
+        elif wealthToTotalMetabolismRatio > 1 and wealthToTotalMetabolismRatio <= 2:
             socialScore -= self.timeSeenOverconsuming
-        elif cellWealthToAgentMetabolicNeedRatio > 2:
+        elif wealthToTotalMetabolismRatio > 2:
             socialScore -= self.timesSeenIndulging
         
-        print(f"Agent {self.ID} has social score {socialScore} with social pressure {socialPressure} for cell at ({cell['cell'].x},{cell['cell'].y})")
+        print(f"Agent {self.ID} has social score {socialScore} with social pressure {self.socialPressure} for cell at ({cell['cell'].x},{cell['cell'].y})")
         
-        return int(round((socialScore * socialPressure), 1))
+        return round((socialScore * self.socialPressure), 1)
     
     def findNumberOfAgentsInNeighborhood(self, cell):
         return len(self.findNeighborhood(cell))
     
-    def findAgentSocialPressure(self, cell):
+    def updateAgentSocialPressureAfterConsumption(self, cell):
         numAgentsInNeighborhood = self.findNumberOfAgentsInNeighborhood(cell)
         
-        print(f"Agent {self.ID} found {numAgentsInNeighborhood} agents in neighborhood of cell at ({cell.x},{cell.y})")
+        # print(f"Agent {self.ID} found {numAgentsInNeighborhood} agents in neighborhood of cell at ({cell.x},{cell.y})")
         if numAgentsInNeighborhood == 0:
             return 0
         #TODO: modify this to be dynamic based on number of agents and distance from current agent
         # That is, farther agents have less social pressure, closer ones have more (up to configured maxSocialPressure)
         else:
-            #TODO: This clearly does not scale as intended -- some agents in later stages of the simulation
-            # reach a socialPressure of over 100, skewing the scoring system
+            print("called socialPressure addition")
             self.socialPressure += self.dynamicSocialPressureFactor
             return self.socialPressure
     
     def updateAgentTemperanceRules(self, cell):
-        cellWealthToAgentMetabolicNeedRatio = (cell.sugar + cell.spice) / self.totalMetabolicNeed
+        #TODO: should this instead happen when the agent gathers resources and not during consumption?
+        # Assuming they've gathered all the cells' resources, that's the greedy part not necessarily consumption?
+        wealthToTotalMetabolismRatio = (cell.sugar + cell.spice) / self.totalMetabolism
         numAgentsInNeighborhood = self.findNumberOfAgentsInNeighborhood(cell)
         
-        if cellWealthToAgentMetabolicNeedRatio <= 1: 
+        if wealthToTotalMetabolismRatio <= 1: 
             # Consuming up to 1x metabolic need is good for the agent
             self.rules["agentConsumedAdequateResources"] += 1
             
-        elif cellWealthToAgentMetabolicNeedRatio > 1 and cellWealthToAgentMetabolicNeedRatio <= 2:
+        elif wealthToTotalMetabolismRatio > 1 and wealthToTotalMetabolismRatio <= 2:
             # Consuming 1-2x metabolic is is great for the agent
             self.rules["agentConsumedAmpleResources"] += 1
             
@@ -472,7 +474,7 @@ class Temperance(agent.Agent):
                 self.timeSeenOverconsuming += 1
                 self.rules["communityDisapprovalOfAmpleResourceConsumption"] += 1
             
-        elif cellWealthToAgentMetabolicNeedRatio > 2:
+        elif wealthToTotalMetabolismRatio > 2:
             # Consuming more than 2x metabolic need is bad for both the agent and the community
             self.rules["agentOverconsumedResources"] += 1
             
@@ -480,10 +482,13 @@ class Temperance(agent.Agent):
                 self.timesSeenIndulging += 1 
                 self.rules["communityDisdainOfOverconsumption"] += 1
             
-    
-    def gotoCell(self, cell):
-        super().gotoCell(cell)
-        self.updateAgentTemperanceRules(cell)
+    def doMetabolism(self):
+        #TODO: figure out when cell is none (after death?)
+        if (self.cell):
+            self.updateAgentTemperanceRules(self.cell)
+            self.updateAgentSocialPressureAfterConsumption(self.cell)
+        super().doMetabolism()
+
         
     def spawnChild(self, childID, birthday, cell, configuration):
         return Temperance(childID, birthday, cell, configuration)
