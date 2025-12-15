@@ -21,6 +21,7 @@ class Agent:
         self.depressionFactor = configuration["depressionFactor"]
         self.diseaseProtectionChance = configuration["diseaseProtectionChance"]
         self.dynamicSelfishnessFactor = configuration["dynamicSelfishnessFactor"]
+        self.dynamicSocialPressureFactor = configuration["dynamicSocialPressureFactor"]
         self.dynamicTemperanceFactor = configuration["dynamicTemperanceFactor"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
@@ -40,7 +41,6 @@ class Agent:
         self.seed = configuration["seed"]
         self.selfishnessFactor = configuration["selfishnessFactor"]
         self.sex = configuration["sex"]
-        self.socialPressure = configuration["socialPressure"]
         self.spice = configuration["spice"]
         self.spiceMetabolism = configuration["spiceMetabolism"]
         self.startingImmuneSystem = configuration["immuneSystem"]
@@ -117,7 +117,7 @@ class Agent:
         self.reproductionWithExperimentalGroup = 0
         self.tradeWithControlGroup = 0
         self.tradeWithExperimentalGroup = 0
-
+        
         # Change metrics for depressed agents
         if self.depressionFactor == 1:
             self.depressed = True
@@ -759,6 +759,7 @@ class Agent:
         "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
         "decisionModelTribalFactor": [self.decisionModelTribalFactor, mate.decisionModelTribalFactor],
         "dynamicSelfishnessFactor": [self.dynamicSelfishnessFactor, mate.dynamicSelfishnessFactor],
+        "dynamicSocialPressureFactor" : [self.dynamicSocialPressureFactor, mate.dynamicSocialPressureFactor],
         "dynamicTemperanceFactor" : [self.dynamicTemperanceFactor, mate.dynamicTemperanceFactor],
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
         "temperanceFactor" : [self.temperanceFactor, mate.temperanceFactor]

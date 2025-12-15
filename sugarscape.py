@@ -501,6 +501,7 @@ class Sugarscape:
         decisionModelTribalFactor = configs["agentDecisionModelTribalFactor"]
         diseaseProtectionChance = configs["agentDiseaseProtectionChance"]
         dynamicSelfishnessFactor = configs["agentDynamicSelfishnessFactor"]
+        dynamicSocialPressureFactor = configs["agentDynamicSocialPressureFactor"]
         dynamicTemperanceFactor = configs["agentDynamicTemperanceFactor"]
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
@@ -520,7 +521,6 @@ class Sugarscape:
         movementMode = configs["agentMovementMode"]
         neighborhoodMode = configs["neighborhoodMode"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
-        socialPressure = configs["agentDynamicSocialPressureFactor"]
         spiceMetabolism = configs["agentSpiceMetabolism"]
         startingSpice = configs["agentStartingSpice"]
         startingSugar = configs["agentStartingSugar"]
@@ -545,6 +545,7 @@ class Sugarscape:
                           "decisionModelTribalFactor": {"endowments": [], "curr": decisionModelTribalFactor[0], "min": decisionModelTribalFactor[0], "max": decisionModelTribalFactor[1]},
                           "diseaseProtectionChance": {"endowments": [], "curr": diseaseProtectionChance[0], "min": diseaseProtectionChance[0], "max": diseaseProtectionChance[1]},
                           "dynamicSelfishnessFactor": {"endowments": [], "curr": dynamicSelfishnessFactor[0], "min": dynamicSelfishnessFactor[0], "max": dynamicSelfishnessFactor[1]},
+                          "dynamicSocialPressureFactor": {"endowments": [], "curr": dynamicSocialPressureFactor[0], "min": dynamicSocialPressureFactor[0], "max": dynamicSocialPressureFactor[1]},
                           "dynamicTemperanceFactor": {"endowments": [], "curr": dynamicTemperanceFactor[0], "min": dynamicTemperanceFactor[0], "max": dynamicTemperanceFactor[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
@@ -558,7 +559,6 @@ class Sugarscape:
                           "maxFriends": {"endowments": [], "curr": maxFriends[0], "min": maxFriends[0], "max": maxFriends[1]},
                           "movement": {"endowments": [], "curr": movement[0], "min": movement[0], "max": movement[1]},
                           "selfishnessFactor": {"endowments": [], "curr": selfishnessFactor[0], "min": selfishnessFactor[0], "max": selfishnessFactor[1]},
-                          "socialPressure": {"endowments": [], "curr": socialPressure[0], "min": socialPressure[0], "max": socialPressure[1]},
                           "spice": {"endowments": [], "curr": startingSpice[0], "min": startingSpice[0], "max": startingSpice[1]},
                           "spiceMetabolism": {"endowments": [], "curr": spiceMetabolism[0], "min": spiceMetabolism[0], "max": spiceMetabolism[1]},
                           "sugar": {"endowments": [], "curr": startingSugar[0], "min": startingSugar[0], "max": startingSugar[1]},
@@ -1531,7 +1531,7 @@ def verifyConfiguration(configuration):
         configuration["agentDynamicSocialPressureFactor"] = [-1,-1]
     elif configuration["agentDynamicSocialPressureFactor"][1] > 1:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have agent maximum dynamic social pressure factor of {configuration['agentDynamicSocialPressureFactor'][1]}. Setting agent maximum dynamic social pressure change to 1.0.")
+            print(f"Cannot have agent maximum dynamic social pressure factor of {configuration['agentDynamicSocialPressureFactor'][1]}. Setting agent maximum dynamic social change to 1.0.")
         configuration["agentDynamicSocialPressureFactor"][1] = 1.0
 
     if configuration["agentTagStringLength"] < 0:
@@ -1634,6 +1634,7 @@ if __name__ == "__main__":
                      "agentDepressionPercentage": 0,
                      "agentDiseaseProtectionChance": [0.0, 0.0],
                      "agentDynamicSelfishnessFactor": [0.0, 0.0],
+                     "agentDynamicSocialPressureFactor": [0,1.0],
                      "agentDynamicTemperanceFactor": [0,0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
@@ -1649,7 +1650,6 @@ if __name__ == "__main__":
                      "agentMaleToFemaleRatio": 1.0,
                      "agentMaxAge": [-1, -1],
                      "agentMaxFriends": [0, 0],
-                     "agentDynamicSocialPressureFactor": [0,1.0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
                      "agentReplacements": 0,

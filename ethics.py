@@ -308,21 +308,19 @@ class Leader(agent.Agent):
 class Temperance(agent.Agent):
     def __init__(self, agentID, birthday, cell, configuration):
         super().__init__(agentID, birthday, cell, configuration)
-        
         self.totalMetabolicNeed = self.findSugarMetabolism() + self.findSpiceMetabolism()
-        #Taken from the existing PECS implementation
-        #TODO: need to update rules weight based on agent's discovery and number of times consuming a certain amount of resources/moving to a place with certain wealth?
         self.rules = {
-                "rule1Known": False, "rule1weight": 0,
-                "rule2Known": False, "rule2weight": 0,
-                "rule3Known": False, "rule3weight": 0,
-                "rule4Known": False, "rule4weight": 0,
-                "rule5Known": False, "rule5weight": 0
+                "agentConsumedAdequateResources": 0,
+                "agentConsumedAmpleResources": 0,
+                "communityDisapprovalOfAmpleResourceConsumption":  0,
+                "agentOverconsumedResources": 0,
+                "communityDisdainOfOverconsumption": 0
             }
-        self.timesPunished2 = 0
-        self.timesPunished3 = 0
+        self.timeSeenOverconsuming = 0
+        self.timesSeenIndulging = 0
         self.lastSelectedCellWealthToNeedRatio = 0
-    
+        self.socialPressure = 0
+        
     def doTemperanceDecision(self, cells, greedyBestCell):
         randomValue = random.random()
         if (randomValue >= self.temperanceFactor):
@@ -353,6 +351,7 @@ class Temperance(agent.Agent):
         
         self.findPECSValueOfCells(cells)
         
+         
         return self.doTemperanceDecision(cells, greedyBestCell)
     
     def findPECSValueOfCells(self, weightedCells):
@@ -364,31 +363,33 @@ class Temperance(agent.Agent):
         for weightedCell in weightedCells:
             cellWealth = weightedCell["wealth"]
             
-            physicalScore = self.findCellPhysicalScore(weightedCell, cellWealth)
-            emotionalScore = self.findCellEmotionalScore(weightedCell, cellWealth)  
-            cognitiveScore = self.findCellCognitiveScore(weightedCell, cellWealth)   
+            physicalScore = self.findCellPhysicalScore()
+            emotionalScore = self.findCellEmotionalScore(cellWealth)  
+            cognitiveScore = self.findCellCognitiveScore(cellWealth)   
             socialScore = self.findCellSocialScore(weightedCell, cellWealth)
             
-            weightedCell["wealth"] = sum(physicalScore, emotionalScore, cognitiveScore, socialScore)
+            weightedCell["wealth"] = physicalScore + emotionalScore + cognitiveScore + socialScore
+            print(f"Agent {self.ID} evaluated cell at ({weightedCell['cell'].x},{weightedCell['cell'].y}) with wealth {cellWealth} has PECS score {weightedCell['wealth']} (P:{physicalScore},E:{emotionalScore},C:{cognitiveScore},S:{socialScore})")
         
         weightedCells.sort(key = lambda cell: cell["wealth"])
         
-    def findCellPhysicalScore(self, cell, cellWealth):
-        if self.timeToLive == 0:
+    def findCellPhysicalScore(self):
+        #TODO: this should also be based on the ability of the cell to meet the needs of the agent?
+        # or is it JUST a measure of how hungry the agent is?
+        if self.timeToLive <= 1:
             return 4
-        elif self.timeToLive > 0 and self.timeToLive <= 1:
+        elif self.timeToLive > 1 and self.timeToLive <= 2:
             return 3
-        elif self.timeToLive > 1 and self.timeToLive <=2:
+        elif self.timeToLive > 2 and self.timeToLive <=3:
             return 2
         else:
             return 1
         
-    def findCellEmotionalScore(self, cell, cellWealth):
+    def findCellEmotionalScore(self,cellWealth):
         emotionalScore = 0            
         environmentMaxSugar = self.cell.environment.sugarscape.configuration["environmentMaxSugar"]
         environmentMaxSpice = self.cell.environment.sugarscape.configuration["environmentMaxSpice"]
         meanMaxCellWealth = (environmentMaxSugar + environmentMaxSpice) / 2
-        #TODO: figure out the ranges (Nate failed me in the moment)
 
         if cellWealth == 0:
             emotionalScore = -1
@@ -396,92 +397,93 @@ class Temperance(agent.Agent):
             emotionalScore = 1
         elif cellWealth >= meanMaxCellWealth and cellWealth < max(environmentMaxSugar, environmentMaxSpice):
             emotionalScore = 2
-        # else:
-        #     #TODO: this should have a factor based on number of times the agent is punished
-        #     emotionalScore = 3 - numtimesSelectedCellMoreThanMetabolicNeed #TODO: fix
+        else:
+            emotionalScore = 3 - (self.rules["communityDisdainOfOverconsumption"] + self.rules["communityDisapprovalOfAmpleResourceConsumption"])
         return emotionalScore
     
-    def findCellCognitiveScore(self, cell, cellWealth):
-        #TODO: use wealth to need ratio instead of raw wealth
+    def findCellCognitiveScore(self,cellWealth):
         cognitiveScore = 0
+        
         
         if cellWealth == 0: 
             cognitiveScore = -1
-        elif cellWealth == 1 and self.rules['rule1Known']:
-            cognitiveScore = self.rules["rule1weight"]   
+        elif cellWealth == 1 and self.rules['agentConsumedAdequateResources']:
+            cognitiveScore = self.rules["agentConsumedAdequateResources"]   
         elif cellWealth == 2:
-            if self.rules["rule2Known"]:
-                cognitiveScore = self.rules["rule2weight"]
-            if self.rules["rule3Known"]:
-                cognitiveScore -= self.rules["rule3weight"]
+            if self.rules["agentConsumedAmpleResources"]:
+                cognitiveScore = self.rules["agentConsumedAmpleResources"]
+            if self.rules["communityDisapprovalOfAmpleResourceConsumption"]:
+                cognitiveScore -= self.rules["communityDisapprovalOfAmpleResourceConsumption"]
         elif cellWealth == 3:
-            if self.rules["rule4Known"]:
-                cognitiveScore -= self.rules["rule4weight"]
-            elif self.rules["rule5Known"]:
-                cognitiveScore -= self.rules ["rule5weight"]  
+            if self.rules["agentOverconsumedResources"]:
+                cognitiveScore -= self.rules["agentOverconsumedResources"]
+            elif self.rules["communityDisdainOfOverconsumption"]:
+                cognitiveScore -= self.rules ["communityDisdainOfOverconsumption"]  
+        
         return cognitiveScore
     
     def findCellSocialScore(self, cell, cellWealth):
-        socialPressure = self.findAgentSocialPressure(cell)
+        socialPressure = self.findAgentSocialPressure(cell["cell"])
         socialScore = 0
-        cellWealthToAgentNeedRatio = cellWealth / self.totalMetabolicNeed
+        cellWealthToAgentMetabolicNeedRatio = cellWealth / self.totalMetabolicNeed
         
-        if (cellWealthToAgentNeedRatio) <= 1:
+        if cellWealthToAgentMetabolicNeedRatio <= 1:
             socialScore = 1
-        elif cellWealthToAgentNeedRatio > 1 and cellWealthToAgentNeedRatio <= 2:
-            socialScore -= self.timesPunished2
-        elif cellWealthToAgentNeedRatio > 2:
-            socialScore -= self.timesPunished3
+        elif cellWealthToAgentMetabolicNeedRatio > 1 and cellWealthToAgentMetabolicNeedRatio <= 2:
+            socialScore -= self.timeSeenOverconsuming
+        elif cellWealthToAgentMetabolicNeedRatio > 2:
+            socialScore -= self.timesSeenIndulging
+        
+        print(f"Agent {self.ID} has social score {socialScore} with social pressure {socialPressure} for cell at ({cell['cell'].x},{cell['cell'].y})")
         
         return int(round((socialScore * socialPressure), 1))
     
+    def findNumberOfAgentsInNeighborhood(self, cell):
+        return len(self.findNeighborhood(cell))
+    
     def findAgentSocialPressure(self, cell):
-        neighborhood = self.findNeighborhood(cell)
-        numAgentsInNeighborhood = len(neighborhood)
+        numAgentsInNeighborhood = self.findNumberOfAgentsInNeighborhood(cell)
         
+        print(f"Agent {self.ID} found {numAgentsInNeighborhood} agents in neighborhood of cell at ({cell.x},{cell.y})")
         if numAgentsInNeighborhood == 0:
             return 0
         #TODO: modify this to be dynamic based on number of agents and distance from current agent
         # That is, farther agents have less social pressure, closer ones have more (up to configured maxSocialPressure)
-        # @Nate, this is also why its an "elif" instead of "else." Dont yell at me
-        elif numAgentsInNeighborhood > 0:
-            self.socialPressure += self.configuration["maxAgentSocialPressure"]
+        else:
+            #TODO: This clearly does not scale as intended -- some agents in later stages of the simulation
+            # reach a socialPressure of over 100, skewing the scoring system
+            self.socialPressure += self.dynamicSocialPressureFactor
             return self.socialPressure
     
-    def updateAgentTemperanceRules(self):
-        wealthToMetabolicNeedRatio = cell.wealth / self.totalMetabolicNeed
-        #TODO: may need to review this -- if they consistently pick cells with lower wealth, they'll 
-        # eventually run out of food, so how do they determine this? If their TTL is less than 2 is it bad for them to choose
-        # the low-wealth cell? Do we just say if the metabolic ratio is 0.9-1.1 its good for this rule?
-        # Otherwise, rule 2 applies?
-        if wealthToMetabolicNeedRatio > 0 and wealthToMetabolicNeedRatio <= 1: 
+    def updateAgentTemperanceRules(self, cell):
+        cellWealthToAgentMetabolicNeedRatio = (cell.sugar + cell.spice) / self.totalMetabolicNeed
+        numAgentsInNeighborhood = self.findNumberOfAgentsInNeighborhood(cell)
+        
+        if cellWealthToAgentMetabolicNeedRatio <= 1: 
             # Consuming up to 1x metabolic need is good for the agent
-            self.rules["rule1Known"] = True
-            self.rules["rule1weight"] += 1
+            self.rules["agentConsumedAdequateResources"] += 1
             
-        elif wealthToMetabolicNeedRatio > 1 and wealthToMetabolicNeedRatio <= 2:
-            # Consuming 1-2x metablic is is great for the agent, but bad for the community
-            self.rules["rule2Known"] = True
-            self.rules["rule2weight"] += 1
+        elif cellWealthToAgentMetabolicNeedRatio > 1 and cellWealthToAgentMetabolicNeedRatio <= 2:
+            # Consuming 1-2x metabolic is is great for the agent
+            self.rules["agentConsumedAmpleResources"] += 1
             
-            self.timesPunished2 += 1
-            self.rules["rule3Known"] = True
-            self.rules["rule3weight"] += 1
+            # Consuming 1-2x metabolic need is overconsumption and is bad for the community
+            if numAgentsInNeighborhood > 0:
+                self.timeSeenOverconsuming += 1
+                self.rules["communityDisapprovalOfAmpleResourceConsumption"] += 1
             
-        elif wealthToMetabolicNeedRatio > 2:
+        elif cellWealthToAgentMetabolicNeedRatio > 2:
             # Consuming more than 2x metabolic need is bad for both the agent and the community
-            self.rules["rule4Known"] = True
-            self.rules["rule4weight"] += 1
+            self.rules["agentOverconsumedResources"] += 1
             
-            self.timesPunished3 += 1 
-            self.rules["rule5Known"] = True
-            self.rules["rule5weight"] += 1
+            if numAgentsInNeighborhood > 0:
+                self.timesSeenIndulging += 1 
+                self.rules["communityDisdainOfOverconsumption"] += 1
             
     
     def gotoCell(self, cell):
         super().gotoCell(cell)
-        
-        self.updateAgentTemperanceRules()
+        self.updateAgentTemperanceRules(cell)
         
     def spawnChild(self, childID, birthday, cell, configuration):
         return Temperance(childID, birthday, cell, configuration)

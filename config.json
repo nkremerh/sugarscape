@@ -1,7 +1,7 @@
 {
     "__README__": "Default values for helper scripts. Details can be found in the README.",
     "dataCollectionOptions": {
-        "decisionModels": [["none"]],
+        "decisionModels": [["temperance"]],
         "numParallelSimJobs": 1,
         "numSeeds": 100,
         "plots": ["deaths", "giniCoefficient", "happiness", "lifeExpectancy", "population", "sickness", "tradeVolume", "ttl", "wealth"],
