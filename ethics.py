@@ -315,7 +315,7 @@ class Temperance(agent.Agent):
                 "agentConsumedAmpleResources": 0,
                 "communityDisapprovalOfAmpleResourceConsumption":  0,
                 "agentOverconsumedResources": 0,
-                "communityDisdainOfOverconsumption": 0
+                "communityDisdainOfExtremeOverconsumption": 0
             }
         self.timeSeenOverconsuming = 0
         self.timesSeenIndulging = 0
@@ -362,7 +362,7 @@ class Temperance(agent.Agent):
             return 
         
         for weightedCell in weightedCells:
-            cellWealth = weightedCell["wealth"]
+            cellWealth = weightedCell["wealth"]    
             
             physicalScore = self.findCellPhysicalScore()
             emotionalScore = self.findCellEmotionalScore(cellWealth)  
@@ -373,7 +373,6 @@ class Temperance(agent.Agent):
             print(f"Agent {self.ID} evaluated cell at ({weightedCell['cell'].x},{weightedCell['cell'].y}) with wealth {cellWealth} has PECS score {weightedCell['wealth']} (P:{physicalScore},E:{emotionalScore},C:{cognitiveScore},S:{socialScore})")
         
             weightedCell["wealthToMetabolismRatio"] = self.findCellWealth(weightedCell["cell"]) / self.totalMetabolism if self.totalMetabolism > 0 else 0
-            print(f"Agent {self.ID} previous cell wealth to metabolism ratio set to {weightedCell["wealthToMetabolismRatio"]} for cell at ({weightedCell.x},{weightedCell.y})")
      
         weightedCells.sort(key = lambda cell: cell["wealth"])
         
@@ -400,7 +399,7 @@ class Temperance(agent.Agent):
         elif cellWealth >= meanMaxCellWealth and cellWealth < max(environmentMaxSugar, environmentMaxSpice):
             emotionalScore = 2
         else:
-            emotionalScore = 3 - (self.rules["communityDisdainOfOverconsumption"] + self.rules["communityDisapprovalOfAmpleResourceConsumption"])
+            emotionalScore = 3 - (self.rules["communityDisdainOfExtremeOverconsumption"] + self.rules["communityDisapprovalOfAmpleResourceConsumption"])
         return emotionalScore
     
     def findCellCognitiveScore(self,cellWealth):
@@ -421,9 +420,9 @@ class Temperance(agent.Agent):
         elif wealthToTotalMetabolismRatio >= 3:
             if self.rules["agentOverconsumedResources"]:
                 cognitiveScore -= self.rules["agentOverconsumedResources"]
-            elif self.rules["communityDisdainOfOverconsumption"]:
-                cognitiveScore -= self.rules["communityDisdainOfOverconsumption"]  
-        print(self.rules["agentConsumedAdequateResources"], self.rules["agentConsumedAmpleResources"], self.rules["communityDisapprovalOfAmpleResourceConsumption"], self.rules["agentOverconsumedResources"], self.rules["communityDisdainOfOverconsumption"])
+            elif self.rules["communityDisdainOfExtremeOverconsumption"]:
+                cognitiveScore -= self.rules["communityDisdainOfExtremeOverconsumption"]  
+        print(self.rules["agentConsumedAdequateResources"], self.rules["agentConsumedAmpleResources"], self.rules["communityDisapprovalOfAmpleResourceConsumption"], self.rules["agentOverconsumedResources"], self.rules["communityDisdainOfExtremeOverconsumption"])
         return cognitiveScore
     
     def findCellSocialScore(self, cell, cellWealth):
@@ -481,7 +480,7 @@ class Temperance(agent.Agent):
             
             if numAgentsInNeighborhood > 0:
                 self.timesSeenIndulging += 1 
-                self.rules["communityDisdainOfOverconsumption"] += 1
+                self.rules["communityDisdainOfExtremeOverconsumption"] += 1
         print("Updated temperance rules:", self.rules)
         print("Number of agents in neighborhood:", numAgentsInNeighborhood)
         print("Wealth to metabolism ratio when updating:", self.previousCellWealthToMetabolismRatio)
@@ -523,8 +522,22 @@ class Temperance(agent.Agent):
     def findCellWealth(self, cell = None):
         if cell is None:
             cell = self.cell
-        return cell.sugar + cell.spice
+        totalResources = cell.sugar + cell.spice
         
+        maxCombatLoot = self.findCombatLootAtCell(cell)
+        
+        print(f"Agent {self.ID} found cell at ({cell.x},{cell.y}) has total resources {totalResources} and combat loot {maxCombatLoot} for a total wealth of {totalResources + maxCombatLoot}")
+        return totalResources + maxCombatLoot
+    
+    def findCombatLootAtCell(self, cell):
+        combatLoot = 0
+        if cell.isOccupied():
+            preyAgent = cell.agent
+            if self.isNeighborValidPrey(preyAgent):
+                preyWealth = preyAgent.sugar + preyAgent.spice
+                maxCombatLoot = cell.environment.maxCombatLoot
+                combatLoot = min(preyWealth, maxCombatLoot)
+        return combatLoot
         
     def spawnChild(self, childID, birthday, cell, configuration):
         return Temperance(childID, birthday, cell, configuration)
