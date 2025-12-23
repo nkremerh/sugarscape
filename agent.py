@@ -992,12 +992,21 @@ class Agent:
     def findSugarMetabolism(self):
         return max(0, self.sugarMetabolism + self.sugarMetabolismModifier)
 
-    def findTimeToLive(self, ageLimited=False):
+    def findTimeToLive(self, ageLimited=False, potentialCell=None):
         spiceMetabolism = self.findSpiceMetabolism()
         sugarMetabolism = self.findSugarMetabolism()
+        sugar = self.sugar
+        spice = self.spice
+        if potentialCell != None:
+            if potentialCell.isOccupied() == True:
+                combatMaxLoot = self.cell.environment.maxCombatLoot
+                sugar += min(combatMaxLoot, potentialCell.agent.sugar)
+                spice += min(combatMaxLoot, potentialCell.agent.spice)
+            sugar += potentialCell.sugar
+            spice += potentialCell.spice
         # If no sugar or spice metabolism, set days to death for that resource to seemingly infinite
-        sugarTimeToLive = self.sugar / sugarMetabolism if sugarMetabolism > 0 else sys.maxsize
-        spiceTimeToLive = self.spice / spiceMetabolism if spiceMetabolism > 0 else sys.maxsize
+        sugarTimeToLive = sugar / sugarMetabolism if sugarMetabolism > 0 else sys.maxsize
+        spiceTimeToLive = spice / spiceMetabolism if spiceMetabolism > 0 else sys.maxsize
         # If an agent has basic income, include the income for at least as many timesteps as they can already survive
         if self.universalSugar != 0:
             sugarIncome = (sugarTimeToLive * self.universalSugar) / self.cell.environment.universalSugarIncomeInterval
@@ -1008,7 +1017,8 @@ class Agent:
         timeToLive = min(sugarTimeToLive, spiceTimeToLive)
         if ageLimited == True:
             timeToLive = min(timeToLive, self.maxAge - self.age)
-        self.timeToLive = timeToLive
+        if potentialCell == None:
+            self.timeToLive = timeToLive
         return timeToLive
 
     def findTribe(self):
