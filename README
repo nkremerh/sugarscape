@@ -149,7 +149,7 @@ agentDecisionModelFactor: [float, float]
 
 agentDecisionModels: [string, ...]
     Set the agent decision models for different decisionmaking.
-    Options: "altruist", "asimov", "bentham", "egoist", "negativeBentham", "none", "rawSugarscape"
+    Options: "altruist", "asimov", "bentham", "egoist", "negativeBentham", "none", "rawSugarscape", "temperance", "temperancePECS"
     Note: Adding either "HalfLookahead" or "NoLookahead" after some decision model names will enforce a particular decision model lookahead factor.
     Note: Adding "Dynamic" after some decision model names enforces dynamic selfishness.
     Default: ["none"]

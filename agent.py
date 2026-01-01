@@ -20,9 +20,9 @@ class Agent:
         self.decisionModelTribalFactor = configuration["decisionModelTribalFactor"]
         self.depressionFactor = configuration["depressionFactor"]
         self.diseaseProtectionChance = configuration["diseaseProtectionChance"]
+        self.dynamicDecisionModelFactor = configuration["dynamicDecisionModelFactor"]
         self.dynamicSelfishnessFactor = configuration["dynamicSelfishnessFactor"]
         self.dynamicSocialPressureFactor = configuration["dynamicSocialPressureFactor"]
-        self.dynamicTemperanceFactor = configuration["dynamicTemperanceFactor"]
         self.fertilityAge = configuration["fertilityAge"]
         self.fertilityFactor = configuration["fertilityFactor"]
         self.follower = configuration["follower"]
@@ -51,7 +51,6 @@ class Agent:
         self.tagging = configuration["tagging"]
         self.tagPreferences = configuration["tagPreferences"]
         self.tags = configuration["tags"]
-        self.temperanceFactor = configuration["temperanceFactor"]
         self.tradeFactor = configuration["tradeFactor"]
         self.universalSpice = configuration["universalSpice"]
         self.universalSugar = configuration["universalSugar"]
@@ -758,11 +757,10 @@ class Agent:
         "decisionModelLookaheadDiscount": [self.decisionModelLookaheadDiscount, mate.decisionModelLookaheadDiscount],
         "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
         "decisionModelTribalFactor": [self.decisionModelTribalFactor, mate.decisionModelTribalFactor],
+        "dynamicDecisionModelFactor" : [self.dynamicDecisionModelFactor, mate.dynamicDecisionModelFactor],
         "dynamicSelfishnessFactor": [self.dynamicSelfishnessFactor, mate.dynamicSelfishnessFactor],
         "dynamicSocialPressureFactor" : [self.dynamicSocialPressureFactor, mate.dynamicSocialPressureFactor],
-        "dynamicTemperanceFactor" : [self.dynamicTemperanceFactor, mate.dynamicTemperanceFactor],
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
-        "temperanceFactor" : [self.temperanceFactor, mate.temperanceFactor]
         }
         childEndowment = {"seed": self.seed, "follower": self.follower}
         randomNumberReset = random.getstate()

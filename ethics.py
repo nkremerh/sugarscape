@@ -307,7 +307,7 @@ class Leader(agent.Agent):
         return Leader(childID, birthday, cell, configuration)
 
 class Temperance(agent.Agent):
-    def __init__(self, agentID, birthday, cell, configuration):
+    def __init__(self, agentID, birthday, cell, configuration, pecs=False):
         super().__init__(agentID, birthday, cell, configuration)
         self.totalMetabolism = self.findSugarMetabolism() + self.findSpiceMetabolism()
         self.rules = {"agentConsumedAdequateResources": 0,
@@ -322,27 +322,7 @@ class Temperance(agent.Agent):
         self.lastSelectedCellWealthToNeedRatio = 0
         self.socialPressure = 0
         self.lastDeltaTimeToLive = 0
-
-    def doTemperanceDecision(self, cells, greedyBestCell):
-        randomValue = random.random()
-        if (randomValue >= self.temperanceFactor):
-            self.doIntemperanceAction()
-            return greedyBestCell
-        else:
-            self.doTemperanceAction()
-            # Temperance action, seek cell closest to metabolic needs
-            cells.sort(key = lambda cell: abs(cell["wealth"] - self.totalMetabolism))
-            return cells[0]["cell"]
-
-    def doIntemperanceAction(self):
-        newTemperanceFactor = round(self.temperanceFactor - self.dynamicTemperanceFactor, 2)
-        self.temperanceFactor = newTemperanceFactor if newTemperanceFactor >= 0 else 0
-        print(f"Agent {self.ID} decreased temperance factor to {self.temperanceFactor}")
-
-    def doTemperanceAction(self):
-        newTemperanceFactor = round(self.temperanceFactor + self.dynamicTemperanceFactor, 2)
-        self.temperanceFactor = newTemperanceFactor if newTemperanceFactor <= 1 else 1
-        print(f"Agent {self.ID} increased temperance factor to {self.temperanceFactor}")
+        self.pecs = pecs
 
     def findBestEthicalCell(self, cells, greedyBestCell=None):
         if len(cells) == 0:
@@ -354,10 +334,10 @@ class Temperance(agent.Agent):
         for cell in cells:
             cell["wealth"] = self.findEthicalValueOfCell(cell["cell"])
         cells = self.sortCellsByWealth(cells)
-        for cell in cells:
-            if cell["wealth"] > 0:
-                bestCell = cell["cell"]
-                break
+        if self.pecs == True:
+            bestCell = cells[0]["cell"]
+        else:
+            bestCell = self.findSimpleTemperanceBestEthicalCell(cells)
 
         if bestCell == None:
             if greedyBestCell == None:
@@ -396,6 +376,9 @@ class Temperance(agent.Agent):
     def findCellPhysicalScore(self):
         return math.erf(1 / self.timeToLive) if self.timeToLive > 0 else 1
 
+    def findCellSimpleScore(self, cell):
+        return abs(self.findTimeToLive(potentialCell=cell) - self.timeToLive)
+
     def findCellSocialScore(self, cell):
         deltaTimeToLive = self.findTimeToLive(potentialCell=cell) - self.timeToLive
         score = 0
@@ -409,15 +392,32 @@ class Temperance(agent.Agent):
         return math.erf(score)
 
     def findEthicalValueOfCell(self, cell):
-        if self.totalMetabolism == 0:
-            return 0
-        physicalScore = self.findCellPhysicalScore()
-        emotionalScore = self.findCellEmotionalScore(cell)
-        cognitiveScore = self.findCellCognitiveScore(cell)
-        socialScore = self.findCellSocialScore(cell)
-        score = physicalScore + emotionalScore + cognitiveScore + socialScore
-        print(f"Agent {self.ID} -> ({cell.x},{cell.y}): {score} = {physicalScore} + {emotionalScore} + {cognitiveScore} + {socialScore}")
+        score = self.findCellSimpleScore(cell)
+        if self.pecs == True:
+            if self.totalMetabolism == 0:
+                return 0
+            physicalScore = self.findCellPhysicalScore()
+            emotionalScore = self.findCellEmotionalScore(cell)
+            cognitiveScore = self.findCellCognitiveScore(cell)
+            socialScore = self.findCellSocialScore(cell)
+            score = physicalScore + emotionalScore + cognitiveScore + socialScore
+            print(f"Agent {self.ID} -> ({cell.x},{cell.y}): {score} = {physicalScore} + {emotionalScore} + {cognitiveScore} + {socialScore}")
         return score
+
+    def findSimpleTemperanceBestEthicalCell(self, cells):
+        bestCell = None
+        numCells = len(cells)
+        midpoint = math.floor(numCells / 2)
+        virtueRoll = random.random()
+        if virtueRoll < self.decisionModelFactor:
+            bestCell = cells[0]["cell"]
+            newTemperanceFactor = round(self.decisionModelFactor + self.dynamicDecisionModelFactor, 2)
+            self.decisionModelFactor = newTemperanceFactor if newTemperanceFactor <= 1 else 1
+        else:
+            bestCell = cells[-1]["cell"]
+            newTemperanceFactor = round(self.decisionModelFactor - self.dynamicDecisionModelFactor, 2)
+            self.decisionModelFactor = newTemperanceFactor if newTemperanceFactor >= 0 else 0
+        return bestCell
 
     def updateAgentSocialPressureAfterConsumption(self):
         if self.cell is None:

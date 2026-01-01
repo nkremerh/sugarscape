@@ -223,6 +223,13 @@ class Sugarscape:
             if "asimov" in agentConfiguration["decisionModel"]:
                 a = ethics.Asimov(agentID, self.timestep, placementCell, agentConfiguration)
 
+            # If using a virtue ethics decision model, replace new agent with instance of child class
+            if "temperance" in agentConfiguration["decisionModel"]:
+                if "PECS" in agentConfiguration["decisionModel"]:
+                    a = ethics.Temperance(agentID, self.timestep, placementCell, agentConfiguration, pecs=True)
+                else:
+                    a = ethics.Temperance(agentID, self.timestep, placementCell, agentConfiguration, pecs=False)
+
             if self.configuration["environmentTribePerQuadrant"] == True:
                 tribe = quadrantIndex
                 tags = self.generateTribeTags(tribe)
@@ -502,7 +509,7 @@ class Sugarscape:
         diseaseProtectionChance = configs["agentDiseaseProtectionChance"]
         dynamicSelfishnessFactor = configs["agentDynamicSelfishnessFactor"]
         dynamicSocialPressureFactor = configs["agentDynamicSocialPressureFactor"]
-        dynamicTemperanceFactor = configs["agentDynamicTemperanceFactor"]
+        dynamicDecisionModelFactor = configs["agentDynamicDecisionModelFactor"]
         femaleFertilityAge = configs["agentFemaleFertilityAge"]
         femaleInfertilityAge = configs["agentFemaleInfertilityAge"]
         fertilityFactor = configs["agentFertilityFactor"]
@@ -527,7 +534,6 @@ class Sugarscape:
         sugarMetabolism = configs["agentSugarMetabolism"]
         tagPreferences = configs["agentTagPreferences"]
         tagging = configs["agentTagging"]
-        temperanceFactor = configs["agentTemperanceFactor"]
         tradeFactor = configs["agentTradeFactor"]
         universalSpice = configs["agentUniversalSpice"]
         universalSugar = configs["agentUniversalSugar"]
@@ -544,9 +550,9 @@ class Sugarscape:
                           "decisionModelLookaheadDiscount": {"endowments": [], "curr": decisionModelLookaheadDiscount[0], "min": decisionModelLookaheadDiscount[0], "max": decisionModelLookaheadDiscount[1]},
                           "decisionModelTribalFactor": {"endowments": [], "curr": decisionModelTribalFactor[0], "min": decisionModelTribalFactor[0], "max": decisionModelTribalFactor[1]},
                           "diseaseProtectionChance": {"endowments": [], "curr": diseaseProtectionChance[0], "min": diseaseProtectionChance[0], "max": diseaseProtectionChance[1]},
+                          "dynamicDecisionModelFactor": {"endowments": [], "curr": dynamicDecisionModelFactor[0], "min": dynamicDecisionModelFactor[0], "max": dynamicDecisionModelFactor[1]},
                           "dynamicSelfishnessFactor": {"endowments": [], "curr": dynamicSelfishnessFactor[0], "min": dynamicSelfishnessFactor[0], "max": dynamicSelfishnessFactor[1]},
                           "dynamicSocialPressureFactor": {"endowments": [], "curr": dynamicSocialPressureFactor[0], "min": dynamicSocialPressureFactor[0], "max": dynamicSocialPressureFactor[1]},
-                          "dynamicTemperanceFactor": {"endowments": [], "curr": dynamicTemperanceFactor[0], "min": dynamicTemperanceFactor[0], "max": dynamicTemperanceFactor[1]},
                           "femaleFertilityAge": {"endowments": [], "curr": femaleFertilityAge[0], "min": femaleFertilityAge[0], "max": femaleFertilityAge[1]},
                           "femaleInfertilityAge": {"endowments": [], "curr": femaleInfertilityAge[0], "min": femaleInfertilityAge[0], "max": femaleInfertilityAge[1]},
                           "fertilityFactor": {"endowments": [], "curr": fertilityFactor[0], "min": fertilityFactor[0], "max": fertilityFactor[1]},
@@ -563,7 +569,6 @@ class Sugarscape:
                           "spiceMetabolism": {"endowments": [], "curr": spiceMetabolism[0], "min": spiceMetabolism[0], "max": spiceMetabolism[1]},
                           "sugar": {"endowments": [], "curr": startingSugar[0], "min": startingSugar[0], "max": startingSugar[1]},
                           "sugarMetabolism": {"endowments": [], "curr": sugarMetabolism[0], "min": sugarMetabolism[0], "max": sugarMetabolism[1]},
-                          "temperanceFactor": {"endowments": [], "curr": temperanceFactor[0], "min": temperanceFactor[0], "max": temperanceFactor[1]},
                           "tradeFactor": {"endowments": [], "curr": tradeFactor[0], "min": tradeFactor[0], "max": tradeFactor[1]},
                           "universalSpice": {"endowments": [], "curr": universalSpice[0], "min": universalSpice[0], "max": universalSugar[1]},
                           "universalSugar": {"endowments": [], "curr": universalSugar[0], "min": universalSugar[0], "max": universalSugar[1]},
@@ -1502,27 +1507,16 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have agent maximum selfishness factor of {configuration['agentSelfishnessFactor'][1]}. Setting agent maximum selfishness factor to 1.0.")
         configuration["agentSelfishnessFactor"][1] = 1
-    
-    # Ensure agent temperance is properly set
-    if configuration["agentTemperanceFactor"][0] < 0:
+
+    if configuration["agentDynamicDecisionModelFactor"][0] < 0:
         if configuration["agentTemperanceFactor"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(f"Cannot have agent temperance factor range of  {configuration['agentTemperanceFactor']}. Disabling agent temperance.")
-        configuration["agentTemperanceFactor"] = [-1,-1]
-    elif configuration["agentTemperanceFactor"][1] > 1:
+                print(f"Cannot have agent dynamic decision model factor of {configuration['agentDynamicDecisionModelFactor']}. Disabling agent temperance.")
+        configuration["agentDynamicDecisionModelFactor"] = [-1,-1]
+    elif configuration["agentDynamicDecisionModelFactor"][1] > 1:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have agent maximum temperance factor of {configuration['agentTemperanceFactor'][1]}. Setting agent maximum temperance factor to 1.0.")
-        configuration["agentTemperanceFactor"][1] = 1.0
-    
-    if configuration["agentDynamicTemperanceFactor"][0] < 0:
-        if configuration["agentTemperanceFactor"][1] != -1:
-            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(f"Cannot have agent dynamic temperance factor of {configuration['agentDynamicTemperanceFactor']}. Disabling agent temperance.")
-        configuration["agentDynamicTemperanceFactor"] = [-1,-1]
-    elif configuration["agentDynamicTemperanceFactor"][1] > 1:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have agent maximum dynamic temperance factor of {configuration['agentDynamicTemperanceFactor'][1]}. Setting agent maximum dynamic temperance change to 1.0.")
-        configuration["agentDynamicTemperanceFactor"][1] = 1.0
+            print(f"Cannot have agent maximum dynamic decision model factor of {configuration['agentDynamicDecisionModelFactor'][1]}. Setting agent maximum dynamic decision model change to 1.0.")
+        configuration["agentDynamicDecisionModelFactor"][1] = 1.0
     
     if configuration["agentDynamicSocialPressureFactor"][0] < 0:
         if configuration["agentTemperanceFactor"][1] != -1:
@@ -1633,9 +1627,9 @@ if __name__ == "__main__":
                      "agentDecisionModelTribalFactor": [-1, -1],
                      "agentDepressionPercentage": 0,
                      "agentDiseaseProtectionChance": [0.0, 0.0],
+                     "agentDynamicDecisionModelFactor": [0.0, 0.0],
                      "agentDynamicSelfishnessFactor": [0.0, 0.0],
                      "agentDynamicSocialPressureFactor": [0,1.0],
-                     "agentDynamicTemperanceFactor": [0,0],
                      "agentFemaleInfertilityAge": [0, 0],
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
