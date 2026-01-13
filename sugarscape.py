@@ -1126,11 +1126,10 @@ class Sugarscape:
                 minWealth = agentWealth
             if agentWealth > maxWealth:
                 maxWealth = agentWealth
-            # TODO: add race to agent.py
-            # if agent.race not in races:
-            #     races[agent.race] = 1
-            # else:
-            #     races[agent.race] += 1
+            if agent.race not in races:
+                races[agent.race] = 1
+            else:
+                races[agent.race] += 1
             if agent.tribe not in tribes:
                 tribes[agent.tribe] = 1
             else:
@@ -1243,8 +1242,8 @@ class Sugarscape:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
             agentWealthBurnRate = round(agentWealthBurnRate / numAgents, 2)
             agentWealthTotal = round(agentWealthTotal, 2)
-            # maxRace = max(races, key=races.get)
-            # maxRaceSize = races[maxRace]
+            maxRace = max(races, key=races.get)
+            maxRaceSize = races[maxRace]
             maxTribe = max(tribes, key=tribes.get)
             maxTribeSize = tribes[maxTribe]
             maxWealth = round(maxWealth, 2)
@@ -1265,7 +1264,7 @@ class Sugarscape:
             meanWealth = round(meanWealth / numAgents, 2)
             meanWealthHappiness = round(meanWealthHappiness / numAgents, 2)
             minWealth = round(minWealth, 2)
-            # remainingRaces = len(races)
+            remainingRaces = len(races)
             remainingTribes = len(tribes)
             tradeVolume = round(tradeVolume, 2)
             meanDeathsPercentage = round((numDeadAgents / numAgents) * 100, 2)
@@ -1319,8 +1318,7 @@ class Sugarscape:
                         "agentDiseaseDeaths": agentDiseaseDeaths, "agentMeanTimeToLive": agentMeanTimeToLive, "agentsBorn": agentsBorn,
                         "agentsReplaced": agentsReplaced, "agentStarvationDeaths": agentStarvationDeaths, "agentTotalMetabolism": agentTotalMetabolism,
                         "agentWealthBurnRate": agentWealthBurnRate, "agentWealthCollected": agentWealthCollected, "agentWealthTotal": agentWealthTotal,
-                        "carryingCapacity": carryingCapacity, 
-                        # "largestRace": maxRace, "largestRaceSize": maxRaceSize,
+                        "carryingCapacity": carryingCapacity, "largestRace": maxRace, "largestRaceSize": maxRaceSize,
                         "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
                         "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
                         "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
@@ -1329,7 +1327,7 @@ class Sugarscape:
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
                         "meanWealthHappiness": meanWealthHappiness, "meanValidMoves": meanValidMoves, "meanVision": meanVision, "minWealth": minWealth,
                         "population": numAgents, "sickAgents": sickAgents, 
-                        # "remainingRaces": remainingRaces, 
+                        "remainingRaces": remainingRaces, 
                         "remainingTribes": remainingTribes,
                         "tradeVolume": tradeVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
                         "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
