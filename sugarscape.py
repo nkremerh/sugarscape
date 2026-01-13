@@ -992,7 +992,6 @@ class Sugarscape:
         minWealth = sys.maxsize
         numAgents = 0
         numTraders = 0
-        numRaces = 0
         numTribes = 0
         sickAgents = 0
         tradeVolume = 0
