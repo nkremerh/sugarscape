@@ -37,6 +37,7 @@ class Agent:
         self.movement = configuration["movement"]
         self.movementMode = configuration["movementMode"]
         self.neighborhoodMode = configuration["neighborhoodMode"]
+        self.racialTags = configuration["racialTags"]
         self.seed = configuration["seed"]
         self.selfishnessFactor = configuration["selfishnessFactor"]
         self.sex = configuration["sex"]
@@ -101,6 +102,7 @@ class Agent:
         self.neighborhood = []
         self.neighbors = []
         self.nice = 0
+        self.race = self.findRace()
         self.socialHappiness = 0
         self.socialNetwork = {"father": None, "mother": None, "children": [], "friends": [], "creditors": [], "debtors": [], "mates": []}
         self.spiceMeanIncome = 1
@@ -142,7 +144,8 @@ class Agent:
                              "preyWealth": 0, "tradePartners": 0, "diseasesSpread": 0, "mates": 0,
                              "neighbors": 0, "validMoves": 0, "moveRank": 0, "lendingPartners": 0,
                              "pollutionDifference": 0, "timeToLiveDifference": 0, "neighborsInTribe": 0,
-                             "neighborsNotInTribe": 0, "experimentalGroupNeighbors": 0, "controlGroupNeighbors": 0}
+                             "neighborsNotInTribe": 0, "sameRaceNeighbors": 0, "differentRaceNeighbors": 0,
+                             "experimentalGroupNeighbors": 0, "controlGroupNeighbors": 0}
 
     def addAgentToSocialNetwork(self, agent):
         agentID = agent.ID
@@ -845,6 +848,7 @@ class Agent:
         hashNum = int(hashed.hexdigest(), 16)
         random.seed(hashNum + self.timestep)
         childTags = []
+        childRacialTags = []
         childImmuneSystem = []
         mateTags = mate.tags
         mismatchBits = [0, 1]
@@ -859,6 +863,19 @@ class Agent:
         childEndowment["tags"] = childTags
         childEndowment["tagPreferences"] = self.tagPreferences
         childEndowment["tagging"] = self.tagging
+
+        hashed = hashlib.md5("racialTags".encode())
+        hashNum = int(hashed.hexdigest(), 16)
+        random.seed(hashNum + self.timestep)
+        if self.racialTags == None:
+            childRacialTags = None
+        else:
+            for i in range(len(self.racialTags)):
+                if self.racialTags[i] == mate.racialTags[i]:
+                    childRacialTags.append(self.racialTags[i])
+                else:
+                    childRacialTags.append(mismatchBits[random.randrange(2)])
+        childEndowment["racialTags"] = childRacialTags
 
         # Current implementation randomly assigns depressed state at agent birth
         depressionPercentage = self.cell.environment.sugarscape.configuration["agentDepressionPercentage"]
@@ -1008,6 +1025,17 @@ class Agent:
         elif sugarNeed == 0:
             return 1 / sugarMetabolism
         return spiceNeed / sugarNeed
+
+    def findRace(self):
+        if self.racialTags == None:
+            return None
+        config = self.cell.environment.sugarscape.configuration
+        numRaces = config["environmentMaxRaces"]
+        possibleZeroes = config["agentRacialTagStringLength"] + 1
+        actualZeroes = self.racialTags.count(0)
+        raceSize = possibleZeroes / numRaces
+        race = min(math.ceil((actualZeroes + 1) / raceSize) - 1, numRaces - 1)
+        return race
 
     def findRetaliatorsInVision(self):
         retaliators = {}
@@ -1492,9 +1520,12 @@ class Agent:
         experimentalNeighbors = 0
         sugarscape = self.cell.environment.sugarscape
         neighborsInTribe = 0
+        sameRaceNeighbors = 0
         for neighbor in self.neighbors:
             if neighbor.tribe == self.tribe:
                 neighborsInTribe += 1
+            if neighbor.race == self.race:
+                sameRaceNeighbors += 1
             if sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup):
                 experimentalNeighbors += 1
             elif sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup, True):
@@ -1512,7 +1543,8 @@ class Agent:
                              "preyWealth": preyWealth, "tradePartners": tradePartners, "diseasesSpread": diseasesSpread, "mates": mates,
                              "neighbors": len(self.neighbors), "validMoves": self.lastValidMoves, "moveRank": self.lastMoveRank, "lendingPartners": loans,
                              "pollutionDifference": pollutionDifference, "timeToLiveDifference": timeToLiveDifference, "neighborsInTribe": neighborsInTribe,
-                             "neighborsNotInTribe": len(self.neighbors) - neighborsInTribe, "experimentalGroupNeighbors": experimentalNeighbors,
+                             "neighborsNotInTribe": len(self.neighbors) - neighborsInTribe, "sameRaceNeighbors": sameRaceNeighbors,
+                             "differentRaceNeighbors": len(self.neighbors) - sameRaceNeighbors, "experimentalGroupNeighbors": experimentalNeighbors,
                              "controlGroupNeighbors": controlNeighbors}
 
         sugarscape.agentRuntimeStats.append(self.runtimeStats)

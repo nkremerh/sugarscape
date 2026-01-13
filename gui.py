@@ -27,13 +27,16 @@ class GUI:
         self.palette = ["#FA3232", "#3232FA", "#32FA32", "#32FAFA", "#FA32FA", "#AA3232", "#3232AA", "#32AA32", "#32AAAA", "#AA32AA", "#FA8800", "#00FA88", "#8800FA", "#FA8888", "#8888FA", "#88FA88", "#FA3288", "#3288FA", "#88FA32", "#AA66AA", "#66AAAA", "#3ED06E", "#6E3ED0", "#D06E3E", "#000000"]
         numTribes = self.sugarscape.configuration["environmentMaxTribes"]
         numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
+        numRaces = self.sugarscape.configuration["environmentMaxRaces"]
         for i in range(numTribes):
             self.colors[str(i)] = self.palette[i]
         for i in range(numDecisionModels):
             self.colors[self.sugarscape.configuration["agentDecisionModels"][i]] = self.palette[i]
+        for i in range(numRaces):
+            self.colors["race" + str(i)] = self.palette[i]
 
         # Set the default strings for interface at simulation start
-        self.defaultAgentString = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: - | Tribe: -"
+        self.defaultAgentString = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: - | Tribe: - | Race: -"
         self.defaultCellString = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -"
         self.defaultSimulationString = "Timestep: - | Population: - | Metabolism: - | Movement: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -"
 
@@ -73,7 +76,7 @@ class GUI:
         self.updateHighlightedCellStats()
 
     def configureAgentColorNames(self):
-        return ["Decision Models", "Depression", "Disease", "Metabolism", "Movement", "Sex", "Tribes", "Vision"]
+        return ["Decision Models", "Depression", "Disease", "Metabolism", "Movement", "Races", "Sex", "Tribes", "Vision"]
 
     def configureButtons(self, window):
         playButton = tkinter.Button(window, text="Play Simulation", command=self.doPlayButton)
@@ -663,6 +666,8 @@ class GUI:
             return self.colors["metabolism"][self.clamp(agent.sugarMetabolism + agent.spiceMetabolism, self.minMetabolism, self.maxMetabolism)]
         elif self.activeColorOptions["agent"] == "Movement":
             return self.colors["movement"][self.clamp(agent.movement, self.minMovement, self.maxMovement)]
+        elif self.activeColorOptions["agent"] == "Races" and agent.race != None:
+            return self.colors["race" + str(agent.race)]
         elif self.activeColorOptions["agent"] == "Sex" and agent.sex != None:
             return self.colors[agent.sex]
         elif self.activeColorOptions["agent"] == "Tribes" and agent.tribe != None:
@@ -737,7 +742,7 @@ class GUI:
             if agent != None:
                 agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "
                 agentStats += f"Sugar: {round(agent.sugar, 2)} | Spice: {round(agent.spice, 2)} | "
-                agentStats += f"Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)} | Decision Model: {agent.decisionModel} | Tribe: {agent.tribe}"
+                agentStats += f"Metabolism: {round(((agent.findSugarMetabolism() + agent.findSpiceMetabolism()) / 2), 2)} | Decision Model: {agent.decisionModel} | Tribe: {agent.tribe} | Race: {agent.race}"
             else:
                 agentStats = self.defaultAgentString
             cellStats += f"\n{agentStats}"

@@ -78,11 +78,11 @@ class Sugarscape:
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "agentsReplaced": 0,
                              "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0,
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
-                             "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestTribe": 0, "largestTribeSize": 0,
-                             "remainingTribes": self.configuration["environmentMaxTribes"], "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0,
-                             "sickAgentsPercentage": 0, "meanSelfishness": 0, "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0,
-                             "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0, "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0,
-                             "meanValidMoves": 0
+                             "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestRace": 0, "largestTribe": 0, "largestRaceSize": 0, "largestTribeSize": 0,
+                             "remainingRaces": self.configuration["environmentMaxRaces"], "remainingTribes": self.configuration["environmentMaxTribes"],
+                             "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0, "sickAgentsPercentage": 0, "meanSelfishness": 0,
+                             "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0, "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0,
+                             "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0, "meanValidMoves": 0
                              }
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
@@ -471,6 +471,19 @@ class Sugarscape:
         self.nextAgentID += 1
         return agentID
 
+    def generateAgentRacialTags(self, numAgents):
+        configs = self.configuration
+        if configs["agentRacialTagStringLength"] == 0 or configs["environmentMaxRaces"] == 0:
+            return [None for i in range(numAgents)]
+        numRaces = configs["environmentMaxRaces"]
+        racialTagsEndowments = []
+        for i in range(numAgents):
+            currRace = i % numRaces
+            tags = self.generateRacialTags(currRace)
+            racialTagsEndowments.append(tags)
+        random.shuffle(racialTagsEndowments)
+        return racialTagsEndowments
+
     def generateAgentTags(self, numAgents):
         configs = self.configuration
         if configs["agentTagStringLength"] == 0 or configs["environmentMaxTribes"] == 0 or self.configuration["environmentTribePerQuadrant"] == True:
@@ -488,6 +501,19 @@ class Sugarscape:
         diseaseID = self.nextDiseaseID
         self.nextDiseaseID += 1
         return diseaseID
+
+    def generateRacialTags(self, race):
+        tagStringLength = self.configuration["agentRacialTagStringLength"]
+        numRaces = self.configuration["environmentMaxRaces"]
+        raceSize = (tagStringLength + 1) / numRaces
+        minZeroes = math.floor(race * raceSize)
+        maxZeroes = math.floor((race + 1) * raceSize) - 1
+        maxZeroes = min(maxZeroes, tagStringLength)
+        zeroes = random.randint(minZeroes, maxZeroes)
+        ones = tagStringLength - zeroes
+        tags = [0 for i in range(zeroes)] + [1 for i in range(ones)]
+        random.shuffle(tags)
+        return tags
 
     def generateTribeTags(self, tribe):
         tagStringLength = self.configuration["agentTagStringLength"]
@@ -624,6 +650,7 @@ class Sugarscape:
         decisionModels = []
         endowments = []
         immuneSystems = []
+        racialTags = self.generateAgentRacialTags(numAgents)
         sexes = []
         tags = self.generateAgentTags(numAgents)
 
@@ -668,7 +695,7 @@ class Sugarscape:
         random.shuffle(sexes)
         random.shuffle(decisionModels)
         for i in range(numAgents):
-            agentEndowment = {"seed": self.seed, "sex": sexes[i], "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
+            agentEndowment = {"seed": self.seed, "sex": sexes[i], "racialTags": racialTags.pop(), "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
                               "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
@@ -941,6 +968,8 @@ class Sugarscape:
         self.updateRuntimeStatsPerGroup()
 
     def updateRuntimeStatsPerGroup(self, group=None, notInGroup=False):
+        maxRace = 0
+        maxRaceSize = 0
         maxTribe = 0
         maxTribeSize = 0
         maxWealth = 0
@@ -1023,6 +1052,8 @@ class Sugarscape:
 
         agentsBorn = 0
         agentsReplaced = 0
+        remainingRaces = 0
+        races = {}
         remainingTribes = 0
         tribes = {}
         
@@ -1086,6 +1117,10 @@ class Sugarscape:
                 minWealth = agentWealth
             if agentWealth > maxWealth:
                 maxWealth = agentWealth
+            if agent.race not in races:
+                races[agent.race] = 1
+            else:
+                races[agent.race] += 1
             if agent.tribe not in tribes:
                 tribes[agent.tribe] = 1
             else:
@@ -1198,6 +1233,8 @@ class Sugarscape:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
             agentWealthBurnRate = round(agentWealthBurnRate / numAgents, 2)
             agentWealthTotal = round(agentWealthTotal, 2)
+            maxRace = max(races, key=races.get)
+            maxRaceSize = races[maxRace]
             maxTribe = max(tribes, key=tribes.get)
             maxTribeSize = tribes[maxTribe]
             maxWealth = round(maxWealth, 2)
@@ -1218,6 +1255,7 @@ class Sugarscape:
             meanWealth = round(meanWealth / numAgents, 2)
             meanWealthHappiness = round(meanWealthHappiness / numAgents, 2)
             minWealth = round(minWealth, 2)
+            remainingRaces = len(races)
             remainingTribes = len(tribes)
             tradeVolume = round(tradeVolume, 2)
             meanDeathsPercentage = round((numDeadAgents / numAgents) * 100, 2)
@@ -1235,6 +1273,7 @@ class Sugarscape:
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
+            maxRace = 0
             maxTribe = 0
             maxWealth = 0
             meanAge = 0
@@ -1250,6 +1289,7 @@ class Sugarscape:
             meanWealth = 0
             meanWealthHappiness = 0
             minWealth = 0
+            remainingRaces = 0
             remainingTribes = 0
             tradeVolume = 0
             diseaseEffectiveReproductionRate = 0
@@ -1269,15 +1309,18 @@ class Sugarscape:
                         "agentDiseaseDeaths": agentDiseaseDeaths, "agentMeanTimeToLive": agentMeanTimeToLive, "agentsBorn": agentsBorn,
                         "agentsReplaced": agentsReplaced, "agentStarvationDeaths": agentStarvationDeaths, "agentTotalMetabolism": agentTotalMetabolism,
                         "agentWealthBurnRate": agentWealthBurnRate, "agentWealthCollected": agentWealthCollected, "agentWealthTotal": agentWealthTotal,
-                        "carryingCapacity": carryingCapacity, "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
+                        "carryingCapacity": carryingCapacity, "largestRace": maxRace, "largestRaceSize": maxRaceSize,
+                        "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
                         "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
                         "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
                         "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanMoveDifferenceFromOptimal": meanMoveDifferenceFromOptimal,
                         "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanSelfishness": meanSelfishness,
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
                         "meanWealthHappiness": meanWealthHappiness, "meanValidMoves": meanValidMoves, "meanVision": meanVision, "minWealth": minWealth,
-                        "population": numAgents, "sickAgents": sickAgents, "remainingTribes": remainingTribes, "tradeVolume": tradeVolume,
-                        "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
+                        "population": numAgents, "sickAgents": sickAgents, 
+                        "remainingRaces": remainingRaces, 
+                        "remainingTribes": remainingTribes,
+                        "tradeVolume": tradeVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
                         "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
                         "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage
                         }
@@ -1566,15 +1609,31 @@ def verifyConfiguration(configuration):
             print(f"Cannot have agent maximum dynamic temperance factor of {configuration['agentDynamicTemperanceFactor'][1]}. Setting agent maximum dynamic temperance change to 1.0.")
         configuration["agentDynamicTemperanceFactor"][1] = 1.0
 
+    if configuration["agentRacialTagStringLength"] < 0:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have a negative agent racial tag string length. Setting agent racial tag string length to 0.")
+        configuration["agentRacialTagStringLength"] = 0
+
     if configuration["agentTagStringLength"] < 0:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have a negative agent tag string length. Setting agent tag string length to 0.")
         configuration["agentTagStringLength"] = 0
 
+    if configuration["environmentMaxRaces"] < 0:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+            print(f"Cannot have a negative number of races. Setting number of races to 0.")
+        configuration["environmentMaxRaces"] = 0
+
     if configuration["environmentMaxTribes"] < 0:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
             print(f"Cannot have a negative number of tribes. Setting number of tribes to 0.")
         configuration["environmentMaxTribes"] = 0
+
+    # Ensure at most number of races is equal to agent racial tag string length
+    if configuration["agentRacialTagStringLength"] > 0 and configuration["environmentMaxRaces"] > configuration["agentRacialTagStringLength"]:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have a longer agent racial tag string length than maximum number of races. Setting the number of races to {configuration['agentRacialTagStringLength']}.")
+        configuration["environmentMaxRaces"] = configuration["agentRacialTagStringLength"]
 
     # Ensure at most number of tribes is equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
@@ -1582,7 +1641,7 @@ def verifyConfiguration(configuration):
             print(f"Cannot have a longer agent tag string length than maximum number of tribes. Setting the number of tribes to {configuration['agentTagStringLength']}.")
         configuration["environmentMaxTribes"] = configuration["agentTagStringLength"]
 
-    # Ensure at most number of tribes and decision models are equal to the number of colors in the GUI
+    # Ensure at most number of races, tribes, and decision models are equal to the number of colors in the GUI
     maxColors = 25
     uniqueAgentDecisionModels = set(configuration["agentDecisionModels"])
     numUniqueAgentDecisionModels = len(uniqueAgentDecisionModels)
@@ -1593,6 +1652,10 @@ def verifyConfiguration(configuration):
         removeDecisionModels = uniqueAgentDecisionModels[maxColors:]
         configuration["agentDecisionModels"] = [i for i in configuration["agentDecisionModels"] if
                                                 i not in removeDecisionModels]
+    if configuration["environmentMaxRaces"] > maxColors:
+        if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+            print(f"Cannot provide {configuration['environmentMaxRaces']} races. Allocating maximum of {maxColors}.")
+        configuration["environmentMaxRaces"] = maxColors
     if configuration["environmentMaxTribes"] > maxColors:
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
@@ -1687,6 +1750,7 @@ if __name__ == "__main__":
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
+                     "agentRacialTagStringLength": 0,
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],
                      "agentSpiceMetabolism": [0, 0],
@@ -1720,6 +1784,7 @@ if __name__ == "__main__":
                      "environmentFile": None,
                      "environmentHeight": 50,
                      "environmentMaxCombatLoot": 0,
+                     "environmentMaxRaces": 0,
                      "environmentMaxSpice": 0,
                      "environmentMaxSugar": 4,
                      "environmentMaxTribes": 0,
