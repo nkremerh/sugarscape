@@ -84,7 +84,7 @@ class Sugarscape:
                              "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0, "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0,
                              "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0, "meanValidMoves": 0
                              }
-        self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanRacialTags": [], "meanTribeTags": [],
+        self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
         self.log = open(configuration["logfile"], 'a') if configuration["logfile"] != None else None
         self.agentLog = open(configuration["agentLogfile"], 'a') if configuration["agentLogfile"] != None else None
@@ -933,13 +933,6 @@ class Sugarscape:
             sugarBins[math.floor(agent.sugar / (maxSugar + 1) * histogramBins)] += 1
             agentWealths.append(agent.sugar + agent.spice)
 
-        meanRacialTags = [0] * self.configuration["agentRacialTagStringLength"]
-        totalPopulation = len(self.agents)
-        if self.configuration["agentRacialTagStringLength"] > 0 and totalPopulation > 0:
-            for agent in self.agents:
-                meanRacialTags = [i + j for i, j in zip(meanRacialTags, agent.racialTags)]
-            meanRacialTags = [round(tag / totalPopulation, 2) * 100 for tag in meanRacialTags]
-
         meanTribeTags = [0] * self.configuration["agentTagStringLength"]
         totalPopulation = len(self.agents)
         if self.configuration["agentTagStringLength"] > 0 and totalPopulation > 0:
@@ -963,7 +956,6 @@ class Sugarscape:
 
         self.graphStats["ageBins"] = ageBins
         self.graphStats["lorenzCurvePoints"] = lorenzCurvePoints
-        self.graphStats["meanRacialTags"] = meanRacialTags
         self.graphStats["meanTribeTags"] = meanTribeTags
         self.graphStats["spiceBins"] = spiceBins
         self.graphStats["sugarBins"] = sugarBins
