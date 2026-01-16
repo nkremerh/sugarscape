@@ -33,7 +33,8 @@ class GUI:
         for i in range(numDecisionModels):
             self.colors[self.sugarscape.configuration["agentDecisionModels"][i]] = self.palette[i]
         for i in range(numRaces):
-            self.colors["race" + str(i)] = self.palette[i]
+            # Use the end of the palette to minimize overlap with other coloring options
+            self.colors["race" + str(i)] = self.palette[len(self.palette) - 1 - i]
 
         # Set the default strings for interface at simulation start
         self.defaultAgentString = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: - | Tribe: - | Race: -"
