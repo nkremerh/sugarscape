@@ -1675,6 +1675,16 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
         configuration["environmentMaxTribes"] = maxColors
 
+    # Ensure at least 0 privileged races and environmentPrivilegedRaces cannot be greater than environmentMaxRaces
+    if configuration["environmentPrivilegedRaces"] < 0:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+            print(f"Cannot have a negative number of privileged races. Setting number of privileged races to 0.")
+        configuration["environmentPrivilegedRaces"] = 0
+    if configuration["environmentPrivilegedRaces"] > configuration["environmentMaxRaces"]:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+            print(f"Cannot have more privileged races than total races. Setting number of privileged races to {configuration['environmentMaxRaces']}")
+        configuration["environmentPrivilegedRaces"] = configuration["environmentMaxRaces"]
+
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
         startingDiseasesPerAgent = sorted(configuration["startingDiseasesPerAgent"])
@@ -1806,6 +1816,7 @@ if __name__ == "__main__":
                      "environmentPollutionDiffusionDelay": 0,
                      "environmentPollutionDiffusionTimeframe": [0, 0],
                      "environmentPollutionTimeframe": [0, 0],
+                     "environmentPrivilegedRaces": 0,
                      "environmentQuadrantSizeFactor": 1,
                      "environmentSeasonalGrowbackDelay": 0,
                      "environmentSeasonInterval": 0,

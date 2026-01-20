@@ -65,6 +65,7 @@
     "environmentMaxTribes": 3,
     "environmentPollutionDiffusionDelay": 2,
     "environmentPollutionTimeframe": [100, -1],
+    "environmentPrivilegedRaces": 1,
     "environmentQuadrantSizeFactor": 1,
     "environmentSeasonalGrowbackDelay": 2,
     "environmentSeasonInterval": 50,

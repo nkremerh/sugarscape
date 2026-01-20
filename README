@@ -438,6 +438,11 @@ environmentPollutionTimeframe: [int, int]
     Note: Value of -1 for the end sets the end timestep to the end of the simulation.
     Default: [0, 0]
 
+environmentPrivilegedRaces: int
+    Set the number of races that are privileged and do not experience racism from other agents.
+    Note: Setting this equal to environmentMaxRaces neutralizes racism.
+    Default: 0
+
 environmentQuadrantSizeFactor: float
     Set the proportion of each corner of the screen taken up by the agents' starting quadrants.
     Default: 1

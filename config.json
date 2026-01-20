@@ -82,6 +82,7 @@
         "environmentPollutionDiffusionDelay": 0,
         "environmentPollutionDiffusionTimeframe": [0, 0],
         "environmentPollutionTimeframe": [0, 0],
+        "environmentPrivilegedRaces": 1,
         "environmentQuadrantSizeFactor": 1,
         "environmentSeasonalGrowbackDelay": 0,
         "environmentSeasonInterval": 0,
