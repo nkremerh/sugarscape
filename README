@@ -154,6 +154,11 @@ agentDecisionModels: [string, ...]
     Note: Adding "Dynamic" after some decision model names enforces dynamic selfishness.
     Default: ["none"]
 
+agentDecisionModelRacismFactor: [float, float]
+    Set how much agents prioritize the welfare of their own race or privileged races over others.
+    Note: Valid range is [0.0, 1.0], use -1 to disable.
+    Default: [-1, -1]
+
 agentDecisionModelTribalFactor: [float, float]
     Set how much agents prioritize the welfare of their own tribe members over others.
     Note: Valid range is [0.0, 1.0], use -1 to disable.
