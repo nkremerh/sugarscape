@@ -573,6 +573,7 @@ class Sugarscape:
         movement = configs["agentMovement"]
         movementMode = configs["agentMovementMode"]
         neighborhoodMode = configs["neighborhoodMode"]
+        privilegedRaces = configs["agentPrivilegedRaces"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
         spiceMetabolism = configs["agentSpiceMetabolism"]
         startingSpice = configs["agentStartingSpice"]
@@ -700,7 +701,7 @@ class Sugarscape:
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "racialTags": racialTags.pop(), "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
-                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
+                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "privilegedRaces": privilegedRaces, "visionMode": visionMode,
                               "depressionFactor": depressionFactors[i], "follower": follower}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set

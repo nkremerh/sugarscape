@@ -38,6 +38,7 @@ class Agent:
         self.movement = configuration["movement"]
         self.movementMode = configuration["movementMode"]
         self.neighborhoodMode = configuration["neighborhoodMode"]
+        self.privilegedRaces = configuration["privilegedRaces"]
         self.racialTags = configuration["racialTags"]
         self.seed = configuration["seed"]
         self.selfishnessFactor = configuration["selfishnessFactor"]
