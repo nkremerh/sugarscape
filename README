@@ -245,6 +245,10 @@ agentMovementMode: string
     Options: "cardinal", "radial"
     Default: "cardinal"
 
+agentRacialTagStringLength: int
+    Set agent racial tags string length.
+    Default: 0
+
 agentReplacements: int
     Set maximum number of agents to replace in environment on agent death.
     Default: 0
@@ -393,6 +397,10 @@ environmentHeight: int
 
 environmentMaxCombatLoot: float
     Set the maximum reward agents receive from winning combat.
+    Default: 0
+
+environmentMaxRaces: int
+    Set the maximum number of races in the starting population.
     Default: 0
 
 environmentMaxSpice: int
