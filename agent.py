@@ -812,7 +812,7 @@ class Agent:
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
         "temperanceFactor" : [self.temperanceFactor, mate.temperanceFactor]
         }
-        childEndowment = {"seed": self.seed, "follower": self.follower}
+        childEndowment = {"seed": self.seed, "follower": self.follower, "privilegedRaces": self.privilegedRaces}
         randomNumberReset = random.getstate()
 
         # Map configuration to a random number via hash to make random number generation independent of iteration order

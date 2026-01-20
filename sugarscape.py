@@ -1678,11 +1678,11 @@ def verifyConfiguration(configuration):
 
     # Ensure at least 0 privileged races and agentPrivilegedRaces cannot be greater than environmentMaxRaces
     if configuration["agentPrivilegedRaces"] < 0:
-        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have a negative number of privileged races. Setting number of privileged races to 0.")
         configuration["agentPrivilegedRaces"] = 0
     if configuration["agentPrivilegedRaces"] > configuration["environmentMaxRaces"]:
-        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have more privileged races than total races. Setting number of privileged races to {configuration['environmentMaxRaces']}")
         configuration["agentPrivilegedRaces"] = configuration["environmentMaxRaces"]
 
