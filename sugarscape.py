@@ -551,6 +551,7 @@ class Sugarscape:
         decisionModelFactor = configs["agentDecisionModelFactor"]
         decisionModelLookaheadDiscount = configs["agentDecisionModelLookaheadDiscount"]
         decisionModelLookaheadFactor = configs["agentDecisionModelLookaheadFactor"]
+        decisionModelRacismFactor = configs["agentDecisionModelRacismFactor"]
         decisionModelTribalFactor = configs["agentDecisionModelTribalFactor"]
         diseaseProtectionChance = configs["agentDiseaseProtectionChance"]
         dynamicSelfishnessFactor = configs["agentDynamicSelfishnessFactor"]
@@ -572,6 +573,7 @@ class Sugarscape:
         movement = configs["agentMovement"]
         movementMode = configs["agentMovementMode"]
         neighborhoodMode = configs["neighborhoodMode"]
+        privilegedRaces = configs["agentPrivilegedRaces"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
         spiceMetabolism = configs["agentSpiceMetabolism"]
         startingSpice = configs["agentStartingSpice"]
@@ -594,6 +596,7 @@ class Sugarscape:
                           "baseInterestRate": {"endowments": [], "curr": baseInterestRate[0], "min": baseInterestRate[0], "max": baseInterestRate[1]},
                           "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
                           "decisionModelLookaheadDiscount": {"endowments": [], "curr": decisionModelLookaheadDiscount[0], "min": decisionModelLookaheadDiscount[0], "max": decisionModelLookaheadDiscount[1]},
+                          "decisionModelRacismFactor": {"endowments": [], "curr": decisionModelRacismFactor[0], "min": decisionModelRacismFactor[0], "max": decisionModelRacismFactor[1]},
                           "decisionModelTribalFactor": {"endowments": [], "curr": decisionModelTribalFactor[0], "min": decisionModelTribalFactor[0], "max": decisionModelTribalFactor[1]},
                           "diseaseProtectionChance": {"endowments": [], "curr": diseaseProtectionChance[0], "min": diseaseProtectionChance[0], "max": diseaseProtectionChance[1]},
                           "dynamicSelfishnessFactor": {"endowments": [], "curr": dynamicSelfishnessFactor[0], "min": dynamicSelfishnessFactor[0], "max": dynamicSelfishnessFactor[1]},
@@ -698,7 +701,7 @@ class Sugarscape:
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "racialTags": racialTags.pop(), "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
-                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
+                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "privilegedRaces": privilegedRaces, "visionMode": visionMode,
                               "depressionFactor": depressionFactors[i], "follower": follower}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
@@ -1472,7 +1475,7 @@ def sortConfigurationTimeframes(configuration, timeframe):
     return config
 
 def verifyConfiguration(configuration):
-    negativesAllowed = ["agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
+    negativesAllowed = ["agentDecisionModelRacismFactor", "agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
     negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseFriendlinessPenalty", "diseaseHappinessPenalty", "diseaseMovementPenalty"]
     negativesAllowed += ["diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
     negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe", "environmentMaxSpice", "environmentMaxSugar"]
@@ -1560,6 +1563,18 @@ def verifyConfiguration(configuration):
         configuration["timesteps"] = sys.maxsize
 
     # Ensure infinitely-lived agents are properly initialized
+    if configuration["agentDecisionModelRacismFactor"][0] < 0:
+        if configuration["agentDecisionModelRacismFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(
+                    f"Cannot have agent racism factor range of {configuration['agentDecisionModelRacismFactor']}. Disabling agent racism factor.")
+        configuration["agentDecisionModelRacismFactor"] = [-1, -1]
+    elif configuration["agentDecisionModelRacismFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(
+                f"Cannot have agent maximum racism factor of {configuration['agentDecisionModelRacismFactor'][1]}. Setting agent maximum racism factor to 1.0.")
+        configuration["agentDecisionModelRacismFactor"][1] = 1
+
     if configuration["agentDecisionModelTribalFactor"][0] < 0:
         if configuration["agentDecisionModelTribalFactor"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
@@ -1661,6 +1676,16 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
         configuration["environmentMaxTribes"] = maxColors
 
+    # Ensure at least 0 privileged races and agentPrivilegedRaces cannot be greater than environmentMaxRaces
+    if configuration["agentPrivilegedRaces"] < 0:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have a negative number of privileged races. Setting number of privileged races to 0.")
+        configuration["agentPrivilegedRaces"] = 0
+    if configuration["agentPrivilegedRaces"] > configuration["environmentMaxRaces"]:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(f"Cannot have more privileged races than total races. Setting number of privileged races to {configuration['environmentMaxRaces']}")
+        configuration["agentPrivilegedRaces"] = configuration["environmentMaxRaces"]
+
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
         startingDiseasesPerAgent = sorted(configuration["startingDiseasesPerAgent"])
@@ -1728,6 +1753,7 @@ if __name__ == "__main__":
                      "agentDecisionModelFactor": [0, 0],
                      "agentDecisionModelLookaheadDiscount": [0, 0],
                      "agentDecisionModelLookaheadFactor": [0],
+                     "agentDecisionModelRacismFactor": [-1, -1],
                      "agentDecisionModelTribalFactor": [-1, -1],
                      "agentDepressionPercentage": 0,
                      "agentDiseaseProtectionChance": [0.0, 0.0],
@@ -1750,6 +1776,7 @@ if __name__ == "__main__":
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
+                     "agentPrivilegedRaces": 0,
                      "agentRacialTagStringLength": 0,
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],

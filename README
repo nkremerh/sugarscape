@@ -154,6 +154,11 @@ agentDecisionModels: [string, ...]
     Note: Adding "Dynamic" after some decision model names enforces dynamic selfishness.
     Default: ["none"]
 
+agentDecisionModelRacismFactor: [float, float]
+    Set how much agents prioritize the welfare of their own race or privileged races over others.
+    Note: Valid range is [0.0, 1.0], use -1 to disable.
+    Default: [-1, -1]
+
 agentDecisionModelTribalFactor: [float, float]
     Set how much agents prioritize the welfare of their own tribe members over others.
     Note: Valid range is [0.0, 1.0], use -1 to disable.
@@ -244,6 +249,11 @@ agentMovementMode: string
     Set the directionality used to figure out which cells an agent can move to.
     Options: "cardinal", "radial"
     Default: "cardinal"
+
+agentPrivilegedRaces: int
+    Set the number of races that are privileged and do not experience racism from other agents.
+    Note: Setting this equal to environmentMaxRaces neutralizes racism.
+    Default: 0
 
 agentRacialTagStringLength: int
     Set agent racial tags string length.

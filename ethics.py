@@ -177,15 +177,20 @@ class Bentham(agent.Agent):
                 if cell == neighbor.cell and neighborCellValue > -1:
                     neighborCellValue = -1
 
+            if self.decisionModelRacismFactor >= 0:
+                neighborRace = neighbor.findRace()
+                if neighborRace == self.race or neighborRace < self.privilegedRaces:
+                    # If same race or privileged race, multiply by racism factor
+                    neighborCellValue *= self.decisionModelRacismFactor
+                else:
+                    # If different race and not privileged, multiply by inverse racism factor
+                    neighborCellValue *= 1 - self.decisionModelRacismFactor
             if self.decisionModelTribalFactor >= 0:
                 if neighbor.findTribe() == self.findTribe():
-                    # if same tribe, multiply by tribal factor 
-                    # higher factor favors in-group, lower factor disfavors in-group
+                    # If same tribe, multiply by tribal factor 
                     neighborCellValue *= self.decisionModelTribalFactor
                 else:
-                    # if different tribe, multiply by inverse tribal factor
-                    # higher factor means multiply by lower number to disfavor out-group
-                    # lower factor means multiply by higher number to favor out-group
+                    # If different tribe, multiply by inverse tribal factor
                     neighborCellValue *= 1 - self.decisionModelTribalFactor
             if self.selfishnessFactor >= 0:
                 if neighbor == self:
