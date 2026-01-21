@@ -88,22 +88,19 @@ class Bentham(agent.Agent):
         if len(cells) == 0:
             return None
         bestCell = None
-        cells = self.sortCellsByWealth(cells) # Sort by greedy wealth first, not using ethics
+        cells = self.sortCellsByWealth(cells)
         if "all" in self.debug or "agent" in self.debug:
             self.printCellScores(cells)
 
         for cell in cells:
             cell["wealth"] = self.findEthicalValueOfCell(cell["cell"])
         if self.selfishnessFactor >= 0:
-            # select the first cell with highest utility (determined without ethics) that has an ethical value > 0
             for cell in cells:
                 if cell["wealth"] > 0:
                     bestCell = cell["cell"]
                     break
         else:
             # Negative utilitarian model uses positive and negative utility to find minimum harm
-            # unhappiness is negative utility (harm), happiness is positive utility (benefit)
-            # sort by unhappiness first (minimize harm), then by happiness (maximize benefit)
             cells.sort(key = lambda cell: (cell["wealth"]["unhappiness"], cell["wealth"]["happiness"]), reverse = True)
             bestCell = cells[0]["cell"]
 
@@ -167,7 +164,7 @@ class Bentham(agent.Agent):
 
             currentReward = extent * (intensity + duration)
             futureReward = futureExtent * (futureIntensity + futureDuration)
-            # represents the overall value of the cell to the neighbor agent
+            # Represents the overall value of the cell to the neighbor agent
             neighborCellValue = (certainty * proximity) * (currentReward + (discount * futureReward))
 
             # If not the agent moving, consider these as opportunity costs
@@ -187,28 +184,22 @@ class Bentham(agent.Agent):
                     neighborCellValue *= 1 - self.decisionModelRacismFactor
             if self.decisionModelTribalFactor >= 0:
                 if neighbor.findTribe() == self.findTribe():
-                    # If same tribe, multiply by tribal factor 
                     neighborCellValue *= self.decisionModelTribalFactor
                 else:
-                    # If different tribe, multiply by inverse tribal factor
                     neighborCellValue *= 1 - self.decisionModelTribalFactor
             if self.selfishnessFactor >= 0:
                 if neighbor == self:
-                    # multiply by selfishness factor to indicate selfishness when dealing with self
                     neighborCellValue *= self.selfishnessFactor
                 else:
-                    # multiply by inverse selfishness factor to indicate selflessness toward others
                     neighborCellValue *= 1 - self.selfishnessFactor
             else:
-                # selfishnessFactor < 0, negative utilitarian model
-                if neighborCellValue > 0: # valuable to neighbor
-                    happiness += neighborCellValue # cell brings happiness to neighbors
-                else: # not valuable to neighbor
-                    unhappiness += neighborCellValue # cell brings unhappiness to neighbors
+                if neighborCellValue > 0:
+                    happiness += neighborCellValue
+                else:
+                    unhappiness += neighborCellValue
             cellValue += neighborCellValue
 
         if self.selfishnessFactor < 0:
-            # happiness = value to neighbors, unhappiness = harm to neighbors
             return {"happiness": happiness, "unhappiness": unhappiness}
         return cellValue
 
