@@ -561,6 +561,7 @@ class Sugarscape:
         fertilityFactor = configs["agentFertilityFactor"]
         follower = configs["agentLeader"]
         immuneSystemLength = configs["agentImmuneSystemLength"]
+        inGroupRaces = configs["agentInGroupRaces"]
         inheritancePolicy = configs["agentInheritancePolicy"]
         lendingFactor = configs["agentLendingFactor"]
         loanDuration = configs["agentLoanDuration"]
@@ -573,7 +574,6 @@ class Sugarscape:
         movement = configs["agentMovement"]
         movementMode = configs["agentMovementMode"]
         neighborhoodMode = configs["neighborhoodMode"]
-        inGroupRaces = configs["agentInGroupRaces"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
         spiceMetabolism = configs["agentSpiceMetabolism"]
         startingSpice = configs["agentStartingSpice"]
@@ -699,9 +699,9 @@ class Sugarscape:
         random.shuffle(decisionModels)
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "racialTags": racialTags.pop(), "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
-                              "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
+                              "immuneSystem": immuneSystems.pop(), "inGroupRaces": inGroupRaces, "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
-                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "inGroupRaces": inGroupRaces, "visionMode": visionMode,
+                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
                               "depressionFactor": depressionFactors[i], "follower": follower}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
@@ -1759,6 +1759,7 @@ if __name__ == "__main__":
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
                      "agentImmuneSystemLength": 0,
+                     "agentInGroupRaces": [],
                      "agentInheritancePolicy": "none",
                      "agentLeader": False,
                      "agentLendingFactor": [0, 0],
@@ -1772,7 +1773,6 @@ if __name__ == "__main__":
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
-                     "agentInGroupRaces": [],
                      "agentRacialTagStringLength": 0,
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],

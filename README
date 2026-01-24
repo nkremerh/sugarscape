@@ -198,6 +198,11 @@ agentImmuneSystemLength: int
     Set the length of agent immune system tags to integer length.
     Default: 0
 
+agentInGroupRaces: [int, ...]
+    Set which races are treated as in-group and do not experience racism from other agents.
+    Note: Including all races neutralizes racism.
+    Default: []
+
 agentInheritancePolicy: string
     Set wealth inheritance policy on agent death to given string.
     Options: "children". "daughters", "friends", "none", "sons"
@@ -249,11 +254,6 @@ agentMovementMode: string
     Set the directionality used to figure out which cells an agent can move to.
     Options: "cardinal", "radial"
     Default: "cardinal"
-
-agentInGroupRaces: [int, ...]
-    Set which races are treated as in-group and do not experience racism from other agents.
-    Note: Including all races neutralizes racism.
-    Default: []
 
 agentRacialTagStringLength: int
     Set agent racial tags string length.
