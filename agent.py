@@ -38,7 +38,7 @@ class Agent:
         self.movement = configuration["movement"]
         self.movementMode = configuration["movementMode"]
         self.neighborhoodMode = configuration["neighborhoodMode"]
-        self.privilegedRaces = configuration["privilegedRaces"]
+        self.inGroupRaces = configuration["inGroupRaces"]
         self.racialTags = configuration["racialTags"]
         self.seed = configuration["seed"]
         self.selfishnessFactor = configuration["selfishnessFactor"]
@@ -812,7 +812,7 @@ class Agent:
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
         "temperanceFactor" : [self.temperanceFactor, mate.temperanceFactor]
         }
-        childEndowment = {"seed": self.seed, "follower": self.follower, "privilegedRaces": self.privilegedRaces}
+        childEndowment = {"seed": self.seed, "follower": self.follower, "inGroupRaces": self.inGroupRaces}
         randomNumberReset = random.getstate()
 
         # Map configuration to a random number via hash to make random number generation independent of iteration order

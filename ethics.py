@@ -176,11 +176,11 @@ class Bentham(agent.Agent):
 
             if self.decisionModelRacismFactor >= 0:
                 neighborRace = neighbor.findRace()
-                if neighborRace == self.race or neighborRace < self.privilegedRaces:
-                    # If same race or privileged race, multiply by racism factor
+                if neighborRace == self.race or neighborRace < self.inGroupRaces:
+                    # If same race or in-group race, multiply by racism factor
                     neighborCellValue *= self.decisionModelRacismFactor
                 else:
-                    # If different race and not privileged, multiply by inverse racism factor
+                    # If different race and not in-group, multiply by inverse racism factor
                     neighborCellValue *= 1 - self.decisionModelRacismFactor
             if self.decisionModelTribalFactor >= 0:
                 if neighbor.findTribe() == self.findTribe():

@@ -573,7 +573,7 @@ class Sugarscape:
         movement = configs["agentMovement"]
         movementMode = configs["agentMovementMode"]
         neighborhoodMode = configs["neighborhoodMode"]
-        privilegedRaces = configs["agentPrivilegedRaces"]
+        inGroupRaces = configs["agentInGroupRaces"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
         spiceMetabolism = configs["agentSpiceMetabolism"]
         startingSpice = configs["agentStartingSpice"]
@@ -701,7 +701,7 @@ class Sugarscape:
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "racialTags": racialTags.pop(), "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
                               "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
-                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "privilegedRaces": privilegedRaces, "visionMode": visionMode,
+                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "inGroupRaces": inGroupRaces, "visionMode": visionMode,
                               "depressionFactor": depressionFactors[i], "follower": follower}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
@@ -1676,15 +1676,15 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
         configuration["environmentMaxTribes"] = maxColors
 
-    # Ensure at least 0 privileged races and agentPrivilegedRaces cannot be greater than environmentMaxRaces
-    if configuration["agentPrivilegedRaces"] < 0:
+    # Ensure at least 0 in-group races and agentInGroupRaces cannot be greater than environmentMaxRaces
+    if configuration["agentInGroupRaces"] < 0:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have a negative number of privileged races. Setting number of privileged races to 0.")
-        configuration["agentPrivilegedRaces"] = 0
-    if configuration["agentPrivilegedRaces"] > configuration["environmentMaxRaces"]:
+            print(f"Cannot have a negative number of in-group races. Setting number of in-group races to 0.")
+        configuration["agentInGroupRaces"] = 0
+    if configuration["agentInGroupRaces"] > configuration["environmentMaxRaces"]:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have more privileged races than total races. Setting number of privileged races to {configuration['environmentMaxRaces']}")
-        configuration["agentPrivilegedRaces"] = configuration["environmentMaxRaces"]
+            print(f"Cannot have more in-group races than total races. Setting number of in-group races to {configuration['environmentMaxRaces']}")
+        configuration["agentInGroupRaces"] = configuration["environmentMaxRaces"]
 
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
@@ -1776,7 +1776,7 @@ if __name__ == "__main__":
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
-                     "agentPrivilegedRaces": 0,
+                     "agentInGroupRaces": 0,
                      "agentRacialTagStringLength": 0,
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],

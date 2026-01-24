@@ -28,7 +28,7 @@
     "agentMaxFriends": [5, 10],
     "agentMovement": [1, 6],
     "agentMovementMode": "cardinal",
-    "agentPrivilegedRaces": 1,
+    "agentInGroupRaces": 1,
     "agentRacialTagStringLength": 11,
     "agentReplacements": 0,
     "agentSelfishnessFactor": [-1, -1],

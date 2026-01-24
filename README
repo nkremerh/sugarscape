@@ -155,7 +155,7 @@ agentDecisionModels: [string, ...]
     Default: ["none"]
 
 agentDecisionModelRacismFactor: [float, float]
-    Set how much agents prioritize the welfare of their own race or privileged races over others.
+    Set how much agents prioritize the welfare of their own race or configured in-group races over others.
     Note: Valid range is [0.0, 1.0], use -1 to disable.
     Default: [-1, -1]
 
@@ -250,8 +250,8 @@ agentMovementMode: string
     Options: "cardinal", "radial"
     Default: "cardinal"
 
-agentPrivilegedRaces: int
-    Set the number of races that are privileged and do not experience racism from other agents.
+agentInGroupRaces: int
+    Set the number of races that are treated as in-group and do not experience racism from other agents.
     Note: Setting this equal to environmentMaxRaces neutralizes racism.
     Default: 0
 
