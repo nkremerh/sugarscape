@@ -1676,15 +1676,11 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
         configuration["environmentMaxTribes"] = maxColors
 
-    # Ensure at least 0 in-group races and agentInGroupRaces cannot be greater than environmentMaxRaces
-    if configuration["agentInGroupRaces"] < 0:
+    # Ensure that no race in agentInGroupRaces is greater than environmentMaxRaces
+    if any(race >= configuration["environmentMaxRaces"] for race in configuration["agentInGroupRaces"]):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have a negative number of in-group races. Setting number of in-group races to 0.")
-        configuration["agentInGroupRaces"] = 0
-    if configuration["agentInGroupRaces"] > configuration["environmentMaxRaces"]:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have more in-group races than total races. Setting number of in-group races to {configuration['environmentMaxRaces']}")
-        configuration["agentInGroupRaces"] = configuration["environmentMaxRaces"]
+            print(f"Cannot have in-group races greater than total races. Removing in-group races greater than or equal to {configuration['environmentMaxRaces']}")
+        configuration["agentInGroupRaces"] = [race for race in configuration["agentInGroupRaces"] if race < configuration["environmentMaxRaces"]]
 
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
@@ -1776,7 +1772,7 @@ if __name__ == "__main__":
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
-                     "agentInGroupRaces": 0,
+                     "agentInGroupRaces": [],
                      "agentRacialTagStringLength": 0,
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],

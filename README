@@ -250,10 +250,10 @@ agentMovementMode: string
     Options: "cardinal", "radial"
     Default: "cardinal"
 
-agentInGroupRaces: int
-    Set the number of races that are treated as in-group and do not experience racism from other agents.
-    Note: Setting this equal to environmentMaxRaces neutralizes racism.
-    Default: 0
+agentInGroupRaces: [int, ...]
+    Set which races are treated as in-group and do not experience racism from other agents.
+    Note: Including all races neutralizes racism.
+    Default: []
 
 agentRacialTagStringLength: int
     Set agent racial tags string length.
