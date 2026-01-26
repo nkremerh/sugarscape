@@ -505,13 +505,13 @@ class Sugarscape:
     def generateRacialTags(self, race):
         tagStringLength = self.configuration["agentRacialTagStringLength"]
         numRaces = self.configuration["environmentMaxRaces"]
-        raceSize = (tagStringLength + 1) / numRaces
-        minZeroes = math.floor(race * raceSize)
-        maxZeroes = math.floor((race + 1) * raceSize) - 1
-        maxZeroes = min(maxZeroes, tagStringLength)
-        zeroes = random.randint(minZeroes, maxZeroes)
-        ones = tagStringLength - zeroes
-        tags = [0 for i in range(zeroes)] + [1 for i in range(ones)]
+        if numRaces == 1:
+            return [race for i in range(tagStringLength)]
+        majorityBits = math.floor(tagStringLength / 2) + 1
+        assignedRaceBits = random.randint(majorityBits, tagStringLength)
+        otherRaceBits = tagStringLength - assignedRaceBits
+        otherRaceOptions = [r for r in range(numRaces) if r != race]
+        tags = [race for i in range(assignedRaceBits)] + [random.choice(otherRaceOptions) for i in range(otherRaceBits)]
         random.shuffle(tags)
         return tags
 
@@ -1643,12 +1643,6 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
             print(f"Cannot have a negative number of tribes. Setting number of tribes to 0.")
         configuration["environmentMaxTribes"] = 0
-
-    # Ensure at most number of races is equal to agent racial tag string length
-    if configuration["agentRacialTagStringLength"] > 0 and configuration["environmentMaxRaces"] > configuration["agentRacialTagStringLength"]:
-        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have a longer agent racial tag string length than maximum number of races. Setting the number of races to {configuration['agentRacialTagStringLength']}.")
-        configuration["environmentMaxRaces"] = configuration["agentRacialTagStringLength"]
 
     # Ensure at most number of tribes is equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:

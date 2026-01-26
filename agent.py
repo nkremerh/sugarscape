@@ -1,3 +1,4 @@
+from collections import Counter
 import hashlib
 import math
 import random
@@ -874,10 +875,7 @@ class Agent:
             childRacialTags = None
         else:
             for i in range(len(self.racialTags)):
-                if self.racialTags[i] == mate.racialTags[i]:
-                    childRacialTags.append(self.racialTags[i])
-                else:
-                    childRacialTags.append(mismatchBits[random.randrange(2)])
+                childRacialTags.append(random.choice([self.racialTags[i], mate.racialTags[i]]))
         childEndowment["racialTags"] = childRacialTags
 
         # Current implementation randomly assigns depressed state at agent birth
@@ -1032,13 +1030,8 @@ class Agent:
     def findRace(self):
         if self.racialTags == None:
             return None
-        config = self.cell.environment.sugarscape.configuration
-        numRaces = config["environmentMaxRaces"]
-        possibleZeroes = config["agentRacialTagStringLength"] + 1
-        actualZeroes = self.racialTags.count(0)
-        raceSize = possibleZeroes / numRaces
-        race = min(math.ceil((actualZeroes + 1) / raceSize) - 1, numRaces - 1)
-        return race
+        # race is determined by most common element in racialTags
+        return Counter(self.racialTags).most_common(1)[0][0]
 
     def findRetaliatorsInVision(self):
         retaliators = {}
