@@ -1347,6 +1347,30 @@ class Agent:
             # Modify value of cell relative to the metabolism needs of the agent
             welfare = self.findWelfare(((cell.sugar + welfarePreySugar) / (1 + cell.pollution)), ((cell.spice + welfarePreySpice) / (1 + cell.pollution)))
 
+            if self.decisionModelRacismFactor >= 0 or self.decisionModelTribalFactor >= 0:
+                potentialNeighbors = cell.findNeighborAgents()
+                if len(potentialNeighbors) > 0:
+                    inGroupRace, inGroupTribe = 0, 0
+                    for neighbor in potentialNeighbors:
+                        neighborRace = neighbor.findRace()
+                        if neighborRace == self.findRace() or neighborRace in self.inGroupRaces:
+                            inGroupRace += 1
+                        neighborTribe = neighbor.findTribe()
+                        if neighborTribe == self.findTribe():
+                            inGroupTribe += 1
+                    if self.decisionModelRacismFactor > 0:
+                        raceProportion = inGroupRace / len(potentialNeighbors)
+                        inGroupRaceModifier = raceProportion * self.decisionModelRacismFactor
+                        outGroupRaceModifier = (1 - raceProportion) * (1 - self.decisionModelRacismFactor)
+                        welfare *= inGroupRaceModifier + outGroupRaceModifier
+                        # welfare *= (1 + (self.decisionModelRacismFactor * raceProportion))
+                    if self.decisionModelTribalFactor > 0:
+                        tribeProportion = inGroupTribe / len(potentialNeighbors)
+                        inGroupTribeModifier = tribeProportion * self.decisionModelTribalFactor
+                        outGroupTribeModifier = (1 - tribeProportion) * (1 - self.decisionModelTribalFactor)
+                        welfare *= inGroupTribeModifier + outGroupTribeModifier
+                        # welfare *= (1 + (self.decisionModelTribalFactor * tribeProportion))
+
             # Avoid attacking agents protected via retaliation
             if prey != None and retaliators[preyTribe] > self.sugar + self.spice + welfare:
                 continue
