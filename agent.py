@@ -1360,16 +1360,10 @@ class Agent:
                             inGroupTribe += 1
                     if self.decisionModelRacismFactor > 0:
                         raceProportion = inGroupRace / len(potentialNeighbors)
-                        inGroupRaceModifier = raceProportion * self.decisionModelRacismFactor
-                        outGroupRaceModifier = (1 - raceProportion) * (1 - self.decisionModelRacismFactor)
-                        welfare *= inGroupRaceModifier + outGroupRaceModifier
-                        # welfare *= (1 + (self.decisionModelRacismFactor * raceProportion))
+                        welfare *= (1 + (self.decisionModelRacismFactor * raceProportion))
                     if self.decisionModelTribalFactor > 0:
                         tribeProportion = inGroupTribe / len(potentialNeighbors)
-                        inGroupTribeModifier = tribeProportion * self.decisionModelTribalFactor
-                        outGroupTribeModifier = (1 - tribeProportion) * (1 - self.decisionModelTribalFactor)
-                        welfare *= inGroupTribeModifier + outGroupTribeModifier
-                        # welfare *= (1 + (self.decisionModelTribalFactor * tribeProportion))
+                        welfare *= (1 + (self.decisionModelTribalFactor * tribeProportion))
 
             # Avoid attacking agents protected via retaliation
             if prey != None and retaliators[preyTribe] > self.sugar + self.spice + welfare:
