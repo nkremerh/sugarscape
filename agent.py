@@ -1,3 +1,4 @@
+from collections import Counter
 import hashlib
 import math
 import random
@@ -29,6 +30,7 @@ class Agent:
         self.leader = not self.follower
         self.immuneSystem = configuration["immuneSystem"]
         self.infertilityAge = configuration["infertilityAge"]
+        self.inGroupRaces = configuration["inGroupRaces"]
         self.inheritancePolicy = configuration["inheritancePolicy"]
         self.lendingFactor = configuration["lendingFactor"]
         self.loanDuration = configuration["loanDuration"]
@@ -38,7 +40,6 @@ class Agent:
         self.movement = configuration["movement"]
         self.movementMode = configuration["movementMode"]
         self.neighborhoodMode = configuration["neighborhoodMode"]
-        self.privilegedRaces = configuration["privilegedRaces"]
         self.racialTags = configuration["racialTags"]
         self.seed = configuration["seed"]
         self.selfishnessFactor = configuration["selfishnessFactor"]
@@ -812,7 +813,7 @@ class Agent:
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
         "temperanceFactor" : [self.temperanceFactor, mate.temperanceFactor]
         }
-        childEndowment = {"seed": self.seed, "follower": self.follower, "privilegedRaces": self.privilegedRaces}
+        childEndowment = {"seed": self.seed, "follower": self.follower, "inGroupRaces": self.inGroupRaces}
         randomNumberReset = random.getstate()
 
         # Map configuration to a random number via hash to make random number generation independent of iteration order
@@ -874,10 +875,7 @@ class Agent:
             childRacialTags = None
         else:
             for i in range(len(self.racialTags)):
-                if self.racialTags[i] == mate.racialTags[i]:
-                    childRacialTags.append(self.racialTags[i])
-                else:
-                    childRacialTags.append(mismatchBits[random.randrange(2)])
+                childRacialTags.append(random.choice([self.racialTags[i], mate.racialTags[i]]))
         childEndowment["racialTags"] = childRacialTags
 
         # Current implementation randomly assigns depressed state at agent birth
@@ -950,6 +948,27 @@ class Agent:
             else:
                 familyHappiness -= self.happinessUnit
         return math.erf(familyHappiness)
+
+    def findGroupBiasCellWelfareModifier(self, cell):
+        potentialNeighbors = cell.findNeighborAgents()
+        modifier = 1
+        if len(potentialNeighbors) > 0:
+            inGroupRace, inGroupTribe = 0, 0
+            for neighbor in potentialNeighbors:
+                neighborRace = neighbor.findRace()
+                if neighborRace == self.findRace() or neighborRace in self.inGroupRaces:
+                    inGroupRace += 1
+                neighborTribe = neighbor.findTribe()
+                if neighborTribe == self.findTribe():
+                    inGroupTribe += 1
+            # increase value of cell according to proportion of in-group neighbors
+            if self.decisionModelRacismFactor > 0:
+                raceProportion = inGroupRace / len(potentialNeighbors)
+                modifier *= (1 + (self.decisionModelRacismFactor * raceProportion))
+            if self.decisionModelTribalFactor > 0:
+                tribeProportion = inGroupTribe / len(potentialNeighbors)
+                modifier *= (1 + (self.decisionModelTribalFactor * tribeProportion))
+        return modifier
 
     def findHammingDistanceInTags(self, neighbor):
         if self.tags == None:
@@ -1032,13 +1051,8 @@ class Agent:
     def findRace(self):
         if self.racialTags == None:
             return None
-        config = self.cell.environment.sugarscape.configuration
-        numRaces = config["environmentMaxRaces"]
-        possibleZeroes = config["agentRacialTagStringLength"] + 1
-        actualZeroes = self.racialTags.count(0)
-        raceSize = possibleZeroes / numRaces
-        race = min(math.ceil((actualZeroes + 1) / raceSize) - 1, numRaces - 1)
-        return race
+        # race is determined by most common element in racialTags
+        return Counter(self.racialTags).most_common(1)[0][0]
 
     def findRetaliatorsInVision(self):
         retaliators = {}
@@ -1353,6 +1367,10 @@ class Agent:
 
             # Modify value of cell relative to the metabolism needs of the agent
             welfare = self.findWelfare(((cell.sugar + welfarePreySugar) / (1 + cell.pollution)), ((cell.spice + welfarePreySpice) / (1 + cell.pollution)))
+
+            if self.decisionModelRacismFactor >= 0 or self.decisionModelTribalFactor >= 0:
+                # modify welfare according to group preferences
+                welfare *= self.findGroupBiasCellWelfareModifier(cell)
 
             # Avoid attacking agents protected via retaliation
             if prey != None and retaliators[preyTribe] > self.sugar + self.spice + welfare:

@@ -505,13 +505,13 @@ class Sugarscape:
     def generateRacialTags(self, race):
         tagStringLength = self.configuration["agentRacialTagStringLength"]
         numRaces = self.configuration["environmentMaxRaces"]
-        raceSize = (tagStringLength + 1) / numRaces
-        minZeroes = math.floor(race * raceSize)
-        maxZeroes = math.floor((race + 1) * raceSize) - 1
-        maxZeroes = min(maxZeroes, tagStringLength)
-        zeroes = random.randint(minZeroes, maxZeroes)
-        ones = tagStringLength - zeroes
-        tags = [0 for i in range(zeroes)] + [1 for i in range(ones)]
+        if numRaces == 1:
+            return [race for i in range(tagStringLength)]
+        majorityBits = math.floor(tagStringLength / 2) + 1
+        assignedRaceBits = random.randint(majorityBits, tagStringLength)
+        otherRaceBits = tagStringLength - assignedRaceBits
+        otherRaceOptions = [r for r in range(numRaces) if r != race]
+        tags = [race for i in range(assignedRaceBits)] + [random.choice(otherRaceOptions) for i in range(otherRaceBits)]
         random.shuffle(tags)
         return tags
 
@@ -561,6 +561,7 @@ class Sugarscape:
         fertilityFactor = configs["agentFertilityFactor"]
         follower = configs["agentLeader"]
         immuneSystemLength = configs["agentImmuneSystemLength"]
+        inGroupRaces = configs["agentInGroupRaces"]
         inheritancePolicy = configs["agentInheritancePolicy"]
         lendingFactor = configs["agentLendingFactor"]
         loanDuration = configs["agentLoanDuration"]
@@ -573,7 +574,6 @@ class Sugarscape:
         movement = configs["agentMovement"]
         movementMode = configs["agentMovementMode"]
         neighborhoodMode = configs["neighborhoodMode"]
-        privilegedRaces = configs["agentPrivilegedRaces"]
         selfishnessFactor = configs["agentSelfishnessFactor"]
         spiceMetabolism = configs["agentSpiceMetabolism"]
         startingSpice = configs["agentStartingSpice"]
@@ -699,9 +699,9 @@ class Sugarscape:
         random.shuffle(decisionModels)
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "racialTags": racialTags.pop(), "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
-                              "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
+                              "immuneSystem": immuneSystems.pop(), "inGroupRaces": inGroupRaces, "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
-                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "privilegedRaces": privilegedRaces, "visionMode": visionMode,
+                              "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
                               "depressionFactor": depressionFactors[i], "follower": follower}
             for config in configurations:
                 # If sexes are enabled, ensure proper fertility and infertility ages are set
@@ -1644,12 +1644,6 @@ def verifyConfiguration(configuration):
             print(f"Cannot have a negative number of tribes. Setting number of tribes to 0.")
         configuration["environmentMaxTribes"] = 0
 
-    # Ensure at most number of races is equal to agent racial tag string length
-    if configuration["agentRacialTagStringLength"] > 0 and configuration["environmentMaxRaces"] > configuration["agentRacialTagStringLength"]:
-        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have a longer agent racial tag string length than maximum number of races. Setting the number of races to {configuration['agentRacialTagStringLength']}.")
-        configuration["environmentMaxRaces"] = configuration["agentRacialTagStringLength"]
-
     # Ensure at most number of tribes is equal to agent tag string length
     if configuration["agentTagStringLength"] > 0 and configuration["environmentMaxTribes"] > configuration["agentTagStringLength"]:
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
@@ -1676,15 +1670,11 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
         configuration["environmentMaxTribes"] = maxColors
 
-    # Ensure at least 0 privileged races and agentPrivilegedRaces cannot be greater than environmentMaxRaces
-    if configuration["agentPrivilegedRaces"] < 0:
+    # Ensure that no race in agentInGroupRaces is greater than environmentMaxRaces
+    if any(race >= configuration["environmentMaxRaces"] for race in configuration["agentInGroupRaces"]):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have a negative number of privileged races. Setting number of privileged races to 0.")
-        configuration["agentPrivilegedRaces"] = 0
-    if configuration["agentPrivilegedRaces"] > configuration["environmentMaxRaces"]:
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(f"Cannot have more privileged races than total races. Setting number of privileged races to {configuration['environmentMaxRaces']}")
-        configuration["agentPrivilegedRaces"] = configuration["environmentMaxRaces"]
+            print(f"Cannot have in-group races greater than total races. Removing in-group races greater than or equal to {configuration['environmentMaxRaces']}")
+        configuration["agentInGroupRaces"] = [race for race in configuration["agentInGroupRaces"] if race < configuration["environmentMaxRaces"]]
 
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
@@ -1763,6 +1753,7 @@ if __name__ == "__main__":
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
                      "agentImmuneSystemLength": 0,
+                     "agentInGroupRaces": [],
                      "agentInheritancePolicy": "none",
                      "agentLeader": False,
                      "agentLendingFactor": [0, 0],
@@ -1776,7 +1767,6 @@ if __name__ == "__main__":
                      "agentMaxFriends": [0, 0],
                      "agentMovement": [1, 6],
                      "agentMovementMode": "cardinal",
-                     "agentPrivilegedRaces": 0,
                      "agentRacialTagStringLength": 0,
                      "agentReplacements": 0,
                      "agentSelfishnessFactor": [-1, -1],
