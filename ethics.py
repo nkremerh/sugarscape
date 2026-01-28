@@ -203,6 +203,10 @@ class Bentham(agent.Agent):
             return {"happiness": happiness, "unhappiness": unhappiness}
         return cellValue
 
+    def findGroupBiasCellWelfareModifier(self, cell):
+        # Bentham class handles group bias in findEthicalValueOfCell
+        return 1
+
     def updateValues(self):
         if self.dynamicSelfishnessFactor != 0:
             self.updateSelfishnessFactor()
