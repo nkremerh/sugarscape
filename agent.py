@@ -949,6 +949,27 @@ class Agent:
                 familyHappiness -= self.happinessUnit
         return math.erf(familyHappiness)
 
+    def findGroupBiasCellWelfareModifier(self, cell):
+        potentialNeighbors = cell.findNeighborAgents()
+        modifier = 1
+        if len(potentialNeighbors) > 0:
+            inGroupRace, inGroupTribe = 0, 0
+            for neighbor in potentialNeighbors:
+                neighborRace = neighbor.findRace()
+                if neighborRace == self.findRace() or neighborRace in self.inGroupRaces:
+                    inGroupRace += 1
+                neighborTribe = neighbor.findTribe()
+                if neighborTribe == self.findTribe():
+                    inGroupTribe += 1
+            # increase value of cell according to proportion of in-group neighbors
+            if self.decisionModelRacismFactor > 0:
+                raceProportion = inGroupRace / len(potentialNeighbors)
+                modifier *= (1 + (self.decisionModelRacismFactor * raceProportion))
+            if self.decisionModelTribalFactor > 0:
+                tribeProportion = inGroupTribe / len(potentialNeighbors)
+                modifier *= (1 + (self.decisionModelTribalFactor * tribeProportion))
+        return modifier
+
     def findHammingDistanceInTags(self, neighbor):
         if self.tags == None:
             return 0
@@ -1348,22 +1369,8 @@ class Agent:
             welfare = self.findWelfare(((cell.sugar + welfarePreySugar) / (1 + cell.pollution)), ((cell.spice + welfarePreySpice) / (1 + cell.pollution)))
 
             if self.decisionModelRacismFactor >= 0 or self.decisionModelTribalFactor >= 0:
-                potentialNeighbors = cell.findNeighborAgents()
-                if len(potentialNeighbors) > 0:
-                    inGroupRace, inGroupTribe = 0, 0
-                    for neighbor in potentialNeighbors:
-                        neighborRace = neighbor.findRace()
-                        if neighborRace == self.findRace() or neighborRace in self.inGroupRaces:
-                            inGroupRace += 1
-                        neighborTribe = neighbor.findTribe()
-                        if neighborTribe == self.findTribe():
-                            inGroupTribe += 1
-                    if self.decisionModelRacismFactor > 0:
-                        raceProportion = inGroupRace / len(potentialNeighbors)
-                        welfare *= (1 + (self.decisionModelRacismFactor * raceProportion))
-                    if self.decisionModelTribalFactor > 0:
-                        tribeProportion = inGroupTribe / len(potentialNeighbors)
-                        welfare *= (1 + (self.decisionModelTribalFactor * tribeProportion))
+                # modify welfare according to group preferences
+                welfare *= self.findGroupBiasCellWelfareModifier(cell)
 
             # Avoid attacking agents protected via retaliation
             if prey != None and retaliators[preyTribe] > self.sugar + self.spice + welfare:
