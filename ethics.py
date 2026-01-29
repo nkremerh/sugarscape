@@ -164,6 +164,7 @@ class Bentham(agent.Agent):
 
             currentReward = extent * (intensity + duration)
             futureReward = futureExtent * (futureIntensity + futureDuration)
+            # Represents the overall value of the cell to the neighbor agent
             neighborCellValue = (certainty * proximity) * (currentReward + (discount * futureReward))
 
             # If not the agent moving, consider these as opportunity costs
@@ -173,6 +174,14 @@ class Bentham(agent.Agent):
                 if cell == neighbor.cell and neighborCellValue > -1:
                     neighborCellValue = -1
 
+            if self.decisionModelRacismFactor >= 0:
+                neighborRace = neighbor.findRace()
+                if neighborRace == self.race or neighborRace in self.inGroupRaces:
+                    # If same race or in-group race, multiply by racism factor
+                    neighborCellValue *= self.decisionModelRacismFactor
+                else:
+                    # If different race and not in-group, multiply by inverse racism factor
+                    neighborCellValue *= 1 - self.decisionModelRacismFactor
             if self.decisionModelTribalFactor >= 0:
                 if neighbor.findTribe() == self.findTribe():
                     neighborCellValue *= self.decisionModelTribalFactor
@@ -193,6 +202,10 @@ class Bentham(agent.Agent):
         if self.selfishnessFactor < 0:
             return {"happiness": happiness, "unhappiness": unhappiness}
         return cellValue
+
+    def findGroupBiasCellWelfareModifier(self, cell):
+        # Bentham class handles group bias in findEthicalValueOfCell
+        return 1
 
     def updateValues(self):
         if self.dynamicSelfishnessFactor != 0:
