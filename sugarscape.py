@@ -507,11 +507,11 @@ class Sugarscape:
         numRaces = self.configuration["environmentMaxRaces"]
         if numRaces == 1:
             return [race for i in range(tagStringLength)]
-        majorityBits = math.floor(tagStringLength / 2) + 1
-        assignedRaceBits = random.randint(majorityBits, tagStringLength)
-        otherRaceBits = tagStringLength - assignedRaceBits
+        majorityTags = math.floor(tagStringLength / 2) + 1
+        assignedRaceTags = random.randint(majorityTags, tagStringLength)
+        otherRaceTags = tagStringLength - assignedRaceTags
         otherRaceOptions = [r for r in range(numRaces) if r != race]
-        tags = [race for i in range(assignedRaceBits)] + [random.choice(otherRaceOptions) for i in range(otherRaceBits)]
+        tags = [race for i in range(assignedRaceTags)] + [random.choice(otherRaceOptions) for i in range(otherRaceTags)]
         random.shuffle(tags)
         return tags
 
