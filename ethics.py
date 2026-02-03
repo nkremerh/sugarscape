@@ -164,7 +164,6 @@ class Bentham(agent.Agent):
 
             currentReward = extent * (intensity + duration)
             futureReward = futureExtent * (futureIntensity + futureDuration)
-            # Represents the overall value of the cell to the neighbor agent
             neighborCellValue = (certainty * proximity) * (currentReward + (discount * futureReward))
 
             # If not the agent moving, consider these as opportunity costs
