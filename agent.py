@@ -963,10 +963,10 @@ class Agent:
             # increase value of cell according to proportion of in-group neighbors
             if self.decisionModelRacismFactor > 0:
                 raceProportion = inGroupRace / len(potentialNeighbors)
-                modifier *= (1 + (self.decisionModelRacismFactor * raceProportion))
+                modifier *= (1 + (self.decisionModelRacismFactor * raceProportion) + ((1 - self.decisionModelRacismFactor) * (1 - raceProportion)))
             if self.decisionModelTribalFactor > 0:
                 tribeProportion = inGroupTribe / len(potentialNeighbors)
-                modifier *= (1 + (self.decisionModelTribalFactor * tribeProportion))
+                modifier *= (1 + (self.decisionModelTribalFactor * tribeProportion) + ((1 - self.decisionModelTribalFactor) * (1 - tribeProportion)))
         return modifier
 
     def findHammingDistanceInTags(self, neighbor):
