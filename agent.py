@@ -960,7 +960,7 @@ class Agent:
                 neighborTribe = neighbor.findTribe()
                 if neighborTribe == self.findTribe():
                     inGroupTribe += 1
-            # increase value of cell according to proportion of in-group neighbors
+            # Increase value of cell according to proportion of in-group neighbors
             if self.decisionModelRacismFactor > 0:
                 raceProportion = inGroupRace / len(potentialNeighbors)
                 modifier *= (1 + (self.decisionModelRacismFactor * raceProportion) + ((1 - self.decisionModelRacismFactor) * (1 - raceProportion)))
@@ -1050,7 +1050,7 @@ class Agent:
     def findRace(self):
         if self.racialTags == None:
             return None
-        # race is determined by most common element in racialTags
+        # Race is determined by most common element in racialTags
         return max(set(self.racialTags), key=self.racialTags.count)
 
     def findRetaliatorsInVision(self):
@@ -1368,7 +1368,7 @@ class Agent:
             welfare = self.findWelfare(((cell.sugar + welfarePreySugar) / (1 + cell.pollution)), ((cell.spice + welfarePreySpice) / (1 + cell.pollution)))
 
             if self.decisionModelRacismFactor >= 0 or self.decisionModelTribalFactor >= 0:
-                # modify welfare according to group preferences
+                # Modify welfare according to group preferences
                 welfare *= self.findGroupBiasCellWelfareModifier(cell)
 
             # Avoid attacking agents protected via retaliation
