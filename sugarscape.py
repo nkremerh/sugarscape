@@ -26,6 +26,7 @@ class Sugarscape:
         environmentConfiguration = {"equator": configuration["environmentEquator"],
                                     "globalMaxSpice": configuration["environmentMaxSpice"],
                                     "globalMaxSugar": configuration["environmentMaxSugar"],
+                                    "inGroupRaces": configuration["environmentInGroupRaces"],
                                     "maxCombatLoot": configuration["environmentMaxCombatLoot"],
                                     "neighborhoodMode": configuration["neighborhoodMode"],
                                     "pollutionDiffusionDelay": configuration["environmentPollutionDiffusionDelay"],
@@ -561,7 +562,6 @@ class Sugarscape:
         fertilityFactor = configs["agentFertilityFactor"]
         follower = configs["agentLeader"]
         immuneSystemLength = configs["agentImmuneSystemLength"]
-        inGroupRaces = configs["agentInGroupRaces"]
         inheritancePolicy = configs["agentInheritancePolicy"]
         lendingFactor = configs["agentLendingFactor"]
         loanDuration = configs["agentLoanDuration"]
@@ -699,7 +699,7 @@ class Sugarscape:
         random.shuffle(decisionModels)
         for i in range(numAgents):
             agentEndowment = {"seed": self.seed, "sex": sexes[i], "racialTags": racialTags.pop(), "tags": tags.pop(), "tagPreferences": tagPreferences, "tagging": tagging,
-                              "immuneSystem": immuneSystems.pop(), "inGroupRaces": inGroupRaces, "inheritancePolicy": inheritancePolicy,
+                              "immuneSystem": immuneSystems.pop(), "inheritancePolicy": inheritancePolicy,
                               "decisionModel": decisionModels.pop(), "decisionModelLookaheadFactor": decisionModelLookaheadFactor,
                               "movementMode": movementMode, "neighborhoodMode": neighborhoodMode, "visionMode": visionMode,
                               "depressionFactor": depressionFactors[i], "follower": follower}
@@ -1670,11 +1670,11 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
         configuration["environmentMaxTribes"] = maxColors
 
-    # Ensure that no race in agentInGroupRaces is greater than environmentMaxRaces
-    if any(race >= configuration["environmentMaxRaces"] for race in configuration["agentInGroupRaces"]):
+    # Ensure that no race in environmentInGroupRaces is greater than environmentMaxRaces
+    if any(race >= configuration["environmentMaxRaces"] for race in configuration["environmentInGroupRaces"]):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have in-group races greater than total races. Removing in-group races greater than or equal to {configuration['environmentMaxRaces']}")
-        configuration["agentInGroupRaces"] = [race for race in configuration["agentInGroupRaces"] if race < configuration["environmentMaxRaces"]]
+        configuration["environmentInGroupRaces"] = [race for race in configuration["environmentInGroupRaces"] if race < configuration["environmentMaxRaces"]]
 
     # Ensure the most number of starting diseases per agent is equal to total starting diseases in the environment
     if configuration["startingDiseasesPerAgent"] != [0, 0]:
@@ -1753,7 +1753,6 @@ if __name__ == "__main__":
                      "agentFemaleFertilityAge": [0, 0],
                      "agentFertilityFactor": [0, 0],
                      "agentImmuneSystemLength": 0,
-                     "agentInGroupRaces": [],
                      "agentInheritancePolicy": "none",
                      "agentLeader": False,
                      "agentLendingFactor": [0, 0],
@@ -1800,6 +1799,7 @@ if __name__ == "__main__":
                      "environmentEquator": -1,
                      "environmentFile": None,
                      "environmentHeight": 50,
+                     "environmentInGroupRaces": [],
                      "environmentMaxCombatLoot": 0,
                      "environmentMaxRaces": 0,
                      "environmentMaxSpice": 0,

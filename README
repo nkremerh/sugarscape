@@ -198,11 +198,6 @@ agentImmuneSystemLength: int
     Set the length of agent immune system tags to integer length.
     Default: 0
 
-agentInGroupRaces: [int, ...]
-    Set which races are treated as in-group and do not experience racism from other agents.
-    Note: Including all races neutralizes racism.
-    Default: []
-
 agentInheritancePolicy: string
     Set wealth inheritance policy on agent death to given string.
     Options: "children". "daughters", "friends", "none", "sons"
@@ -404,6 +399,11 @@ environmentFile: string
 environmentHeight: int
     Set the height in cells of the Sugarscape environment.
     Default: 50
+
+environmentInGroupRaces: [int, ...]
+    Set which races are treated as in-group and do not experience racism from other agents.
+    Note: Including all races neutralizes racism.
+    Default: []
 
 environmentMaxCombatLoot: float
     Set the maximum reward agents receive from winning combat.
