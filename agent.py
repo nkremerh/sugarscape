@@ -29,7 +29,6 @@ class Agent:
         self.leader = not self.follower
         self.immuneSystem = configuration["immuneSystem"]
         self.infertilityAge = configuration["infertilityAge"]
-        self.inGroupRaces = configuration["inGroupRaces"]
         self.inheritancePolicy = configuration["inheritancePolicy"]
         self.lendingFactor = configuration["lendingFactor"]
         self.loanDuration = configuration["loanDuration"]
@@ -812,7 +811,7 @@ class Agent:
         "selfishnessFactor" : [self.selfishnessFactor, mate.selfishnessFactor],
         "temperanceFactor" : [self.temperanceFactor, mate.temperanceFactor]
         }
-        childEndowment = {"seed": self.seed, "follower": self.follower, "inGroupRaces": self.inGroupRaces}
+        childEndowment = {"seed": self.seed, "follower": self.follower}
         randomNumberReset = random.getstate()
 
         # Map configuration to a random number via hash to make random number generation independent of iteration order
@@ -955,7 +954,7 @@ class Agent:
             inGroupRace, inGroupTribe = 0, 0
             for neighbor in potentialNeighbors:
                 neighborRace = neighbor.findRace()
-                if neighborRace == self.findRace() or neighborRace in self.inGroupRaces:
+                if neighborRace == self.findRace() or neighborRace in self.cell.environment.inGroupRaces:
                     inGroupRace += 1
                 neighborTribe = neighbor.findTribe()
                 if neighborTribe == self.findTribe():
