@@ -1672,7 +1672,7 @@ def verifyConfiguration(configuration):
 
     # Ensure that no race in environmentInGroupRaces is greater than environmentMaxRaces
     if any(race >= configuration["environmentMaxRaces"] for race in configuration["environmentInGroupRaces"]):
-        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
             print(f"Cannot have in-group races greater than total races. Removing in-group races greater than or equal to {configuration['environmentMaxRaces']}")
         configuration["environmentInGroupRaces"] = [race for race in configuration["environmentInGroupRaces"] if race < configuration["environmentMaxRaces"]]
 
