@@ -1566,25 +1566,21 @@ def verifyConfiguration(configuration):
     if configuration["agentDecisionModelRacismFactor"][0] < 0:
         if configuration["agentDecisionModelRacismFactor"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(
-                    f"Cannot have agent racism factor range of {configuration['agentDecisionModelRacismFactor']}. Disabling agent racism factor.")
+                print(f"Cannot have agent racism factor range of {configuration['agentDecisionModelRacismFactor']}. Disabling agent racism factor.")
         configuration["agentDecisionModelRacismFactor"] = [-1, -1]
     elif configuration["agentDecisionModelRacismFactor"][1] > 1:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(
-                f"Cannot have agent maximum racism factor of {configuration['agentDecisionModelRacismFactor'][1]}. Setting agent maximum racism factor to 1.0.")
+            print(f"Cannot have agent maximum racism factor of {configuration['agentDecisionModelRacismFactor'][1]}. Setting agent maximum racism factor to 1.0.")
         configuration["agentDecisionModelRacismFactor"][1] = 1
 
     if configuration["agentDecisionModelTribalFactor"][0] < 0:
         if configuration["agentDecisionModelTribalFactor"][1] != -1:
             if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-                print(
-                    f"Cannot have age tribal factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent tribal factor.")
+                print(f"Cannot have age tribal factor range of {configuration['agentDecisionModelTribalFactor']}. Disabling agent tribal factor.")
         configuration["agentDecisionModelTribalFactor"] = [-1, -1]
     elif configuration["agentDecisionModelTribalFactor"][1] > 1:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
-            print(
-                f"Cannot have agent maximum tribal factor of {configuration['agentDecisionModelTribalFactor'][1]}. Setting agent maximum tribal factor to 1.0.")
+            print(f"Cannot have agent maximum tribal factor of {configuration['agentDecisionModelTribalFactor'][1]}. Setting agent maximum tribal factor to 1.0.")
         configuration["agentDecisionModelTribalFactor"][1] = 1
 
     if configuration["agentMaxAge"][0] < 0:
@@ -1670,7 +1666,6 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide {configuration['environmentMaxTribes']} tribes. Allocating maximum of {maxColors}.")
         configuration["environmentMaxTribes"] = maxColors
 
-    # Ensure that no race in environmentInGroupRaces is greater than environmentMaxRaces
     if any(race >= configuration["environmentMaxRaces"] for race in configuration["environmentInGroupRaces"]):
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
             print(f"Cannot have in-group races greater than total races. Removing in-group races greater than or equal to {configuration['environmentMaxRaces']}")
