@@ -154,6 +154,11 @@ agentDecisionModels: [string, ...]
     Note: Adding "Dynamic" after some decision model names enforces dynamic selfishness.
     Default: ["none"]
 
+agentDecisionModelRacismFactor: [float, float]
+    Set how much agents prioritize the welfare of their own race or configured in-group races over others.
+    Note: Valid range is [0.0, 1.0], use -1 to disable.
+    Default: [-1, -1]
+
 agentDecisionModelTribalFactor: [float, float]
     Set how much agents prioritize the welfare of their own tribe members over others.
     Note: Valid range is [0.0, 1.0], use -1 to disable.
@@ -244,6 +249,10 @@ agentMovementMode: string
     Set the directionality used to figure out which cells an agent can move to.
     Options: "cardinal", "radial"
     Default: "cardinal"
+
+agentRacialTagStringLength: int
+    Set agent racial tags string length.
+    Default: 0
 
 agentReplacements: int
     Set maximum number of agents to replace in environment on agent death.
@@ -391,8 +400,17 @@ environmentHeight: int
     Set the height in cells of the Sugarscape environment.
     Default: 50
 
+environmentInGroupRaces: [int, ...]
+    Set which races are treated as in-group and do not experience racism from other agents.
+    Note: Including all races neutralizes racism.
+    Default: []
+
 environmentMaxCombatLoot: float
     Set the maximum reward agents receive from winning combat.
+    Default: 0
+
+environmentMaxRaces: int
+    Set the maximum number of races in the starting population.
     Default: 0
 
 environmentMaxSpice: int
