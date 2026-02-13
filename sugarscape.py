@@ -34,6 +34,7 @@ class Sugarscape:
                                     "pollutionTimeframe": configuration["environmentPollutionTimeframe"],
                                     "seasonalGrowbackDelay": configuration["environmentSeasonalGrowbackDelay"],
                                     "seasonInterval": configuration["environmentSeasonInterval"],
+                                    "sexistGroups": configuration["environmentSexistGroups"],
                                     "spiceConsumptionPollutionFactor": configuration["environmentSpiceConsumptionPollutionFactor"],
                                     "spiceProductionPollutionFactor": configuration["environmentSpiceProductionPollutionFactor"],
                                     "spiceRegrowRate": configuration["environmentSpiceRegrowRate"],
@@ -553,6 +554,7 @@ class Sugarscape:
         decisionModelLookaheadDiscount = configs["agentDecisionModelLookaheadDiscount"]
         decisionModelLookaheadFactor = configs["agentDecisionModelLookaheadFactor"]
         decisionModelRacismFactor = configs["agentDecisionModelRacismFactor"]
+        decisionModelSexismFactor = configs["agentDecisionModelSexismFactor"]
         decisionModelTribalFactor = configs["agentDecisionModelTribalFactor"]
         diseaseProtectionChance = configs["agentDiseaseProtectionChance"]
         dynamicSelfishnessFactor = configs["agentDynamicSelfishnessFactor"]
@@ -597,6 +599,7 @@ class Sugarscape:
                           "decisionModelFactor": {"endowments": [], "curr": decisionModelFactor[0], "min": decisionModelFactor[0], "max": decisionModelFactor[1]},
                           "decisionModelLookaheadDiscount": {"endowments": [], "curr": decisionModelLookaheadDiscount[0], "min": decisionModelLookaheadDiscount[0], "max": decisionModelLookaheadDiscount[1]},
                           "decisionModelRacismFactor": {"endowments": [], "curr": decisionModelRacismFactor[0], "min": decisionModelRacismFactor[0], "max": decisionModelRacismFactor[1]},
+                          "decisionModelSexismFactor": {"endowments": [], "curr": decisionModelSexismFactor[0], "min": decisionModelSexismFactor[0], "max": decisionModelSexismFactor[1]},
                           "decisionModelTribalFactor": {"endowments": [], "curr": decisionModelTribalFactor[0], "min": decisionModelTribalFactor[0], "max": decisionModelTribalFactor[1]},
                           "diseaseProtectionChance": {"endowments": [], "curr": diseaseProtectionChance[0], "min": diseaseProtectionChance[0], "max": diseaseProtectionChance[1]},
                           "dynamicSelfishnessFactor": {"endowments": [], "curr": dynamicSelfishnessFactor[0], "min": dynamicSelfishnessFactor[0], "max": dynamicSelfishnessFactor[1]},
@@ -1475,7 +1478,7 @@ def sortConfigurationTimeframes(configuration, timeframe):
     return config
 
 def verifyConfiguration(configuration):
-    negativesAllowed = ["agentDecisionModelRacismFactor", "agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
+    negativesAllowed = ["agentDecisionModelRacismFactor", "agentDecisionModelSexismFactor", "agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
     negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseFriendlinessPenalty", "diseaseHappinessPenalty", "diseaseMovementPenalty"]
     negativesAllowed += ["diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
     negativesAllowed += ["environmentEquator", "environmentPollutionDiffusionTimeframe", "environmentPollutionTimeframe", "environmentMaxSpice", "environmentMaxSugar"]
@@ -1572,6 +1575,18 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have agent maximum racism factor of {configuration['agentDecisionModelRacismFactor'][1]}. Setting agent maximum racism factor to 1.0.")
         configuration["agentDecisionModelRacismFactor"][1] = 1
+
+    if configuration["agentDecisionModelSexismFactor"][0] < 0:
+        if configuration["agentDecisionModelSexismFactor"][1] != -1:
+            if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+                print(
+                    f"Cannot have agent sexism factor range of {configuration['agentDecisionModelSexismFactor']}. Disabling agent sexism factor.")
+        configuration["agentDecisionModelSexismFactor"] = [-1, -1]
+    elif configuration["agentDecisionModelSexismFactor"][1] > 1:
+        if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
+            print(
+                f"Cannot have agent maximum sexism factor of {configuration['agentDecisionModelSexismFactor'][1]}. Setting agent maximum sexism factor to 1.0.")
+        configuration["agentDecisionModelSexismFactor"][1] = 1
 
     if configuration["agentDecisionModelTribalFactor"][0] < 0:
         if configuration["agentDecisionModelTribalFactor"][1] != -1:
@@ -1739,6 +1754,7 @@ if __name__ == "__main__":
                      "agentDecisionModelLookaheadDiscount": [0, 0],
                      "agentDecisionModelLookaheadFactor": [0],
                      "agentDecisionModelRacismFactor": [-1, -1],
+                     "agentDecisionModelSexismFactor": [-1, -1],
                      "agentDecisionModelTribalFactor": [-1, -1],
                      "agentDepressionPercentage": 0,
                      "agentDiseaseProtectionChance": [0.0, 0.0],
@@ -1806,6 +1822,7 @@ if __name__ == "__main__":
                      "environmentQuadrantSizeFactor": 1,
                      "environmentSeasonalGrowbackDelay": 0,
                      "environmentSeasonInterval": 0,
+                     "environmentSexistGroups": ["female", "male"],
                      "environmentSpiceConsumptionPollutionFactor": 0,
                      "environmentSpicePeaks": [[35, 35, 4], [15, 15, 4]],
                      "environmentSpiceProductionPollutionFactor": 0,

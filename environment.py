@@ -25,6 +25,7 @@ class Environment:
         self.seasonNorth = "wet" if configuration["seasonInterval"] > 0 else None
         self.seasonSouth = "dry" if configuration["seasonInterval"] > 0 else None
         self.seed = configuration["sugarscapeSeed"]
+        self.sexistGroups = configuration["sexistGroups"]
         self.spiceConsumptionPollutionFactor = configuration["spiceConsumptionPollutionFactor"]
         self.spiceProductionPollutionFactor = configuration["spiceProductionPollutionFactor"]
         self.spiceRegrowRate = configuration["spiceRegrowRate"]
