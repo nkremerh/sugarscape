@@ -10,6 +10,7 @@ class Environment:
         self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
         self.globalMaxSpice = configuration["globalMaxSpice"]
         self.globalMaxSugar = configuration["globalMaxSugar"]
+        self.inGroupRaces = configuration["inGroupRaces"]
         self.maxCombatLoot = configuration["maxCombatLoot"]
         self.neighborhoodMode = configuration["neighborhoodMode"]
         self.pollutionDiffusionCountdown = configuration["pollutionDiffusionDelay"]
