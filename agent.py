@@ -14,6 +14,7 @@ class Agent:
         self.aggressionFactor = configuration["aggressionFactor"]
         self.baseInterestRate = configuration["baseInterestRate"]
         self.decisionModel = configuration["decisionModel"]
+        self.decisionModelAgeismFactor = configuration["decisionModelAgeismFactor"]
         self.decisionModelFactor = configuration["decisionModelFactor"]
         self.decisionModelLookaheadDiscount = configuration["decisionModelLookaheadDiscount"]
         self.decisionModelLookaheadFactor = configuration["decisionModelLookaheadFactor"]
@@ -806,6 +807,7 @@ class Agent:
         # These endowments should always come from the same parent for sensible outcomes
         pairedEndowments = {
         "decisionModel": [self.decisionModel, mate.decisionModel],
+        "decisionModelAgeismFactor": [self.decisionModelAgeismFactor, mate.decisionModelAgeismFactor],
         "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
         "decisionModelLookaheadDiscount": [self.decisionModelLookaheadDiscount, mate.decisionModelLookaheadDiscount],
         "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
@@ -957,10 +959,24 @@ class Agent:
         potentialNeighbors = cell.findNeighborAgents()
         modifier = 1
         if len(potentialNeighbors) > 0:
+            inGroupAge = 0
             inGroupRace = 0
             inGroupSex = 0
             inGroupTribe = 0
             for neighbor in potentialNeighbors:
+                neighborAge = neighbor.age
+                inRelativeAgeWindow = abs(neighborAge - self.age) <= self.cell.environment.inGroupAgeRelativeWindow
+                minAgeRange, maxAgeRange = self.cell.environment.inGroupAgeAbsoluteRange
+                if self.age < minAgeRange:
+                    inAbsoluteAgeRange = neighborAge <= maxAgeRange
+                elif self.age > maxAgeRange:
+                    inAbsoluteAgeRange = neighborAge >= minAgeRange
+                else:
+                    inAbsoluteAgeRange = minAgeRange <= neighborAge <= maxAgeRange
+                # Neighbor is considered in-group for age if within relative or absolute age range
+                if inRelativeAgeWindow or inAbsoluteAgeRange:
+                    inGroupAge += 1
+
                 neighborRace = neighbor.findRace()
                 if neighborRace == self.findRace() or neighborRace in self.cell.environment.inGroupRaces:
                     inGroupRace += 1
@@ -968,7 +984,11 @@ class Agent:
                     inGroupSex += 1
                 if neighbor.findTribe() == self.findTribe():
                     inGroupTribe += 1
+            
             # Increase value of cell according to proportion of in-group neighbors
+            if self.decisionModelAgeismFactor > 0:
+                ageProportion = inGroupAge / len(potentialNeighbors)
+                modifier *= (0.5 + (self.decisionModelAgeismFactor * ageProportion) + ((1 - self.decisionModelAgeismFactor) * (1 - ageProportion)))
             if self.decisionModelRacismFactor > 0:
                 raceProportion = inGroupRace / len(potentialNeighbors)
                 # TODO: Detetermine whether 0.5 is the correct scaling factor
@@ -1133,7 +1153,7 @@ class Agent:
     def findValueOfCell(self, cell, preySugar, preySpice):
         # Modify value of cell relative to the metabolism needs of the agent
         value = self.findWelfare(((cell.sugar + preySugar) / (1 + cell.pollution)), ((cell.spice + preySpice) / (1 + cell.pollution)))
-        if self.decisionModelRacismFactor >= 0 or (self.sex in self.cell.environment.sexistGroups and self.decisionModelSexismFactor >= 0) or self.decisionModelTribalFactor >= 0:
+        if self.decisionModelAgeismFactor >= 0 or self.decisionModelRacismFactor >= 0 or (self.sex in self.cell.environment.sexistGroups and self.decisionModelSexismFactor >= 0) or self.decisionModelTribalFactor >= 0:
             # Modify welfare according to group preferences
             value *= self.findGroupBiasCellWelfareModifier(cell)
         return value

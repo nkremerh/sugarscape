@@ -135,6 +135,11 @@ agentBaseInterestRate: [float, float]
     Set the interest rate for an agent's lending as a percentage.
     Default: [0.0, 0.0]
 
+agentDecisionModelAgeismFactor: [float, float]
+    Set how much agents prioritize the welfare of agents close in age over agents farther in age.
+    Note: Valid range is [0.0, 1.0], use -1 to disable.
+    Default: [-1, -1]
+
 agentDecisionModelLookaheadDiscount: [float, float]
     Set the agent's discount applied to considering possible rewards in future timesteps.
     Note: This feature is used in agent decision models besides the "none" and "rawSugarscape" models.
@@ -407,6 +412,17 @@ environmentFile: string
 environmentHeight: int
     Set the height in cells of the Sugarscape environment.
     Default: 50
+
+environmentInGroupAgeAbsoluteRange: [int, int]
+    Set a range within which agents are considered in-group for age, even if outside of environmentInGroupAgeRelativeWindow.
+    Note: Valid range is only positive values, use -1 to disable.
+    Note: If disabled with -1, agents will only use environmentInGroupAgeRelativeWindow to determine age grouping of other agents.
+    Default: [-1, -1]
+
+environmentInGroupAgeRelativeWindow: int
+    Set a range where agents with age within +/- of this variable are considered in-group for age, even if outside of environmentInGroupAgeAbsoluteRange.
+    Note: Use -1 to disable. If disabled, agents will only use environmentInGroupAgeAbsoluteRange to determine age grouping of other agents.
+    Default: -1
 
 environmentInGroupRaces: [int, ...]
     Set which races are treated as in-group and do not experience racism from other agents.
