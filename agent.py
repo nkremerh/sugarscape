@@ -988,17 +988,17 @@ class Agent:
             # Increase value of cell according to proportion of in-group neighbors
             if self.decisionModelAgeismFactor > 0:
                 ageProportion = inGroupAge / len(potentialNeighbors)
-                modifier *= (0.5 + (self.decisionModelAgeismFactor * ageProportion) + ((1 - self.decisionModelAgeismFactor) * (1 - ageProportion)))
+                modifier *= (1 + (self.decisionModelAgeismFactor * ageProportion) + ((1 - self.decisionModelAgeismFactor) * (1 - ageProportion)))
             if self.decisionModelRacismFactor > 0:
                 raceProportion = inGroupRace / len(potentialNeighbors)
-                # TODO: Detetermine whether 0.5 is the correct scaling factor
-                modifier *= (0.5 + (self.decisionModelRacismFactor * raceProportion) + ((1 - self.decisionModelRacismFactor) * (1 - raceProportion)))
+                # TODO: Detetermine the correct scaling factor
+                modifier *= (1 + (self.decisionModelRacismFactor * raceProportion) + ((1 - self.decisionModelRacismFactor) * (1 - raceProportion)))
             if self.sex in self.cell.environment.sexistGroups and self.decisionModelSexismFactor > 0:
                 sexProportion = inGroupSex / len(potentialNeighbors)
-                modifier *= (0.5 + (self.decisionModelSexismFactor * sexProportion) + ((1 - self.decisionModelSexismFactor) * (1 - sexProportion)))
+                modifier *= (1 + (self.decisionModelSexismFactor * sexProportion) + ((1 - self.decisionModelSexismFactor) * (1 - sexProportion)))
             if self.decisionModelTribalFactor > 0:
                 tribeProportion = inGroupTribe / len(potentialNeighbors)
-                modifier *= (0.5 + (self.decisionModelTribalFactor * tribeProportion) + ((1 - self.decisionModelTribalFactor) * (1 - tribeProportion)))
+                modifier *= (1 + (self.decisionModelTribalFactor * tribeProportion) + ((1 - self.decisionModelTribalFactor) * (1 - tribeProportion)))
         return modifier
 
     def findHammingDistanceInTags(self, neighbor):
