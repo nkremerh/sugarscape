@@ -1700,12 +1700,12 @@ def verifyConfiguration(configuration):
         configuration["environmentMaxTribes"] = maxColors
 
     # Ensure no negative value for environmentInGroupAgeAbsoluteRange
-    # TODO: modify -1 to represent minimum age or maximum age
-    # if configuration["environmentInGroupAgeAbsoluteRange"][0] < 0:
-    #     if configuration["environmentInGroupAgeAbsoluteRange"][1] != -1:
-    #         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-    #             print(f"Cannot have environment in-group age cutoff range of {configuration['environmentInGroupAgeAbsoluteRange']}. Disabling environment in-group age cutoff.")
-    #     configuration["environmentInGroupAgeAbsoluteRange"] = [-1, -1]
+    for ageRange in configuration["environmentInGroupAgeAbsoluteRange"][:]:
+        minAge, maxAge = ageRange
+        if minAge < -1 or maxAge < -1 or (minAge > maxAge and maxAge != -1):
+            if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                print(f"Cannot have environment in-group age cutoff range of [{minAge}, {maxAge}]. Removing range from list.")
+            configuration["environmentInGroupAgeAbsoluteRange"].remove(ageRange)
 
     # Ensure no negative value for environmentInGroupAgeRelativeWindow
     if configuration["environmentInGroupAgeRelativeWindow"] < 0:

@@ -970,7 +970,7 @@ class Agent:
                 inRelativeAgeWindow = abs(neighborAge - self.age) <= self.inGroupAgeRelativeWindow
                 inAbsoluteAgeRange = False
                 for minAge, maxAge in self.inGroupAgeAbsoluteRange:
-                    if minAge <= neighborAge <= maxAge:
+                    if neighborAge >= minAge and (neighborAge <= maxAge or maxAge == -1):
                         inAbsoluteAgeRange = True
                         break
                 # Neighbor is considered in-group for age if within relative or absolute age range
