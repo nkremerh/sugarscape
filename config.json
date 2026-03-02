@@ -77,7 +77,7 @@
         "environmentEquator": -1,
         "environmentFile": null,
         "environmentHeight": 50,
-        "environmentInGroupAgeAbsoluteRange": [25, 50],
+        "environmentInGroupAgeAbsoluteRange": [[0, 10], [60, 100]],
         "environmentInGroupAgeRelativeWindow": 10,
         "environmentInGroupRaces": [0],
         "environmentMaxCombatLoot": 2,

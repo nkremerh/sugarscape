@@ -1700,11 +1700,12 @@ def verifyConfiguration(configuration):
         configuration["environmentMaxTribes"] = maxColors
 
     # Ensure no negative value for environmentInGroupAgeAbsoluteRange
-    if configuration["environmentInGroupAgeAbsoluteRange"][0] < 0:
-        if configuration["environmentInGroupAgeAbsoluteRange"][1] != -1:
-            if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
-                print(f"Cannot have environment in-group age cutoff range of {configuration['environmentInGroupAgeAbsoluteRange']}. Disabling environment in-group age cutoff.")
-        configuration["environmentInGroupAgeAbsoluteRange"] = [-1, -1]
+    # TODO: modify -1 to represent minimum age or maximum age
+    # if configuration["environmentInGroupAgeAbsoluteRange"][0] < 0:
+    #     if configuration["environmentInGroupAgeAbsoluteRange"][1] != -1:
+    #         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+    #             print(f"Cannot have environment in-group age cutoff range of {configuration['environmentInGroupAgeAbsoluteRange']}. Disabling environment in-group age cutoff.")
+    #     configuration["environmentInGroupAgeAbsoluteRange"] = [-1, -1]
 
     # Ensure no negative value for environmentInGroupAgeRelativeWindow
     if configuration["environmentInGroupAgeRelativeWindow"] < 0:
@@ -1714,7 +1715,7 @@ def verifyConfiguration(configuration):
             configuration["environmentInGroupAgeRelativeWindow"] = -1
     
     # If both environmentInGroupAgeAbsoluteRange and environmentInGroupAgeRelativeWindow are disabled, ageism must be disabled since there is no mechanism for determining in-grouping
-    if configuration["environmentInGroupAgeAbsoluteRange"] == [-1, -1] and configuration["environmentInGroupAgeRelativeWindow"] == -1 and configuration["agentDecisionModelAgeismFactor"] != [-1, -1]:
+    if configuration["environmentInGroupAgeAbsoluteRange"] == [] and configuration["environmentInGroupAgeRelativeWindow"] == -1 and configuration["agentDecisionModelAgeismFactor"] != [-1, -1]:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot have ageism without in-grouping mechanism. Disabling agentDecisionModelAgeismFactor")
         configuration["agentDecisionModelAgeismFactor"] = [-1, -1]
@@ -1850,7 +1851,7 @@ if __name__ == "__main__":
                      "environmentEquator": -1,
                      "environmentFile": None,
                      "environmentHeight": 50,
-                     "environmentInGroupAgeAbsoluteRange": [-1, -1],
+                     "environmentInGroupAgeAbsoluteRange": [],
                      "environmentInGroupAgeRelativeWindow": -1,
                      "environmentInGroupRaces": [],
                      "environmentMaxCombatLoot": 0,
