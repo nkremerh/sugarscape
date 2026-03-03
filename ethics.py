@@ -194,7 +194,7 @@ class Bentham(agent.Agent):
 
             if self.decisionModelAgeismFactor >= 0:
                 neighborAge = neighbor.age
-                inRelativeAgeWindow = abs(neighborAge - self.age) <= self.inGroupAgeRelativeWindow
+                inRelativeAgeWindow = abs(neighborAge - self.age) <= self.cell.environment.inGroupAgeRelativeWindow
                 inAbsoluteAgeRange = False
                 for minAge, maxAge in self.inGroupAgeAbsoluteRange:
                     if neighborAge >= minAge and (neighborAge <= maxAge or maxAge == -1):

@@ -32,7 +32,6 @@ class Agent:
         self.leader = not self.follower
         self.immuneSystem = configuration["immuneSystem"]
         self.infertilityAge = configuration["infertilityAge"]
-        self.inGroupAgeRelativeWindow = cell.environment.inGroupAgeRelativeWindow
         self.inGroupAgeAbsoluteRange = cell.environment.inGroupAgeAbsoluteRange
         self.inheritancePolicy = configuration["inheritancePolicy"]
         self.lendingFactor = configuration["lendingFactor"]
@@ -967,7 +966,7 @@ class Agent:
             inGroupTribe = 0
             for neighbor in potentialNeighbors:
                 neighborAge = neighbor.age
-                inRelativeAgeWindow = abs(neighborAge - self.age) <= self.inGroupAgeRelativeWindow
+                inRelativeAgeWindow = abs(neighborAge - self.age) <= self.cell.environment.inGroupAgeRelativeWindow
                 inAbsoluteAgeRange = False
                 for minAge, maxAge in self.inGroupAgeAbsoluteRange:
                     if neighborAge >= minAge and (neighborAge <= maxAge or maxAge == -1):
