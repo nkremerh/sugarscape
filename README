@@ -414,14 +414,14 @@ environmentHeight: int
     Default: 50
 
 environmentInGroupAgeAbsoluteRange: [[int, int], ...]
-    Set range(s) within which agents are considered in-group for age, even if outside of environmentInGroupAgeRelativeWindow.
-    Note: Use -1 to represent minimum age or maximum age possible for agents.
-    Note: Disable with empty list. If disabled, agents will only use environmentInGroupAgeRelativeWindow to determine age grouping of other agents.
+    Set specific range(s) within which agents are considered in-group for age.
+    Note: A value of -1 as the second element of an age range sets the value to the maximum possible age for agents.
+    Note: Providing an empty list disables in-groups defined by specific age ranges.
     Default: []
 
 environmentInGroupAgeRelativeWindow: int
-    Set a range where agents with age within +/- of this variable are considered in-group for age, even if outside of environmentInGroupAgeAbsoluteRange.
-    Note: Use -1 to disable. If disabled, agents will only use environmentInGroupAgeAbsoluteRange to determine age grouping of other agents.
+    Set the value for which agents will consider others in the in-group for age if the other agent is within that number of timesteps in age to the agent.
+    Note: Use -1 to disable.
     Default: -1
 
 environmentInGroupRaces: [int, ...]
