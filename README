@@ -413,14 +413,14 @@ environmentHeight: int
     Set the height in cells of the Sugarscape environment.
     Default: 50
 
-environmentInGroupAgeAbsoluteRange: [[int, int], ...]
+environmentAgeistAbsoluteRanges: [[int, int], ...]
     Set specific range(s) within which agents are considered in-group for age.
     Note: A value of -1 as the second element of an age range sets the value to the maximum possible age for agents.
     Note: Providing an empty list disables in-groups defined by specific age ranges.
     Default: []
 
-environmentInGroupAgeRelativeWindow: int
-    Set the value for which agents will consider others in the in-group for age if the other agent is within that number of timesteps in age to the agent.
+environmentAgeistRelativeRange: int
+    Set the value for which agents are considered in-group for age when within the specified number of timesteps in age to another agent.
     Note: Use -1 to disable.
     Default: -1
 
