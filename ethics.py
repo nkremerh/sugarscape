@@ -192,6 +192,20 @@ class Bentham(agent.Agent):
                 if cell == neighbor.cell and neighborCellValue > -1:
                     neighborCellValue = -1
 
+            if self.decisionModelAgeismFactor >= 0:
+                neighborAge = neighbor.age
+                inRelativeAgeWindow = abs(neighborAge - self.age) <= self.cell.environment.inGroupAgeRelativeRange
+                inAbsoluteAgeRange = False
+                for minAge, maxAge in self.cell.environment.inGroupAgeAbsoluteRanges:
+                    if neighborAge >= minAge and (neighborAge <= maxAge or maxAge == -1):
+                        inAbsoluteAgeRange = True
+                        break
+                # Neighbor is considered in-group for age if within relative or absolute age range
+                if inRelativeAgeWindow or inAbsoluteAgeRange:
+                    neighborCellValue *= self.decisionModelAgeismFactor
+                else:
+                    neighborCellValue *= 1 - self.decisionModelAgeismFactor
+            
             if self.decisionModelRacismFactor >= 0:
                 neighborRace = neighbor.findRace()
                 if neighborRace == self.race or neighborRace in self.cell.environment.inGroupRaces:

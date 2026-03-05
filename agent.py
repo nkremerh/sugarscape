@@ -14,6 +14,7 @@ class Agent:
         self.aggressionFactor = configuration["aggressionFactor"]
         self.baseInterestRate = configuration["baseInterestRate"]
         self.decisionModel = configuration["decisionModel"]
+        self.decisionModelAgeismFactor = configuration["decisionModelAgeismFactor"]
         self.decisionModelFactor = configuration["decisionModelFactor"]
         self.decisionModelLookaheadDiscount = configuration["decisionModelLookaheadDiscount"]
         self.decisionModelLookaheadFactor = configuration["decisionModelLookaheadFactor"]
@@ -806,6 +807,7 @@ class Agent:
         # These endowments should always come from the same parent for sensible outcomes
         pairedEndowments = {
         "decisionModel": [self.decisionModel, mate.decisionModel],
+        "decisionModelAgeismFactor": [self.decisionModelAgeismFactor, mate.decisionModelAgeismFactor],
         "decisionModelFactor": [self.decisionModelFactor, mate.decisionModelFactor],
         "decisionModelLookaheadDiscount": [self.decisionModelLookaheadDiscount, mate.decisionModelLookaheadDiscount],
         "decisionModelLookaheadFactor": [self.decisionModelLookaheadFactor, mate.decisionModelLookaheadFactor],
@@ -957,10 +959,22 @@ class Agent:
         potentialNeighbors = cell.findNeighborAgents()
         modifier = 1
         if len(potentialNeighbors) > 0:
+            inGroupAge = 0
             inGroupRace = 0
             inGroupSex = 0
             inGroupTribe = 0
             for neighbor in potentialNeighbors:
+                neighborAge = neighbor.age
+                inRelativeAgeRange = abs(neighborAge - self.age) <= self.cell.environment.inGroupAgeRelativeRange
+                inAbsoluteAgeRanges = False
+                for minAge, maxAge in self.cell.environment.inGroupAgeAbsoluteRanges:
+                    if neighborAge >= minAge and (neighborAge <= maxAge or maxAge == -1):
+                        inAbsoluteAgeRanges = True
+                        break
+                # Neighbor is considered in-group for age if within relative or absolute age range
+                if inRelativeAgeRange or inAbsoluteAgeRanges:
+                    inGroupAge += 1
+
                 neighborRace = neighbor.findRace()
                 if neighborRace == self.findRace() or neighborRace in self.cell.environment.inGroupRaces:
                     inGroupRace += 1
@@ -968,17 +982,21 @@ class Agent:
                     inGroupSex += 1
                 if neighbor.findTribe() == self.findTribe():
                     inGroupTribe += 1
+            
             # Increase value of cell according to proportion of in-group neighbors
+            if self.decisionModelAgeismFactor > 0:
+                ageProportion = inGroupAge / len(potentialNeighbors)
+                modifier *= (1 + (self.decisionModelAgeismFactor * ageProportion) + ((1 - self.decisionModelAgeismFactor) * (1 - ageProportion)))
             if self.decisionModelRacismFactor > 0:
                 raceProportion = inGroupRace / len(potentialNeighbors)
-                # TODO: Detetermine whether 0.5 is the correct scaling factor
-                modifier *= (0.5 + (self.decisionModelRacismFactor * raceProportion) + ((1 - self.decisionModelRacismFactor) * (1 - raceProportion)))
+                # TODO: Detetermine the correct scaling factor
+                modifier *= (1 + (self.decisionModelRacismFactor * raceProportion) + ((1 - self.decisionModelRacismFactor) * (1 - raceProportion)))
             if self.sex in self.cell.environment.sexistGroups and self.decisionModelSexismFactor > 0:
                 sexProportion = inGroupSex / len(potentialNeighbors)
-                modifier *= (0.5 + (self.decisionModelSexismFactor * sexProportion) + ((1 - self.decisionModelSexismFactor) * (1 - sexProportion)))
+                modifier *= (1 + (self.decisionModelSexismFactor * sexProportion) + ((1 - self.decisionModelSexismFactor) * (1 - sexProportion)))
             if self.decisionModelTribalFactor > 0:
                 tribeProportion = inGroupTribe / len(potentialNeighbors)
-                modifier *= (0.5 + (self.decisionModelTribalFactor * tribeProportion) + ((1 - self.decisionModelTribalFactor) * (1 - tribeProportion)))
+                modifier *= (1 + (self.decisionModelTribalFactor * tribeProportion) + ((1 - self.decisionModelTribalFactor) * (1 - tribeProportion)))
         return modifier
 
     def findHammingDistanceInTags(self, neighbor):
@@ -1133,7 +1151,7 @@ class Agent:
     def findValueOfCell(self, cell, preySugar, preySpice):
         # Modify value of cell relative to the metabolism needs of the agent
         value = self.findWelfare(((cell.sugar + preySugar) / (1 + cell.pollution)), ((cell.spice + preySpice) / (1 + cell.pollution)))
-        if self.decisionModelRacismFactor >= 0 or (self.sex in self.cell.environment.sexistGroups and self.decisionModelSexismFactor >= 0) or self.decisionModelTribalFactor >= 0:
+        if self.decisionModelAgeismFactor >= 0 or self.decisionModelRacismFactor >= 0 or (self.sex in self.cell.environment.sexistGroups and self.decisionModelSexismFactor >= 0) or self.decisionModelTribalFactor >= 0:
             # Modify welfare according to group preferences
             value *= self.findGroupBiasCellWelfareModifier(cell)
         return value
