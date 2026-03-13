@@ -287,9 +287,9 @@ class Agent:
             prey.spice -= spiceLoot
             prey.doDeath("combat")
             sugarscape = self.cell.environment.sugarscape
-            if sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup):
+            if sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(prey, sugarscape.experimentalGroup):
                 self.combatWithExperimentalGroup += 1
-            elif sugarscape.experimentalGroup != None and prey.isInGroup(sugarscape.experimentalGroup, True):
+            elif sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(prey, sugarscape.experimentalGroup, True):
                 self.combatWithControlGroup += 1
         self.gotoCell(cell)
 
@@ -353,9 +353,9 @@ class Agent:
             if neighbor.isInfectedWithDisease(disease.ID) == True:
                 diseasesSpread += 1
             sugarscape = self.cell.environment.sugarscape
-            if sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup):
+            if sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(neighbor, sugarscape.experimentalGroup):
                 self.diseaseWithExperimentalGroup += 1
-            elif sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup, True):
+            elif sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(neighbor, sugarscape.experimentalGroup, True):
                 self.diseaseWithControlGroup += 1
         if diseasesSpread > 0:
             self.lastSpreadDiseaseTimestep = self.timestep
@@ -474,9 +474,9 @@ class Agent:
                 self.addLoanToAgent(borrower, self.lastMovedTimestep, sugarLoanPrincipal, sugarLoanAmount, spiceLoanPrincipal, spiceLoanAmount, self.loanDuration)
                 loans += 1
                 sugarscape = self.cell.environment.sugarscape
-                if sugarscape.experimentalGroup != None and borrower.isInGroup(sugarscape.experimentalGroup):
+                if sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(borrower, sugarscape.experimentalGroup):
                     self.lendingWithExperimentalGroup += 1
-                elif sugarscape.experimentalGroup != None and borrower.isInGroup(sugarscape.experimentalGroup, True):
+                elif sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(borrower, sugarscape.experimentalGroup, True):
                     self.lendingWithControlGroup += 1
         if loans > 0:
             self.lastLendedTimestep = self.timestep
@@ -545,9 +545,9 @@ class Agent:
                     if neighbor not in mates:
                         mates.append(neighbor)
                     sugarscape = self.cell.environment.sugarscape
-                    if sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup):
+                    if sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(neighbor, sugarscape.experimentalGroup):
                         self.reproductionWithExperimentalGroup += 1
-                    elif sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup, True):
+                    elif sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(neighbor, sugarscape.experimentalGroup, True):
                         self.reproductionWithControlGroup += 1
                     if "all" in self.debug or "agent" in self.debug:
                         print(f"Agent {self.ID} reproduced with agent {str(neighbor)} at cell ({emptyCell.x},{emptyCell.y})")
@@ -698,9 +698,9 @@ class Agent:
                 sugarscape = self.cell.environment.sugarscape
                 if trader not in tradePartners:
                         tradePartners.append(trader)
-                if sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup):
+                if sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(trader, sugarscape.experimentalGroup):
                     self.tradeWithExperimentalGroup += 1
-                elif sugarscape.experimentalGroup != None and trader.isInGroup(sugarscape.experimentalGroup, True):
+                elif sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(trader, sugarscape.experimentalGroup, True):
                     self.tradeWithControlGroup += 1
         if self.lastTradeTimestep == self.timestep:
             self.lastTradePartners = len(tradePartners)
@@ -1251,26 +1251,6 @@ class Agent:
                 return True
         return False
 
-    def isInGroup(self, group, notInGroup=False):
-        membership = False
-        if group == self.decisionModel:
-            membership = True
-        elif group == "depressed":
-            membership = self.depressed
-        elif "disease" in group:
-            diseaseID = re.search(r"disease(?P<ID>\d+)", group).group("ID")
-            membership = self.isInfectedWithDisease(diseaseID)
-        elif group == "female":
-            membership = True if self.sex == "female" else False
-        elif group == "male":
-            membership = True if self.sex == "male" else False
-        elif group == "sick":
-            membership = self.isSick()
-
-        if notInGroup == True:
-            membership = not membership
-        return membership
-
     def isLender(self):
         # If not a lender, skip lending
         if self.lendingFactor == 0:
@@ -1588,9 +1568,9 @@ class Agent:
                 neighborsInTribe += 1
             if neighbor.race == self.race:
                 sameRaceNeighbors += 1
-            if sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup):
+            if sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(neighbor, sugarscape.experimentalGroup):
                 experimentalNeighbors += 1
-            elif sugarscape.experimentalGroup != None and neighbor.isInGroup(sugarscape.experimentalGroup, True):
+            elif sugarscape.experimentalGroup != None and sugarscape.isAgentInGroup(neighbor, sugarscape.experimentalGroup, True):
                 controlNeighbors += 1
 
         self.lastTimeToLive = self.timeToLive

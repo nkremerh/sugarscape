@@ -550,8 +550,10 @@ environmentWraparound: bool
 
 experimentalGroup: string
     Set the experimental group of agents under study for finer-grained logging.
-    Options: "depressed", "disease", "female", "male", "sick", decision model names
+    Options: "ageInGroup", "ageRange" "depressed", "disease", "female", "male", "race", "raceInGroup", "sick", decision model names
+    Note: Add an integer after "ageRange" such as "ageRange0" to track a specific age range.
     Note: Add an integer after "disease" such as "disease1" to track a specific disease.
+    Note: Add an integer after "race" such as "race0" to track a specific race, otherwise use raceInGroup to track any race considered in-group.
     Default: null
 
 headlessMode: bool
@@ -624,8 +626,9 @@ numSeeds: int
 
 plots: [string, ...]
     Set the plots to be created once data has been collected.
-    Options: "combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "lifeExpectancy", "population", "selfishness", "socialHappiness", "totalWealth", "ttl", "wealth", "wealthHappiness"
+    Options: "ageism", "biasFactors", "combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "lifeExpectancy", "lendingInteractions", "loanVolume", "population", "racism", "selfishness", "sexism", "socialHappiness", "reproductionInteractions", "totalWealth", "tradeInteractions", "ttl", "wealth", "wealthHappiness"
     Default: ["deaths", "giniCoefficient", "happiness", "lifeExpectancy", "population", "sickness", "tradeVolume", "ttl", "wealth"]
+    Note: lendingInteractions, reproductionInteractions, and tradeInteractions require experimentalGroup to be set.
 
 plotStatistic: string
     Set the statistic to use for plotting.
