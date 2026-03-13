@@ -119,8 +119,6 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
 def generateGroupInteractionLinePlot(models, dataset, totalTimesteps, outfile, column, label, positioning):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.size"] = 18
-    modelCount = len(dataset)
-    figure, axes = matplotlib.pyplot.subplots(1, modelCount, figsize=(8 * modelCount, 6), squeeze=False)
     x = [i for i in range(totalTimesteps + 1)]
     y = [0 for i in range(totalTimesteps + 1)]
     modelStrings = {"asimov": "Asimov's Robot", "bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape",
@@ -131,43 +129,42 @@ def generateGroupInteractionLinePlot(models, dataset, totalTimesteps, outfile, c
         (f"{column}ExperimentalGroupToControlGroup", "Experimental to Control", "cyan"),
         (f"{column}ExperimentalGroupToExperimentalGroup", "Experimental to Experimental", "gold")
     ]
-    for i, model in enumerate(dataset):
-        axesColumn = axes[0][i]
-        axesColumn.set(xlabel = "Timestep", ylabel = label, xlim = [0, totalTimesteps])
+    for model in dataset:
+        figure, axes = matplotlib.pyplot.subplots()
+        axes.set(xlabel = "Timestep", ylabel = label, xlim = [0, totalTimesteps])
         modelString = model
         if '_' in model:
             modelString = "multiple"
         elif model not in modelStrings:
             modelString = "unknown"
-        axesColumn.set_title(modelStrings[modelString])
+        axes.set_title(modelStrings[modelString])
         for interactionColumn, interactionLabel, color in interactionColumns:
             if interactionColumn in dataset[model]["aggregates"]:
                 y = [dataset[model]["aggregates"][interactionColumn][i] for i in range(totalTimesteps + 1)]
-                axesColumn.plot(x, y, color=color, label=f"{interactionLabel}")
-        axesColumn.legend(loc=positioning, labelspacing=0.1, frameon=False, fontsize=16)
-    figure.tight_layout()
-    figure.savefig(outfile, format="pdf", bbox_inches="tight")
+                axes.plot(x, y, color=color, label=f"{interactionLabel}")
+        axes.legend(loc=positioning, labelspacing=0.1, frameon=False, fontsize=16)
+        modelOutfile = outfile.replace(".pdf", f"_{model}_model.pdf")
+        figure.savefig(modelOutfile, format="pdf", bbox_inches="tight")
+        matplotlib.pyplot.close(figure)
 
 def generatePlotForBiases(dataset, totalTimesteps, outfile, label, positioning, experimentalGroup=None):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.size"] = 18
-    modelCount = len(dataset)
-    figure, axes = matplotlib.pyplot.subplots(1, modelCount, figsize=(8 * modelCount, 6), squeeze=False)
     x = [i for i in range(totalTimesteps + 1)]
     y = [0 for i in range(totalTimesteps + 1)]
     modelStrings = {"asimov": "Asimov's Robot", "bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape",
                     "temperance": "Simple Temperance", "temperancePECS": "Complex Temperance", "multiple": "Multiple", "unknown": "Unknown"}
     biasColumns = [("meanAgeismFactor", "Ageism", "green"), ("meanRacismFactor", "Racism", "red"), ("meanSexismFactor", "Sexism", "purple")]
 
-    for i, model in enumerate(dataset):
-        axesColumn = axes[0][i]
-        axesColumn.set(xlabel = "Timestep", ylabel = label, xlim = [0, totalTimesteps], ylim = [0, 1])
+    for model in dataset:
+        figure, axes = matplotlib.pyplot.subplots()
+        axes.set(xlabel = "Timestep", ylabel = label, xlim = [0, totalTimesteps], ylim = [0, 1])
         modelString = model
         if '_' in model:
             modelString = "multiple"
         elif model not in modelStrings:
             modelString = "unknown"
-        axesColumn.set_title(modelStrings[modelString])
+        axes.set_title(modelStrings[modelString])
         if experimentalGroup != None:
             for column, biasLabel, color in biasColumns:
                 controlGroupColumn = "control" + column[0].upper() + column[1:]
@@ -178,21 +175,21 @@ def generatePlotForBiases(dataset, totalTimesteps, outfile, label, positioning, 
                 if column in dataset[model]["aggregates"]:
                     y = [dataset[model]["aggregates"][controlGroupColumn][i] for i in range(totalTimesteps + 1)]
                     if not any(value == -1 for value in y):
-                        axesColumn.plot(x, y, color=color, label=controlGroupLabel)
+                        axes.plot(x, y, color=color, label=controlGroupLabel)
                     y = [dataset[model]["aggregates"][experimentalGroupColumn][i] for i in range(totalTimesteps + 1)]
                     if not any(value == -1 for value in y):
-                        axesColumn.plot(x, y, color=color, label=experimentalGroupLabel, linestyle="dotted")
+                        axes.plot(x, y, color=color, label=experimentalGroupLabel, linestyle="dotted")
         else:
             for column, biasLabel, color in biasColumns:
                 # Prevent key error if all seeds went extinct for model
                 if column in dataset[model]["aggregates"]:
                     y = [dataset[model]["aggregates"][column][i] for i in range(totalTimesteps + 1)]
                     if not any(value == -1 for value in y):
-                        axesColumn.plot(x, y, color=color, label=biasLabel)
-        axesColumn.legend(loc=positioning, labelspacing=0.1, frameon=False, fontsize=16)
-
-    figure.tight_layout()
-    figure.savefig(outfile, format="pdf", bbox_inches="tight")
+                        axes.plot(x, y, color=color, label=biasLabel)
+        axes.legend(loc=positioning, labelspacing=0.1, frameon=False, fontsize=16)
+        modelOutfile = outfile.replace(".pdf", f"_{model}_model.pdf")
+        figure.savefig(modelOutfile, format="pdf", bbox_inches="tight")
+        matplotlib.pyplot.close(figure)
 
 def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, label, positioning, percentage=False, experimentalGroup=None):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
