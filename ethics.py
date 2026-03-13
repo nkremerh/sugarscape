@@ -265,7 +265,6 @@ class Leader(agent.Agent):
         # Special leader agent should be configured to be immortal and omniscient
         self.fertilityFactor = 0.0
         self.follower = False
-        self.grid = [[[] for j in range(self.cell.environment.height)] for i in range(self.cell.environment.width)]
         self.agentPlacements = {}
         self.leader = True
         self.maxAge = -1
@@ -296,7 +295,6 @@ class Leader(agent.Agent):
         agents = futurescape.agents
         sorted(agents, key=lambda agent: agent.happiness)
         futurescape.environment.doTimestep(futurescape.timestep)
-        self.agentPlacements = {}
         for agent in agents:
             if agent == self:
                 continue
@@ -338,9 +336,7 @@ class Leader(agent.Agent):
         # Always ensure leader has maximum resources each timestep
         self.spice = sys.maxsize
         self.sugar = sys.maxsize
-        self.grid = [[[] for j in range(self.cell.environment.height) ] for i in range(self.cell.environment.width)]
-        #self.grid[self.cell.x][self.cell.y] = self
-        self.agentPlacements = {self.ID: self.cell}
+        self.agentPlacements = {}
 
     def spawnChild(self, childID, birthday, cell, configuration):
         return Leader(childID, birthday, cell, configuration)

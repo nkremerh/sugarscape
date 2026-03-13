@@ -61,9 +61,6 @@ class GUI:
         self.stopSimulation = False
         self.configureWindow()
 
-    def __deepcopy__(self, memo):
-        return None
-
     def clamp(self, value, mininum, maximum):
         if value < mininum:
             return mininum
