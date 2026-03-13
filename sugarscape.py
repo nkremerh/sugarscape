@@ -6,6 +6,7 @@ import condition
 import environment
 import ethics
 
+import copy
 import getopt
 import hashlib
 import json
@@ -117,6 +118,18 @@ class Sugarscape:
                                                  "tradeExperimentalGroupToControlGroup": 0, "tradeExperimentalGroupToExperimentalGroup": 0
                                                  }
             self.runtimeStats.update(self.groupInteractionRuntimeStats)
+
+    def __deepcopy__(self, memo):
+        selfClass = self.__class__
+        result = selfClass.__new__(selfClass)
+        memo[id(self)] = result
+        skips = ["log", "agentLog"]
+        for key,value in self.__dict__.items():
+            if key not in skips:
+                setattr(result, key, copy.deepcopy(value, memo))
+            else:
+                setattr(result, key, None)
+        return result
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
@@ -1515,7 +1528,8 @@ def verifyConfiguration(configuration):
                 configValue = 0
                 negativeFlag += 1
     if negativeFlag > 0:
-        print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
+        if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
+            print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
 
     # If no specific disease is tracked, revert to generic sick experimental group
     if configuration["experimentalGroup"] != None and "disease" in configuration["experimentalGroup"]:

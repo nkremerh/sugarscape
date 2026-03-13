@@ -1,5 +1,6 @@
 import agent
 
+import copy
 import math
 import random
 import sys
@@ -289,7 +290,13 @@ class Leader(agent.Agent):
 
     def findBestCell(self):
         self.resetForTimestep()
-        agents = self.cell.environment.sugarscape.agents
+        recursionLimit = sys.getrecursionlimit()
+        sys.setrecursionlimit(100000)
+        agents = copy.depepcopy(self.cell.environment.sugarscape.agents)
+        sorted(agents, key=lambda agent: agent.happiness)
+        for agent in agents:
+            futurescape = copy.deepcopy(self.cell.environment.sugarscape)
+
         agentsByNeed = []
         for agent in agents:
             if agent.isAlive() == False or agent == self:
