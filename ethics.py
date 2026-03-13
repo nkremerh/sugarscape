@@ -292,36 +292,20 @@ class Leader(agent.Agent):
         self.resetForTimestep()
         recursionLimit = sys.getrecursionlimit()
         sys.setrecursionlimit(100000)
-        agents = copy.depepcopy(self.cell.environment.sugarscape.agents)
+        futurescape = copy.deepcopy(self.cell.environment.sugarscape)
+        agents = futurescape.agents
         sorted(agents, key=lambda agent: agent.happiness)
+        futurescape.environment.doTimestep(futurescape.timestep)
+        self.agentPlacements = {}
         for agent in agents:
-            futurescape = copy.deepcopy(self.cell.environment.sugarscape)
-
-        agentsByNeed = []
-        for agent in agents:
-            if agent.isAlive() == False or agent == self:
+            if agent == self:
                 continue
-            urgency = self.findUrgencyForAgent(agent)
-            viableCells = self.findViableCellsForAgent(agent)
-            for cell in viableCells:
-                self.grid[cell.x][cell.y].append({"agent": agent, "urgency": urgency})
-
-        width = self.cell.environment.width
-        height = self.cell.environment.height
-
-        placedAgents = []
-        for i in range(width):
-            for j in range(height):
-                if len(self.grid[i][j]) == 0:
-                    continue
-                sorted(self.grid[i][j], key=lambda agentRecord: agentRecord["urgency"])
-                agent = self.grid[i][j].pop()["agent"]
-                cell = self.cell.environment.grid[i][j]
-                invalidCell = cell.isOccupied() and agent.isNeighborValidPrey(cell.agent) == False
-                while len(self.grid[i][j]) > 0 and (agent in placedAgents or agent.isAlive() == False or invalidCell == True) and len(self.grid[i][j]):
-                    agent = self.grid[i][j].pop()["agent"]
-                    invalidCell = cell.isOccupied() and agent.isNeighborValidPrey(cell.agent) == False
-                self.agentPlacements[agent.ID] = cell
+            prevCell = agent.cell
+            agent.doTimestep(futurescape.timestep)
+            currCell = agent.cell
+            if prevCell == None or currCell == None:
+                continue
+            self.agentPlacements[agent.ID] = self.cell.environment.findCell(agent.cell.x, agent.cell.y)
 
         # Leader agent should not move
         return self.cell

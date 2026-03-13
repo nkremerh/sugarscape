@@ -123,7 +123,7 @@ class Sugarscape:
         selfClass = self.__class__
         result = selfClass.__new__(selfClass)
         memo[id(self)] = result
-        skips = ["log", "agentLog"]
+        skips = ["log", "agentLog", "agentLeader"]
         for key,value in self.__dict__.items():
             if key not in skips:
                 setattr(result, key, copy.deepcopy(value, memo))
