@@ -87,7 +87,7 @@ class Sugarscape:
                              "remainingRaces": self.configuration["environmentMaxRaces"], "remainingTribes": self.configuration["environmentMaxTribes"],
                              "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0, "sickAgentsPercentage": 0, "meanSelfishness": 0,
                              "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0, "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0,
-                             "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0, "meanValidMoves": 0
+                             "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0, "meanValidMoves": 0, "totalHappiness": 0
                              }
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
@@ -209,8 +209,7 @@ class Sugarscape:
             a = agent.Agent(agentID, self.timestep, placementCell, agentConfiguration)
             if self.configuration["agentLeader"] == True and self.agentLeader == None:
                 a = ethics.Leader(agentID, self.timestep, placementCell, agentConfiguration)
-                cornerCell = self.environment.grid[0][0]
-                a.gotoCell(cornerCell)
+                a.gotoCell(self.environment.dummyCell)
                 self.agentLeader = a
 
             # If using a different decision model, replace new agent with instance of child class
@@ -345,6 +344,10 @@ class Sugarscape:
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks, environmentFile=None):
         height = self.environment.height
         width = self.environment.width
+        # Dummy cell for debugging and for leader agent
+        dummyCell = cell.Cell(-1, -1, self.environment)
+        self.environment.dummyCell = dummyCell
+
         if environmentFile == None:
             for i in range(width):
                 for j in range(height):
@@ -1258,6 +1261,9 @@ class Sugarscape:
                 continue
             diseasePrevalence += len(disease.infected)
 
+        # Aggregated metrics captured here before dividing by population size
+        totalHappiness = meanHappiness
+
         if numAgents > 0:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
             agentWealthBurnRate = round(agentWealthBurnRate / numAgents, 2)
@@ -1320,6 +1326,7 @@ class Sugarscape:
             minWealth = 0
             remainingRaces = 0
             remainingTribes = 0
+            totalHappiness = 0
             tradeVolume = 0
             diseaseEffectiveReproductionRate = 0
 
@@ -1346,7 +1353,7 @@ class Sugarscape:
                         "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanSelfishness": meanSelfishness,
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
                         "meanWealthHappiness": meanWealthHappiness, "meanValidMoves": meanValidMoves, "meanVision": meanVision, "minWealth": minWealth,
-                        "population": numAgents, "sickAgents": sickAgents, 
+                        "population": numAgents, "sickAgents": sickAgents, "totalHappiness": totalHappiness,
                         "remainingRaces": remainingRaces, 
                         "remainingTribes": remainingTribes,
                         "tradeVolume": tradeVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
