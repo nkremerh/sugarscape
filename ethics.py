@@ -61,9 +61,21 @@ class Asimov(agent.Agent):
             return -1 * sys.maxsize
         return 0
 
-    def scoreLawTwo(self, neighbor):
+    def scoreLawTwo(self, neighbor, cell):
         # A robot must obey the orders given it by human beings except where such orders would conflict with the first law
         # Robots are fully autonomous, thus implicitly always conform to the second law
+
+        # Only obey non-robots
+        nonRobot = self.decisionModel != neighbor.decisionModel
+
+        if not nonRobot:
+            return 0
+
+        # Interpret human intent as a request
+        # If neighbor intends to move to this cell, favor yielding
+        if hasattr(neighbor, "bestCell") and neighbor.bestCell == cell:
+            return 2  # strong positive weight
+
         return 0
 
     def scoreLawThree(self, cell):
