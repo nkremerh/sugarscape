@@ -1,5 +1,4 @@
 import math
-import random
 
 class Environment:
     # Assumption: grid is always indexed by [width][height]

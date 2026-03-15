@@ -1760,9 +1760,6 @@ def verifyConfiguration(configuration):
     if configuration["agentLogfile"] == "":
         configuration["agentLogfile"] = None
 
-    if configuration["seed"] == -1:
-        configuration["seed"] = random.randrange(sys.maxsize)
-
     recognizedDebugModes = ["agent", "all", "cell", "disease", "environment", "ethics", "none", "sugarscape"]
     validModes = True
     for mode in configuration["debugMode"]:
@@ -1801,6 +1798,11 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide separate log stats for experimental group {configuration['experimentalGroup']}. Disabling separate log stats.")
         configuration["experimentalGroup"] = None
     return configuration
+
+def verifyRandomSeed(configuration):
+    if type(configuration["seed"]) != int or configuration["seed"] == -1:
+        configuration["seed"] = random.randrange(sys.maxsize)
+    random.seed(configuration["seed"])
 
 if __name__ == "__main__":
     # Set default values for simulation configuration
@@ -1917,10 +1919,10 @@ if __name__ == "__main__":
                      "timesteps": 200
                      }
     configuration = parseOptions(configuration)
+    verifyRandomSeed(configuration)
     configuration = verifyConfiguration(configuration)
     if configuration["headlessMode"] == False:
         import gui
-    random.seed(configuration["seed"])
     S = Sugarscape(configuration)
     if configuration["profileMode"] == True:
         import cProfile
