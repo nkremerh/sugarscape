@@ -211,6 +211,9 @@ class Sugarscape:
                 a = ethics.Leader(agentID, self.timestep, placementCell, agentConfiguration)
                 a.gotoCell(self.environment.dummyCell)
                 self.agentLeader = a
+                self.environment.dummyCell.agent = a
+                a.findCellsInRange()
+                continue
 
             # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
