@@ -269,6 +269,7 @@ class Leader(agent.Agent):
         self.leader = True
         self.maxAge = -1
         self.movement = 0
+        self.recursionLimit = 100000
         self.spice = sys.maxsize
         self.spiceMetabolism = 0
         self.sugar = sys.maxsize
@@ -288,49 +289,72 @@ class Leader(agent.Agent):
         agents = env.sugarscape.agents
 
     def findBestCell(self, predeterminedBestCell=None):
-        print(f"Finding ideal agent placements for timestep {self.timestep}.")
-        randomNumberReset = random.getstate()
         self.resetForTimestep()
-        recursionLimit = sys.getrecursionlimit()
-        sys.setrecursionlimit(100000)
-        futurescape = copy.deepcopy(self.cell.environment.sugarscape)
+        defaultRecursionLimit = sys.getrecursionlimit()
+        sys.setrecursionlimit(self.recursionLimit)
+        agents = [agent for agent in copy.deepcopy(self.cell.environment.sugarscape.agents) if agent.isAlive() == True]
 
-        firstAgent = None
-        for agent in futurescape.agents:
-            if agent.leader == False and agent.isAlive() == True:
-                firstAgent = agent
-                break
-        print(f"First agent: {firstAgent}")
-        possiblePlacements = []
-        # If agent cannot move, ensure its own cell is considered in range for movement planning
-        cellsInRange = list(firstAgent.cellsInRange.keys()) if len(firstAgent.cellsInRange) > 0 else [firstAgent.cell]
-        #print(f"{firstAgent} -> {len(cellsInRange)} ({firstAgent.cell.x},{firstAgent.cell.y})")
-        for i in range(len(cellsInRange)):
-            futurescape = copy.deepcopy(self.cell.environment.sugarscape)
+        # Use a list of counters to iterate through the search space one possible placement at a time
+        cellRanges = []
+        counters = []
+        for agent in agents:
+            cellsInRange = list(agent.cellsInRange.keys()) if len(agent.cellsInRange) > 0 else [agent.cell]
+            cellRanges.append(len(cellsInRange) - 1)
+            counters.append(0)
+
+        attempts = 0
+        maxAttempts = sys.maxsize
+        bestPlacement = {}
+        bestScore = (-1 * sys.maxsize) - 1
+
+        # Ensure each simulated timestep uses the same random numbers
+        randomNumberReset = random.getstate()
+        searchSpaceExhausted = False
+        while attempts < maxAttempts and searchSpaceExhausted == False:
             possiblePlacement = {"placement": {}, "score": 0}
-            premove = cellsInRange[i]
-            for agent in futurescape.agents:
-                random.setstate(randomNumberReset)
-                if agent == self:
+            futurescape = copy.deepcopy(self.cell.environment.sugarscape)
+            random.setstate(randomNumberReset)
+
+            counterIndex = -1
+            for agent in agents:
+                # If agent is not in the copied environment, skip its consideration
+                agent = next(a for a in futurescape.agents if a.ID == agent.ID)
+                if agent == None:
                     continue
-                prevCell = agent.cell
-                if agent.ID != firstAgent.ID:
-                    agent.doTimestep(futurescape.timestep)
-                else:
-                    agent.doTimestep(futurescape.timestep, premove)
+                counterIndex += 1
+                if agent.isAlive() == False:
+                    continue
+                agentPremoveIndex = counters[counterIndex]
+                cellsInRange = list(agent.cellsInRange.keys()) if len(agent.cellsInRange) > 0 else [agent.cell]
+                premove = cellsInRange[agentPremoveIndex]
+                agent.doTimestep(futurescape.timestep, premove)
                 currCell = agent.cell
-                if prevCell == None or currCell == None:
+                if currCell == None:
                     continue
                 possiblePlacement["placement"][agent.ID] = self.cell.environment.findCell(agent.cell.x, agent.cell.y)
             futurescape.updateRuntimeStats()
-            possiblePlacement["score"] = futurescape.runtimeStats["totalHappiness"]
-            possiblePlacements.append(possiblePlacement)
+            possiblePlacement["score"] = futurescape.runtimeStats["meanHappiness"]
+            if possiblePlacement["score"] > bestScore:
+                bestScore = possiblePlacement["score"]
+                bestPlacement = possiblePlacement["placement"]
 
-        possiblePlacements = sorted(possiblePlacements, key=lambda placement: placement["score"], reverse=True)
-        self.agentPlacements = possiblePlacements[0]["placement"]
+            #Update counter indices
+            carry = 1
+            for i in range(-1, -1 * (len(counters) + 1), -1):
+                if carry > 0:
+                    counters[i] += carry
+                    carry = 0
+                if counters[i] > cellRanges[i]:
+                    counters[i] = 0
+                    carry = 1
+            # If there is a carry out on the last counter, all placements in the search space have been considered
+            if carry == 1 and counters[0] == 0:
+                searchSpaceExhausted = True
+            attempts += 1
 
+        self.agentPlacements = bestPlacement
         random.setstate(randomNumberReset)
-        sys.setrecursionlimit(recursionLimit)
+        sys.setrecursionlimit(defaultRecursionLimit)
 
         # Leader agent should not move
         return self.cell
