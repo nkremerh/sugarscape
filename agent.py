@@ -65,7 +65,7 @@ class Agent:
         self.aggressionFactorModifier = 0
         self.alive = True
         self.causeOfDeath = None
-        self.cellsInRange = []
+        self.cellsInRange = {}
         self.childEndowmentHashes = None
         self.conflictHappiness = 0
         self.depressed = False
@@ -565,7 +565,7 @@ class Agent:
                 neighbor.flipTag(position, self.tags[position])
                 neighbor.tribe = neighbor.findTribe()
 
-    def doTimestep(self, timestep):
+    def doTimestep(self, timestep, predeterminedMove=None):
         self.timestep = timestep
         # Prevent dead or already moved agent from moving
         if self.isAlive() == True and self.lastMovedTimestep != self.timestep:
@@ -573,7 +573,7 @@ class Agent:
             self.lastSugar = self.sugar
             self.lastSpice = self.spice
             # Beginning of timestep actions
-            self.moveToBestCell()
+            self.moveToBestCell(predeterminedMove)
             self.updateNeighbors()
             # Middle of timestep actions
             self.collectResourcesAtCell()
@@ -716,7 +716,9 @@ class Agent:
     def findAggression(self):
         return max(0, self.aggressionFactor + self.aggressionFactorModifier)
 
-    def findBestCell(self):
+    def findBestCell(self, predeterminedBestCell=None):
+        if predeterminedBestCell != None:
+            return predeterminedBestCell
         leader = self.cell.environment.sugarscape.agentLeader
         if self.follower == True and leader != None:
             return leader.findBestCellForAgent(self)
@@ -1287,8 +1289,8 @@ class Agent:
             return True
         return False
 
-    def moveToBestCell(self):
-        bestCell = self.findBestCell()
+    def moveToBestCell(self, predeterminedMove=None):
+        bestCell = self.findBestCell(predeterminedMove)
         if "all" in self.debug or "agent" in self.debug:
             print(f"Agent {self.ID} moving to ({bestCell.x},{bestCell.y})")
         if self.findAggression() > 0:

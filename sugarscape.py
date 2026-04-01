@@ -6,6 +6,7 @@ import condition
 import environment
 import ethics
 
+import copy
 import getopt
 import hashlib
 import json
@@ -86,7 +87,7 @@ class Sugarscape:
                              "remainingRaces": self.configuration["environmentMaxRaces"], "remainingTribes": self.configuration["environmentMaxTribes"],
                              "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0, "sickAgentsPercentage": 0, "meanAgeismFactor": 0, "meanRacismFactor": 0, "meanSelfishness": 0, "meanSexismFactor": 0,
                              "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0, "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0,
-                             "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0, "meanValidMoves": 0
+                             "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0, "meanValidMoves": 0, "totalHappiness": 0
                              }
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
@@ -117,6 +118,18 @@ class Sugarscape:
                                                  "tradeExperimentalGroupToControlGroup": 0, "tradeExperimentalGroupToExperimentalGroup": 0
                                                  }
             self.runtimeStats.update(self.groupInteractionRuntimeStats)
+
+    def __deepcopy__(self, memo):
+        selfClass = self.__class__
+        result = selfClass.__new__(selfClass)
+        memo[id(self)] = result
+        skips = ["gui", "log", "agentLog", "agentLeader"]
+        for key,value in self.__dict__.items():
+            if key not in skips:
+                setattr(result, key, copy.deepcopy(value, memo))
+            else:
+                setattr(result, key, None)
+        return result
 
     def addAgent(self, agent):
         self.bornAgents.append(agent)
@@ -196,9 +209,11 @@ class Sugarscape:
             a = agent.Agent(agentID, self.timestep, placementCell, agentConfiguration)
             if self.configuration["agentLeader"] == True and self.agentLeader == None:
                 a = ethics.Leader(agentID, self.timestep, placementCell, agentConfiguration)
-                cornerCell = self.environment.grid[0][0]
-                a.gotoCell(cornerCell)
+                a.gotoCell(self.environment.dummyCell)
                 self.agentLeader = a
+                self.environment.dummyCell.agent = a
+                a.findCellsInRange()
+                continue
 
             # If using a different decision model, replace new agent with instance of child class
             if "altruist" in agentConfiguration["decisionModel"]:
@@ -332,6 +347,10 @@ class Sugarscape:
     def configureEnvironment(self, maxSugar, maxSpice, sugarPeaks, spicePeaks, environmentFile=None):
         height = self.environment.height
         width = self.environment.width
+        # Dummy cell for debugging and for leader agent
+        dummyCell = cell.Cell(-1, -1, self.environment)
+        self.environment.dummyCell = dummyCell
+
         if environmentFile == None:
             for i in range(width):
                 for j in range(height):
@@ -1289,6 +1308,9 @@ class Sugarscape:
                 continue
             diseasePrevalence += len(disease.infected)
 
+        # Aggregated metrics captured here before dividing by population size
+        totalHappiness = meanHappiness
+
         if numAgents > 0:
             agentMeanTimeToLive = round(agentMeanTimeToLive / numAgents, 2)
             agentWealthBurnRate = round(agentWealthBurnRate / numAgents, 2)
@@ -1358,6 +1380,7 @@ class Sugarscape:
             minWealth = 0
             remainingRaces = 0
             remainingTribes = 0
+            totalHappiness = 0
             tradeVolume = 0
             loanVolume = 0
             diseaseEffectiveReproductionRate = 0
@@ -1385,7 +1408,7 @@ class Sugarscape:
                         "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanRacismFactor": meanRacismFactor, "meanSelfishness": meanSelfishness, "meanSexismFactor": meanSexismFactor,
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
                         "meanWealthHappiness": meanWealthHappiness, "meanValidMoves": meanValidMoves, "meanVision": meanVision, "minWealth": minWealth,
-                        "population": numAgents, "sickAgents": sickAgents, 
+                        "population": numAgents, "sickAgents": sickAgents, "totalHappiness": totalHappiness,
                         "remainingRaces": remainingRaces, 
                         "remainingTribes": remainingTribes,
                         "tradeVolume": tradeVolume, "loanVolume": loanVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
@@ -1567,7 +1590,8 @@ def verifyConfiguration(configuration):
                 configValue = 0
                 negativeFlag += 1
     if negativeFlag > 0:
-        print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
+        if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
+            print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
 
     # If no specific age range is tracked, revert to generic in-group age ranges experimental group
     if configuration["experimentalGroup"] != None and "ageRange" in configuration["experimentalGroup"]:
@@ -1803,9 +1827,6 @@ def verifyConfiguration(configuration):
     if configuration["agentLogfile"] == "":
         configuration["agentLogfile"] = None
 
-    if configuration["seed"] == -1:
-        configuration["seed"] = random.randrange(sys.maxsize)
-
     recognizedDebugModes = ["agent", "all", "cell", "disease", "environment", "ethics", "none", "sugarscape"]
     validModes = True
     for mode in configuration["debugMode"]:
@@ -1844,6 +1865,11 @@ def verifyConfiguration(configuration):
             print(f"Cannot provide separate log stats for experimental group {configuration['experimentalGroup']}. Disabling separate log stats.")
         configuration["experimentalGroup"] = None
     return configuration
+
+def verifyRandomSeed(configuration):
+    if type(configuration["seed"]) != int or configuration["seed"] == -1:
+        configuration["seed"] = random.randrange(sys.maxsize)
+    random.seed(configuration["seed"])
 
 if __name__ == "__main__":
     # Set default values for simulation configuration
@@ -1960,10 +1986,10 @@ if __name__ == "__main__":
                      "timesteps": 200
                      }
     configuration = parseOptions(configuration)
+    verifyRandomSeed(configuration)
     configuration = verifyConfiguration(configuration)
     if configuration["headlessMode"] == False:
         import gui
-    random.seed(configuration["seed"])
     S = Sugarscape(configuration)
     if configuration["profileMode"] == True:
         import cProfile

@@ -1,5 +1,4 @@
 import math
-import random
 
 class Environment:
     # Assumption: grid is always indexed by [width][height]
@@ -7,6 +6,7 @@ class Environment:
         self.width = width
         self.height = height
         self.sugarscape = sugarscape
+        self.dummyCell = None
         self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
         self.globalMaxSpice = configuration["globalMaxSpice"]
         self.globalMaxSugar = configuration["globalMaxSugar"]

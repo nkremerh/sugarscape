@@ -77,6 +77,27 @@ def printProgress(lastJob, jobsFinished, totalJobs, jobLength, decimals=2):
     printString = f"\rRunning {lastJob:>{jobLength}}: |{bar}| {jobsFinished} / {totalJobs} ({progress}%)"
     print(f"\r{printString}", end='\r')
 
+def runDeterminismTest(config, configFiles):
+    failures = 0
+    dataOpts = config["dataCollectionOptions"]
+    pythonAlias = dataOpts["pythonAlias"]
+    result1 = os.system(f"{pythonAlias} ../sugarscape.py --conf determinism_test.config &> /dev/null && mv determinism_test.log 1.log")
+    result2 = os.system(f"{pythonAlias} ../sugarscape.py --conf determinism_test.config &> /dev/null && mv determinism_test.log 2.log")
+    if result1 != 0:
+        failures += 1
+    if result2 != 0:
+        failures += 1
+    logfile1 = open("1.log")
+    logfile2 = open("2.log")
+    log1 = json.loads(logfile1.read())
+    log2 = json.loads(logfile2.read())
+    logfile1.close()
+    logfile2.close()
+    if log1 != log2:
+        print("Simulation is not deterministic!")
+        failures += 1
+    return failures
+
 def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, count, printFileLength, failures):
     result = os.system(f"{pythonAlias} ../sugarscape.py --conf {configFile} &> /dev/null")
     if result != 0:
@@ -87,6 +108,7 @@ def runSimulation(configFile, pythonAlias, jobNumber, totalJobs, count, printFil
 def runSimulations(config, configFiles):
     dataOpts = config["dataCollectionOptions"]
     pythonAlias = dataOpts["pythonAlias"]
+    configFiles.remove("determinism_test.config")
     totalSimJobs = len(configFiles)
 
     # Submit simulation jobs to local worker pool
@@ -110,10 +132,9 @@ def runSimulations(config, configFiles):
     pool.close()
     pool.join()
     print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
-    print("All jobs completed.")
     for failure in failures:
         print(f"Test {failure} failed, got result {failures[failure]}.")
-    return failures
+    return len(failures)
 
 def verifyConfiguration(configuration):
     # Check if number of parallel jobs is greater than number of CPU cores
@@ -140,6 +161,8 @@ if __name__ == "__main__":
     config = verifyConfiguration(config)
     configFiles = createConfigurations(path)
     failures = runSimulations(config, configFiles)
-    if len(failures) == 0:
+    failures += runDeterminismTest(config, configFiles)
+    print("All tests completed.")
+    if failures == 0:
         cleanup()
     exit(0)
