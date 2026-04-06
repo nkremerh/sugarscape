@@ -31,7 +31,7 @@ def createConfigurations(config, path, mode="json"):
                     simOpts["logfileFormat"] = "json"
                 else:
                     simOpts["logfile"] = f"{path}{modelString}{seed}.csv"
-                    if simOpts["agentLogfile"] != "none":
+                    if simOpts["agentLogfile"] != None:
                         simOpts["agentLogfile"] = f"{path}agents.{modelString}{seed}.csv"
                     simOpts["logfileFormat"] = "csv"
                 # Enforce noninteractive, no-output mode
