@@ -79,13 +79,13 @@ class Sugarscape:
         # TODO: Remove redundant metrics
         # TODO: Streamline naming
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanMovement": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
-                             "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
+                             "meanTradePrice": 0, "tradeVolume": 0, "loanVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "agentsReplaced": 0,
                              "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0,
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestRace": 0, "largestTribe": 0, "largestRaceSize": 0, "largestTribeSize": 0,
                              "remainingRaces": self.configuration["environmentMaxRaces"], "remainingTribes": self.configuration["environmentMaxTribes"],
-                             "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0, "sickAgentsPercentage": 0, "meanSelfishness": 0,
+                             "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0, "sickAgentsPercentage": 0, "meanAgeismFactor": 0, "meanRacismFactor": 0, "meanSelfishness": 0, "meanSexismFactor": 0,
                              "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0, "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0,
                              "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0, "meanValidMoves": 0, "totalHappiness": 0
                              }
@@ -557,6 +557,41 @@ class Sugarscape:
         tags = [0 for i in range(zeroes)] + [1 for i in range(ones)]
         random.shuffle(tags)
         return tags
+    
+    def isAgentInGroup(self, agent, group, notInGroup=False):
+        membership = False
+        if group == agent.decisionModel:
+            membership = True
+        elif group == "ageInGroup":
+            membership = False
+            for minAge, maxAge in self.environment.inGroupAgeAbsoluteRanges:
+                if agent.age >= minAge and (agent.age <= maxAge or maxAge == -1):
+                    membership = True
+                    break
+        elif "ageRange" in group:
+            ageRangeID = int(re.search(r"ageRange(?P<ID>\d+)", group).group("ID"))
+            minAge, maxAge = self.environment.inGroupAgeAbsoluteRanges[ageRangeID]
+            membership = agent.age >= minAge and (agent.age <= maxAge or maxAge == -1)
+        elif group == "depressed":
+            membership = agent.depressed
+        elif "disease" in group:
+            diseaseID = re.search(r"disease(?P<ID>\d+)", group).group("ID")
+            membership = agent.isInfectedWithDisease(diseaseID)
+        elif group == "female":
+            membership = True if agent.sex == "female" else False
+        elif group == "male":
+            membership = True if agent.sex == "male" else False
+        elif group == "raceInGroup":
+            membership = agent.race in self.environment.inGroupRaces
+        elif "race" in group:
+            raceID = int(re.search(r"race(?P<ID>\d+)", group).group("ID"))
+            membership = agent.race == raceID
+        elif group == "sick":
+            membership = agent.isSick()
+
+        if notInGroup == True:
+            membership = not membership
+        return membership
 
     def isDiseaseExperimentalGroup(self, diseaseID):
         if self.experimentalGroup == None:
@@ -1009,13 +1044,16 @@ class Sugarscape:
         maxTribeSize = 0
         maxWealth = 0
         meanAge = 0
+        meanAgeismFactor = 0
         meanConflictHappiness = 0
         meanFamilyHappiness = 0
         meanHappiness = 0
         meanHealthHappiness = 0
         meanMetabolism = 0
         meanMovement = 0
+        meanRacismFactor = 0
         meanSelfishness = 0
+        meanSexismFactor = 0
         meanSocialHappiness = 0
         meanSpiceMetabolism = 0
         meanSugarMetabolism = 0
@@ -1030,6 +1068,7 @@ class Sugarscape:
         numTribes = 0
         sickAgents = 0
         tradeVolume = 0
+        loanVolume = 0
         carryingCapacityWeight = 0.05
         carryingCapacity = math.ceil((carryingCapacityWeight * len(self.agents)) + ((1 - carryingCapacityWeight) * self.runtimeStats["carryingCapacity"]))
         if self.timestep == 0:
@@ -1100,12 +1139,15 @@ class Sugarscape:
         meanMoveDifferenceFromOptimal = 0
 
         for agent in self.agents:
-            if group != None and agent.isInGroup(group, notInGroup) == False:
+            if group != None and self.isAgentInGroup(agent, group, notInGroup) == False:
                 continue
             agentTimeToLive = agent.findTimeToLive()
             agentTimeToLiveAgeLimited = agent.findTimeToLive(True)
             agentWealth = agent.sugar + agent.spice
+            meanAgeismFactor += agent.decisionModelAgeismFactor
+            meanRacismFactor += agent.decisionModelRacismFactor
             meanSelfishness += agent.selfishnessFactor
+            meanSexismFactor += agent.decisionModelSexismFactor
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
             meanMovement += agent.movement
@@ -1122,6 +1164,8 @@ class Sugarscape:
                 meanTradePrice += max(agent.spicePrice, agent.sugarPrice)
                 tradeVolume += agent.tradeVolume
                 numTraders += 1
+            if agent.lastLendedTimestep == self.timestep:
+                loanVolume += agent.lastLoans
             agentWealthTotal += agentWealth
             agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
             agentWealthBurnRate += agentTimeToLive
@@ -1134,7 +1178,7 @@ class Sugarscape:
             meanNeighbors += len(agent.movementNeighborhood)
             if self.experimentalGroup != None:
                 for neighbor in agent.movementNeighborhood:
-                    if neighbor.isInGroup(self.experimentalGroup, notInGroup=True):
+                    if self.isAgentInGroup(neighbor, self.experimentalGroup, notInGroup=True):
                         meanControlNeighbors += 1
                     else:
                         meanExperimentalNeighbors += 1
@@ -1160,7 +1204,7 @@ class Sugarscape:
                 tribes[agent.tribe] = 1
             else:
                 tribes[agent.tribe] += 1
-            if group != None and agent.isInGroup(group):
+            if group != None and self.isAgentInGroup(agent, group):
                 combatExperimentalToControl += agent.combatWithControlGroup
                 combatExperimentalToExperimental += agent.combatWithExperimentalGroup
                 diseaseExperimentalToControl += agent.diseaseWithControlGroup
@@ -1172,7 +1216,7 @@ class Sugarscape:
                 tradeExperimentalToControl += agent.tradeWithControlGroup
                 tradeExperimentalToExperimental += agent.tradeWithExperimentalGroup
                 agent.resetTimestepMetrics()
-            elif group != None and agent.isInGroup(group, notInGroup=True):
+            elif group != None and self.isAgentInGroup(agent, group, notInGroup=True):
                 combatControlToControl += agent.combatWithControlGroup
                 combatControlToExperimental += agent.combatWithExperimentalGroup
                 diseaseControlToControl += agent.diseaseWithControlGroup
@@ -1201,7 +1245,7 @@ class Sugarscape:
         numDeadAgents = 0
         meanAgeAtDeath = 0
         for agent in self.deadAgents:
-            if group != None and agent.isInGroup(group, notInGroup) == False:
+            if group != None and self.isAgentInGroup(agent, group, notInGroup) == False:
                 continue
             # If agent moved this timestep but died, count its movement optimality
             if agent.timestep == self.timestep:
@@ -1215,7 +1259,7 @@ class Sugarscape:
             agentCombatDeaths += 1 if agent.causeOfDeath == "combat" else 0
             agentDiseaseDeaths += 1 if agent.diseaseDeath == True else 0
             agentStarvationDeaths += 1 if agent.causeOfDeath == "starvation" else 0
-            if group != None and agent.isInGroup(group):
+            if group != None and self.isAgentInGroup(agent, group):
                 combatExperimentalToControl += agent.combatWithControlGroup
                 combatExperimentalToExperimental += agent.combatWithExperimentalGroup
                 diseaseExperimentalToControl += agent.diseaseWithControlGroup
@@ -1226,7 +1270,7 @@ class Sugarscape:
                 reproductionExperimentalToExperimental += agent.reproductionWithExperimentalGroup
                 tradeExperimentalToControl += agent.tradeWithControlGroup
                 tradeExperimentalToExperimental += agent.tradeWithExperimentalGroup
-            elif group != None and agent.isInGroup(group, notInGroup=True):
+            elif group != None and self.isAgentInGroup(agent, group, notInGroup=True):
                 combatControlToControl += agent.combatWithControlGroup
                 combatControlToExperimental += agent.combatWithExperimentalGroup
                 diseaseControlToControl += agent.diseaseWithControlGroup
@@ -1277,6 +1321,7 @@ class Sugarscape:
             maxTribeSize = tribes[maxTribe]
             maxWealth = round(maxWealth, 2)
             meanAge = round(meanAge / numAgents, 2)
+            meanAgeismFactor = round(meanAgeismFactor / numAgents, 2)
             meanConflictHappiness = round(meanConflictHappiness / numAgents, 2)
             meanFamilyHappiness = round(meanFamilyHappiness / numAgents, 2)
             meanHappiness = round(meanHappiness / numAgents, 2)
@@ -1286,7 +1331,9 @@ class Sugarscape:
                 combinedMetabolism = round(combinedMetabolism / 2, 2)
             meanMetabolism = round(combinedMetabolism / numAgents, 2)
             meanMovement = round(meanMovement / numAgents, 2)
+            meanRacismFactor = round(meanRacismFactor / numAgents, 2)
             meanSelfishness = round(meanSelfishness / numAgents, 2)
+            meanSexismFactor = round(meanSexismFactor / numAgents, 2)
             meanSocialHappiness = round(meanSocialHappiness / numAgents, 2)
             meanTradePrice = round(meanTradePrice / numTraders, 2) if numTraders > 0 else 0
             meanVision = round(meanVision / numAgents, 2)
@@ -1296,6 +1343,7 @@ class Sugarscape:
             remainingRaces = len(races)
             remainingTribes = len(tribes)
             tradeVolume = round(tradeVolume, 2)
+            loanVolume = round(loanVolume, 2)
             meanDeathsPercentage = round((numDeadAgents / numAgents) * 100, 2)
             sickAgentsPercentage = round((sickAgents / numAgents) * 100, 2)
             diseaseEffectiveReproductionRate = round(diseaseIncidence / len(infectors), 2) if len(infectors) > 0 else 0
@@ -1315,13 +1363,16 @@ class Sugarscape:
             maxTribe = 0
             maxWealth = 0
             meanAge = 0
+            meanAgeismFactor = 0
             meanConflictHappiness = 0
             meanFamilyHappiness = 0
             meanHappiness = 0
             meanHealthHappiness = 0
             meanMetabolism = 0
             meanMovement = 0
+            meanRacismFactor = 0
             meanSelfishness = 0
+            meanSexismFactor = 0
             meanSocialHappiness = 0
             meanVision = 0
             meanWealth = 0
@@ -1331,15 +1382,16 @@ class Sugarscape:
             remainingTribes = 0
             totalHappiness = 0
             tradeVolume = 0
+            loanVolume = 0
             diseaseEffectiveReproductionRate = 0
 
         for agent in self.replacedAgents:
-            if group != None and agent.isInGroup(group, notInGroup) == False:
+            if group != None and self.isAgentInGroup(agent, group, notInGroup) == False:
                 continue
             agentsReplaced += 1
 
         for agent in self.bornAgents:
-            if group != None and agent.isInGroup(group, notInGroup) == False:
+            if group != None and self.isAgentInGroup(agent, group, notInGroup) == False:
                 continue
             agentsBorn += 1
 
@@ -1350,16 +1402,16 @@ class Sugarscape:
                         "agentWealthBurnRate": agentWealthBurnRate, "agentWealthCollected": agentWealthCollected, "agentWealthTotal": agentWealthTotal,
                         "carryingCapacity": carryingCapacity, "largestRace": maxRace, "largestRaceSize": maxRaceSize,
                         "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
-                        "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
+                        "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanAgeismFactor": meanAgeismFactor, "meanConflictHappiness": meanConflictHappiness,
                         "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
                         "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanMoveDifferenceFromOptimal": meanMoveDifferenceFromOptimal,
-                        "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanSelfishness": meanSelfishness,
+                        "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanRacismFactor": meanRacismFactor, "meanSelfishness": meanSelfishness, "meanSexismFactor": meanSexismFactor,
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
                         "meanWealthHappiness": meanWealthHappiness, "meanValidMoves": meanValidMoves, "meanVision": meanVision, "minWealth": minWealth,
                         "population": numAgents, "sickAgents": sickAgents, "totalHappiness": totalHappiness,
                         "remainingRaces": remainingRaces, 
                         "remainingTribes": remainingTribes,
-                        "tradeVolume": tradeVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
+                        "tradeVolume": tradeVolume, "loanVolume": loanVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
                         "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
                         "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage
                         }
@@ -1541,11 +1593,23 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "sugarscape" in configuration["debugMode"]:
             print(f"Detected negative values provided for {negativeFlag} option(s). Setting these values to zero.")
 
+    # If no specific age range is tracked, revert to generic in-group age ranges experimental group
+    if configuration["experimentalGroup"] != None and "ageRange" in configuration["experimentalGroup"]:
+        experimentalAgeRangeID = re.search(r"ageRange(?P<ID>\d+)", configuration["experimentalGroup"])
+        if experimentalAgeRangeID == None:
+            configuration["experimentalGroup"] = "ageInGroup"
+
     # If no specific disease is tracked, revert to generic sick experimental group
     if configuration["experimentalGroup"] != None and "disease" in configuration["experimentalGroup"]:
             experimentalDiseaseID = re.search(r"disease(?P<ID>\d+)", configuration["experimentalGroup"])
             if experimentalDiseaseID == None:
                 configuration["experimentalGroup"] = "sick"
+
+    # If no specific race is tracked, revert to generic in-group races experimental group
+    if configuration["experimentalGroup"] != None and "race" in configuration["experimentalGroup"]:
+        experimentalRaceID = re.search(r"race(?P<ID>\d+)", configuration["experimentalGroup"])
+        if experimentalRaceID == None:
+            configuration["experimentalGroup"] = "raceInGroup"
 
     if configuration["environmentMaxSpice"] < 0:
         configuration["environmentMaxSpice"] = random.randint(1, 10)
@@ -1791,12 +1855,12 @@ def verifyConfiguration(configuration):
     # Ensure experimental group is properly defined or otherwise ignored
     if configuration["experimentalGroup"] == "":
         configuration["experimentalGroup"] = None
-    groupList = ["depressed", "female", "male", "sick"]
+    groupList = ["ageInGroup", "depressed", "female", "raceInGroup", "male", "sick"]
     if type(configuration["agentDecisionModels"]) == str:
         groupList.append(configuration["agentDecisionModels"])
     else:
         groupList += configuration["agentDecisionModels"]
-    if configuration["experimentalGroup"] != None and configuration["experimentalGroup"] not in groupList and "disease" not in configuration["experimentalGroup"]:
+    if configuration["experimentalGroup"] != None and configuration["experimentalGroup"] not in groupList and "ageRange" not in configuration["experimentalGroup"] and "disease" not in configuration["experimentalGroup"] and "race" not in configuration["experimentalGroup"]:
         if "all" in configuration["debugMode"] or "agent" in configuration["debugMode"]:
             print(f"Cannot provide separate log stats for experimental group {configuration['experimentalGroup']}. Disabling separate log stats.")
         configuration["experimentalGroup"] = None
