@@ -626,9 +626,9 @@ numSeeds: int
 
 plots: [string, ...]
     Set the plots to be created once data has been collected.
-    Options: "ageism", "biasFactors", "combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "lifeExpectancy", "lendingInteractions", "loanVolume", "population", "racism", "selfishness", "sexism", "socialHappiness", "reproductionInteractions", "totalWealth", "tradeInteractions", "ttl", "wealth", "wealthHappiness"
+    Options: "ageism", "biasFactors", "combatHappiness", "combatInteractions", "deaths", "familyHappiness", "happiness", "healthHappiness", "lifeExpectancy", "lendingInteractions", "loanVolume", "population", "racism", "selfishness", "sexism", "socialHappiness", "reproductionInteractions", "totalWealth", "tradeInteractions", "ttl", "wealth", "wealthHappiness"
     Default: ["deaths", "giniCoefficient", "happiness", "lifeExpectancy", "population", "sickness", "tradeVolume", "ttl", "wealth"]
-    Note: lendingInteractions, reproductionInteractions, and tradeInteractions require experimentalGroup to be set.
+    Note: combatInteractions, lendingInteractions, reproductionInteractions, and tradeInteractions require experimentalGroup to be set.
 
 plotStatistic: string
     Set the statistic to use for plotting.

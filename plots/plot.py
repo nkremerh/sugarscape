@@ -52,6 +52,9 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
     if "conflictHappiness" in config["plots"]:
         print(f"Generating {statistic} conflict happiness plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_conflict_happiness.pdf", "meanConflictHappiness", f"{titleStatistic} Conflict Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
+    if "combatInteractions" in config["plots"]:
+        print(f"Generating {statistic} combat interactions plot")
+        generateGroupInteractionLinePlot(models, dataset, totalTimesteps, f"{statistic}_combat_interactions.pdf", "combat", f"{titleStatistic} Combat Interactions", "center right")
     if "deaths" in config["plots"]:
         print(f"Generating {statistic} deaths plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_deaths.pdf", "meanDeathsPercentage", f"{titleStatistic} Deaths", "center right", percentage=True, experimentalGroup=experimentalGroup)
