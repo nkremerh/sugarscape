@@ -6,6 +6,7 @@ import matplotlib.pyplot
 import matplotlib.ticker
 import os
 import re
+import statistics
 import sys
 
 def findMeans(dataset):
@@ -15,7 +16,9 @@ def findMeans(dataset):
             for i in range(len(dataset[model]["metrics"][column])):
                 if column not in dataset[model]["aggregates"]:
                     dataset[model]["aggregates"][column] = [0 for j in range(totalTimesteps + 1)]
-                dataset[model]["aggregates"][column][i] = dataset[model]["metrics"][column][i] / dataset[model]["runs"]
+                    dataset[model]["standardDeviations"][column] = [0 for j in range(totalTimesteps + 1)]
+                dataset[model]["standardDeviations"][column][i] = statistics.stdev(dataset[model]["metrics"][column][i])
+                dataset[model]["aggregates"][column][i] = sum(dataset[model]["metrics"][column][i]) / dataset[model]["runs"]
     return dataset
 
 def findMedians(dataset):
@@ -177,16 +180,10 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
                 if entry in ["agentWealths", "agentTimesToLive", "agentTimesToLiveAgeLimited", "agentTotalMetabolism"]:
                     continue
                 if entry not in dataset[model]["metrics"]:
-                    if statistic == "mean":
-                        dataset[model]["metrics"][entry] = [0 for j in range(totalTimesteps + 1)]
-                    elif statistic == "median":
-                        dataset[model]["metrics"][entry] = [[] for j in range(totalTimesteps + 1)]
+                    dataset[model]["metrics"][entry] = [[] for j in range(totalTimesteps + 1)]
                 if item[entry] == "None":
                     item[entry] = 0
-                if statistic == "mean":
-                    dataset[model]["metrics"][entry][i-1] += float(item[entry])
-                elif statistic == "median":
-                    dataset[model]["metrics"][entry][i-1].append(float(item[entry]))
+                dataset[model]["metrics"][entry][i-1].append(float(item[entry]))
             i += 1
     print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
     for model in dataset:
@@ -271,7 +268,7 @@ if __name__ == "__main__":
         modelString = model
         if type(model) == list:
             modelString = '_'.join(model)
-        dataset[modelString] = {"runs": 0, "extinct": 0, "worse": 0, "better": 0, "timesteps": 0, "aggregates": {}, "firstQuartiles": {}, "thirdQuartiles": {}, "metrics": {}}
+        dataset[modelString] = {"runs": 0, "extinct": 0, "worse": 0, "better": 0, "timesteps": 0, "aggregates": {}, "firstQuartiles": {}, "thirdQuartiles": {}, "standardDeviations": {}, "metrics": {}}
 
     if not os.path.exists(path):
         print(f"Path {path} not recognized.")
