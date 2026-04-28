@@ -6,6 +6,7 @@ import matplotlib.pyplot
 import matplotlib.ticker
 import os
 import re
+import statistics
 import sys
 
 def findMeans(dataset):
@@ -15,7 +16,9 @@ def findMeans(dataset):
             for i in range(len(dataset[model]["metrics"][column])):
                 if column not in dataset[model]["aggregates"]:
                     dataset[model]["aggregates"][column] = [0 for j in range(totalTimesteps + 1)]
-                dataset[model]["aggregates"][column][i] = dataset[model]["metrics"][column][i] / dataset[model]["runs"]
+                    dataset[model]["standardDeviations"][column] = [0 for j in range(totalTimesteps + 1)]
+                dataset[model]["standardDeviations"][column][i] = statistics.stdev(dataset[model]["metrics"][column][i])
+                dataset[model]["aggregates"][column][i] = sum(dataset[model]["metrics"][column][i]) / dataset[model]["runs"]
     return dataset
 
 def findMedians(dataset):
@@ -41,7 +44,7 @@ def findMedians(dataset):
                 dataset[model]["aggregates"][column][i] = median
     return dataset
 
-def generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup=None):
+def generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup=None, plotGroups=False):
     titleStatistic = statistic.title()
     if "ageism" in config["plots"]:
         print(f"Generating {statistic} ageism plot")
@@ -51,28 +54,28 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
         generatePlotForBiases(dataset, totalTimesteps, f"{statistic}_bias_factors.pdf", "Mean Bias Factors", "lower center", experimentalGroup=experimentalGroup)
     if "conflictHappiness" in config["plots"]:
         print(f"Generating {statistic} conflict happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_conflict_happiness.pdf", "meanConflictHappiness", f"{titleStatistic} Conflict Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_conflict_happiness.pdf", "meanConflictHappiness", f"{titleStatistic} Conflict Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "combatInteractions" in config["plots"]:
         print(f"Generating {statistic} combat interactions plot")
         generateGroupInteractionLinePlot(models, dataset, totalTimesteps, f"{statistic}_combat_interactions.pdf", "combat", f"{titleStatistic} Combat Interactions", "center right")
     if "deaths" in config["plots"]:
         print(f"Generating {statistic} deaths plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_deaths.pdf", "meanDeathsPercentage", f"{titleStatistic} Deaths", "center right", percentage=True, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_deaths.pdf", "meanDeathsPercentage", f"{titleStatistic} Deaths", "center right", percentage=True, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "familyHappiness" in config["plots"]:
         print(f"Generating {statistic} family happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_family_happiness.pdf", "meanFamilyHappiness", f"{titleStatistic} Family Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_family_happiness.pdf", "meanFamilyHappiness", f"{titleStatistic} Family Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "giniCoefficient" in config["plots"]:
         print(f"Generating {statistic} Gini coefficient plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_gini.pdf", "giniCoefficient", f"{titleStatistic} Gini Coefficient", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_gini.pdf", "giniCoefficient", f"{titleStatistic} Gini Coefficient", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "happiness" in config["plots"]:
         print(f"Generating {statistic} happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_happiness.pdf", "meanHappiness", f"{titleStatistic} Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_happiness.pdf", "meanHappiness", f"{titleStatistic} Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "healthHappiness" in config["plots"]:
         print(f"Generating {statistic} health happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_health_happiness.pdf", "meanHealthHappiness", f"{titleStatistic} Health Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_health_happiness.pdf", "meanHealthHappiness", f"{titleStatistic} Health Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "lifeExpectancy" in config["plots"]:
         print(f"Generating {statistic} life expectancy plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_life_expectancy.pdf", "meanAgeAtDeath", f"{titleStatistic} Life Expectancy", "lower right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_life_expectancy.pdf", "meanAgeAtDeath", f"{titleStatistic} Life Expectancy", "lower right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "loanVolume" in config["plots"]:
         print(f"Generating {statistic} loan volume plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_loans.pdf", "loanVolume", f"{titleStatistic} Loan Volume", "center right", percentage=False, experimentalGroup=experimentalGroup)
@@ -81,7 +84,7 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
         generateGroupInteractionLinePlot(models, dataset, totalTimesteps, f"{statistic}_lending_interactions.pdf", "lending", f"{titleStatistic} Lending Interactions", "center right")
     if "population" in config["plots"]:
         print(f"Generating {statistic} population plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_population.pdf", "population", f"{titleStatistic} Population", "lower right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_population.pdf", "population", f"{titleStatistic} Population", "lower right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "racism" in config["plots"]:
         print(f"Generating {statistic} racism plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_racism.pdf", "meanRacismFactor", f"{titleStatistic} Racism Factor", "lower center", percentage=False, experimentalGroup=experimentalGroup)
@@ -90,34 +93,34 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
         generateGroupInteractionLinePlot(models, dataset, totalTimesteps, f"{statistic}_reproduction_interactions.pdf", "reproduction", f"{titleStatistic} Reproduction Interactions", "center right")
     if "selfishness" in config["plots"]:
         print(f"Generating {statistic} selfishness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_selfishness.pdf", "meanSelfishness", f"{titleStatistic} Selfishness Factor", "lower center", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_selfishness.pdf", "meanSelfishness", f"{titleStatistic} Selfishness Factor", "lower center", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "sexism" in config["plots"]:
         print(f"Generating {statistic} sexism plot")
         generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_sexism.pdf", "meanSexismFactor", f"{titleStatistic} Sexism Factor", "lower center", percentage=False, experimentalGroup=experimentalGroup)
     if "sickness" in config["plots"]:
         print(f"Generating {statistic} sick percentage plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_sickness.pdf", "sickAgentsPercentage", f"{titleStatistic} Diseased Agents", "center right", percentage=True, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_sickness.pdf", "sickAgentsPercentage", f"{titleStatistic} Diseased Agents", "center right", percentage=True, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "socialHappiness" in config["plots"]:
         print(f"Generating {statistic} social happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_social_happiness.pdf", "meanSocialHappiness", f"{titleStatistic} Social Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_social_happiness.pdf", "meanSocialHappiness", f"{titleStatistic} Social Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "totalWealth" in config["plots"]:
         print(f"Generating {statistic} total wealth plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_wealth.pdf", "agentWealthTotal", f"{titleStatistic} Total Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_wealth.pdf", "agentWealthTotal", f"{titleStatistic} Total Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "tradeVolume" in config["plots"]:
         print(f"Generating {statistic} trade volume plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_trades.pdf", "tradeVolume", f"{titleStatistic} Trade Volume", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_trades.pdf", "tradeVolume", f"{titleStatistic} Trade Volume", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "tradeInteractions" in config["plots"]:
         print(f"Generating {statistic} trade interactions plot")
         generateGroupInteractionLinePlot(models, dataset, totalTimesteps, f"{statistic}_trade_interactions.pdf", "trade", f"{titleStatistic} Trade Interactions", "center right")
     if "ttl" in config["plots"]:
         print(f"Generating {statistic} time to live plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_ttl.pdf", "agentMeanTimeToLive", f"{titleStatistic} Time to Live", "upper right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_ttl.pdf", "agentMeanTimeToLive", f"{titleStatistic} Time to Live", "upper right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "wealth" in config["plots"]:
         print(f"Generating {statistic} wealth plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_wealth.pdf", "meanWealth", f"{titleStatistic} Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_wealth.pdf", "meanWealth", f"{titleStatistic} Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
     if "wealthHappiness" in config["plots"]:
         print(f"Generating {statistic} wealth happiness plot")
-        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_total_wealth_happiness.pdf", "meanWealthHappiness", f"{titleStatistic} Wealth Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup)
+        generateSimpleLinePlot(models, dataset, totalTimesteps, f"{statistic}_total_wealth_happiness.pdf", "meanWealthHappiness", f"{titleStatistic} Wealth Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups)
 
 def generateGroupInteractionLinePlot(models, dataset, totalTimesteps, outfile, column, label, positioning):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
@@ -194,7 +197,7 @@ def generatePlotForBiases(dataset, totalTimesteps, outfile, label, positioning, 
         figure.savefig(modelOutfile, format="pdf", bbox_inches="tight")
         matplotlib.pyplot.close(figure)
 
-def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, label, positioning, percentage=False, experimentalGroup=None):
+def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.size"] = 18
     figure, axes = matplotlib.pyplot.subplots()
@@ -205,13 +208,14 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, outfile, column, lab
     modelStrings = {"asimov": "Asimov's Robot", "bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape",
                     "temperance": "Simple Temperance", "temperancePECS": "Complex Temperance", "multiple": "Multiple", "unknown": "Unknown"}
     colors = {"asimov": "blue", "bentham": "magenta", "egoist": "cyan", "altruist": "gold", "none": "black", "rawSugarscape": "black ", "temperance": "blue", "temperancePECS": "purple", "multiple": "red", "unknown": "green"}
+
     for model in dataset:
         modelString = model
         if '_' in model:
             modelString = "multiple"
         elif model not in modelStrings:
             modelString = "unknown"
-        if experimentalGroup != None:
+        if experimentalGroup != None and plotGroups == True:
             controlGroupColumn = "control" + column[0].upper() + column[1:]
             controlGroupLabel = f"Control {modelStrings[modelString]}"
             experimentalGroupColumn = experimentalGroup + column[0].upper() + column[1:]
@@ -278,16 +282,10 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
                 if entry in ["agentWealths", "agentTimesToLive", "agentTimesToLiveAgeLimited", "agentTotalMetabolism"]:
                     continue
                 if entry not in dataset[model]["metrics"]:
-                    if statistic == "mean":
-                        dataset[model]["metrics"][entry] = [0 for j in range(totalTimesteps + 1)]
-                    elif statistic == "median":
-                        dataset[model]["metrics"][entry] = [[] for j in range(totalTimesteps + 1)]
+                    dataset[model]["metrics"][entry] = [[] for j in range(totalTimesteps + 1)]
                 if item[entry] == "None":
                     item[entry] = 0
-                if statistic == "mean":
-                    dataset[model]["metrics"][entry][i-1] += float(item[entry])
-                elif statistic == "median":
-                    dataset[model]["metrics"][entry][i-1].append(float(item[entry]))
+                dataset[model]["metrics"][entry][i-1].append(float(item[entry]))
             i += 1
     print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
     for model in dataset:
@@ -298,8 +296,8 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
 def parseOptions():
     commandLineArgs = sys.argv[1:]
     shortOptions = "c:p:s:t:h"
-    longOptions = ("conf=", "path=", "help", "skip")
-    options = {"config": None, "path": None, "skip": False}
+    longOptions = ("conf=", "groups", "path=", "help", "skip")
+    options = {"config": None, "path": None, "plotGroups": False, "skip": False}
     try:
         args, vals = getopt.getopt(commandLineArgs, shortOptions, longOptions)
     except getopt.GetoptError as err:
@@ -311,6 +309,8 @@ def parseOptions():
                 print("No config file provided.")
                 printHelp()
             options["config"] = currVal
+        elif currArg in ("-g", "--groups"):
+            options["plotGroups"] = True
         elif currArg in ("-p", "--path"):
             options["path"] = currVal
             if currVal == "":
@@ -354,6 +354,7 @@ def printSummaryStats(dataset):
 if __name__ == "__main__":
     options = parseOptions()
     path = options["path"]
+    plotGroups = options["plotGroups"]
     config = options["config"]
     skipExtinct = options["skip"]
     configFile = open(config)
@@ -369,7 +370,7 @@ if __name__ == "__main__":
         modelString = model
         if type(model) == list:
             modelString = '_'.join(model)
-        dataset[modelString] = {"runs": 0, "extinct": 0, "worse": 0, "better": 0, "timesteps": 0, "aggregates": {}, "firstQuartiles": {}, "thirdQuartiles": {}, "metrics": {}}
+        dataset[modelString] = {"runs": 0, "extinct": 0, "worse": 0, "better": 0, "timesteps": 0, "aggregates": {}, "firstQuartiles": {}, "thirdQuartiles": {}, "standardDeviations": {}, "metrics": {}}
 
     if not os.path.exists(path):
         print(f"Path {path} not recognized.")
@@ -384,6 +385,6 @@ if __name__ == "__main__":
         print(f"Plotting statistic {statistic} not recognized.")
         printHelp()
 
-    generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup)
+    generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup, plotGroups)
     printSummaryStats(dataset)
     exit(0)

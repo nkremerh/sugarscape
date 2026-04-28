@@ -20,7 +20,14 @@ class Asimov(agent.Agent):
             cell["wealth"] = self.findEthicalValueOfCell(cell["cell"])
         cells = self.sortCellsByWealth(cells)
         for cell in cells:
-            if cell["wealth"] > 0:
+            for neighbor in self.neighborhood:
+                if type(neighbor) != type(self) and neighbor.canReachCell(cell["cell"]) == True:
+                    lawTwoScore = self.scoreLawTwo(neighbor, cell["cell"])
+                    # Take the first positive recommendation from a neighbor as a command
+                    if lawTwoScore > 0:
+                        bestCell = cell["cell"]
+            # If no neighbors provide a recommendation, revert to self-preservation
+            if bestCell == None and cell["wealth"] > 0:
                 bestCell = cell["cell"]
                 break
 
@@ -45,12 +52,6 @@ class Asimov(agent.Agent):
             if lawOneScore < 0:
                 return lawOneScore
             scoreModifier += lawOneScore
-            if type(neighbor) != type(self) and neighbor.canReachCell(cell) == True:
-                lawTwoScore = self.scoreLawTwo(neighbor, cell)
-                # Ignore neighbor cell score if they do not recommend moving there
-                if lawTwoScore < 0:
-                    continue
-                scoreModifier += lawTwoScore
         cellValue = scoreModifier * cellValue
         return cellValue
 
@@ -70,19 +71,17 @@ class Asimov(agent.Agent):
     def scoreLawTwo(self, neighbor, cell):
         # A robot must obey the orders given it by human beings except where such orders would conflict with the first law
         # If a non-Asimov agent has a decision model, use their ethical evaluation else use the default valuation
-        if neighbor.decisionModelFactor > 0 and neighbor.decisionModel != "none":
+        if neighbor.decisionModelFactor > 0 and neighbor.decisionModel != self.decisionModel and neighbor.decisionModel != "none":
             return neighbor.findEthicalValueOfCell(cell)
-        else:
-            # Law One guarantees agent in this cell should be non-Asimov
+        # Collect the relevant information for greedy agent evaluation
+        elif neighbor.decisionModel == "none":
             robot = cell.agent
-            robotSugar = 0
-            robotSpice = 0
-            if robot != None:
+            if robot != None and robot.decisionModel == self.decisionModel:
                 aggression = neighbor.findAggression()
                 combatMaxLoot = self.cell.environment.maxCombatLoot
                 robotSugar = aggression * min(combatMaxLoot, robot.sugar)
                 robotSpice = aggression * min(combatMaxLoot, robot.spice)
-            return neighbor.findValueOfCell(cell, robotSugar, robotSpice)
+                return neighbor.findValueOfCell(cell, robotSugar, robotSpice)
         return 0
 
     def scoreLawThree(self, cell):
