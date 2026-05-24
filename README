@@ -550,8 +550,10 @@ environmentWraparound: bool
 
 experimentalGroup: string
     Set the experimental group of agents under study for finer-grained logging.
-    Options: "depressed", "disease", "female", "male", "sick", decision model names
+    Options: "ageInGroup", "ageRange" "depressed", "disease", "female", "male", "race", "raceInGroup", "sick", decision model names
+    Note: Add an integer after "ageRange" such as "ageRange0" to track a specific age range.
     Note: Add an integer after "disease" such as "disease1" to track a specific disease.
+    Note: Add an integer after "race" such as "race0" to track a specific race, otherwise use raceInGroup to track any race considered in-group.
     Default: null
 
 headlessMode: bool
@@ -574,6 +576,7 @@ logfile: path
 
 logfileFormat: string
     Set the file format for the log file.
+    Options: "csv", "json"
     Default: "json"
 
 neighborhoodMode: string

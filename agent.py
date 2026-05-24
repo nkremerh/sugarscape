@@ -1255,7 +1255,11 @@ class Agent:
 
     def isInGroup(self, group, notInGroup=False):
         membership = False
-        if group == self.decisionModel:
+        if "ageRange" in group:
+            ageRangeID = int(re.search(r"ageRange(?P<ID>\d+)", group).group("ID"))
+            minAge, maxAge = self.cell.environment.inGroupAgeAbsoluteRanges[ageRangeID]
+            membership = self.age >= minAge and (self.age <= maxAge or maxAge == -1)
+        elif group == self.decisionModel:
             membership = True
         elif group == "depressed":
             membership = self.depressed
@@ -1266,6 +1270,11 @@ class Agent:
             membership = True if self.sex == "female" else False
         elif group == "male":
             membership = True if self.sex == "male" else False
+        elif "race" in group:
+            raceID = int(re.search(r"race(?P<ID>\d+)", group).group("ID"))
+            membership =  self.race == raceID
+        elif group == "raceInGroup":
+            membership = self.race in self.cell.environment.inGroupRaces
         elif group == "sick":
             membership = self.isSick()
 
