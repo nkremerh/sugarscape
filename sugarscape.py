@@ -88,7 +88,7 @@ class Sugarscape:
                              "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0, "sickAgentsPercentage": 0, "meanSelfishness": 0,
                              "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0, "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0,
                              "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0, "meanValidMoves": 0, "totalHappiness": 0, "loanVolume": 0,
-                             "meanAgeismFactor": 0, "meanRacismFactor": 0, "meanSexismFactor": 0
+                             "meanAgeismFactor": 0, "meanRacismFactor": 0, "meanSexismFactor": 0, "moveSpace": 0
                              }
         self.graphStats = {"ageBins": [], "sugarBins": [], "spiceBins": [], "lorenzCurvePoints": [], "meanTribeTags": [],
                            "maxSugar": 0, "maxSpice": 0, "maxWealth": 0}
@@ -1031,6 +1031,7 @@ class Sugarscape:
         maxTribeSize = 0
         maxWealth = 0
         minWealth = sys.maxsize
+        moveSpace = 0
         numAgents = 0
         numTraders = 0
         numTribes = 0
@@ -1149,6 +1150,7 @@ class Sugarscape:
                         meanControlNeighbors += 1
                     else:
                         meanExperimentalNeighbors += 1
+            moveSpace += agent.lastValidMoves
             meanValidMoves += len(agent.validMoves)
             for i in range(len(agent.validMoves)):
                 cell = agent.validMoves[i]["cell"]
@@ -1379,7 +1381,7 @@ class Sugarscape:
                         "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
                         "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage,
                         "meanAgeismFactor": meanAgeismFactor, "meanRacismFactor": meanRacismFactor, "meanSexismFactor": meanSexismFactor,
-                        "loanVolume": loanVolume
+                        "loanVolume": loanVolume, "moveSpace": moveSpace
                         }
 
         controlInteractionStats = {"combatControlGroupToControlGroup": combatControlToControl, "combatControlGroupToExperimentalGroup": combatControlToExperimental,
