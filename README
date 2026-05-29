@@ -576,6 +576,7 @@ logfile: path
 
 logfileFormat: string
     Set the file format for the log file.
+    Options: "csv", "json"
     Default: "json"
 
 neighborhoodMode: string
