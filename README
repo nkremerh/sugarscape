@@ -628,8 +628,8 @@ numSeeds: int
 plotConfigPrefixesWithExperimentalGroups: {string : string, ...}
     Set the configuration prefixes to plot as keys mapping to associated experimental groups.
     Note: configuration prefix must precede a number or number range in the log file names in one of two of the following formats before the rest of the filename.
-        "<configPrefix>-<int1>_"
-        "<configPrefix>-<int1>-<int2>_"
+        "<configPrefix>-<int>_"
+        "<configPrefix>-<int>-<int>_"
 
 plots: [string, ...]
     Set the plots to be created once data has been collected.
