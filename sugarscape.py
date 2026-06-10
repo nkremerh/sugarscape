@@ -79,13 +79,13 @@ class Sugarscape:
         # TODO: Remove redundant metrics
         # TODO: Streamline naming
         self.runtimeStats = {"timestep": 0, "population": 0, "meanMetabolism": 0, "meanMovement": 0, "meanVision": 0, "meanWealth": 0, "meanAge": 0, "giniCoefficient": 0,
-                             "meanTradePrice": 0, "tradeVolume": 0, "loanVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
+                             "meanTradePrice": 0, "tradeVolume": 0, "maxWealth": 0, "minWealth": 0, "meanHappiness": 0, "meanWealthHappiness": 0, "meanHealthHappiness": 0,
                              "meanSocialHappiness": 0, "meanFamilyHappiness": 0, "meanConflictHappiness": 0, "meanAgeAtDeath": 0, "seed": self.seed, "agentsReplaced": 0,
                              "agentsBorn": 0, "agentStarvationDeaths": 0, "agentDiseaseDeaths": 0, "environmentWealthCreated": 0, "agentWealthTotal": 0,
                              "environmentWealthTotal": 0, "agentWealthCollected": 0, "agentWealthBurnRate": 0, "agentMeanTimeToLive": 0, "agentTotalMetabolism": 0,
                              "agentCombatDeaths": 0, "agentAgingDeaths": 0, "agentDeaths": 0, "largestRace": 0, "largestTribe": 0, "largestRaceSize": 0, "largestTribeSize": 0,
                              "remainingRaces": self.configuration["environmentMaxRaces"], "remainingTribes": self.configuration["environmentMaxTribes"],
-                             "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0, "sickAgentsPercentage": 0, "meanAgeismFactor": 0, "meanRacismFactor": 0, "meanSelfishness": 0, "meanSexismFactor": 0,
+                             "sickAgents": 0, "carryingCapacity": 0, "meanDeathsPercentage": 0, "sickAgentsPercentage": 0, "meanSelfishness": 0,
                              "diseaseEffectiveReproductionRate": 0, "diseaseIncidence": 0, "diseasePrevalence": 0, "agentLastMoveOptimalityPercentage": 0, "meanNeighbors": 0,
                              "meanMoveRank": 0, "meanMoveDifferenceFromOptimal": 0, "meanValidMoves": 0, "totalHappiness": 0, "loanVolume": 0,
                              "meanAgeismFactor": 0, "meanRacismFactor": 0, "meanSexismFactor": 0, "moveSpace": 0
@@ -1037,7 +1037,6 @@ class Sugarscape:
         numTribes = 0
         sickAgents = 0
         tradeVolume = 0
-        loanVolume = 0
         carryingCapacityWeight = 0.05
         carryingCapacity = math.ceil((carryingCapacityWeight * len(self.agents)) + ((1 - carryingCapacityWeight) * self.runtimeStats["carryingCapacity"]))
         if self.timestep == 0:
@@ -1113,10 +1112,7 @@ class Sugarscape:
             agentTimeToLive = agent.findTimeToLive()
             agentTimeToLiveAgeLimited = agent.findTimeToLive(True)
             agentWealth = agent.sugar + agent.spice
-            meanAgeismFactor += agent.decisionModelAgeismFactor
-            meanRacismFactor += agent.decisionModelRacismFactor
             meanSelfishness += agent.selfishnessFactor
-            meanSexismFactor += agent.decisionModelSexismFactor
             meanSugarMetabolism += agent.sugarMetabolism
             meanSpiceMetabolism += agent.spiceMetabolism
             meanMovement += agent.movement
@@ -1138,8 +1134,6 @@ class Sugarscape:
                 meanTradePrice += max(agent.spicePrice, agent.sugarPrice)
                 tradeVolume += agent.tradeVolume
                 numTraders += 1
-            if agent.lastLendedTimestep == self.timestep:
-                loanVolume += agent.lastLoans
             agentWealthTotal += agentWealth
             agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
             agentWealthBurnRate += agentTimeToLive
@@ -1319,7 +1313,6 @@ class Sugarscape:
             remainingRaces = len(races)
             remainingTribes = len(tribes)
             tradeVolume = round(tradeVolume, 2)
-            loanVolume = round(loanVolume, 2)
             meanDeathsPercentage = round((numDeadAgents / numAgents) * 100, 2)
             sickAgentsPercentage = round((sickAgents / numAgents) * 100, 2)
             diseaseEffectiveReproductionRate = round(diseaseIncidence / len(infectors), 2) if len(infectors) > 0 else 0
@@ -1333,6 +1326,7 @@ class Sugarscape:
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
+            loanVolume = 0
             maxRace = 0
             maxTribe = 0
             maxWealth = 0
@@ -1356,7 +1350,6 @@ class Sugarscape:
             remainingTribes = 0
             totalHappiness = 0
             tradeVolume = 0
-            loanVolume = 0
             diseaseEffectiveReproductionRate = 0
 
         for agent in self.replacedAgents:
@@ -1376,16 +1369,16 @@ class Sugarscape:
                         "agentWealthBurnRate": agentWealthBurnRate, "agentWealthCollected": agentWealthCollected, "agentWealthTotal": agentWealthTotal,
                         "carryingCapacity": carryingCapacity, "largestRace": maxRace, "largestRaceSize": maxRaceSize,
                         "largestTribe": maxTribe, "largestTribeSize": maxTribeSize, "maxWealth": maxWealth,
-                        "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanAgeismFactor": meanAgeismFactor, "meanConflictHappiness": meanConflictHappiness,
+                        "meanAge": meanAge, "meanAgeAtDeath": meanAgeAtDeath, "meanConflictHappiness": meanConflictHappiness,
                         "meanFamilyHappiness": meanFamilyHappiness, "meanHappiness": meanHappiness, "meanHealthHappiness": meanHealthHappiness,
                         "meanMetabolism": meanMetabolism, "meanMovement": meanMovement, "meanMoveDifferenceFromOptimal": meanMoveDifferenceFromOptimal,
-                        "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanRacismFactor": meanRacismFactor, "meanSelfishness": meanSelfishness, "meanSexismFactor": meanSexismFactor,
+                        "meanMoveRank": meanMoveRank, "meanNeighbors": meanNeighbors, "meanSelfishness": meanSelfishness,
                         "meanSocialHappiness": meanSocialHappiness, "meanTradePrice": meanTradePrice, "meanWealth": meanWealth,
                         "meanWealthHappiness": meanWealthHappiness, "meanValidMoves": meanValidMoves, "meanVision": meanVision, "minWealth": minWealth,
                         "population": numAgents, "sickAgents": sickAgents, "totalHappiness": totalHappiness,
                         "remainingRaces": remainingRaces, 
                         "remainingTribes": remainingTribes,
-                        "tradeVolume": tradeVolume, "loanVolume": loanVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
+                        "tradeVolume": tradeVolume, "meanDeathsPercentage": meanDeathsPercentage, "sickAgentsPercentage": sickAgentsPercentage,
                         "diseaseEffectiveReproductionRate": diseaseEffectiveReproductionRate, "diseaseIncidence": diseaseIncidence,
                         "diseasePrevalence": diseasePrevalence, "agentLastMoveOptimalityPercentage": agentLastMoveOptimalityPercentage,
                         "meanAgeismFactor": meanAgeismFactor, "meanRacismFactor": meanRacismFactor, "meanSexismFactor": meanSexismFactor,
