@@ -524,9 +524,13 @@ class GUI:
                 for label in agent.socialNetwork:
                     if isinstance(label, str):
                         continue
-                    trader = agent.socialNetwork[label]
-                    if trader != None and trader["agent"].isAlive() == True and trader["lastSeen"] == self.sugarscape.timestep and trader["timesTraded"] > 0:
-                        trader = trader["agent"]
+                    traderRecord = agent.socialNetwork[label]
+                    trader = None
+                    for otherAgent in self.sugarscape.agents:
+                        if otherAgent.ID == label:
+                            trader = otherAgent
+                            break
+                    if trader != None and trader.isAlive() == True and traderRecord["lastSeen"] == self.sugarscape.timestep and traderRecord["timesTraded"] > 0:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (trader.cell.x, trader.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)
 
@@ -534,7 +538,7 @@ class GUI:
             for agent in self.sugarscape.agents:
                 # Loan records are always kept on both sides, so only one side is needed
                 for loanRecord in agent.socialNetwork["creditors"]:
-                    creditor = agent.socialNetwork[loanRecord["creditor"]]["agent"]
+                    creditor = loanRecord["creditor"]
                     if creditor.isAlive() == True:
                         lineEndpointsPair = frozenset([(agent.cell.x, agent.cell.y), (creditor.cell.x, creditor.cell.y)])
                         lineCoordinates.add(lineEndpointsPair)

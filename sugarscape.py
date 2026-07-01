@@ -471,7 +471,6 @@ class Sugarscape:
         self.endLog(self.agentLog)
         if "all" in self.debug or "sugarscape" in self.debug:
             print(str(self))
-        exit(0)
 
     def findActiveQuadrants(self):
         quadrants = self.configuration["environmentStartingQuadrants"]

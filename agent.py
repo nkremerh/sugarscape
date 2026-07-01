@@ -154,7 +154,7 @@ class Agent:
         agentID = agent.ID
         if agentID in self.socialNetwork:
             return
-        self.socialNetwork[agentID] = {"agent": agent, "lastSeen": self.lastMovedTimestep, "timesVisited": 1, "timesReproduced": 0,
+        self.socialNetwork[agentID] = {"lastSeen": self.lastMovedTimestep, "timesVisited": 1, "timesReproduced": 0,
                                          "timesTraded": 0, "timesLoaned": 0, "marginalRateOfSubstitution": 0}
         
         if self.decisionModel == "temperance":
@@ -192,7 +192,7 @@ class Agent:
         if agentID not in self.socialNetwork:
             self.addAgentToSocialNetwork(agent)
         self.socialNetwork[agentID]["timesLoaned"] += 1
-        loan = {"creditor": agentID, "debtor": self.ID, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
+        loan = {"creditor": agent, "debtor": self, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
                 "loanOrigin": timestep}
         self.socialNetwork["creditors"].append(loan)
 
@@ -202,7 +202,7 @@ class Agent:
             self.addAgentToSocialNetwork(agent)
         self.socialNetwork[agentID]["timesLoaned"] += 1
         agent.addLoanFromAgent(self, timestep, sugarLoan, spiceLoan, duration)
-        loan = {"creditor": self.ID, "debtor": agentID, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
+        loan = {"creditor": self, "debtor": agent, "sugarLoan": sugarLoan, "spiceLoan": spiceLoan, "loanDuration": duration,
                 "loanOrigin": timestep}
         self.socialNetwork["debtors"].append(loan)
         self.sugar -= sugarPrincipal
@@ -1328,8 +1328,7 @@ class Agent:
             self.gotoCell(bestCell)
 
     def payDebt(self, loan):
-        creditorID = loan["creditor"]
-        creditor = self.socialNetwork[creditorID]["agent"]
+        creditor = loan["creditor"]
         if creditor.isAlive() == False:
             if creditor.inheritancePolicy != "children":
                 self.socialNetwork["creditors"].remove(loan)
@@ -1361,8 +1360,7 @@ class Agent:
             creditor.addLoanToAgent(self, self.lastMovedTimestep, 0, newSugarLoan, 0, newSpiceLoan, creditor.loanDuration)
 
     def payDebtToCreditorChildren(self, loan):
-        creditorID = loan["creditor"]
-        creditor = self.socialNetwork[creditorID]["agent"]
+        creditor = loan["creditor"]
         creditorChildren = creditor.socialNetwork["children"]
         livingCreditorChildren = []
         for child in creditorChildren:
@@ -1533,8 +1531,7 @@ class Agent:
 
     def updateLoans(self):
         for debtor in self.socialNetwork["debtors"]:
-            debtorID = debtor["debtor"]
-            debtorAgent = self.socialNetwork[debtorID]["agent"]
+            debtorAgent = debtor["debtor"]
             # Cannot collect on debt since debtor is dead
             if debtorAgent.isAlive() == False:
                 self.socialNetwork["debtors"].remove(debtor)
