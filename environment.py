@@ -62,18 +62,15 @@ class Environment:
     def doCellUpdate(self):
         for i in range(self.width):
             for j in range(self.height):
+                cell = self.grid[i][j]
+                if cell is not None:
+                    cell.updateWaterCap()
                 cellCurrSugar = self.grid[i][j].sugar
                 cellCurrSpice = self.grid[i][j].spice
                 cellMaxSugar = self.grid[i][j].maxSugar
                 cellMaxSpice = self.grid[i][j].maxSpice
                 cellSeason = self.grid[i][j].season
                 
-                #watercells:
-
-                # cellWaterMultiplier = 1 - self.grid[i][j].waterCapacity
-                # cellSugarRegrowthRate = self.sugarRegrowRate * cellWaterMultiplier
-                # cellSpiceRegrowthRate = self.spiceRegrowRate * cellWaterMultiplier
-
                 waterCap = self.grid[i][j].waterCapacity
 
                 if waterCap == 1.0:
@@ -118,11 +115,11 @@ class Environment:
                     self.grid[i][j].sugar = sugarRegrowth
                     self.grid[i][j].spice = spiceRegrowth
         if self.pollutionDiffusionStart <= self.timestep <= self.pollutionDiffusionEnd and self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
-            for i in range(self.height):
-                for j in range(self.width):
+            for i in range(self.width):
+                for j in range(self.height):
                     self.grid[i][j].findPollutionFlux()
-            for i in range(self.height):
-                for j in range(self.width):
+            for i in range(self.width):
+                for j in range(self.height):
                     self.grid[i][j].doPollutionDiffusion()
 
     def doTimestep(self, timestep):
@@ -201,41 +198,18 @@ class Environment:
             delta = border - delta
         return delta
 
-    def getWaterFlowVector(self):
+    def getWaterFlowDirection(self):
         config = self.sugarscape.configuration
-        orientation = config.get("environmentRiverOrientation", "horizontal")
         flowDir = config.get("environmentRiverFlowDirection", "left-to-right")
-        slope = config.get("environmentRiverSlope", 0)
 
-        dx = -1 if flowDir == "right-to-left" else 1
-        
-        if orientation == "horizontal":
-            return (dx,0)
-        
-        elif orientation == "vertical":
-            dy = -1 if flowDir == "bottom-to-top" else 1
-            return (0,dy)
+        isReverse = flowDir in ["right-to-left"]
 
-        elif orientation == "diagonal":
-            # diagonal flows like verticals
-            # slope determines left-to-right/right-to-left
-            # configuration determines top-to-bottom/bottom-to-top
-
-            if flowDir == "top-to-bottom":
-                dy = 1
-                dx = int(dy / slope) if slope != 0 else 1
-
-            else:
-                dy = -1
-                dx = int(dy / slope) if slope != 0 else -1
-
-            return (dx, dy)
-
-        
-        return (0,0)
+        direction = -1 if isReverse else 1
+        return direction
 
     def resetCell(self, x, y):
         self.grid[x][y] = None
+        
 
     def setCell(self, cell, x, y):
         if self.grid[x][y] == None:
@@ -265,6 +239,7 @@ class Environment:
                 else:
                     self.seasonNorth = "wet"
                     self.seasonSouth = "dry"
+        
         
 
     def __str__(self):

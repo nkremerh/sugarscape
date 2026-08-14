@@ -167,41 +167,36 @@ class Sugarscape:
         height = self.environment.height
         width = self.environment.width
         radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
+
+        RIVER_MAX_CAPACITY = 0
+        FLOODPLAIN_MAX_CAPACITY = math.ceil(maxValue * 1.25)
+
         for i in range(width):
             for j in range(height):
                 
-                #water
-
                 targetCell = self.environment.findCell(i,j)
-                RIVER_MAX_CAPACITY = 0
-                FLOODPLAIN_MAX_CAPACITY = 4
-
-                # if targetCell.waterCapacity == 1.0:
-                #     waterMultiplier = 0.15
-                # elif targetCell.waterCapacity == 0.5:
-                #     waterMultiplier = 0.5
-                # else:
-                #     waterMultiplier = 1.0
-
-                # if waterMultiplier <= 0:
-                #     continue
 
                 euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
                 currDispersion = 1 + maxValue * (1 - euclideanDistanceToStart / radialDispersion)
                 cellMaxCapacity = min(currDispersion, maxValue)
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
 
+                if resource == "spice":
+                    targetCell.baseMaxSpice = max(getattr(targetCell, 'baseMaxSpice', 0), cellMaxCapacity)
+                elif resource == "sugar":
+                    targetCell.baseMaxSugar = max(getattr(targetCell, 'baseMaxSugar', 0), cellMaxCapacity)
+
                 if targetCell.waterCapacity == 1.0:
                     cellMaxCapacity = min(cellMaxCapacity, RIVER_MAX_CAPACITY)
                 elif targetCell.waterCapacity == 0.5:
                     cellMaxCapacity = min(max(cellMaxCapacity, 2), FLOODPLAIN_MAX_CAPACITY)
 
-                if resource == "spice" and cellMaxCapacity > self.environment.findCell(i, j).maxSpice:
-                    self.environment.findCell(i, j).maxSpice = cellMaxCapacity
-                    self.environment.findCell(i, j).spice = cellMaxCapacity
-                elif resource == "sugar" and cellMaxCapacity > self.environment.findCell(i, j).maxSugar:
-                    self.environment.findCell(i, j).maxSugar = cellMaxCapacity
-                    self.environment.findCell(i, j).sugar = cellMaxCapacity
+                if resource == "spice" and cellMaxCapacity > targetCell.maxSpice:
+                    targetCell.maxSpice = cellMaxCapacity
+                    targetCell.spice = cellMaxCapacity
+                elif resource == "sugar" and cellMaxCapacity > targetCell.maxSugar:
+                    targetCell.maxSugar = cellMaxCapacity
+                    targetCell.sugar = cellMaxCapacity
 
                     
 
@@ -1578,6 +1573,7 @@ def sortConfigurationTimeframes(configuration, timeframe):
     return config
 
 def verifyConfiguration(configuration):
+    orientationAllowed = ["horizontal", "Horizontal", "Vertical", "vertical", "Diagonal", "diagonal"]
     negativesAllowed = ["agentDecisionModelAgeismFactor", "agentDecisionModelRacismFactor", "agentDecisionModelSexismFactor", "agentDecisionModelTribalFactor", "agentMaxAge", "agentSelfishnessFactor"]
     negativesAllowed += ["diseaseAggressionPenalty", "diseaseFertilityPenalty", "diseaseFriendlinessPenalty", "diseaseHappinessPenalty", "diseaseMovementPenalty"]
     negativesAllowed += ["diseaseSpiceMetabolismPenalty", "diseaseSugarMetabolismPenalty", "diseaseTimeframe", "diseaseVisionPenalty"]
@@ -1658,6 +1654,11 @@ def verifyConfiguration(configuration):
         if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
             print(f"Cannot have a quadrant size factor of {configuration['environmentQuadrantSizeFactor']}. Setting quadrant size factor to 1.")
         configuration["environmentQuadrantSizeFactor"] = 1
+
+    # Validating River Orientation
+    if configuration["environmentRiverOrientation"] not in orientationAllowed:
+        if "all" in configuration["debugMode"] or "environment" in configuration["debugMode"]:
+                    print(f"Cannot have a river orientation that is not either diagonal, horizontal or vertical.")
 
     if len(configuration["environmentStartingQuadrants"]) == 0:
         configuration["environmentStartingQuadrants"] = [1, 2, 3, 4]
@@ -1970,16 +1971,16 @@ if __name__ == "__main__":
                      "environmentPollutionDiffusionTimeframe": [0, 0],
                      "environmentPollutionTimeframe": [0, 0],
                      "environmentQuadrantSizeFactor": 1,
-                     "environmentRiverLocation": 30,
+                     "environmentRiverLocation": 25,
                      "environmentRiverOrientation": "diagonal",
                      "environmentRiverWidthWet": 4,
                      "environmentRiverWidthDry": 2,
-                     "environmentRiverSlope": -3.0,
-                     "environmentRiverFlowDirection": "top-to-bottom",
+                     "environmentRiverSlope": 0.5,
+                     "environmentRiverFlowDirection": "left-to-right",
                      "environmentWaterPollutionFlow": True,
                      "environmentWaterPollutionFlowRate": 0.5,
                      "environmentSeasonalGrowbackDelay": 0,
-                     "environmentSeasonInterval": 2,
+                     "environmentSeasonInterval": 50,
                      "environmentSexistGroups": [],
                      "environmentSpiceConsumptionPollutionFactor": 0,
                      "environmentSpicePeaks": [[35, 35, 4], [15, 15, 4]],
@@ -1993,8 +1994,6 @@ if __name__ == "__main__":
                      "environmentTribePerQuadrant": False,
                      "environmentUniversalSpiceIncomeInterval": 0,
                      "environmentUniversalSugarIncomeInterval": 0,
-                     "environmentWaterPollutionFlow": True,
-                     "environmentWaterPollutionFlowRate": 0.5,
                      "environmentWidth": 50,
                      "environmentWraparound": True,
                      "experimentalGroup": None,

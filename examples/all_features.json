@@ -73,7 +73,7 @@
     "environmentPollutionTimeframe": [100, -1],
     "environmentQuadrantSizeFactor": 1,
     "environmentSeasonalGrowbackDelay": 1,
-    "environmentSeasonInterval": 2,
+    "environmentSeasonInterval": 50,
     "environmentSexistGroups": ["female", "male"],
     "environmentSpiceConsumptionPollutionFactor": 1,
     "environmentSpicePeaks": [[15, 15, 4], [35, 35, 4]],
