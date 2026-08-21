@@ -2,7 +2,8 @@ import math
 import tkinter
 
 class GUI:
-    def __init__(self, sugarscape, screenHeight=1000, screenWidth=900):
+    def __init__(self, sugarscape, screenHeight=1000, screenWidth=900, colorMode="light"):
+        self.colorMode = colorMode
         self.sugarscape = sugarscape
         self.screenHeight = screenHeight
         self.screenWidth = screenWidth
@@ -55,7 +56,7 @@ class GUI:
         self.highlightedAgent = None
         self.highlightedCell = None
         self.highlightRectangle = None
-        self.menuTrayColumns = 7
+        self.menuTrayColumns = 8
         self.siteHeight = (self.screenHeight - 2 * self.borderEdge) / self.sugarscape.environmentHeight
         self.siteWidth = (self.screenWidth - 2 * self.borderEdge) / self.sugarscape.environmentWidth
         self.stopSimulation = False
@@ -153,6 +154,10 @@ class GUI:
             editingMenu.add_checkbutton(label=mode, onvalue=mode, offvalue=mode, variable=self.lastSelectedEditingMode, command=self.doEditingMenu, indicatoron=True)
         editingButton.grid(row=0, column=6, sticky="nsew")
 
+        nextColorMode = "Dark Mode" if self.colorMode == "light" else "Light Mode"
+        colorModeButton = tkinter.Button(window, text=nextColorMode, command=self.configureColorMode, relief=tkinter.RAISED)
+        colorModeButton.grid(row=0, column=7, sticky="nsew")
+
         statsLabel = tkinter.Label(window, text=self.defaultSimulationString, font="Roboto 10", justify=tkinter.CENTER)
         statsLabel.grid(row=1, column=0, columnspan=self.menuTrayColumns, sticky="nsew")
         cellLabel = tkinter.Label(window, text=f"{self.defaultCellString}\n{self.defaultAgentString}", font="Roboto 10", justify=tkinter.CENTER)
@@ -169,6 +174,7 @@ class GUI:
         self.widgets["environmentColorMenu"] = environmentColorMenu
         self.widgets["statsLabel"] = statsLabel
         self.widgets["cellLabel"] = cellLabel
+        self.widgets["colorModeButton"] = colorModeButton
 
     def configureCanvas(self):
         canvas = tkinter.Canvas(self.window, background="white")
@@ -180,8 +186,35 @@ class GUI:
             self.doubleClick = False
         self.canvas = canvas
 
+    def configureColorMode(self):
+        borderWidth = 1
+        if self.colorMode == "light":
+            nextColorMode = "dark"
+            backgroundColor = "#26242F"
+            foregroundColor = "#D9D9D9"
+            activeBackgroundColor = "orange"
+            activeForegroundColor = "#26242F"
+            emptyCellColor = "#26242F"
+        else:
+            nextColorMode = "light"
+            backgroundColor = "#D9D9D9"
+            foregroundColor = "#26242F"
+            activeBackgroundColor = "#ECECEC"
+            activeForegroundColor = "#26242F"
+            emptyCellColor = "#FFFFFF"
+        self.window.config(bg=backgroundColor)
+        self.canvas.config(bg=backgroundColor)
+        for widget in self.widgets:
+            self.widgets[widget].config(bd=borderWidth, bg=backgroundColor, fg=foregroundColor, activebackground=activeBackgroundColor, activeforeground=activeForegroundColor)
+            if widget == "colorModeButton":
+                colorText = "Dark Mode" if nextColorMode == "light" else "Light Mode"
+                self.widgets[widget].config(text=colorText)
+        self.colors["sugarAndSpice"][0][0] = emptyCellColor
+        self.configureEnvironment()
+        self.colorMode = nextColorMode
+
     def configureEditingModes(self):
-        return ["Add Agent", "Add Disease", "Add Current Spice", "Add Current Sugar", "Add Maximum Spice", "Add Maximum Sugar",
+        return ["Change Color Mode", "Add Agent", "Add Disease", "Add Current Spice", "Add Current Sugar", "Add Maximum Spice", "Add Maximum Sugar",
                 "Remove Current Spice", "Remove Current Sugar", "Remove Maximum Spice", "Remove Maximum Sugar"]
 
     def configureEnvironment(self):
@@ -378,7 +411,9 @@ class GUI:
 
     def doEditAction(self, cell):
         mode = self.lastSelectedEditingMode.get()
-        if mode == "Add Agent":
+        if mode == "Change Color Mode":
+            self.changeColorMode()
+        elif mode == "Add Agent":
             self.sugarscape.configureAgents(1, cell)
         elif mode == "Add Disease":
             self.sugarscape.configureDiseases(1, [], cell)
