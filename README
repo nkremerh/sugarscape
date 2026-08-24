@@ -625,18 +625,27 @@ numSeeds: int
     Set the number of random seeds to be tested in data collection.
     Default: 100
 
+plotConfigPrefixesWithExperimentalGroups: {string : string, ...}
+    Set the configuration prefixes to plot as keys mapping to associated experimental groups.
+    Note: configuration prefix must precede a number or number range in the log file names in one of two of the following formats before the rest of the filename.
+        "<configPrefix>-<int>_"
+        "<configPrefix>-<int>-<int>_"
+
 plots: [string, ...]
     Set the plots to be created once data has been collected.
-    Options: "combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "lifeExpectancy", "population", "selfishness", "socialHappiness", "totalWealth", "ttl", "wealth", "wealthHappiness"
+    Options: "ageism", "biasFactors", "combatHappiness", "combatInteractions", "deaths", "extinctions", "familyHappiness", "happiness", "healthHappiness", "lifeExpectancy", "lendingInteractions", "loanVolume", "population", "racism", "sameGroupInteractions", "selfishness", "sexism", "socialHappiness", "reproductionInteractions", "totalWealth", "tradeInteractions", "ttl", "wealth", "wealthHappiness"
     Default: ["deaths", "giniCoefficient", "happiness", "lifeExpectancy", "population", "sickness", "tradeVolume", "ttl", "wealth"]
+    Note: combatInteractions, lendingInteractions, reproductionInteractions, sameGroupInteractions, and tradeInteractions require experimentalGroup to be set.
+    Note: extinctions and sameGroupInteractions require meansByConfig plotStatistic
 
 plotStatistic: string
     Set the statistic to use for plotting.
-    Options: "mean", "median"
+    Options: "mean", "meansByConfig", "median"
     Default: "mean"
+    Note: meansByConfig requires plotConfigPrefixesWithExperimentalGroups
 
 plotTimesteps: int
-    Set the number of timesteps to plot in graphs as the X axis.
+    Set the number of timesteps to plot in graphs.
     Note: This option does not control how many timesteps the simulation runs.
     Default: 1000
 
