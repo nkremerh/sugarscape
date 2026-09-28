@@ -14,34 +14,52 @@ def createConfigurations(config, path, mode="json"):
         if path[-1] != '/':
             path = path + '/'
         dataOpts = config["dataCollectionOptions"]
+        parameter = dataOpts["parameterSweep"] if "parameterSweep" in dataOpts else None
+        parameterRange = dataOpts["parameterRange"] if "parameterRange" in dataOpts else []
         seeds = generateSeeds(dataOpts)
         confFiles = []
+        validParameter = True
+        if len(parameterRange) < 2 or parameter == None:
+            parameterRange = [0]
+            validParameter = False
+        elif len(parameterRange) == 2:
+            parameterRange = range(parameterRange[0], parameterRange[1] + 1)
+        else:
+            parameterRange = range(parameterRange[0], parameterRange[1] + 1, parameterRange[2])
+
         for seed in seeds:
             for model in dataOpts["decisionModels"]:
-                modelString = model
-                if type(model) == list:
-                    modelString = '_'.join(model)
-                simOpts = config["sugarscapeOptions"]
-                simOpts["agentDecisionModels"] = model
-                simOpts["seed"] = seed
-                if mode == "json":
-                    simOpts["logfile"] = f"{path}{modelString}{seed}.json"
-                    if simOpts["agentLogfile"] != None:
-                        simOpts["agentLogfile"] = f"{path}agents.{modelString}{seed}.json"
-                    simOpts["logfileFormat"] = "json"
-                else:
-                    simOpts["logfile"] = f"{path}{modelString}{seed}.csv"
-                    if simOpts["agentLogfile"] != None:
-                        simOpts["agentLogfile"] = f"{path}agents.{modelString}{seed}.csv"
-                    simOpts["logfileFormat"] = "csv"
-                # Enforce noninteractive, no-output mode
-                simOpts["headlessMode"] = True
-                simOpts["debugMode"] = ["none"]
-                confFilePath = f"{path}{modelString}{seed}.config"
-                confFiles.append(confFilePath)
-                conf = open(confFilePath, 'w')
-                conf.write(json.dumps(simOpts))
-                conf.close()
+                for param in parameterRange:
+                    modelString = model
+                    if type(model) == list:
+                        modelString = '_'.join(model)
+                    paramString = ''
+                    simOpts = config["sugarscapeOptions"]
+                    simOpts["agentDecisionModels"] = model
+                    simOpts["seed"] = seed
+                    if validParameter == True:
+                        paramString = f"{param}{parameter}"
+                        simOpts[parameter] = param if type(simOpts[parameter]) != list else [param, param]
+                    filename = f"{path}{modelString}{paramString}{seed}"
+                    agentLogname = f"{path}agents.{modelString}{paramString}{seed}"
+                    if mode == "json":
+                        simOpts["logfile"] = f"{filename}.json"
+                        if simOpts["agentLogfile"] != None:
+                            simOpts["agentLogfile"] = f"{agentLogname}.json"
+                        simOpts["logfileFormat"] = "json"
+                    else:
+                        simOpts["logfile"] = f"{filename}.csv"
+                        if simOpts["agentLogfile"] != None:
+                            simOpts["agentLogfile"] = f"{agentLogname}.csv"
+                        simOpts["logfileFormat"] = "csv"
+                    # Enforce noninteractive, no-output mode
+                    simOpts["headlessMode"] = True
+                    simOpts["debugMode"] = ["none"]
+                    confFilePath = f"{filename}.config"
+                    confFiles.append(confFilePath)
+                    conf = open(confFilePath, 'w')
+                    conf.write(json.dumps(simOpts))
+                    conf.close()
         return confFiles
     return configs
 

@@ -24,7 +24,7 @@ def findMeans(dataset):
                 if column not in dataset[model]["aggregates"]:
                     dataset[model]["aggregates"][column] = [0 for j in range(totalTimesteps + 1)]
                     dataset[model]["standardDeviations"][column] = [0 for j in range(totalTimesteps + 1)]
-                dataset[model]["standardDeviations"][column][i] = statistics.stdev(dataset[model]["metrics"][column][i])
+                dataset[model]["standardDeviations"][column][i] = statistics.stdev(dataset[model]["metrics"][column][i]) if len(dataset[model]["metrics"][column][i]) > 1 else 0
                 dataset[model]["aggregates"][column][i] = sum(dataset[model]["metrics"][column][i]) / dataset[model]["runs"]
     return dataset
 
@@ -184,14 +184,14 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False):
     for file in files:
         filename = os.fsdecode(file)
         filePath = path + filename
-        fileDecisionModel = re.compile(r"^([A-z]*)(\d*)\.(json|csv)")
+        fileDecisionModel = re.compile(r"^([A-z]*)(\d+[A-z]+)?(\d*)\.(json|csv)")
         fileSearch = re.search(fileDecisionModel, filename)
         if fileSearch == None:
             continue
         model = fileSearch.group(1)
         if model not in dataset:
             continue
-        seed = fileSearch.group(2)
+        seed = fileSearch.group(3)
         log = open(filePath)
         printProgress(filename, fileCount, totalFiles, printFileLength)
         fileCount += 1
@@ -308,6 +308,8 @@ if __name__ == "__main__":
     configFile.close()
     experimentalGroup = config["sugarscapeOptions"]["experimentalGroup"] if "experimentalGroup" in config["sugarscapeOptions"] else None
     config = config["dataCollectionOptions"]
+    if "plotType" in config:
+        plotType = config["plotType"]
     totalTimesteps = config["plotTimesteps"]
     models = config["decisionModels"]
     statistic = config["plotStatistic"]

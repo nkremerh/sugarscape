@@ -1326,6 +1326,7 @@ class Sugarscape:
         else:
             agentMeanTimeToLive = 0
             agentWealthBurnRate = 0
+            loanVolume = 0
             maxRace = 0
             maxTribe = 0
             maxWealth = 0

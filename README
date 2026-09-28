@@ -625,6 +625,17 @@ numSeeds: int
     Set the number of random seeds to be tested in data collection.
     Default: 100
 
+parameterRange: [int, int, int]
+    Set the first value, last value, and increment value for the experimental parameter in data collection.
+    Note: If an increment value is not provided, an increment of 1 will be used.
+    Note: This option must be used in conjunction with the parameterSweep option.
+    Default: []
+
+parameterSweep: string
+    Set the simulation option to use as an experimental parameter in data collection.
+    Note: This option must be used in conjunction with the parameterRange option.
+    Default: null
+
 plots: [string, ...]
     Set the plots to be created once data has been collected.
     Options: "combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "lifeExpectancy", "population", "selfishness", "socialHappiness", "totalWealth", "ttl", "wealth", "wealthHappiness"
@@ -634,6 +645,11 @@ plotStatistic: string
     Set the statistic to use for plotting.
     Options: "mean", "median"
     Default: "mean"
+
+plotType: string
+    Set the type of plots to generate.
+    Options: "bar", "line"
+    Default: "line"
 
 plotTimesteps: int
     Set the number of timesteps to plot in graphs as the X axis.

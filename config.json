@@ -4,9 +4,12 @@
         "decisionModels": [["none"]],
         "numParallelSimJobs": 1,
         "numSeeds": 100,
+        "parameterRange": [],
+        "parameterSweep": null,
         "plots": ["deaths", "giniCoefficient", "happiness", "lifeExpectancy", "population", "sickness", "tradeVolume", "ttl", "wealth"],
         "plotStatistic": "mean",
         "plotTimesteps": 1000,
+        "plotType": "line",
         "pythonAlias": "python"
     },
     "sugarscapeOptions": {
