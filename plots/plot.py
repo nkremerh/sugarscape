@@ -13,8 +13,8 @@ COLORS = {"asimov": "blue", "bentham": "magenta", "egoist": "cyan", "altruist": 
           "temperancePECS": "purple", "multiple": "red", "unknown": "green"}
 LABELS = {"asimov": "Asimov's Robot", "bentham": "Utilitarian", "egoist": "Egoist", "altruist": "Altruist", "none": "Raw Sugarscape", "rawSugarscape": "Raw Sugarscape",
           "temperance": "Simple Temperance", "temperancePECS": "Complex Temperance", "multiple": "Multiple", "unknown": "Unknown"}
-HATCHES = {"asimov": '/', "bentham": 'x', "egoist": '+', "altruist": 'o', "none": '-', "rawSugarscape": '-',
-           "temperance": '.', "temperancePECS": 'O', "multiple": '*', "unknown": '*'}
+HATCHES = {"asimov": 'O', "bentham": 'o', "egoist": 'o', "altruist": 'o', "none": '.', "rawSugarscape": '.',
+           "temperance": 'x', "temperancePECS": 'x', "multiple": '*', "unknown": '*'}
 
 def findMeans(dataset):
     print(f"Finding mean values across {totalTimesteps} timesteps")
@@ -123,7 +123,23 @@ def generateSimpleBarPlot(models, dataset, totalTimesteps, outfile, column, labe
         elif model not in LABELS:
             modelString = "unknown"
         if experimentalGroup != None and plotGroups == True:
-            continue
+            controlGroupColumn = "control" + column[0].upper() + column[1:]
+            controlGroupLabel = f"Control {LABELS[modelString]}"
+            experimentalGroupColumn = experimentalGroup + column[0].upper() + column[1:]
+            experimentalGroupLabel = experimentalGroup[0].upper() + experimentalGroup[1:] + f" {LABELS[modelString]}"
+            # Prevent key error if all seeds went extinct for model
+            if column in dataset[model]["aggregates"]:
+                colors.append(COLORS[modelString])
+                errors.append(dataset[model]["standardDeviations"][controlGroupColumn][-1])
+                hatches.append(HATCHES[modelString])
+                labels.append(controlGroupLabel)
+                values.append(dataset[model]["aggregates"][controlGroupColumn][-1])
+                colors.append("white")
+                errors.append(dataset[model]["standardDeviations"][experimentalGroupColumn][-1])
+                hatches.append(HATCHES[modelString])
+                labels.append(experimentalGroupLabel)
+                values.append(dataset[model]["aggregates"][experimentalGroupColumn][-1])
+            matplotlib.pyplot.xticks(rotation=-45, fontsize=12)
         # Prevent key error if all seeds went extinct for model
         elif column in dataset[model]["aggregates"]:
             colors.append(COLORS[modelString])
@@ -132,10 +148,11 @@ def generateSimpleBarPlot(models, dataset, totalTimesteps, outfile, column, labe
             labels.append(LABELS[modelString])
             values.append(dataset[model]["aggregates"][column][-1])
 
+    edgeColors = [colors[i] if colors[i] != "white" else colors[i - 1] for i in range(len(colors))]
     yMax =  max(values) + max(errors)
     yMax = math.ceil(yMax * 1.05) if yMax > 0 else yMax + 1
     axes.set(xlabel="Decision Models", ylabel=label, ylim=[0, yMax])
-    axes.bar(labels, values, color=colors, yerr=errors, ecolor="gray", capsize=8, hatch=hatches)
+    axes.bar(labels, values, capsize=8, color=colors, ecolor="gray", edgecolor=edgeColors, hatch=hatches, yerr=errors)
     if percentage == True:
         axes.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter())
     figure.savefig(outfile, format="pdf", bbox_inches="tight")
@@ -308,6 +325,8 @@ if __name__ == "__main__":
     configFile.close()
     experimentalGroup = config["sugarscapeOptions"]["experimentalGroup"] if "experimentalGroup" in config["sugarscapeOptions"] else None
     config = config["dataCollectionOptions"]
+    if "plotGroups" in config:
+        plotGroups = config["plotGroups"]
     if "plotType" in config:
         plotType = config["plotType"]
     totalTimesteps = config["plotTimesteps"]
