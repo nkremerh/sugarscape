@@ -636,6 +636,16 @@ parameterSweep: string
     Note: This option must be used in conjunction with the parameterRange option.
     Default: null
 
+plotFill: bool
+    Set whether to fill the area above and below the plot statistic in relevant plot types.
+    Note: When plotting the mean as the statistic, the area of fill will be one standard deviation above and below the mean.
+    Note: When plotting the median as the statistic, the area of fill will be one quartile above and below the mean.
+    Default: false
+
+plotGroups: bool
+    Set whether to create plots based on experimental and control groups.
+    Default: false
+
 plots: [string, ...]
     Set the plots to be created once data has been collected.
     Options: "combatHappiness", "deaths", "familyHappiness", "happiness", "healthHappiness", "lifeExpectancy", "population", "selfishness", "socialHappiness", "totalWealth", "ttl", "wealth", "wealthHappiness"
