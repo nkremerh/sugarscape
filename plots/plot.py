@@ -68,9 +68,7 @@ def findMedians(dataset, totalTimesteps, parameter=None, parameterRange=None):
 def generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup=None, plotGroups=False, fill=False, plotType="line", parameter=None, parameterRange=None):
     titleStatistic = statistic.title()
     generatePlot = generateSimpleLinePlot
-    if plotType == "bar" and parameter != None:
-        generatePlot = generateGroupedBarPlot
-    elif plotType == "bar":
+    if plotType == "bar":
         generatePlot = generateSimpleBarPlot
 
     if "conflictHappiness" in config["plots"]:
@@ -122,68 +120,6 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
         print(f"Generating {statistic} wealth happiness plot")
         generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_total_wealth_happiness.pdf", "meanWealthHappiness", f"{titleStatistic} Wealth Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
 
-def generateGroupedBarPlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None):
-    matplotlib.pyplot.rcParams["font.family"] = "serif"
-    matplotlib.pyplot.rcParams["font.size"] = 14
-    figure, axes = matplotlib.pyplot.subplots(layout="constrained")
-    colors = []
-    errors = []
-    hatches = []
-    labels = [i for i in range(parameterRange[0], parameterRange[1] + 1, parameterRange[2])]
-    values = {}
-
-    params = [i for i in range(parameterRange[0], parameterRange[1] + 1, parameterRange[2])]
-    for param in params:
-        for model in dataset:
-            modelString = model
-            if '_' in model:
-                modelString = "multiple"
-            elif model not in LABELS:
-                modelString = "unknown"
-            if experimentalGroup != None and plotGroups == True:
-                controlGroupColumn = "control" + column[0].upper() + column[1:]
-                controlGroupLabel = f"Control {LABELS[modelString]}"
-                experimentalGroupColumn = experimentalGroup + column[0].upper() + column[1:]
-                experimentalGroupLabel = experimentalGroup[0].upper() + experimentalGroup[1:] + f" {LABELS[modelString]}"
-                # Prevent key error if all seeds went extinct for model
-                if column in dataset[model]["aggregates"]:
-                    if controlGroupLabel not in values:
-                        colors.append(COLORS[modelString])
-                        hatches.append(HATCHES[modelString])
-                        values[controlGroupLabel] = []
-                        colors.append("white")
-                        hatches.append(HATCHES[modelString])
-                        values[experimentalGroupLabel] = []
-                    #errors.append(dataset[model]["standardDeviations"][controlGroupColumn][param])
-                    #labels.append(controlGroupLabel)
-                    values[controlGroupLabel].append(dataset[model]["aggregates"][controlGroupColumn][param])
-                    #errors.append(dataset[model]["standardDeviations"][experimentalGroupColumn][param])
-                    #labels.append(experimentalGroupLabel)
-                    values[experimentalGroupLabel].append(dataset[model]["aggregates"][experimentalGroupColumn][param])
-                    #print(f"{model}->{controlGroupColumn}->{dataset[model]['aggregates'][controlGroupColumn]} ({len(dataset[model]['aggregates'][controlGroupColumn])})")
-                    #print(f"{model}->{experimentalGroupColumn}->{dataset[model]['aggregates'][experimentalGroupColumn]} ({len(dataset[model]['aggregates'][experimentalGroupColumn])})")
-                matplotlib.pyplot.xticks(rotation=-45, fontsize=12)
-            # Prevent key error if all seeds went extinct for model
-            elif column in dataset[model]["aggregates"]:
-                if model not in values:
-                    colors.append(COLORS[modelString])
-                    hatches.append(HATCHES[modelString])
-                    values[model] = []
-                #errors.append(dataset[model]["standardDeviations"][column][-1])
-                labels.append(LABELS[modelString])
-                values.append(dataset[model]["aggregates"][column][param])
-
-    edgeColors = [colors[i] if colors[i] != "white" else colors[i - 1] for i in range(len(colors))]
-    yMax =  max(i for value in values.values() for i in value)
-    yMax = math.ceil(yMax * 1.05) if yMax > 0 else yMax + 1
-    axes.set(xlabel=parameter, ylabel=label, ylim=[0, yMax])
-    #axes.grouped_bar(labels, values, capsize=8, color=colors, ecolor="gray", edgecolor=edgeColors, hatch=hatches, yerr=errors, tick_labels=params)
-    axes.grouped_bar(values, tick_labels=params)
-    axes.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), labelspacing=0.1, ncols=2, frameon=False, fontsize=12)
-    if percentage == True:
-        axes.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter())
-    figure.savefig(outfile, format="pdf", bbox_inches="tight")
-
 def generateSimpleBarPlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.size"] = 14
@@ -231,7 +167,6 @@ def generateSimpleBarPlot(models, dataset, totalTimesteps, statistic, outfile, c
     yMax = math.ceil(yMax * 1.05) if yMax > 0 else yMax + 1
     axes.set(xlabel="Decision Models", ylabel=label, ylim=[0, yMax])
     axes.bar(labels, values, capsize=8, color=colors, ecolor="gray", edgecolor=edgeColors, hatch=hatches, yerr=errors)
-    #axes.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), labelspacing=0.1, ncols=2, frameon=False, fontsize=12)
     if percentage == True:
         axes.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter())
     figure.savefig(outfile, format="pdf", bbox_inches="tight")
@@ -240,14 +175,18 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, statistic, outfile, 
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.size"] = 18
     figure, axes = matplotlib.pyplot.subplots()
-    axes.set(xlabel="Timestep", ylabel=label, xlim=[0, totalTimesteps])
-    x = [i for i in range(totalTimesteps + 1)]
-    y = [0 for i in range(totalTimesteps + 1)]
+    if parameter != None:
+        axes.set(xlabel=parameter, ylabel=label, xlim=[parameterRange[0], parameterRange[1]])
+        matplotlib.pyplot.xticks(ticks=[param for param in range(parameterRange[0], parameterRange[1] + 1, parameterRange[2])])
+    else:
+        axes.set(xlabel="Timestep", ylabel=label, xlim=[0, totalTimesteps])
+    xRange = range(parameterRange[0], parameterRange[1] + 1, parameterRange[2]) if parameter != None else range(totalTimesteps + 1)
+    yRange = range(((parameterRange[1] - parameterRange[0]) // parameterRange[2]) + 1) if parameter != None else range(totalTimesteps + 1)
+    x = [i for i in xRange]
+    y = [0 for i in yRange]
     lines = []
 
     for model in dataset:
-        fillAbove = []
-        fillBelow = []
         modelString = model
         if '_' in model:
             modelString = "multiple"
@@ -260,21 +199,35 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, statistic, outfile, 
             experimentalGroupLabel = experimentalGroup[0].upper() + experimentalGroup[1:] + f" {LABELS[modelString]}"
             # Prevent key error if all seeds went extinct for model
             if column in dataset[model]["aggregates"]:
-                y = [dataset[model]["aggregates"][controlGroupColumn][i] for i in range(totalTimesteps + 1)]
+                y = [dataset[model]["aggregates"][controlGroupColumn][i] for i in yRange]
                 axes.plot(x, y, color=COLORS[modelString], label=controlGroupLabel)
-                y = [dataset[model]["aggregates"][experimentalGroupColumn][i] for i in range(totalTimesteps + 1)]
+                y = [dataset[model]["aggregates"][experimentalGroupColumn][i] for i in yRange]
                 axes.plot(x, y, color=COLORS[modelString], label=experimentalGroupLabel, linestyle="dotted")
+                if fill == True and statistic == "mean":
+                    fillAboveControl = [y[i] + dataset[model]["standardDeviations"][controlGroupColumn][i] for i in yRange]
+                    fillBelowControl = [max(0, y[i] - dataset[model]["standardDeviations"][controlGroupColumn][i]) for i in yRange]
+                    fillAboveExperimental = [y[i] + dataset[model]["standardDeviations"][experimentalGroupColumn][i] for i in yRange]
+                    fillBelowExperimental = [max(0, y[i] - dataset[model]["standardDeviations"][experimentalGroupColumn][i]) for i in yRange]
+                    axes.fill_between(x, fillBelowControl, fillAboveControl, color=FILLCOLORS[modelString], alpha=0.75)
+                    axes.fill_between(x, fillBelowExperimental, fillAboveExperimental, facecolor="none", edgecolor=FILLCOLORS[modelString], hatch=HATCHES[modelString], alpha=0.75)
+                elif fill == True and statistic == "median":
+                    fillAboveControl = [dataset[model]["thirdQuartiles"][controlGroupColumn][i] for i in yRange]
+                    fillBelowControl = [dataset[model]["firstQuartiles"][controlGroupColumn][i] for i in yRange]
+                    fillAboveExperimental = [dataset[model]["thirdQuartiles"][experimentalGroupColumn][i] for i in yRange]
+                    fillBelowExperimental = [dataset[model]["firstQuartiles"][experimentalGroupColumn][i] for i in yRange]
+                    axes.fill_between(x, fillBelowControl, fillAboveControl, color=FILLCOLORS[modelString], alpha=0.75)
+                    axes.fill_between(x, fillBelowExperimental, fillAboveExperimental, facecolor="none", edgecolor=FILLCOLORS[modelString], hatch=HATCHES[modelString], alpha=0.75)
         # Prevent key error if all seeds went extinct for model
         elif column in dataset[model]["aggregates"]:
-            y = [dataset[model]["aggregates"][column][i] for i in range(totalTimesteps + 1)]
+            y = [dataset[model]["aggregates"][column][i] for i in yRange]
             axes.plot(x, y, color=COLORS[modelString], label=LABELS[modelString])
             if fill == True and statistic == "mean":
-                fillAbove = [y[i] + dataset[model]["standardDeviations"][column][i] for i in range(totalTimesteps + 1)]
-                fillBelow = [max(0, y[i] - dataset[model]["standardDeviations"][column][i]) for i in range(totalTimesteps + 1)]
+                fillAbove = [y[i] + dataset[model]["standardDeviations"][column][i] for i in yRange]
+                fillBelow = [max(0, y[i] - dataset[model]["standardDeviations"][column][i]) for i in yRange]
                 axes.fill_between(x, fillBelow, fillAbove, color=FILLCOLORS[modelString], alpha=0.75)
             elif fill == True and statistic == "median":
-                fillAbove = [dataset[model]["thirdQuartiles"][column][i] for i in range(totalTimesteps + 1)]
-                fillBelow = [dataset[model]["firstQuartiles"][column][i] for i in range(totalTimesteps + 1)]
+                fillAbove = [dataset[model]["thirdQuartiles"][column][i] for i in yRange]
+                fillBelow = [dataset[model]["firstQuartiles"][column][i] for i in yRange]
                 axes.fill_between(x, fillBelow, fillAbove, color=FILLCOLORS[modelString], alpha=0.75)
         axes.legend(loc=positioning, labelspacing=0.1, frameon=False, fontsize=16)
     if percentage == True:
@@ -287,6 +240,7 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
     printFileLength = len(max(files, key=len))
     fileCount = 1
     totalFiles = len(files)
+    datasetRange = range(parameterRange[1] + 1) if parameter != None else range(totalTimesteps + 1)
     for file in files:
         filename = os.fsdecode(file)
         filePath = path + filename
@@ -299,7 +253,8 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
             continue
         param = fileSearch.group(2)
         paramValue = 0
-        if param != None:
+        paramPresent = parameter != None and param != None
+        if paramPresent == True:
             paramExpr = re.compile(r"(\d+)([A-z]+)")
             paramSearch = re.search(paramExpr, param)
             paramValue = int(paramSearch.group(1))
@@ -326,7 +281,7 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
             dataset[model]["better"] += 1
         dataset[model]["runs"] += 1
 
-        if param != None:
+        if paramPresent == True:
             i = len(rawData) - 1
             item = rawData[i]
             while int(item["timestep"]) > totalTimesteps:
@@ -336,7 +291,7 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
                 if entry in ["agentWealths", "agentTimesToLive", "agentTimesToLiveAgeLimited", "agentTotalMetabolism"]:
                         continue
                 if entry not in dataset[model]["metrics"]:
-                    dataset[model]["metrics"][entry] = [[] for j in range(parameterRange[1] + 1)]
+                    dataset[model]["metrics"][entry] = [[] for j in datasetRange]
                 if item[entry] == "None":
                     item[entry] = 0
                 dataset[model]["metrics"][entry][paramValue].append(float(item[entry]))
@@ -352,11 +307,21 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
                     if entry in ["agentWealths", "agentTimesToLive", "agentTimesToLiveAgeLimited", "agentTotalMetabolism"]:
                         continue
                     if entry not in dataset[model]["metrics"]:
-                        dataset[model]["metrics"][entry] = [[] for j in range(totalTimesteps + 1)]
+                        dataset[model]["metrics"][entry] = [[] for j in datasetRange]
                     if item[entry] == "None":
                         item[entry] = 0
                     dataset[model]["metrics"][entry][i - 1].append(float(item[entry]))
                 i += 1
+
+    if paramPresent == True:
+        for model in dataset:
+            for column in dataset[model]["metrics"]:
+                clippedColumn = []
+                for i in range(len(dataset[model]["metrics"][column])):
+                    inParameterRange = i >= parameterRange[0] and i <= parameterRange[1] and i % parameterRange[2] == 0
+                    if inParameterRange == True:
+                        clippedColumn.append(dataset[model]["metrics"][column][i])
+                dataset[model]["metrics"][column] = clippedColumn
 
     print(f"\r{' ' * os.get_terminal_size().columns}", end='\r')
     for model in dataset:
