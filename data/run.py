@@ -15,16 +15,17 @@ def createConfigurations(config, path, mode="json"):
             path = path + '/'
         dataOpts = config["dataCollectionOptions"]
         parameter = dataOpts["parameterSweep"] if "parameterSweep" in dataOpts else None
+        parameterPercentage = dataOpts["parameterPercentage"] if "parameterPercentage" in dataOpts else False
         parameterRange = dataOpts["parameterRange"] if "parameterRange" in dataOpts else []
         seeds = generateSeeds(dataOpts)
         confFiles = []
         validParameter = True
-        if len(parameterRange) < 2 or parameter == None:
+        if len(parameterRange) < 3 or parameter == None:
             parameterRange = [0]
             validParameter = False
-        elif len(parameterRange) == 2:
-            parameterRange = range(parameterRange[0], parameterRange[1] + 1)
         else:
+            if parameterPercentage == True:
+                parameterRange = [int(i * 100) for i in parameterRange]
             parameterRange = range(parameterRange[0], parameterRange[1] + 1, parameterRange[2])
 
         for seed in seeds:
@@ -39,7 +40,8 @@ def createConfigurations(config, path, mode="json"):
                     simOpts["seed"] = seed
                     if validParameter == True:
                         paramString = f"{param}{parameter}"
-                        simOpts[parameter] = param if type(simOpts[parameter]) != list else [param, param]
+                        paramValue = param / 100.0 if parameterPercentage == True else param
+                        simOpts[parameter] = paramValue if type(simOpts[parameter]) != list else [paramValue, paramValue]
                     filename = f"{path}{modelString}{paramString}{seed}"
                     agentLogname = f"{path}agents.{modelString}{paramString}{seed}"
                     if mode == "json":

@@ -65,7 +65,7 @@ def findMedians(dataset, totalTimesteps, parameter=None, parameterRange=None):
                 dataset[model]["thirdQuartiles"][column][i] = thirdQuartile
     return dataset
 
-def generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup=None, plotGroups=False, fill=False, plotType="line", parameter=None, parameterRange=None):
+def generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup=None, plotGroups=False, fill=False, plotType="line", parameter=None, parameterRange=None, parameterPercentage=False):
     titleStatistic = statistic.title()
     generatePlot = generateSimpleLinePlot
     if plotType == "bar":
@@ -73,54 +73,54 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
 
     if "conflictHappiness" in config["plots"]:
         print(f"Generating {statistic} conflict happiness plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_conflict_happiness.pdf", "meanConflictHappiness", f"{titleStatistic} Conflict Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_conflict_happiness.pdf", "meanConflictHappiness", f"{titleStatistic} Conflict Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "deaths" in config["plots"]:
         print(f"Generating {statistic} deaths plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_deaths.pdf", "meanDeathsPercentage", f"{titleStatistic} Deaths", "center right", percentage=True, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_deaths.pdf", "meanDeathsPercentage", f"{titleStatistic} Deaths", "center right", percentage=True, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "familyHappiness" in config["plots"]:
         print(f"Generating {statistic} family happiness plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_family_happiness.pdf", "meanFamilyHappiness", f"{titleStatistic} Family Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_family_happiness.pdf", "meanFamilyHappiness", f"{titleStatistic} Family Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "giniCoefficient" in config["plots"]:
         print(f"Generating {statistic} Gini coefficient plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_gini.pdf", "giniCoefficient", f"{titleStatistic} Gini Coefficient", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_gini.pdf", "giniCoefficient", f"{titleStatistic} Gini Coefficient", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "happiness" in config["plots"]:
         print(f"Generating {statistic} happiness plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_happiness.pdf", "meanHappiness", f"{titleStatistic} Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_happiness.pdf", "meanHappiness", f"{titleStatistic} Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "healthHappiness" in config["plots"]:
         print(f"Generating {statistic} health happiness plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_health_happiness.pdf", "meanHealthHappiness", f"{titleStatistic} Health Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_health_happiness.pdf", "meanHealthHappiness", f"{titleStatistic} Health Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "lifeExpectancy" in config["plots"]:
         print(f"Generating {statistic} life expectancy plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_life_expectancy.pdf", "meanAgeAtDeath", f"{titleStatistic} Life Expectancy", "lower right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_life_expectancy.pdf", "meanAgeAtDeath", f"{titleStatistic} Life Expectancy", "lower right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "population" in config["plots"]:
         print(f"Generating {statistic} population plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_population.pdf", "population", f"{titleStatistic} Population", "lower right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_population.pdf", "population", f"{titleStatistic} Population", "lower right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "selfishness" in config["plots"]:
         print(f"Generating {statistic} selfishness plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_selfishness.pdf", "meanSelfishness", f"{titleStatistic} Selfishness Factor", "lower center", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_selfishness.pdf", "meanSelfishness", f"{titleStatistic} Selfishness Factor", "lower center", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "sickness" in config["plots"]:
         print(f"Generating {statistic} sick percentage plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_sickness.pdf", "sickAgentsPercentage", f"{titleStatistic} Diseased Agents", "center right", percentage=True, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_sickness.pdf", "sickAgentsPercentage", f"{titleStatistic} Diseased Agents", "center right", percentage=True, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "socialHappiness" in config["plots"]:
         print(f"Generating {statistic} social happiness plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_social_happiness.pdf", "meanSocialHappiness", f"{titleStatistic} Social Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_social_happiness.pdf", "meanSocialHappiness", f"{titleStatistic} Social Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "totalWealth" in config["plots"]:
         print(f"Generating {statistic} total wealth plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_wealth.pdf", "agentWealthTotal", f"{titleStatistic} Total Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_wealth.pdf", "agentWealthTotal", f"{titleStatistic} Total Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "tradeVolume" in config["plots"]:
         print(f"Generating {statistic} trade volume plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_trades.pdf", "tradeVolume", f"{titleStatistic} Trade Volume", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_trades.pdf", "tradeVolume", f"{titleStatistic} Trade Volume", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "ttl" in config["plots"]:
         print(f"Generating {statistic} time to live plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_ttl.pdf", "agentMeanTimeToLive", f"{titleStatistic} Time to Live", "upper right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_ttl.pdf", "agentMeanTimeToLive", f"{titleStatistic} Time to Live", "upper right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "wealth" in config["plots"]:
         print(f"Generating {statistic} wealth plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_wealth.pdf", "meanWealth", f"{titleStatistic} Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_wealth.pdf", "meanWealth", f"{titleStatistic} Wealth", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
     if "wealthHappiness" in config["plots"]:
         print(f"Generating {statistic} wealth happiness plot")
-        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_total_wealth_happiness.pdf", "meanWealthHappiness", f"{titleStatistic} Wealth Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange)
+        generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_total_wealth_happiness.pdf", "meanWealthHappiness", f"{titleStatistic} Wealth Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
 
-def generateSimpleBarPlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None):
+def generateSimpleBarPlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None, parameterPercentage=False):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.size"] = 14
     figure, axes = matplotlib.pyplot.subplots()
@@ -171,17 +171,23 @@ def generateSimpleBarPlot(models, dataset, totalTimesteps, statistic, outfile, c
         axes.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter())
     figure.savefig(outfile, format="pdf", bbox_inches="tight")
 
-def generateSimpleLinePlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None):
+def generateSimpleLinePlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None, parameterPercentage=False):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.size"] = 18
     figure, axes = matplotlib.pyplot.subplots()
+    xRange = range(totalTimesteps + 1)
+    yRange = range(totalTimesteps + 1)
     if parameter != None:
+        xRange = [param for param in range(parameterRange[0], parameterRange[1] + 1, parameterRange[2])]
+        yRange = range(((parameterRange[1] - parameterRange[0]) // parameterRange[2]) + 1)
+        # Undo integer conversions from dataset parsing
+        if parameterPercentage == True:
+            parameterRange = [i / 100.0 for i in parameterRange]
+            xRange = [x / 100.0 for x in xRange]
         axes.set(xlabel=parameter, ylabel=label, xlim=[parameterRange[0], parameterRange[1]])
-        matplotlib.pyplot.xticks(ticks=[param for param in range(parameterRange[0], parameterRange[1] + 1, parameterRange[2])])
+        matplotlib.pyplot.xticks(ticks=xRange)
     else:
         axes.set(xlabel="Timestep", ylabel=label, xlim=[0, totalTimesteps])
-    xRange = range(parameterRange[0], parameterRange[1] + 1, parameterRange[2]) if parameter != None else range(totalTimesteps + 1)
-    yRange = range(((parameterRange[1] - parameterRange[0]) // parameterRange[2]) + 1) if parameter != None else range(totalTimesteps + 1)
     x = [i for i in xRange]
     y = [0 for i in yRange]
     lines = []
@@ -229,6 +235,7 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, statistic, outfile, 
                 fillAbove = [dataset[model]["thirdQuartiles"][column][i] for i in yRange]
                 fillBelow = [dataset[model]["firstQuartiles"][column][i] for i in yRange]
                 axes.fill_between(x, fillBelow, fillAbove, color=FILLCOLORS[modelString], alpha=0.75)
+        axes.set_ylim(bottom=0)
         axes.legend(loc=positioning, labelspacing=0.1, frameon=False, fontsize=16)
     if percentage == True:
         axes.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter())
@@ -405,11 +412,17 @@ if __name__ == "__main__":
     experimentalGroup = config["sugarscapeOptions"]["experimentalGroup"] if "experimentalGroup" in config["sugarscapeOptions"] else None
     config = config["dataCollectionOptions"]
     parameter = config["parameterSweep"] if "parameterSweep" in config else None
+    parameterPercentage = config["parameterPercentage"] if "parameterPercentage" in config else False
     parameterRange = config["parameterRange"] if "parameterRange" in config else None
     # Ensure plotting by parameter only happens if both the parameter and its range are fully specified
     if parameter == None or parameterRange == None or len(parameterRange) < 2:
         parameter = None
+        parameterPercentage = False
         parameterRange = None
+    # Convert percentage-based parameters to integers for easy parsing
+    if parameterPercentage == True and parameterRange != None:
+        parameterRange = [int(i * 100) for i in parameterRange]
+
     plotGroups = config["plotGroups"] if "plotGroups" in config else plotGroups
     plotType = config["plotType"] if "plotType" in config else plotType
     fill = config["plotFill"] if "plotFill" in config else False
@@ -436,6 +449,6 @@ if __name__ == "__main__":
         print(f"Plotting statistic {statistic} not recognized.")
         printHelp()
 
-    generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup, plotGroups, fill, plotType, parameter, parameterRange)
+    generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup, plotGroups, fill, plotType, parameter, parameterRange, parameterPercentage)
     printSummaryStats(dataset)
     exit(0)

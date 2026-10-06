@@ -4,6 +4,7 @@
         "decisionModels": [["none"]],
         "numParallelSimJobs": 1,
         "numSeeds": 100,
+        "parameterPercentage": false,
         "parameterRange": [],
         "parameterSweep": null,
         "plotFill": false,

@@ -625,6 +625,10 @@ numSeeds: int
     Set the number of random seeds to be tested in data collection.
     Default: 100
 
+parameterPercentage: bool
+    Set whether the parameter is a percentage-based value.
+    Default: false
+
 parameterRange: [int, int, int]
     Set the first value, last value, and increment value for the experimental parameter in data collection.
     Note: If an increment value is not provided, an increment of 1 will be used.
