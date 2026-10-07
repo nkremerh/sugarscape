@@ -251,7 +251,7 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
     for file in files:
         filename = os.fsdecode(file)
         filePath = path + filename
-        fileDecisionModel = re.compile(r"^([A-z]*)(\d+[A-z]+)?(\d*)\.(json|csv)")
+        fileDecisionModel = re.compile(r"^([A-z]*)\.?(\d+[A-z]+)?\.(\d*)\.(json|csv)")
         fileSearch = re.search(fileDecisionModel, filename)
         if fileSearch == None:
             continue
@@ -264,7 +264,8 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
         if paramPresent == True:
             paramExpr = re.compile(r"(\d+)([A-z]+)")
             paramSearch = re.search(paramExpr, param)
-            paramValue = int(paramSearch.group(1))
+            paramString = paramSearch.group(1)
+            paramValue = int(paramString)
             param = paramSearch.group(2)
             if param != parameter:
                 continue
@@ -278,14 +279,24 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
         else:
             rawData = list(csv.DictReader(log))
 
+        if parameter != None and paramString not in dataset[model][parameter]:
+            dataset[model][parameter][paramString] = {"extinct": 0, "worse": 0, "better": 0}
+
         if int(rawData[-1]["population"]) == 0:
             dataset[model]["extinct"] += 1
+            if parameter != None:
+                dataset[model][parameter][paramString]["extinct"] += 1
             if skipExtinct == True:
                 continue
         elif int(rawData[-1]["population"]) <= int(rawData[0]["population"]):
             dataset[model]["worse"] += 1
+            if parameter != None:
+                dataset[model][parameter][paramString]["worse"] += 1
+
         else:
             dataset[model]["better"] += 1
+            if parameter != None:
+                dataset[model][parameter][paramString]["better"] += 1
         dataset[model]["runs"] += 1
 
         if paramPresent == True:
@@ -394,10 +405,18 @@ def printProgress(filename, filesParsed, totalFiles, fileLength, decimals=2):
     else:
         print(f"\r{printString}", end='\r')
 
-def printSummaryStats(dataset):
-    print(f"Model population performance:\n{'Decision Model':^30} {'Extinct':^5} {'Worse':^5} {'Better':^5}")
+def printSummaryStats(dataset, parameter=None):
+    summaryString = f"Model population performance:\n{'Decision Model':^30} {'Extinct':^5} {'Worse':^5} {'Better':^5}\n"
+    parameterSummaryString = f"Model population performance per parameter:\n{'Decision Model':^30} {'Extinct':^5} {'Worse':^5} {'Better':^5}\n"
     for model in dataset:
-        print(f"{model:^30} {dataset[model]['extinct']:^5} {dataset[model]['worse']:^5} {dataset[model]['better']:^5}")
+        summaryString += f"{model:^30} {dataset[model]['extinct']:^5} {dataset[model]['worse']:^5} {dataset[model]['better']:^5}\n"
+        if parameter != None:
+            for value in dataset[model][parameter]:
+                parameterSummaryString += f"{model + '.' + value:^30} {dataset[model][parameter][value]['extinct']:^5} {dataset[model][parameter][value]['worse']:^5} {dataset[model][parameter][value]['better']:^5}\n"
+
+    print(summaryString)
+    if parameter != None:
+        print(parameterSummaryString)
 
 if __name__ == "__main__":
     options = parseOptions()
@@ -435,6 +454,8 @@ if __name__ == "__main__":
         if type(model) == list:
             modelString = '_'.join(model)
         dataset[modelString] = {"runs": 0, "extinct": 0, "worse": 0, "better": 0, "timesteps": 0, "aggregates": {}, "firstQuartiles": {}, "thirdQuartiles": {}, "standardDeviations": {}, "metrics": {}}
+        if parameter != None:
+            dataset[modelString][parameter] = {}
 
     if not os.path.exists(path):
         print(f"Path {path} not recognized.")
@@ -450,5 +471,5 @@ if __name__ == "__main__":
         printHelp()
 
     generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup, plotGroups, fill, plotType, parameter, parameterRange, parameterPercentage)
-    printSummaryStats(dataset)
+    printSummaryStats(dataset, parameter)
     exit(0)

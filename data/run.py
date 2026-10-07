@@ -34,12 +34,12 @@ def createConfigurations(config, path, mode="json"):
                     modelString = model
                     if type(model) == list:
                         modelString = '_'.join(model)
-                    paramString = ''
+                    paramString = '.'
                     simOpts = config["sugarscapeOptions"]
                     simOpts["agentDecisionModels"] = model
                     simOpts["seed"] = seed
                     if validParameter == True:
-                        paramString = f"{param}{parameter}"
+                        paramString = f".{param}{parameter}."
                         paramValue = param / 100.0 if parameterPercentage == True else param
                         simOpts[parameter] = paramValue if type(simOpts[parameter]) != list else [paramValue, paramValue]
                     filename = f"{path}{modelString}{paramString}{seed}"
