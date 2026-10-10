@@ -205,24 +205,24 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, statistic, outfile, 
             experimentalGroupLabel = experimentalGroup[0].upper() + experimentalGroup[1:] + f" {LABELS[modelString]}"
             # Prevent key error if all seeds went extinct for model
             if column in dataset[model]["aggregates"]:
-                y = [dataset[model]["aggregates"][controlGroupColumn][i] for i in yRange]
-                axes.plot(x, y, color=COLORS[modelString], label=controlGroupLabel)
-                y = [dataset[model]["aggregates"][experimentalGroupColumn][i] for i in yRange]
-                axes.plot(x, y, color=COLORS[modelString], label=experimentalGroupLabel, linestyle="dotted")
+                yControl = [dataset[model]["aggregates"][controlGroupColumn][i] for i in yRange]
+                axes.plot(x, yControl, color=COLORS[modelString], label=controlGroupLabel)
+                yExperimental = [dataset[model]["aggregates"][experimentalGroupColumn][i] for i in yRange]
+                axes.plot(x, yExperimental, color=COLORS[modelString], label=experimentalGroupLabel, linestyle="dotted")
                 if fill == True and statistic == "mean":
-                    fillAboveControl = [y[i] + dataset[model]["standardDeviations"][controlGroupColumn][i] for i in yRange]
-                    fillBelowControl = [max(0, y[i] - dataset[model]["standardDeviations"][controlGroupColumn][i]) for i in yRange]
-                    fillAboveExperimental = [y[i] + dataset[model]["standardDeviations"][experimentalGroupColumn][i] for i in yRange]
-                    fillBelowExperimental = [max(0, y[i] - dataset[model]["standardDeviations"][experimentalGroupColumn][i]) for i in yRange]
+                    fillAboveControl = [yControl[i] + dataset[model]["standardDeviations"][controlGroupColumn][i] for i in yRange]
+                    fillBelowControl = [max(0, yControl[i] - dataset[model]["standardDeviations"][controlGroupColumn][i]) for i in yRange]
                     axes.fill_between(x, fillBelowControl, fillAboveControl, color=FILLCOLORS[modelString], alpha=0.75)
-                    axes.fill_between(x, fillBelowExperimental, fillAboveExperimental, facecolor="none", edgecolor=FILLCOLORS[modelString], hatch=HATCHES[modelString], alpha=0.75)
+                    fillAboveExperimental = [yExperimental[i] + dataset[model]["standardDeviations"][experimentalGroupColumn][i] for i in yRange]
+                    fillBelowExperimental = [max(0, yExperimental[i] - dataset[model]["standardDeviations"][experimentalGroupColumn][i]) for i in yRange]
+                    axes.fill_between(x, fillBelowExperimental, fillAboveExperimental, color=FILLCOLORS[modelString], alpha=0.25)
                 elif fill == True and statistic == "median":
                     fillAboveControl = [dataset[model]["thirdQuartiles"][controlGroupColumn][i] for i in yRange]
                     fillBelowControl = [dataset[model]["firstQuartiles"][controlGroupColumn][i] for i in yRange]
                     fillAboveExperimental = [dataset[model]["thirdQuartiles"][experimentalGroupColumn][i] for i in yRange]
                     fillBelowExperimental = [dataset[model]["firstQuartiles"][experimentalGroupColumn][i] for i in yRange]
                     axes.fill_between(x, fillBelowControl, fillAboveControl, color=FILLCOLORS[modelString], alpha=0.75)
-                    axes.fill_between(x, fillBelowExperimental, fillAboveExperimental, facecolor="none", edgecolor=FILLCOLORS[modelString], hatch=HATCHES[modelString], alpha=0.75)
+                    axes.fill_between(x, fillBelowExperimental, fillAboveExperimental, color=FILLCOLORS[modelString], alpha=0.25)
         # Prevent key error if all seeds went extinct for model
         elif column in dataset[model]["aggregates"]:
             y = [dataset[model]["aggregates"][column][i] for i in yRange]
@@ -292,7 +292,6 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
             dataset[model]["worse"] += 1
             if parameter != None:
                 dataset[model][parameter][paramString]["worse"] += 1
-
         else:
             dataset[model]["better"] += 1
             if parameter != None:
