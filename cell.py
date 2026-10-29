@@ -45,7 +45,7 @@ class Cell:
             self.pollution += productionPollutionFactor * sugarProduced
 
     def findEastNeighbor(self):
-        if self.environment.wraparound == False and self.x + 1 > self.environment.width - 1:
+        if self.environment.wraparound == "plane" and self.x + 1 > self.environment.width - 1:
             return None
         eastNeighbor = self.environment.findCell((self.x + 1 + self.environment.width) % self.environment.width, self.y)
         return eastNeighbor
@@ -96,9 +96,15 @@ class Cell:
         return neighborWealth
 
     def findNorthNeighbor(self):
-        if self.environment.wraparound == False and self.y - 1 < 0:
-            return None
+        # Default north neighbor assuming wraparound
         northNeighbor = self.environment.findCell(self.x, (self.y - 1 + self.environment.height) % self.environment.height)
+        # Check if cell is at the northern edge of the grid
+        if self.y - 1 < 0:
+            if self.environment.wraparound == "plane":
+                return None
+            # Crossing the north pole stays in the same row half the grid away
+            if self.environment.wraparound == "sphere":
+                return self.environment.findCell((self.x + self.environment.width // 2) % self.environment.width, self.y)
         return northNeighbor
 
     def findPollutionFlux(self):
@@ -109,13 +115,19 @@ class Cell:
         self.pollutionFlux = meanPollution
 
     def findSouthNeighbor(self):
-        if self.environment.wraparound == False and self.y + 1 < self.environment.height - 1:
-            return None
+        # Default south neighbor assuming wraparound
         southNeighbor = self.environment.findCell(self.x, (self.y + 1 + self.environment.height) % self.environment.height)
+        # Check if cell is at the southern edge of the grid
+        if self.y + 1 > self.environment.height - 1:
+            if self.environment.wraparound == "plane":
+                return None
+            # Crossing the south pole stays in the same row half the grid away
+            if self.environment.wraparound == "sphere":
+                return self.environment.findCell((self.x + self.environment.width // 2) % self.environment.width, self.y)
         return southNeighbor
 
     def findWestNeighbor(self):
-        if self.environment.wraparound == False and self.x - 1 < 0:
+        if self.environment.wraparound == "plane" and self.x - 1 < 0:
             return None
         westNeighbor = self.environment.findCell((self.x - 1 + self.environment.width) % self.environment.width, self.y)
         return westNeighbor

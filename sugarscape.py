@@ -154,11 +154,17 @@ class Sugarscape:
     def addResourcePeak(self, startX, startY, radius, maxValue, resource):
         height = self.environment.height
         width = self.environment.width
-        radialDispersion = math.sqrt(max(startX, width - startX)**2 + max(startY, height - startY)**2) * (radius / width)
         for i in range(width):
             for j in range(height):
-                euclideanDistanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
-                currDispersion = 1 + maxValue * (1 - euclideanDistanceToStart / radialDispersion)
+                distanceToStart = math.inf
+                if self.environment.wraparound == "plane":
+                    distanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
+                if self.environment.wraparound == "torus":
+                    distanceToStart = math.sqrt(min(abs(startX - i), width - abs(startX - i))**2 + min(abs(startY - j), height - abs(startY - j))**2)
+                if self.environment.wraparound == "sphere":
+                    dx, dy = self.environment.findSphereDeltas(startX, startY, i, j)
+                    distanceToStart = math.sqrt(dx**2 + dy**2)
+                currDispersion = 1 + maxValue * (1 - distanceToStart / radius)
                 cellMaxCapacity = min(currDispersion, maxValue)
                 cellMaxCapacity = math.ceil(cellMaxCapacity)
                 if resource == "spice" and cellMaxCapacity > self.environment.findCell(i, j).maxSpice:
@@ -1788,6 +1794,11 @@ def verifyConfiguration(configuration):
             print(f"Range of starting diseases per agent exceeds {startingDiseases} starting diseases. Setting range to {startingDiseasesPerAgent}.")
         configuration["startingDiseasesPerAgent"] = startingDiseasesPerAgent
 
+    # Ensure environment wraparound is valid type
+    if configuration["environmentWraparound"] not in ["plane", "torus", "sphere"]:
+        print(f"Invalid environment wraparound type: {configuration['environmentWraparound']}. Defaulting to 'torus'.")
+        configuration["environmentWraparound"] = "torus"
+
     if configuration["logfile"] == "":
         configuration["logfile"] = None
 
@@ -1934,7 +1945,7 @@ if __name__ == "__main__":
                      "environmentUniversalSpiceIncomeInterval": 0,
                      "environmentUniversalSugarIncomeInterval": 0,
                      "environmentWidth": 50,
-                     "environmentWraparound": True,
+                     "environmentWraparound": "torus",
                      "experimentalGroup": None,
                      "headlessMode": False,
                      "interfaceHeight": 1000,

@@ -111,7 +111,7 @@
         "environmentUniversalSpiceIncomeInterval": 0,
         "environmentUniversalSugarIncomeInterval": 0,
         "environmentWidth": 50,
-        "environmentWraparound": true,
+        "environmentWraparound": "torus",
         "experimentalGroup": null,
         "headlessMode": false,
         "interfaceHeight": 1400,
