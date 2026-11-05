@@ -51,8 +51,8 @@ class Sugarscape:
                                     "environmentRiverWidthWet": configuration["environmentRiverWidthWet"],
                                     "environmentRiverWidthDry": configuration["environmentRiverWidthDry"],
                                     "environmentRiverCoordinates": configuration["environmentRiverCoordinates"],
-                                    "environmentWaterPollutionFlow": configuration["environmentWaterPollutionFlow"],
-                                    "environmentWaterPollutionFlowRate": configuration["environmentWaterPollutionFlowRate"]}
+                                    "environmentRiverPollutionFlowing": configuration["environmentRiverPollutionFlowing"],
+                                    "environmentRiverPollutionFlowRate": configuration["environmentRiverPollutionFlowRate"]}
         self.seed = configuration["seed"]
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
