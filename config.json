@@ -99,6 +99,7 @@
         "environmentRiverWidthDry": 2,
         "environmentRiverPollutionFlowing": true,
         "environmentRiverPollutionFlowRate": 0.5,
+        "environmentRiverCoordinates": [[0, 25], [50, 25]],
         "environmentSeasonalGrowbackDelay": 2,
         "environmentSeasonInterval": 50,
         "environmentSexistGroups": ["female", "male"],
