@@ -53,8 +53,12 @@ class Cell:
         config = self.environment.sugarscape.configuration
         riverCoordinates = config.get("environmentRiverCoordinates", [])
         if not riverCoordinates:
-            return math.inf
+            return math.inf, None, None, 0.0
         closestDistance = math.inf
+        startPoint = None
+        endPoint = None
+        distFromRiverStart = 0.0
+        totalDistanceFromRiverStart = 0.0
         for (x1, y1), (x2, y2) in zip(riverCoordinates, riverCoordinates[1:]):
             dx = x2 - x1
             dy = y2 - y1
@@ -64,11 +68,17 @@ class Cell:
             t = max(0, min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)))
             closestX = x1 + t * dx
             closestY = y1 + t * dy
+            # Distance from the point to the closest point on the line segment
             distance = math.hypot(px - closestX, py - closestY)
             if distance < closestDistance:
+                distFromRiverStart = totalDistanceFromRiverStart
                 closestDistance = distance
-        return closestDistance
-        
+                startPoint = (x1, y1)
+                endPoint = (x2, y2)
+                distAlongSegment = math.hypot(closestX - x1, closestY - y1)
+                distFromRiverStart += distAlongSegment
+            totalDistanceFromRiverStart += math.hypot(dx, dy)
+        return closestDistance, startPoint, endPoint, distFromRiverStart
 
     def findEastNeighbor(self):
         if self.environment.wraparound == False and self.x + 1 > self.environment.width - 1:
@@ -128,56 +138,29 @@ class Cell:
         return northNeighbor
 
     def findPollutionFlux(self):
-
         config = self.environment.sugarscape.configuration
         waterPolFlow = config.get("environmentRiverPollutionFlowing", True)
 
-        # Unidirectional pollution for river cells based on waterflow and direction
+        # Unidirectional pollution for river cells based on waterflow
         if waterPolFlow and getattr(self, 'waterCapacity', 0.0) == 1.0:
             flowRate = config.get("environmentRiverPollutionFlowRate", 0.5)
+            distFromRiverStart = self.findDistToRiver()[3]
+            neighborCells = self.neighbors
+            upstreamCells = []
 
-            direction = self.environment.getWaterFlowDirection()
+            for cell in neighborCells.values():
+                if cell != None and getattr(cell, 'waterCapacity', 0.0) == 1.0:
+                    cellDistFromRiverStart = cell.findDistToRiver()[3]
+                    # Consider the cell upstream only if it is sufficiently far from the current cell along the river
+                    if cellDistFromRiverStart < distFromRiverStart - 0.5:
+                        upstreamCells.append(cell)
 
-            # Look at cell right of or left of based on direction
-            if orientation == "horizontal":
-                targetX = self.x - direction
-                targetY = self.y
-
-            # Look at cell to the top or bottom based on direction
-            if orientation == "vertical":
-                targetX = self.x
-                targetY = self.y - direction
-
-            if orientation == "diagonal":
-                # If slope = 0, it is horizontal
-                if slope == 0.0:
-                    targetX = self.x - direction
-                    targetY = self.y   
-
-                # If positive slope looks at NW and SE neighbors
-                elif slope > 0.0:
-                    targetX = self.x - direction
-                    targetY = self.y - direction
-
-                # If negative slope looks at NE and SW neighbors
-                else:
-                    targetX = self.x - direction
-                    targetY = self.y + direction
-
-                        
-            if self.environment.wraparound:
-                upstreamX = targetX % self.environment.width
-                upstreamY = targetY % self.environment.height
-                upstreamCell = self.environment.findCell(upstreamX, upstreamY)
-
-            else:
-                if 0 <= targetX < self.environment.width and 0 <= targetY < self.environment.height:
-                    upstreamCell = self.environment.findCell(targetX, targetY)
-                else:
-                    upstreamCell = None
-
-            if upstreamCell is not None and getattr(upstreamCell, 'waterCapacity', 0.0) == 1.0:
-                self.pollutionFlux = (flowRate * upstreamCell.pollution) + ((1.0 - flowRate) * self.pollution)
+            if upstreamCells:
+                self.pollutionFlux = 0.0
+                for upstreamCell in upstreamCells:
+                    #TODO Fix bug: this will multiply pollution
+                    self.pollutionFlux += (flowRate * upstreamCell.pollution) + ((1.0 - flowRate) * self.pollution)
+                self.pollutionFlux /= len(upstreamCells)
                 return
 
         # Standard pollution diffusion for non-river cells and floodplain cells
@@ -419,7 +402,7 @@ class Cell:
 
         # Get river half width, and the edges or distance of river to determine river and floodplain width
         halfWidth = self.findRiverWidth()
-        distance = self.findDistToRiver()
+        distance = self.findDistToRiver()[0]
 
         floodplainWidth = halfWidth
 
