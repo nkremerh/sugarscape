@@ -130,4 +130,6 @@ dmypy.json
 #Files related to graphing
 data/*.json
 plots/*.pdf
-plots/*.dat
+plots/*.datdata/
+log.json
+profile_output.txt

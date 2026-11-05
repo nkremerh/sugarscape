@@ -471,9 +471,26 @@ environmentQuadrantSizeFactor: float
     Set the proportion of each corner of the screen taken up by the agents' starting quadrants.
     Default: 1
 
-environmentSeasonalGrowbackDelay: int
-    Set the delay interval in timesteps when resources are regrown when cell is in a dry season.
-    Default: 0
+environmentRiverWidthWet: int
+    Set the maximum width of the river when it is in the wet or default season.
+    Default: 4
+
+environmentRiverWidthDry: int
+    Set the width of the river when it is in the dry season.
+    Default: 2
+
+environmentRiverCoordinates: [[int, int], [int, int], ...]
+    Set the series of points that the river will follow in order of river flow direction
+    Default: [[0, 25], [50, 25]]
+
+environmentWaterPollutionFlow: bool
+    Set the water pollution flow to be on or off.
+    Note: When environmentWaterPollutionFlow is set to False, normal pollution flow will take place in the river.
+    Default: True
+
+environmentWaterPollutionFlowRate: float
+    Set the flow rate of the water pollution if flow is on.
+    Default: 0.5
 
 environmentSeasonInterval: int
     Set the interval in timesteps when environment seasons change.

@@ -24,8 +24,8 @@ class GUI:
         self.minVision = sugarscape.configuration["agentVision"][0]
         self.maxVision = sugarscape.configuration["agentVision"][1]
         visionColors = self.findColorRange("#FF0000", "#00FF00", self.minVision, self.maxVision)
-        self.colors = {"sugarAndSpice": sugarAndSpiceColors, "pollution": pollutionColors, "healthy": "#3232FA", "sick": "#FA3232", "metabolism": metabolismColors, "movement": movementColors, "noSex": "#FA3232", "female": "#FA32FA", "male": "#3232FA", "vision": visionColors}
-        self.palette = ["#FA3232", "#3232FA", "#32FA32", "#32FAFA", "#FA32FA", "#AA3232", "#3232AA", "#32AA32", "#32AAAA", "#AA32AA", "#FA8800", "#00FA88", "#8800FA", "#FA8888", "#8888FA", "#88FA88", "#FA3288", "#3288FA", "#88FA32", "#AA66AA", "#66AAAA", "#3ED06E", "#6E3ED0", "#D06E3E", "#000000"]
+        self.colors = {"sugarAndSpice": sugarAndSpiceColors, "pollution": pollutionColors, "healthy": "#32AA32", "sick": "#FA3232", "metabolism": metabolismColors, "movement": movementColors, "noSex": "#FA3232", "female": "#FA32FA", "male": "#1B3D6A", "vision": visionColors}
+        self.palette = ["#FA3232", "#32FA32", "#32FAFA", "#FA32FA", "#AA3232", "#3232AA", "#32AA32", "#32AAAA", "#AA32AA", "#FA8800", "#00FA88", "#8800FA", "#FA8888", "#88FA88", "#FA3288", "#285CA1", "#88FA32", "#AA66AA", "#66AAAA", "#3ED06E", "#6E3ED0", "#D06E3E", "#000000"]
         numTribes = self.sugarscape.configuration["environmentMaxTribes"]
         numDecisionModels = len(self.sugarscape.configuration["agentDecisionModels"])
         numRaces = self.sugarscape.configuration["environmentMaxRaces"]
@@ -39,7 +39,7 @@ class GUI:
 
         # Set the default strings for interface at simulation start
         self.defaultAgentString = "Agent: - | Age: - | Vision: - | Movement: - | Sugar: - | Spice: - | Metabolism: - | Decision Model: - | Tribe: - | Race: -"
-        self.defaultCellString = "Cell: - | Sugar: - | Spice: - | Pollution: - | Season: -"
+        self.defaultCellString = "Cell: - | Sugar: - | Spice: - | Water Capacity: - | Pollution: - | Season: -"
         self.defaultSimulationString = "Timestep: - | Population: - | Metabolism: - | Movement: - | Vision: - | Gini: - | Trade Price: - | Trade Volume: -"
 
         self.widgets = {}
@@ -691,10 +691,39 @@ class GUI:
 
         agent = cell.agent
         if agent == None:
+
             if self.activeColorOptions["environment"] == "Pollution":
                 return self.colors["pollution"][min(round(cell.pollution), 20)]
-            else:
-                return self.colors["sugarAndSpice"][cell.sugar][cell.spice]
+            
+            waterCap = getattr(cell, 'waterCapacity', 0.0)
+
+            maxSugar = self.sugarscape.configuration["environmentMaxSugar"]
+            maxSpice = self.sugarscape.configuration["environmentMaxSpice"]
+            safeSugar = min(max(0, int(cell.sugar)), maxSugar)
+            safeSpice = min(max(0, int(cell.spice)), maxSpice)
+
+            if waterCap == 1.0:
+                hasResources = cell.sugar > 0 or cell.spice > 0
+                if hasResources:
+                    floodplainRGB = self.hexToInt("#034CB8")
+                    resourceRGB = self.hexToInt(self.colors["sugarAndSpice"][safeSugar][safeSpice])
+                    blendedRGB = self.interpolateColor(resourceRGB, floodplainRGB, 0.6)
+                    return self.intToHex(blendedRGB)
+                else:
+                    return "#034CB8"
+            
+            elif waterCap == 0.5:
+                hasResources = cell.sugar > 0 or cell.spice > 0
+                if hasResources:
+                    floodplainRGB = self.hexToInt("#3288FA")
+                    resourceRGB = self.hexToInt(self.colors["sugarAndSpice"][safeSugar][safeSpice])
+                    blendedRGB = self.interpolateColor(resourceRGB, floodplainRGB, 0.6)
+                    return self.intToHex(blendedRGB)
+                else:
+                    return "#3288FA"
+            
+            else:    
+                return self.colors["sugarAndSpice"][safeSugar][safeSpice]
 
         elif agent.decisionModel != None and self.activeColorOptions["agent"] == "Decision Models":
             return self.colors[agent.decisionModel]
@@ -715,6 +744,7 @@ class GUI:
         elif self.activeColorOptions["agent"] == "Vision":
             return self.colors["vision"][self.clamp(agent.vision, self.minVision, self.maxVision)]
         return self.colors["noSex"]
+    
 
     def lookupNetworkColor(self, cell):
         agent = cell.agent
@@ -777,7 +807,8 @@ class GUI:
         cell = self.highlightedCell
         if cell != None:
             cellSeason = cell.season if cell.season != None else '-'
-            cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
+            waterCap = getattr(cell, 'waterCapacity', 0.0)
+            cellStats = f"Cell: ({cell.x},{cell.y}) | Sugar: {cell.sugar}/{cell.maxSugar} | Spice: {cell.spice}/{cell.maxSpice} | Water Capacity: {waterCap} | Pollution: {round(cell.pollution, 2)} | Season: {cellSeason}"
             agent = cell.agent
             if agent != None:
                 agentStats = f"Agent: {str(agent)} | Age: {agent.age} | Vision: {round(agent.findVision(), 2)} | Movement: {round(agent.findMovement(), 2)} | "

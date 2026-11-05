@@ -1421,6 +1421,20 @@ class Agent:
             prey = cell.agent
             if cell.isOccupied() and self.isNeighborValidPrey(prey) == False:
                 continue
+
+            #watercost
+
+            riverCost = 0.0
+            for i in range(1, travelDistance + 1):
+                intermediateCell = self.cell.environment.findCellAtDistance(self.cell, cell, i)
+                if getattr(intermediateCell, 'waterCapacity', 0.0) == 1.0:
+                    riverCost += 1.0
+
+            effectiveDistance = travelDistance + riverCost
+
+            if effectiveDistance > self.findMovement():
+                continue
+
             preyTribe = prey.tribe if prey != None else "empty"
             preySugar = prey.sugar if prey != None else 0
             preySpice = prey.spice if prey != None else 0
