@@ -26,6 +26,7 @@ class Asimov(agent.Agent):
                     # Take the first positive recommendation from a neighbor as a command
                     if lawTwoScore > 0:
                         bestCell = cell["cell"]
+                        break
             # If no neighbors provide a recommendation, revert to self-preservation
             if bestCell == None and cell["wealth"] > 0:
                 bestCell = cell["cell"]
@@ -60,12 +61,12 @@ class Asimov(agent.Agent):
         starvation = cell.spice + neighbor.spice - neighbor.findSpiceMetabolism() <= 0 or cell.sugar + neighbor.sugar - neighbor.findSugarMetabolism() <= 0
         # A robot may not injure a human being
         if cell.isOccupied() == True and neighbor == cell.agent and nonRobot == True:
-            return -1 * sys.maxsize
+            return -1 * math.inf
         if neighbor.canReachCell(cell) == False:
             return 1
         # Through inaction, a robot may not allow a human being to come to harm
         elif nonRobot == True and starvation == True:
-            return -1 * sys.maxsize
+            return -1 * math.inf
         return 0
 
     def scoreLawTwo(self, neighbor, cell):
@@ -106,7 +107,6 @@ class Bentham(agent.Agent):
         if len(cells) == 0:
             return None
         bestCell = None
-        cells = self.sortCellsByWealth(cells)
         if "all" in self.debug or "agent" in self.debug:
             self.printCellScores(cells)
 
