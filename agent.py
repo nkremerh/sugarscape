@@ -968,23 +968,21 @@ class Agent:
             inGroupSex = 0
             inGroupTribe = 0
             for neighbor in potentialNeighbors:
-                neighborAge = neighbor.age
-                inRelativeAgeRange = abs(neighborAge - self.age) <= self.cell.environment.inGroupAgeRelativeRange
+                inRelativeAgeRange = abs(neighbor.age - self.age) <= self.cell.environment.inGroupAgeRelativeRange
                 inAbsoluteAgeRanges = False
                 for minAge, maxAge in self.cell.environment.inGroupAgeAbsoluteRanges:
-                    if neighborAge >= minAge and (neighborAge <= maxAge or maxAge == -1):
+                    if neighbor.age >= minAge and (neighbor.age <= maxAge or maxAge == -1):
                         inAbsoluteAgeRanges = True
                         break
                 # Neighbor is considered in-group for age if within relative or absolute age range
                 if inRelativeAgeRange or inAbsoluteAgeRanges:
                     inGroupAge += 1
 
-                neighborRace = neighbor.findRace()
-                if neighborRace == self.findRace() or neighborRace in self.cell.environment.inGroupRaces:
+                if neighbor.race == self.race or neighbor.race in self.cell.environment.inGroupRaces:
                     inGroupRace += 1
                 if neighbor.sex == self.sex:
                     inGroupSex += 1
-                if neighbor.findTribe() == self.findTribe():
+                if neighbor.findTribe() == self.tribe:
                     inGroupTribe += 1
             
             # Increase value of cell according to proportion of in-group neighbors
@@ -1084,7 +1082,7 @@ class Agent:
     def findRace(self):
         if self.racialTags == None:
             return None
-        # race is determined by most common element in racialTags
+        # Race is determined by most common element in racial tags
         return max(set(self.racialTags), key=self.racialTags.count)
 
     def findRetaliatorsInVision(self):
@@ -1323,7 +1321,7 @@ class Agent:
     def isSocialNetworkEntryAlive(self, entry):
         if isinstance(entry, Agent):
             return entry.isAlive()
-        return false
+        return False
 
     def moveToBestCell(self, predeterminedMove=None):
         bestCell = self.findBestCell(predeterminedMove)
@@ -1416,6 +1414,7 @@ class Agent:
         bestRange = max(self.cell.environment.height, self.cell.environment.width)
         potentialCells = []
 
+        self.tribe = self.findTribe()
         for cell, travelDistance in cellsInRange:
             # Avoid attacking agents ineligible to attack
             prey = cell.agent
@@ -1452,9 +1451,11 @@ class Agent:
     def removeDeadSocialNetworkEntries(self):
         network = self.socialNetwork
         socialNetworkEntries = [network["father"], network["mother"]] + network["children"] + network["mates"]
-        for entry in socialNetworkEntries:
-            if isinstance(entry, Agent) and entry.isAlive() == False:
-                entry = entry.ID
+        for relationship in ["children", "mates", "friends", "creditors", "debtors"]:
+            self.socialNetwork[relationship] = [entry.ID if isinstance(entry, Agent) and entry.isAlive() == False else entry for entry in self.socialNetwork[relationship]]
+        for relationship in ["father", "mother"]:
+            if isinstance(self.socialNetwork[relationship], Agent) and self.socialNetwork[relationship].isAlive() == False:
+                self.socialNetwork[relationship] = self.socialNetwork[relationship].ID
 
     def removeDebt(self, loan):
         for debtor in self.socialNetwork["debtors"]:
@@ -1491,16 +1492,8 @@ class Agent:
         self.socialNetwork["mother"] = mother
 
     def sortCellsByWealth(self, cells):
-        # Insertion sort of cells by wealth in descending order with range as a tiebreaker
-        i = 0
-        while i < len(cells):
-            j = i
-            while j > 0 and (cells[j - 1]["wealth"] < cells[j]["wealth"] or (cells[j - 1]["wealth"] == cells[j]["wealth"] and cells[j - 1]["range"] > cells[j]["range"])):
-                currCell = cells[j]
-                cells[j] = cells[j - 1]
-                cells[j - 1] = currCell
-                j -= 1
-            i += 1
+        # Sort of cells by wealth in descending order with range as a tiebreaker
+        cells.sort(key=lambda cell: (-1 * cell["wealth"], cell["range"]))
         return cells
 
     def spawnChild(self, childID, birthday, cell, configuration):
