@@ -662,7 +662,7 @@ plotStatistic: string
 
 plotType: string
     Set the type of plots to generate.
-    Options: "bar", "line"
+    Options: "box", "line"
     Default: "line"
 
 plotTimesteps: int

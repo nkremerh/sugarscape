@@ -67,9 +67,9 @@ def findMedians(dataset, totalTimesteps, parameter=None, parameterRange=None):
 
 def generatePlots(config, models, totalTimesteps, dataset, statistic, experimentalGroup=None, plotGroups=False, fill=False, plotType="line", parameter=None, parameterRange=None, parameterPercentage=False):
     titleStatistic = statistic.title()
-    generatePlot = generateSimpleLinePlot
-    if plotType == "bar":
-        generatePlot = generateSimpleBarPlot
+    generatePlot = generateLinePlot
+    if plotType == "box":
+        generatePlot = generateBoxPlot
 
     if "conflictHappiness" in config["plots"]:
         print(f"Generating {statistic} conflict happiness plot")
@@ -120,7 +120,7 @@ def generatePlots(config, models, totalTimesteps, dataset, statistic, experiment
         print(f"Generating {statistic} wealth happiness plot")
         generatePlot(models, dataset, totalTimesteps, statistic, f"{statistic}_total_wealth_happiness.pdf", "meanWealthHappiness", f"{titleStatistic} Wealth Happiness", "center right", percentage=False, experimentalGroup=experimentalGroup, plotGroups=plotGroups, fill=fill, parameter=parameter, parameterRange=parameterRange, parameterPercentage=parameterPercentage)
 
-def generateSimpleBarPlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None, parameterPercentage=False):
+def generateBarPlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None, parameterPercentage=False):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.size"] = 14
     figure, axes = matplotlib.pyplot.subplots()
@@ -171,7 +171,47 @@ def generateSimpleBarPlot(models, dataset, totalTimesteps, statistic, outfile, c
         axes.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter())
     figure.savefig(outfile, format="pdf", bbox_inches="tight")
 
-def generateSimpleLinePlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None, parameterPercentage=False):
+def generateBoxPlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None, parameterPercentage=False):
+    matplotlib.pyplot.rcParams["font.family"] = "serif"
+    matplotlib.pyplot.rcParams["font.size"] = 16
+    figure, axes = matplotlib.pyplot.subplots()
+    axes.set(ylabel=label)
+
+    colors = []
+    labels = []
+    values = []
+    for model in dataset:
+        modelString = model
+        if '_' in model:
+            modelString = "multiple"
+        elif model not in LABELS:
+            modelString = "unknown"
+        if experimentalGroup != None and plotGroups == True:
+            controlGroupColumn = "control" + column[0].upper() + column[1:]
+            controlGroupLabel = f"Control\n {LABELS[modelString]}"
+            experimentalGroupColumn = experimentalGroup + column[0].upper() + column[1:]
+            experimentalGroupLabel = experimentalGroup[0].upper() + experimentalGroup[1:] + f"\n {LABELS[modelString]}"
+            # Prevent key error if all seeds went extinct for model
+            if column in dataset[model]["metrics"]:
+                colors.append((COLORS[modelString], 0.50))
+                labels.append(controlGroupLabel)
+                values.append(dataset[model]["metrics"][controlGroupColumn])
+                colors.append((COLORS[modelString], 0.25))
+                labels.append(experimentalGroupLabel)
+                values.append(dataset[model]["metrics"][experimentalGroupColumn])
+        # Prevent key error if all seeds went extinct for model
+        elif column in dataset[model]["metrics"]:
+            colors.append((COLORS[modelString], 0.75))
+            labels.append(LABELS[modelString])
+            values.append(dataset[model]["metrics"][column])
+    #axes.set_xticks(list(range(1, len(labels) + 1)))
+    axes.set_xticklabels(labels)
+    plot = axes.boxplot(values, showmeans=True, showfliers=False, meanline=True, meanprops={"color": "black"}, medianprops={"color": "black"}, patch_artist=True)
+    for patch, color in zip(plot["boxes"], colors):
+        patch.set_facecolor(color)
+    figure.savefig(outfile, format="pdf", bbox_inches="tight")
+
+def generateLinePlot(models, dataset, totalTimesteps, statistic, outfile, column, label, positioning, percentage=False, experimentalGroup=None, plotGroups=False, fill=False, parameter=None, parameterRange=None, parameterPercentage=False):
     matplotlib.pyplot.rcParams["font.family"] = "serif"
     matplotlib.pyplot.rcParams["font.size"] = 18
     figure, axes = matplotlib.pyplot.subplots()
@@ -190,7 +230,6 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, statistic, outfile, 
         axes.set(xlabel="Timestep", ylabel=label, xlim=[0, totalTimesteps])
     x = [i for i in xRange]
     y = [0 for i in yRange]
-    lines = []
 
     for model in dataset:
         modelString = model
@@ -241,7 +280,7 @@ def generateSimpleLinePlot(models, dataset, totalTimesteps, statistic, outfile, 
         axes.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter())
     figure.savefig(outfile, format="pdf", bbox_inches="tight")
 
-def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, parameter=None, parameterRange=None):
+def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, parameter=None, parameterRange=None, plotType="line"):
     encodedDir = os.fsencode(path)
     files = [f for f in os.listdir(encodedDir) if os.fsdecode(f).endswith("json") or os.fsdecode(f).endswith(".csv")]
     printFileLength = len(max(files, key=len))
@@ -314,21 +353,32 @@ def parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct=False, pa
                 dataset[model]["metrics"][entry][paramValue].append(float(item[entry]))
         else:
             i = 1
-            for item in rawData:
-                if int(item["timestep"]) > totalTimesteps:
-                    break
-                if int(item["timestep"]) > dataset[model]["timesteps"]:
-                    dataset[model]["timesteps"] += 1
-
-                for entry in item:
+            if plotType == "box":
+                rawData = rawData[totalTimesteps] if len(rawData) >= totalTimesteps else rawData[-1]
+                for entry in rawData:
                     if entry in ["agentWealths", "agentTimesToLive", "agentTimesToLiveAgeLimited", "agentTotalMetabolism"]:
                         continue
                     if entry not in dataset[model]["metrics"]:
-                        dataset[model]["metrics"][entry] = [[] for j in datasetRange]
-                    if item[entry] == "None":
-                        item[entry] = 0
-                    dataset[model]["metrics"][entry][i - 1].append(float(item[entry]))
-                i += 1
+                        dataset[model]["metrics"][entry] = []
+                    if rawData[entry] == "None" or rawData["timestep"] < totalTimesteps:
+                        rawData[entry] = 0 if entry != "timestep" else totalTimesteps
+                    dataset[model]["metrics"][entry].append(float(rawData[entry]))
+            else:
+                for item in rawData:
+                    if int(item["timestep"]) > totalTimesteps:
+                        break
+                    if int(item["timestep"]) > dataset[model]["timesteps"]:
+                        dataset[model]["timesteps"] += 1
+
+                    for entry in item:
+                        if entry in ["agentWealths", "agentTimesToLive", "agentTimesToLiveAgeLimited", "agentTotalMetabolism"]:
+                            continue
+                        if entry not in dataset[model]["metrics"]:
+                            dataset[model]["metrics"][entry] = [[] for j in datasetRange]
+                        if item[entry] == "None":
+                            item[entry] = 0
+                        dataset[model]["metrics"][entry][i - 1].append(float(item[entry]))
+                    i += 1
 
     if paramPresent == True:
         for model in dataset:
@@ -407,9 +457,11 @@ def printProgress(filename, filesParsed, totalFiles, fileLength, decimals=2):
 def printSummaryStats(dataset, parameter=None):
     summaryString = f"Model population performance:\n{'Decision Model':^30} {'Extinct':^5} {'Worse':^5} {'Better':^5}\n"
     parameterSummaryString = f"Model population performance per parameter:\n{'Decision Model':^30} {'Extinct':^5} {'Worse':^5} {'Better':^5}\n"
+    dataset = dict(sorted(dataset.items(), key=lambda model: model[1]["better"], reverse=True))
     for model in dataset:
         summaryString += f"{model:^30} {dataset[model]['extinct']:^5} {dataset[model]['worse']:^5} {dataset[model]['better']:^5}\n"
         if parameter != None:
+            dataset[model][parameter] = dict(sorted(dataset[model][parameter].items(), key=lambda param: param[1]["better"], reverse=True))
             for value in dataset[model][parameter]:
                 parameterSummaryString += f"{model + '.' + value:^30} {dataset[model][parameter][value]['extinct']:^5} {dataset[model][parameter][value]['worse']:^5} {dataset[model][parameter][value]['better']:^5}\n"
 
@@ -460,12 +512,12 @@ if __name__ == "__main__":
         print(f"Path {path} not recognized.")
         printHelp()
 
-    dataset = parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct, parameter, parameterRange)
-    if statistic == "mean":
+    dataset = parseDataset(path, dataset, totalTimesteps, statistic, skipExtinct, parameter, parameterRange, plotType)
+    if statistic == "mean" and plotType != "box":
         dataset = findMeans(dataset, totalTimesteps, parameter, parameterRange)
-    elif statistic == "median":
+    elif statistic == "median" and plotType != "box":
         dataset = findMedians(dataset, totalTimesteps, parameter, parameterRange)
-    else:
+    elif plotType != "box":
         print(f"Plotting statistic {statistic} not recognized.")
         printHelp()
 

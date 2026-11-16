@@ -860,8 +860,8 @@ class Sugarscape:
             self.configureAgents(numReplacements)
 
     def runSimulation(self, timesteps=5):
-        self.startLog(self.log)
         self.updateRuntimeStats()
+        self.startLog(self.log)
         if self.gui != None:
             # Simulation begins paused until start button in GUI pressed
             self.gui.updateLabels()
@@ -1135,7 +1135,7 @@ class Sugarscape:
                 tradeVolume += agent.tradeVolume
                 numTraders += 1
             agentWealthTotal += agentWealth
-            agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice)
+            agentWealthCollected += agentWealth - (agent.lastSugar + agent.lastSpice) if self.timestep > 0 else 0
             agentWealthBurnRate += agentTimeToLive
             agentMeanTimeToLive += agentTimeToLiveAgeLimited
             agentTotalMetabolism += agent.sugarMetabolism + agent.spiceMetabolism
