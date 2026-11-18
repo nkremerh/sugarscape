@@ -544,9 +544,13 @@ environmentWidth: int
     Set the width in cells of the Sugarscape environment.
     Default: 50
 
-environmentWraparound: bool
-    Set whether the environment is a torus (wraparound) or a plane (no wraparound).
-    Default: true
+environmentWraparoundMode: string
+    Set whether the environment is a plane, a torus, or an approximation of a sphere.
+    Options: "plane", "torus", "sphere"
+    Note: There is no wrapping in plane mode.
+    Note: All edges wrap to the opposite side in torus mode.
+    Note: North and south edges wrap back to the same edge halfway across the grid in sphere mode while east and west edges act the same as in torus mode.
+    Default: "plane"
 
 experimentalGroup: string
     Set the experimental group of agents under study for finer-grained logging.
