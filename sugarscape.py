@@ -47,7 +47,7 @@ class Sugarscape:
                                     "sugarscapeSeed": configuration["seed"],
                                     "universalSpiceIncomeInterval": configuration["environmentUniversalSpiceIncomeInterval"],
                                     "universalSugarIncomeInterval": configuration["environmentUniversalSugarIncomeInterval"],
-                                    "wraparound": configuration["environmentWraparound"]}
+                                    "wraparoundMode": configuration["environmentWraparoundMode"]}
         self.seed = configuration["seed"]
         self.environment = environment.Environment(configuration["environmentHeight"], configuration["environmentWidth"], self, environmentConfiguration)
         self.environmentHeight = configuration["environmentHeight"]
@@ -157,11 +157,11 @@ class Sugarscape:
         for i in range(width):
             for j in range(height):
                 distanceToStart = math.inf
-                if self.environment.wraparound == "plane":
+                if self.environment.wraparoundMode == "plane":
                     distanceToStart = math.sqrt((startX - i)**2 + (startY - j)**2)
-                if self.environment.wraparound == "torus":
+                if self.environment.wraparoundMode == "torus":
                     distanceToStart = math.sqrt(min(abs(startX - i), width - abs(startX - i))**2 + min(abs(startY - j), height - abs(startY - j))**2)
-                if self.environment.wraparound == "sphere":
+                if self.environment.wraparoundMode == "sphere":
                     dx, dy = self.environment.findSphereDeltas(startX, startY, i, j)
                     distanceToStart = math.sqrt(dx**2 + dy**2)
                 currDispersion = 1 + maxValue * (1 - distanceToStart / radius)
@@ -1795,9 +1795,9 @@ def verifyConfiguration(configuration):
         configuration["startingDiseasesPerAgent"] = startingDiseasesPerAgent
 
     # Ensure environment wraparound is valid type
-    if configuration["environmentWraparound"] not in ["plane", "torus", "sphere"]:
-        print(f"Invalid environment wraparound type: {configuration['environmentWraparound']}. Defaulting to 'torus'.")
-        configuration["environmentWraparound"] = "torus"
+    if configuration["environmentWraparoundMode"] not in ["plane", "torus", "sphere"]:
+        print(f"Invalid environment wraparound mode: {configuration['environmentWraparoundMode']}. Defaulting to plane.")
+        configuration["environmentWraparoundMode"] = "plane"
 
     if configuration["logfile"] == "":
         configuration["logfile"] = None
@@ -1945,7 +1945,7 @@ if __name__ == "__main__":
                      "environmentUniversalSpiceIncomeInterval": 0,
                      "environmentUniversalSugarIncomeInterval": 0,
                      "environmentWidth": 50,
-                     "environmentWraparound": "torus",
+                     "environmentWraparoundMode": "plane",
                      "experimentalGroup": None,
                      "headlessMode": False,
                      "interfaceHeight": 1000,

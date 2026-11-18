@@ -36,7 +36,7 @@ class Environment:
         self.sugarRegrowRate = configuration["sugarRegrowRate"]
         self.universalSpiceIncomeInterval = configuration["universalSpiceIncomeInterval"]
         self.universalSugarIncomeInterval = configuration["universalSugarIncomeInterval"]
-        self.wraparound = configuration["wraparound"]
+        self.wraparoundMode = configuration["wraparoundMode"]
         self.maxCellDistance = 0
         self.timestep = 0
 
@@ -112,26 +112,26 @@ class Environment:
         if deltaX != 0:
             nextX = x + deltaX
             if nextX < 0 or nextX > self.width - 1:
-                if self.wraparound == "plane":
+                if self.wraparoundMode == "plane":
                     return None, None, deltaY
                 nextX = nextX % self.width
             return nextX, y, deltaY
         nextY = y + deltaY
         if nextY < 0 or nextY > self.height - 1:
-            if self.wraparound == "plane":
+            if self.wraparoundMode == "plane":
                 return None, None, deltaY
             # Crossing a pole stays in the same row, jumps half the grid, and reverses direction
-            if self.wraparound == "sphere":
+            if self.wraparoundMode == "sphere":
                 return (x + self.width // 2) % self.width, y, -deltaY
             nextY = nextY % self.height
         return x, nextY, deltaY
 
     def findCardinalCellRanges(self, maxDeltaX, maxDeltaY, cellCoords):
-        for x1, y1 in cellCoords:
-            origin = self.grid[x1][y1]
+        for startX, startY in cellCoords:
+            origin = self.grid[startX][startY]
             for startDeltaX, startDeltaY in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                 maxSteps = maxDeltaX if startDeltaY == 0 else maxDeltaY
-                x, y, deltaY = x1, y1, startDeltaY
+                x, y, deltaY = startX, startY, startDeltaY
                 for step in range(1, maxSteps + 1):
                     x, y, deltaY = self.findNextCardinalCell(x, y, startDeltaX, deltaY)
                     if x is None:
@@ -140,7 +140,6 @@ class Environment:
                     if target is origin:
                         break
                     origin.ranges[step][target] = step
-
 
     def findCell(self, x, y):
         return self.grid[x][y]
@@ -159,7 +158,7 @@ class Environment:
         maxDeltaX = min(maxAgentRange, self.width // 2)
         maxDeltaY = min(maxAgentRange, self.height // 2)
         maxRadialDelta = min(maxAgentRange, math.floor(math.sqrt((self.width // 2) ** 2 + (self.height // 2) ** 2)))
-        if self.wraparound == "plane":
+        if self.wraparoundMode == "plane":
             maxDeltaX = min(maxAgentRange, self.width - 1)
             maxDeltaY = min(maxAgentRange, self.height - 1)
             maxRadialDelta = min(maxAgentRange, math.floor(math.sqrt((self.width - 1) ** 2 + (self.height - 1) ** 2)))
@@ -210,23 +209,23 @@ class Environment:
                     self.grid[x2][y2].ranges[gridRange][self.grid[x1][y1]] = distance
 
     def findSphereDeltas(self, x1, y1, x2, y2):
-        # Direct route: no pole crossing
-        dx = abs(x1 - x2)
-        dx = min(dx, self.width - dx)
-        dy = abs(y1 - y2)
-        best = (dx, dy)
+        # Direct route without pole crossing
+        deltaX = abs(x1 - x2)
+        deltaX = min(deltaX, self.width - deltaX)
+        deltaY = abs(y1 - y2)
+        best = (deltaX, deltaY)
 
-        # Crossing either pole traverses half the width in x direction
-        poleDx = abs(x1 - (x2 + self.width // 2) % self.width)
-        poleDx = min(poleDx, self.width - poleDx)
+        # Crossing either pole traverses half the width in X direction
+        polarDeltaX = abs(x1 - (x2 + self.width // 2) % self.width)
+        polarDeltaX = min(polarDeltaX, self.width - polarDeltaX)
 
-        # Crossing either pole traverses the distance to the pole and back down the other side in y direction
-        northDy = y1 + y2 + 1
-        southDy = (self.height - 1 - y1) + (self.height - 1 - y2) + 1
+        # Crossing either pole traverses the distance to the pole and back down the other side in Y direction
+        northDeltaY = y1 + y2 + 1
+        southDeltaY = (self.height - 1 - y1) + (self.height - 1 - y2) + 1
 
         # Compare the direct route to the two pole crossing routes and return the best one
-        for candidate in ((poleDx, northDy), (poleDx, southDy)):
-            if math.hypot(*candidate) < math.hypot(*best):
+        for candidate in ((polarDeltaX, northDeltaY), (polarDeltaX, southDeltaY)):
+            if math.hypot(candidate[0], candidate[1]) < math.hypot(best[0], best[1]):
                 best = candidate
         return best
 
