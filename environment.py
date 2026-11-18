@@ -1,4 +1,5 @@
 import math
+import random
 
 class Environment:
     # Assumption: grid is always indexed by [width][height]
@@ -10,8 +11,8 @@ class Environment:
         self.equator = configuration["equator"] if configuration["equator"] >= 0 else math.ceil(self.height / 2)
         self.globalMaxSpice = configuration["globalMaxSpice"]
         self.globalMaxSugar = configuration["globalMaxSugar"]
-        self.inGroupAgeAbsoluteRanges = configuration["ageistAbsoluteRanges"]
-        self.inGroupAgeRelativeRange = configuration["ageistRelativeRange"]
+        self.inGroupAgeAbsoluteRanges = configuration.get("ageistAbsoluteRanges", [])
+        self.inGroupAgeRelativeRange = configuration.get("ageistRelativeRange", 0)
         self.inGroupRaces = configuration["inGroupRaces"]
         self.maxCombatLoot = configuration["maxCombatLoot"]
         self.neighborhoodMode = configuration["neighborhoodMode"]
@@ -61,13 +62,32 @@ class Environment:
     def doCellUpdate(self):
         for i in range(self.width):
             for j in range(self.height):
+                cell = self.grid[i][j]
+                if cell is not None:
+                    cell.updateWaterCap()
                 cellCurrSugar = self.grid[i][j].sugar
                 cellCurrSpice = self.grid[i][j].spice
                 cellMaxSugar = self.grid[i][j].maxSugar
                 cellMaxSpice = self.grid[i][j].maxSpice
                 cellSeason = self.grid[i][j].season
-                sugarRegrowth = min(cellCurrSugar + self.sugarRegrowRate, cellMaxSugar)
-                spiceRegrowth = min(cellCurrSpice + self.spiceRegrowRate, cellMaxSpice)
+                
+                waterCap = self.grid[i][j].waterCapacity
+
+                if waterCap == 1.0:
+                    cellWaterMultiplier = 0
+                
+                elif waterCap == 0.5:
+                    cellWaterMultiplier = 2.0
+                
+                else:
+                    cellWaterMultiplier = 1.0
+                
+                cellSugarRegrowthRate = self.sugarRegrowRate * cellWaterMultiplier
+                cellSpiceRegrowthRate = self.spiceRegrowRate * cellWaterMultiplier
+                
+                sugarRegrowth = min(cellCurrSugar + cellSugarRegrowthRate, cellMaxSugar)
+                spiceRegrowth = min(cellCurrSpice + cellSpiceRegrowthRate, cellMaxSpice)
+                
                 self.grid[i][j].timestep = self.timestep
                 if self.seasonInterval > 0:
                     if self.timestep % self.seasonInterval == 0:
@@ -95,11 +115,11 @@ class Environment:
                     self.grid[i][j].sugar = sugarRegrowth
                     self.grid[i][j].spice = spiceRegrowth
         if self.pollutionDiffusionStart <= self.timestep <= self.pollutionDiffusionEnd and self.pollutionDiffusionDelay > 0 and self.pollutionDiffusionCountdown == self.pollutionDiffusionDelay:
-            for i in range(self.height):
-                for j in range(self.width):
+            for i in range(self.width):
+                for j in range(self.height):
                     self.grid[i][j].findPollutionFlux()
-            for i in range(self.height):
-                for j in range(self.width):
+            for i in range(self.width):
+                for j in range(self.height):
                     self.grid[i][j].doPollutionDiffusion()
 
     def doTimestep(self, timestep):
@@ -123,6 +143,28 @@ class Environment:
 
     def findCell(self, x, y):
         return self.grid[x][y]
+
+    def findCellAtDistance(self, origin, cell, distance):
+        deltaX = cell.x - origin.x
+        deltaY = cell.y - origin.y
+        # Radial movement
+        if deltaX != 0 and deltaY != 0:
+            #todo
+            return None
+        stepX = self.findWraparoundStep(deltaX, self.width)
+        stepY = self.findWraparoundStep(deltaY, self.height)
+        newX = (origin.x + stepX * distance) % self.width
+        newY = (origin.y + stepY * distance) % self.height
+        return self.grid[newX][newY]
+
+    def findWraparoundStep(self, delta, border):
+        if delta == 0:
+            return 0
+        step = 1 if delta > 0 else -1
+        # Shorter path by wrapping
+        if self.wraparound == True and abs(delta) > border / 2:
+            step = -step
+        return step
 
     def findCellNeighbors(self):
         for i in range(self.width):
@@ -178,8 +220,18 @@ class Environment:
             delta = border - delta
         return delta
 
+    def getWaterFlowDirection(self):
+        config = self.sugarscape.configuration
+        flowDir = config.get("environmentRiverFlowDirection", "left-to-right")
+
+        isReverse = flowDir in ["right-to-left"]
+
+        direction = -1 if isReverse else 1
+        return direction
+
     def resetCell(self, x, y):
         self.grid[x][y] = None
+        
 
     def setCell(self, cell, x, y):
         if self.grid[x][y] == None:
@@ -209,6 +261,8 @@ class Environment:
                 else:
                     self.seasonNorth = "wet"
                     self.seasonSouth = "dry"
+        
+        
 
     def __str__(self):
         string = ""
